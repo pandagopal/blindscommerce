@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser, setAuthCookie } from '@/lib/auth';
+import { loginUser, generateToken, setAuthCookie } from '@/lib/auth';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password, rememberMe } = body;
+    const body = await req.json();
+    const { email, password } = body;
 
+    // Validate inputs
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -13,33 +14,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await loginUser(email, password, rememberMe);
+    // Attempt login
+    const user = await loginUser(email, password);
 
-    if (!result) {
+    // Check if login was successful
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    const { user, token } = result;
+    // Generate JWT token
+    const token = generateToken(user);
 
-    // Set the auth cookie with remember me preference
-    setAuthCookie(token, rememberMe);
+    // Create response
+    const response = NextResponse.json({
+      success: true,
+      user: {
+        id: user.userId,
+        email: user.email,
+        firstName: user.firstName || null,
+        lastName: user.lastName || null,
+        role: user.role || 'customer',
+        isAdmin: user.isAdmin
+      }
+    });
 
-    return NextResponse.json(
-      {
-        message: 'Login successful',
-        user: {
-          userId: user.userId,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          role: user.role,
-        }
-      },
-      { status: 200 }
-    );
+    // Set auth cookie
+    setAuthCookie(response, token);
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(

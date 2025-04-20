@@ -1,115 +1,132 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCategories, getFeaturedProducts } from "@/lib/db";
 
-// Static mock data for categories
-const mockCategories = [
-  {
-    id: 1,
-    name: "Blinds",
-    slug: "blinds",
-    image: "https://source.unsplash.com/random/300x300/?blinds",
-    description: "Custom blinds for every window"
-  },
-  {
-    id: 2,
-    name: "Shades",
-    slug: "shades",
-    image: "https://source.unsplash.com/random/300x300/?shades",
-    description: "Elegant shades for your home"
-  },
-  {
-    id: 3,
-    name: "Curtains",
-    slug: "curtains",
-    image: "https://source.unsplash.com/random/300x300/?curtains",
-    description: "Beautiful curtains for any room"
-  },
-  {
-    id: 4,
-    name: "Shutters",
-    slug: "shutters",
-    image: "https://source.unsplash.com/random/300x300/?shutters",
-    description: "Classic shutters for style and privacy"
-  },
-  {
-    id: 5,
-    name: "Drapes",
-    slug: "drapes",
-    image: "https://source.unsplash.com/random/300x300/?drapes",
-    description: "Luxury drapes for elegant spaces"
-  },
-  {
-    id: 6,
-    name: "Accessories",
-    slug: "accessories",
-    image: "https://source.unsplash.com/random/300x300/?home-accessories",
-    description: "Complete your window treatments"
+// This enables Server Side Rendering for database fetching
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Home page with database integration
+export default async function Home() {
+  // Fetch data from the database
+  let categories = [];
+  let products = [];
+
+  try {
+    // Fetch categories from database
+    categories = await getCategories();
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    // Fallback to static mock data if database fetch fails
+    categories = [
+      {
+        id: 1,
+        name: "Blinds",
+        slug: "blinds",
+        image: "https://source.unsplash.com/random/300x300/?blinds",
+        description: "Custom blinds for every window"
+      },
+      {
+        id: 2,
+        name: "Shades",
+        slug: "shades",
+        image: "https://source.unsplash.com/random/300x300/?shades",
+        description: "Elegant shades for your home"
+      },
+      {
+        id: 3,
+        name: "Curtains",
+        slug: "curtains",
+        image: "https://source.unsplash.com/random/300x300/?curtains",
+        description: "Beautiful curtains for any room"
+      },
+      {
+        id: 4,
+        name: "Shutters",
+        slug: "shutters",
+        image: "https://source.unsplash.com/random/300x300/?shutters",
+        description: "Classic shutters for style and privacy"
+      },
+      {
+        id: 5,
+        name: "Drapes",
+        slug: "drapes",
+        image: "https://source.unsplash.com/random/300x300/?drapes",
+        description: "Luxury drapes for elegant spaces"
+      },
+      {
+        id: 6,
+        name: "Accessories",
+        slug: "accessories",
+        image: "https://source.unsplash.com/random/300x300/?home-accessories",
+        description: "Complete your window treatments"
+      }
+    ];
   }
-];
 
-// Static mock data for products
-const mockProducts = [
-  {
-    product_id: 1,
-    name: "Premium Wooden Blinds",
-    slug: "premium-wooden-blinds",
-    category_name: "Blinds",
-    base_price: 89.99,
-    rating: 4.7,
-    primary_image: "https://source.unsplash.com/random/600x400/?wooden-blinds"
-  },
-  {
-    product_id: 2,
-    name: "Blackout Roller Shades",
-    slug: "blackout-roller-shades",
-    category_name: "Shades",
-    base_price: 69.99,
-    rating: 4.5,
-    primary_image: "https://source.unsplash.com/random/600x400/?roller-shades"
-  },
-  {
-    product_id: 3,
-    name: "Elegant Linen Curtains",
-    slug: "elegant-linen-curtains",
-    category_name: "Curtains",
-    base_price: 129.99,
-    rating: 4.8,
-    primary_image: "https://source.unsplash.com/random/600x400/?linen-curtains"
-  },
-  {
-    product_id: 4,
-    name: "Classic Plantation Shutters",
-    slug: "classic-plantation-shutters",
-    category_name: "Shutters",
-    base_price: 249.99,
-    rating: 4.9,
-    primary_image: "https://source.unsplash.com/random/600x400/?shutters"
-  },
-  {
-    product_id: 5,
-    name: "Energy Efficient Cellular Shades",
-    slug: "energy-efficient-cellular-shades",
-    category_name: "Shades",
-    base_price: 119.99,
-    rating: 4.6,
-    primary_image: "https://source.unsplash.com/random/600x400/?cellular-shades"
-  },
-  {
-    product_id: 6,
-    name: "Decorative Curtain Rods",
-    slug: "decorative-curtain-rods",
-    category_name: "Accessories",
-    base_price: 39.99,
-    rating: 4.4,
-    primary_image: "https://source.unsplash.com/random/600x400/?curtain-rods"
+  try {
+    // Fetch featured products from database
+    products = await getFeaturedProducts(6);
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    // Fallback to static mock data if database fetch fails
+    products = [
+      {
+        product_id: 1,
+        name: "Premium Wooden Blinds",
+        slug: "premium-wooden-blinds",
+        category_name: "Blinds",
+        base_price: 89.99,
+        rating: 4.7,
+        primary_image: "https://source.unsplash.com/random/600x400/?wooden-blinds"
+      },
+      {
+        product_id: 2,
+        name: "Blackout Roller Shades",
+        slug: "blackout-roller-shades",
+        category_name: "Shades",
+        base_price: 69.99,
+        rating: 4.5,
+        primary_image: "https://source.unsplash.com/random/600x400/?roller-shades"
+      },
+      {
+        product_id: 3,
+        name: "Elegant Linen Curtains",
+        slug: "elegant-linen-curtains",
+        category_name: "Curtains",
+        base_price: 129.99,
+        rating: 4.8,
+        primary_image: "https://source.unsplash.com/random/600x400/?linen-curtains"
+      },
+      {
+        product_id: 4,
+        name: "Classic Plantation Shutters",
+        slug: "classic-plantation-shutters",
+        category_name: "Shutters",
+        base_price: 249.99,
+        rating: 4.9,
+        primary_image: "https://source.unsplash.com/random/600x400/?shutters"
+      },
+      {
+        product_id: 5,
+        name: "Energy Efficient Cellular Shades",
+        slug: "energy-efficient-cellular-shades",
+        category_name: "Shades",
+        base_price: 119.99,
+        rating: 4.6,
+        primary_image: "https://source.unsplash.com/random/600x400/?cellular-shades"
+      },
+      {
+        product_id: 6,
+        name: "Decorative Curtain Rods",
+        slug: "decorative-curtain-rods",
+        category_name: "Accessories",
+        base_price: 39.99,
+        rating: 4.4,
+        primary_image: "https://source.unsplash.com/random/600x400/?curtain-rods"
+      }
+    ];
   }
-];
-
-// Update function to use static data
-export default function Home() {
-  // Use static mock data instead of dynamic fetching
-  const categories = mockCategories;
-  const products = mockProducts;
 
   return (
     <div className="container mx-auto px-4 pt-6">
