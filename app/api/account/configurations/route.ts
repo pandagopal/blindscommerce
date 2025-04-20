@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import pool from '@/lib/db';
+import { getPool } from '@/lib/db';
 
 // GET /api/account/configurations - Get all saved configurations for the current user
 export async function GET(req: NextRequest) {
@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
         sc.created_at DESC
     `;
 
+    const pool = await getPool();
     const result = await pool.query(query, [user.userId]);
 
     return NextResponse.json({
@@ -155,6 +156,7 @@ export async function POST(req: NextRequest) {
       configuration
     ];
 
+    const pool = await getPool();
     const result = await pool.query(query, values);
 
     // Get product name
@@ -217,6 +219,7 @@ export async function DELETE(req: NextRequest) {
       WHERE configuration_id = $1 AND user_id = $2
     `;
 
+    const pool = await getPool();
     const result = await pool.query(query, [configId, user.userId]);
 
     if (result.rowCount === 0) {

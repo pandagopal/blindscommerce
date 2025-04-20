@@ -15,6 +15,13 @@ export interface CartItem {
   colorName?: string;
   materialId?: number; // make optional with undefined
   materialName?: string;
+  mountType?: number;
+  mountTypeName?: string;
+  controlType?: string;
+  headrailId?: number;
+  headrailName?: string;
+  bottomRailId?: number;
+  bottomRailName?: string;
   image: string;
   totalPrice: number;
 }
@@ -74,14 +81,18 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   // Add an item to cart
   const addItem = (newItem: CartItem) => {
     setItems((prev) => {
-      // Check if item already exists in cart
+      // Check if item already exists in cart with same configuration
       const existingItemIndex = prev.findIndex(
         (item) =>
           item.productId === newItem.productId &&
           item.width === newItem.width &&
           item.height === newItem.height &&
           item.colorId === newItem.colorId &&
-          item.materialId === newItem.materialId
+          item.materialId === newItem.materialId &&
+          item.mountType === newItem.mountType &&
+          item.controlType === newItem.controlType &&
+          item.headrailId === newItem.headrailId &&
+          item.bottomRailId === newItem.bottomRailId
       );
 
       if (existingItemIndex >= 0) {
