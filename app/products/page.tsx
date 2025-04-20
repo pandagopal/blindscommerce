@@ -1,10 +1,147 @@
 import { Metadata } from "next";
 
+// Comment out dynamic rendering for static export
+// // export const dynamic = 'force-dynamic';
+// // export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "Shop Custom Window Treatments | Smart Blinds Hub",
   description: "Browse our wide selection of custom blinds, shades, and shutters. Find the perfect window treatment for your home.",
 };
 
+// Static mock data for categories
+const mockCategories = [
+  {
+    id: 1,
+    name: "Blinds",
+    slug: "blinds",
+    image: "https://source.unsplash.com/random/300x300/?blinds",
+    description: "Custom blinds for every window"
+  },
+  {
+    id: 2,
+    name: "Shades",
+    slug: "shades",
+    image: "https://source.unsplash.com/random/300x300/?shades",
+    description: "Elegant shades for your home"
+  },
+  {
+    id: 3,
+    name: "Curtains",
+    slug: "curtains",
+    image: "https://source.unsplash.com/random/300x300/?curtains",
+    description: "Beautiful curtains for any room"
+  },
+  {
+    id: 4,
+    name: "Shutters",
+    slug: "shutters",
+    image: "https://source.unsplash.com/random/300x300/?shutters",
+    description: "Classic shutters for style and privacy"
+  },
+  {
+    id: 5,
+    name: "Drapes",
+    slug: "drapes",
+    image: "https://source.unsplash.com/random/300x300/?drapes",
+    description: "Luxury drapes for elegant spaces"
+  },
+  {
+    id: 6,
+    name: "Accessories",
+    slug: "accessories",
+    image: "https://source.unsplash.com/random/300x300/?home-accessories",
+    description: "Complete your window treatments"
+  }
+];
+
+// Static mock data for products
+const mockProducts = [
+  {
+    product_id: 1,
+    name: "Premium Wooden Blinds",
+    slug: "premium-wooden-blinds",
+    category_name: "Blinds",
+    base_price: 89.99,
+    rating: 4.7,
+    primary_image: "https://source.unsplash.com/random/600x400/?wooden-blinds"
+  },
+  {
+    product_id: 2,
+    name: "Blackout Roller Shades",
+    slug: "blackout-roller-shades",
+    category_name: "Shades",
+    base_price: 69.99,
+    rating: 4.5,
+    primary_image: "https://source.unsplash.com/random/600x400/?roller-shades"
+  },
+  {
+    product_id: 3,
+    name: "Elegant Linen Curtains",
+    slug: "elegant-linen-curtains",
+    category_name: "Curtains",
+    base_price: 129.99,
+    rating: 4.8,
+    primary_image: "https://source.unsplash.com/random/600x400/?linen-curtains"
+  },
+  {
+    product_id: 4,
+    name: "Classic Plantation Shutters",
+    slug: "classic-plantation-shutters",
+    category_name: "Shutters",
+    base_price: 249.99,
+    rating: 4.9,
+    primary_image: "https://source.unsplash.com/random/600x400/?shutters"
+  },
+  {
+    product_id: 5,
+    name: "Energy Efficient Cellular Shades",
+    slug: "energy-efficient-cellular-shades",
+    category_name: "Shades",
+    base_price: 119.99,
+    rating: 4.6,
+    primary_image: "https://source.unsplash.com/random/600x400/?cellular-shades"
+  },
+  {
+    product_id: 6,
+    name: "Decorative Curtain Rods",
+    slug: "decorative-curtain-rods",
+    category_name: "Accessories",
+    base_price: 39.99,
+    rating: 4.4,
+    primary_image: "https://source.unsplash.com/random/600x400/?curtain-rods"
+  },
+  {
+    product_id: 7,
+    name: "Bamboo Roman Shades",
+    slug: "bamboo-roman-shades",
+    category_name: "Shades",
+    base_price: 149.99,
+    rating: 4.7,
+    primary_image: "https://source.unsplash.com/random/600x400/?bamboo-shades"
+  },
+  {
+    product_id: 8,
+    name: "Vertical Blinds for Patio Door",
+    slug: "vertical-blinds-patio",
+    category_name: "Blinds",
+    base_price: 179.99,
+    rating: 4.3,
+    primary_image: "https://source.unsplash.com/random/600x400/?vertical-blinds"
+  },
+  {
+    product_id: 9,
+    name: "Motorized Smart Blinds",
+    slug: "motorized-smart-blinds",
+    category_name: "Blinds",
+    base_price: 299.99,
+    rating: 4.9,
+    primary_image: "https://source.unsplash.com/random/600x400/?smart-blinds"
+  }
+];
+
+// Comment out dynamic data fetching functions
+/*
 async function getCategories() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`, {
@@ -36,12 +173,13 @@ async function getProducts() {
     return [];
   }
 }
+*/
 
-export default async function ProductsPage() {
-  const [categories, products] = await Promise.all([
-    getCategories(),
-    getProducts(),
-  ]);
+// Update function to use static data
+export default function ProductsPage() {
+  // Use static mock data instead of dynamic fetching
+  const categories = mockCategories;
+  const products = mockProducts;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -1,5 +1,4 @@
 import { Pool } from 'pg';
-import { createHash } from 'crypto';
 
 // Define types for query parameters
 interface ProductQueryParams {
@@ -15,7 +14,11 @@ interface ProductQueryParams {
 
 // Create a pool of connections to the PostgreSQL database
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  user: process.env.DB_USER || 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  database: process.env.DB_NAME || 'smartblindshub',
+  password: process.env.DB_PASSWORD || 'postgres',
+  port: parseInt(process.env.DB_PORT || '5432'),
   ssl: process.env.NODE_ENV === 'production'
     ? { rejectUnauthorized: false }
     : false,
@@ -29,12 +32,19 @@ pool.on('connect', (client) => {
 // Log database connection errors
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
-  process.exit(-1);
+  // Remove process.exit(-1) for Edge compatibility
 });
 
-// Helper function to hash passwords
-export const hashPassword = (password: string): string => {
-  return createHash('sha256').update(password).digest('hex');
+// Helper function for password hashing - using Web Crypto API
+export const hashPassword = async (password: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+
+  return hashHex;
 };
 
 // Query functions
@@ -269,6 +279,216 @@ export const getCategoryBySlug = async (slug: string) => {
     return result.rows[0] || null;
   } catch (error) {
     console.error('Database error fetching category by slug:', error);
+    throw error;
+  }
+};
+
+// User functions
+
+// Get user by ID
+export const getUserById = async (userId: number) => {
+  try {
+    const query = `
+      SELECT
+        user_id,
+        email,
+        first_name,
+        last_name,
+        phone,
+        is_admin,
+        is_active
+      FROM
+        users
+      WHERE
+        user_id = $1 AND is_active = TRUE
+    `;
+
+    const result = await pool.query(query, [userId]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Database error fetching user by ID:', error);
+    throw error;
+  }
+};
+
+// Get user by email
+export const getUserByEmail = async (email: string) => {
+  try {
+    const query = `
+      SELECT
+        user_id,
+        email,
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        is_admin,
+        is_active
+      FROM
+        users
+      WHERE
+        email = $1 AND is_active = TRUE
+    `;
+
+    const result = await pool.query(query, [email]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Database error fetching user by email:', error);
+    throw error;
+  }
+};
+
+// Get user role (admin, vendor, customer, etc.)
+export const getUserRole = async (userId: number) => {
+  try {
+    // First check if the user is an admin
+    const userQuery = `
+      SELECT is_admin FROM users WHERE user_id = $1 AND is_active = TRUE
+    `;
+    const userResult = await pool.query(userQuery, [userId]);
+
+    if (!userResult.rows.length) {
+      return null;
+    }
+
+    if (userResult.rows[0].is_admin) {
+      return 'admin';
+    }
+
+    // Check if user is a vendor
+    const vendorQuery = `
+      SELECT * FROM vendor_info WHERE user_id = $1 AND is_active = TRUE
+    `;
+    const vendorResult = await pool.query(vendorQuery, [userId]);
+
+    if (vendorResult.rows.length > 0) {
+      return 'vendor';
+    }
+
+    // Default role is customer
+    return 'customer';
+  } catch (error) {
+    console.error('Database error getting user role:', error);
+    throw error;
+  }
+};
+
+// Get user orders
+export const getUserOrders = async (userId: number) => {
+  try {
+    const query = `
+      SELECT
+        o.order_id,
+        o.order_number,
+        o.created_at,
+        o.total_amount,
+        s.name as status,
+        COUNT(oi.order_item_id) as item_count
+      FROM
+        orders o
+      JOIN
+        order_status s ON o.status_id = s.status_id
+      LEFT JOIN
+        order_items oi ON o.order_id = oi.order_id
+      WHERE
+        o.user_id = $1
+      GROUP BY
+        o.order_id, o.order_number, o.created_at, o.total_amount, s.name
+      ORDER BY
+        o.created_at DESC
+    `;
+
+    const result = await pool.query(query, [userId]);
+    return result.rows;
+  } catch (error) {
+    console.error('Database error fetching user orders:', error);
+    throw error;
+  }
+};
+
+// Get order details
+export const getOrderById = async (orderId: number, userId: number | null = null) => {
+  try {
+    // Base query to get order details
+    let query = `
+      SELECT
+        o.*,
+        s.name as status_name,
+        json_agg(
+          json_build_object(
+            'order_item_id', oi.order_item_id,
+            'product_id', oi.product_id,
+            'product_name', oi.product_name,
+            'width', oi.width,
+            'height', oi.height,
+            'color_name', oi.color_name,
+            'material_name', oi.material_name,
+            'quantity', oi.quantity,
+            'unit_price', oi.unit_price,
+            'subtotal', oi.subtotal
+          )
+        ) as items
+      FROM
+        orders o
+      JOIN
+        order_status s ON o.status_id = s.status_id
+      LEFT JOIN
+        order_items oi ON o.order_id = oi.order_id
+      WHERE
+        o.order_id = $1
+    `;
+
+    // If userId is provided, restrict to orders for that user
+    const params = [orderId];
+    if (userId !== null) {
+      query += ` AND o.user_id = $2`;
+      params.push(userId);
+    }
+
+    query += `
+      GROUP BY
+        o.order_id, s.name
+    `;
+
+    const result = await pool.query(query, params);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return result.rows[0];
+  } catch (error) {
+    console.error('Database error fetching order details:', error);
+    throw error;
+  }
+};
+
+// Get vendor products
+export const getVendorProducts = async (vendorId: number) => {
+  try {
+    const query = `
+      SELECT
+        product_id,
+        name,
+        slug,
+        type_id,
+        is_active,
+        is_listing_enabled,
+        base_price,
+        created_at,
+        updated_at
+      FROM
+        vendor_products
+      WHERE
+        vendor_id = $1
+      ORDER BY
+        created_at DESC
+    `;
+
+    const result = await pool.query(query, [vendorId]);
+    return result.rows;
+  } catch (error) {
+    console.error('Database error fetching vendor products:', error);
     throw error;
   }
 };
