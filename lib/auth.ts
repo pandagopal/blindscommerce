@@ -15,15 +15,15 @@ export interface User {
   role?: string;
 }
 
-// Mock user for development (when no database connection)
-const MOCK_USER: User = {
-  userId: 1,
-  email: 'admin@example.com',
-  firstName: 'Admin',
-  lastName: 'User',
-  isAdmin: true,
-  role: 'admin'
-};
+// // Mock user for development (when no database connection)
+// const MOCK_USER: User = {
+//   userId: 1,
+//   email: 'admin@example.com',
+//   firstName: 'Admin',
+//   lastName: 'User',
+//   isAdmin: true,
+//   role: 'admin'
+// };
 
 // Helper to generate JWT token
 export function generateToken(user: User): string {
@@ -36,7 +36,7 @@ export function generateToken(user: User): string {
   const token = jwt.sign(
     payload,
     process.env.JWT_SECRET || 'smartblindshub_secret',
-    { expiresIn: '24h' }
+    { expiresIn: '3h' }
   );
 
   return token;
@@ -77,12 +77,7 @@ export function clearAuthCookie(res: NextResponse): void {
 
 // Get current user from auth token
 export async function getCurrentUser(): Promise<User | null> {
-  // In development or if MOCK_AUTH is explicitly set to true, return mock data
-  if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AUTH === 'true') {
-    return Promise.resolve(MOCK_USER);
-  }
-
-  try {
+   try {
     // Get token from cookies - fix the cookies().get issue
     const cookieStore = cookies();
     // TypeScript is showing an error, but this is the correct way to use cookies()
@@ -108,7 +103,7 @@ export async function getCurrentUser(): Promise<User | null> {
         last_name as "lastName",
         is_admin as "isAdmin"
       FROM
-        users
+        blinds.users
       WHERE
         user_id = $1 AND is_active = TRUE
     `;
@@ -132,7 +127,7 @@ export async function getCurrentUser(): Promise<User | null> {
         ELSE 'customer'
         END as role
       FROM
-        users
+        blinds.users
       WHERE
         user_id = $1
     `;
@@ -221,14 +216,6 @@ export async function logoutUser(): Promise<boolean> {
 
 // Login user with email and password
 export async function loginUser(email: string, password: string): Promise<User | null> {
-  // Use mock data in development
-  if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AUTH === 'true') {
-    if (email === MOCK_USER.email && password === 'password') {
-      return Promise.resolve(MOCK_USER);
-    }
-    return null;
-  }
-
   try {
     // Get user by email
     const query = `
@@ -240,7 +227,7 @@ export async function loginUser(email: string, password: string): Promise<User |
         last_name as "lastName",
         is_admin as "isAdmin"
       FROM
-        users
+        blinds.users
       WHERE
         email = $1 AND is_active = TRUE
     `;
@@ -270,7 +257,7 @@ export async function loginUser(email: string, password: string): Promise<User |
         ELSE 'customer'
         END as role
       FROM
-        users
+        blinds.users
       WHERE
         user_id = $1
     `;
@@ -285,7 +272,7 @@ export async function loginUser(email: string, password: string): Promise<User |
 
     // Update last login date
     const updateQuery = `
-      UPDATE users
+      UPDATE blinds.users
       SET last_login = CURRENT_TIMESTAMP
       WHERE user_id = $1
     `;
@@ -309,9 +296,8 @@ export async function registerUser(
 ): Promise<User | null> {
   // Use mock data in development
   if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AUTH === 'true') {
-    // Simulate a successful registration in dev mode
     return Promise.resolve({
-      ...MOCK_USER,
+      userId: 0,
       email,
       firstName,
       lastName,
@@ -332,7 +318,7 @@ export async function registerUser(
 
       // Insert new user
       const query = `
-        INSERT INTO users (
+        INSERT INTO blinds.users (
           email,
           password_hash,
           first_name,
@@ -362,7 +348,7 @@ export async function registerUser(
 
       // Create empty wishlist for user
       const wishlistQuery = `
-        INSERT INTO wishlist (user_id) VALUES ($1)
+        INSERT INTO blinds.wishlist (user_id) VALUES ($1)
       `;
       await client.query(wishlistQuery, [user.userId]);
 
