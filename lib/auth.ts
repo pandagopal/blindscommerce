@@ -79,9 +79,7 @@ export function clearAuthCookie(res: NextResponse): void {
 export async function getCurrentUser(): Promise<User | null> {
    try {
     // Get token from cookies - fix the cookies().get issue
-    const cookieStore = cookies();
-    // TypeScript is showing an error, but this is the correct way to use cookies()
-    // @ts-ignore - Suppress TS error for cookies().get()
+    const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
 
     if (!token) {
