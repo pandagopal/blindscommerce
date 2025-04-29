@@ -71,9 +71,9 @@ export async function GET(req: NextRequest) {
         sc.created_at,
         sc.configuration_data as config
       FROM
-        saved_configurations sc
+        blinds.saved_configurations sc
       JOIN
-        products p ON sc.product_id = p.product_id
+        blinds.products p ON sc.product_id = p.product_id
       WHERE
         sc.user_id = $1
       ORDER BY
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     // Insert the configuration into the database
     const query = `
-      INSERT INTO saved_configurations (
+      INSERT INTO blinds.saved_configurations (
         user_id,
         product_id,
         name,
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     const result = await pool.query(query, values);
 
     // Get product name
-    const productQuery = `SELECT name FROM products WHERE product_id = $1`;
+    const productQuery = `SELECT name FROM blinds.products WHERE product_id = $1`;
     const productResult = await pool.query(productQuery, [productId]);
     const productName = productResult.rows[0]?.name || 'Unknown Product';
 
@@ -215,7 +215,7 @@ export async function DELETE(req: NextRequest) {
 
     // Delete the configuration
     const query = `
-      DELETE FROM saved_configurations
+      DELETE FROM blinds.saved_configurations
       WHERE configuration_id = $1 AND user_id = $2
     `;
 

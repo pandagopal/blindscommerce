@@ -159,7 +159,7 @@ export const getCategories = async () => {
       parent_id,
       is_active
     FROM
-      categories
+      blinds.categories
     WHERE
       is_active = TRUE
     ORDER BY
@@ -189,7 +189,7 @@ export const getCategoryBySlug = async (slug: string) => {
       parent_id,
       is_active
     FROM
-      categories
+      blinds.categories
     WHERE
       slug = $1 AND is_active = TRUE
   `;
@@ -217,7 +217,7 @@ export const getSubcategories = async (parentId: number) => {
       parent_id,
       is_active
     FROM
-      categories
+      blinds.categories
     WHERE
       parent_id = $1 AND is_active = TRUE
     ORDER BY
@@ -246,9 +246,9 @@ export const getProductsCount = async ({
     SELECT
       COUNT(*) as total
     FROM
-      products p
+      blinds.products p
     JOIN
-      categories c ON p.category_id = c.category_id
+      blinds.categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE
   `;
@@ -315,14 +315,14 @@ export const getProducts = async ({
       c.slug as category_slug,
       (
         SELECT image_url
-        FROM product_images
+        FROM blinds.product_images
         WHERE product_id = p.product_id AND is_primary = TRUE
         LIMIT 1
       ) as primary_image
     FROM
-      products p
+      blinds.products p
     JOIN
-      categories c ON p.category_id = c.category_id
+      blinds.categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE
   `;
@@ -390,7 +390,7 @@ export const getProductBySlug = async (slug: string) => {
         SELECT
           p.product_id
         FROM
-          products p
+          blinds.products p
         WHERE
           p.slug = $1 AND p.is_active = TRUE
       `;
@@ -419,9 +419,9 @@ export const getProductById = async (productId: number) => {
           c.name as category_name,
           c.slug as category_slug
         FROM
-          products p
+          blinds.products p
         JOIN
-          categories c ON p.category_id = c.category_id
+          blinds.categories c ON p.category_id = c.category_id
         WHERE
           p.product_id = $1 AND p.is_active = TRUE
       `;
@@ -436,7 +436,7 @@ export const getProductById = async (productId: number) => {
 
       // Get product images
       const imagesQuery = `
-        SELECT * FROM product_images
+        SELECT * FROM blinds.product_images
         WHERE product_id = $1
         ORDER BY is_primary DESC, display_order ASC
       `;
@@ -446,8 +446,8 @@ export const getProductById = async (productId: number) => {
       // Get product features
       const featuresQuery = `
         SELECT f.name, f.description, pf.value
-        FROM product_features pf
-        JOIN features f ON pf.feature_id = f.feature_id
+        FROM blinds.product_features pf
+        JOIN blinds.features f ON pf.feature_id = f.feature_id
         WHERE pf.product_id = $1
       `;
       const featuresResult = await pool.query(featuresQuery, [productId]);
@@ -456,8 +456,8 @@ export const getProductById = async (productId: number) => {
       // Get product colors
       const colorsQuery = `
         SELECT c.*, pc.price_modifier, pc.image_url as swatch_image, pc.is_default
-        FROM product_colors pc
-        JOIN colors c ON pc.color_id = c.color_id
+        FROM blinds.product_colors pc
+        JOIN blinds.colors c ON pc.color_id = c.color_id
         WHERE pc.product_id = $1 AND c.is_active = TRUE
       `;
       const colorsResult = await pool.query(colorsQuery, [productId]);
@@ -466,8 +466,8 @@ export const getProductById = async (productId: number) => {
       // Get product materials
       const materialsQuery = `
         SELECT m.*, pm.price_modifier, pm.is_default
-        FROM product_materials pm
-        JOIN materials m ON pm.material_id = m.material_id
+        FROM blinds.product_materials pm
+        JOIN blinds.materials m ON pm.material_id = m.material_id
         WHERE pm.product_id = $1 AND m.is_active = TRUE
       `;
       const materialsResult = await pool.query(materialsQuery, [productId]);
@@ -500,9 +500,9 @@ export const getFeaturedProducts = async (limit = 6) => {
         LIMIT 1
       ) as primary_image
     FROM
-      products p
+      blinds.products p
     JOIN
-      categories c ON p.category_id = c.category_id
+      blinds.categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE AND p.is_featured = TRUE
     ORDER BY
@@ -529,7 +529,7 @@ export const getProductFeatures = async () => {
       name,
       description
     FROM
-      features
+      blinds.features
     WHERE
       is_active = TRUE
     ORDER BY
@@ -561,7 +561,7 @@ export const getUserById = async (userId: number) => {
       is_admin,
       is_active
     FROM
-      users
+      blinds.users
     WHERE
       user_id = $1 AND is_active = TRUE
   `;
@@ -590,7 +590,7 @@ export const getUserByEmail = async (email: string) => {
       is_admin,
       is_active
     FROM
-      users
+      blinds.users
     WHERE
       email = $1 AND is_active = TRUE
   `;
@@ -613,7 +613,7 @@ export const getUserRole = async (userId: number) => {
       // First check if the user is an admin
       const pool = await getPool();
       const userQuery = `
-        SELECT is_admin FROM users WHERE user_id = $1 AND is_active = TRUE
+        SELECT is_admin FROM blinds.users WHERE user_id = $1 AND is_active = TRUE
       `;
       const userResult = await pool.query(userQuery, [userId]);
 
@@ -627,7 +627,7 @@ export const getUserRole = async (userId: number) => {
 
       // Check if user is a vendor
       const vendorQuery = `
-        SELECT * FROM vendor_info WHERE user_id = $1 AND is_active = TRUE
+        SELECT * FROM blinds.vendor_info WHERE user_id = $1 AND is_active = TRUE
       `;
       const vendorResult = await pool.query(vendorQuery, [userId]);
 
@@ -656,9 +656,9 @@ export const getUserOrders = async (userId: number) => {
     FROM
       orders o
     JOIN
-      order_status s ON o.status_id = s.status_id
+      blinds.order_status s ON o.status_id = s.status_id
     LEFT JOIN
-      order_items oi ON o.order_id = oi.order_id
+      blinds.order_items oi ON o.order_id = oi.order_id
     WHERE
       o.user_id = $1
     GROUP BY
@@ -700,11 +700,11 @@ export const getOrderById = async (orderId: number, userId: number | null = null
         )
       ) as items
     FROM
-      orders o
+      blinds.orders o
     JOIN
-      order_status s ON o.status_id = s.status_id
+      blinds.order_status s ON o.status_id = s.status_id
     LEFT JOIN
-      order_items oi ON o.order_id = oi.order_id
+      blinds.order_items oi ON o.order_id = oi.order_id
     WHERE
       o.order_id = $1
   `;

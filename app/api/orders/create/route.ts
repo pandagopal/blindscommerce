@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
 
       // Get default status ID (usually "Pending")
       const statusResult = await client.query(
-        'SELECT status_id FROM order_status WHERE name = $1',
+        'SELECT status_id FROM blinds.order_status WHERE name = $1',
         ['Pending']
       );
       const statusId = statusResult.rows[0]?.status_id || 1;
@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
 
       // Insert order record
       const orderQuery = `
-        INSERT INTO orders (
+        INSERT INTO blinds.orders (
           user_id,
           order_number,
           status_id,
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       // Create payment record if payment information is provided
       if (body.payment && body.payment.transactionId) {
         const paymentQuery = `
-          INSERT INTO payments (
+          INSERT INTO blinds.payments (
             order_id,
             transaction_id,
             payment_method,
