@@ -90,3 +90,13 @@ Initialize the database with sample data using:
 ```
 psql -U postgres -f database/schema.sql
 ```
+![image](https://github.com/user-attachments/assets/73f6f754-55f2-44fe-9050-68d6e253c481)
+
+![image](https://github.com/user-attachments/assets/3a6e441c-d950-4e07-b155-eb156a461999)
+
+![image](https://github.com/user-attachments/assets/92210b0a-aa90-4871-a3e4-a1696b05e321)
+
+![image](https://github.com/user-attachments/assets/66ac1954-a83d-4181-8aae-7e478b1548d4)
+
+
+
