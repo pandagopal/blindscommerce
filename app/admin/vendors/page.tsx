@@ -119,26 +119,24 @@ export default function AdminVendorsPage() {
     }).format(amount);
   };
 
-  const toggleVendorStatus = async (vendorId: number, currentStatus: boolean) => {
+  const handleStatusToggle = async (vendorId: number, currentStatus: boolean) => {
     try {
       const response = await fetch(`/api/admin/vendors/${vendorId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          is_active: !currentStatus
-        })
+        body: JSON.stringify({ is_active: !currentStatus }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to update vendor status');
       }
 
-      // Refresh vendors list
+      // Refresh the vendors list
       fetchVendors();
-    } catch (error) {
-      console.error('Error updating vendor status:', error);
+    } catch (err) {
+      console.error('Error updating vendor status:', err instanceof Error ? err.message : 'Failed to update vendor status');
     }
   };
 
@@ -303,8 +301,7 @@ export default function AdminVendorsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => toggleVendorStatus(vendor.vendor_info_id, vendor.is_active)}
+                      <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           vendor.is_active
                             ? 'bg-green-100 text-green-800'
@@ -312,7 +309,7 @@ export default function AdminVendorsPage() {
                         }`}
                       >
                         {vendor.is_active ? 'Active' : 'Inactive'}
-                      </button>
+                      </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(vendor.created_at)}
@@ -331,14 +328,14 @@ export default function AdminVendorsPage() {
                         Edit
                       </Link>
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this vendor?')) {
-                            // Handle delete
-                          }
-                        }}
-                        className="text-red-600 hover:text-red-900"
+                        onClick={() => handleStatusToggle(vendor.vendor_info_id, vendor.is_active)}
+                        className={`${
+                          vendor.is_active
+                            ? 'text-red-600 hover:text-red-900'
+                            : 'text-green-600 hover:text-green-900'
+                        }`}
                       >
-                        Delete
+                        {vendor.is_active ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>
