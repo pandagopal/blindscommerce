@@ -28,20 +28,20 @@ export async function GET(request: NextRequest) {
         p.created_at,
         p.updated_at,
         c.name as category_name,
-        v.company_name as vendor_name,
+        vi.business_name as vendor_name,
         (
           SELECT COUNT(*) 
-          FROM blinds.product_reviews pr 
+          FROM blinds.reviews pr 
           WHERE pr.product_id = p.product_id
         ) as review_count,
         (
           SELECT COALESCE(AVG(rating), 0) 
-          FROM blinds.product_reviews pr 
+          FROM blinds.reviews pr 
           WHERE pr.product_id = p.product_id
         ) as average_rating
       FROM blinds.products p
       LEFT JOIN blinds.categories c ON p.category_id = c.category_id
-      LEFT JOIN blinds.vendors v ON p.vendor_id = v.vendor_id
+      LEFT JOIN blinds.vendor_info vi ON p.vendor_id = vi.vendor_info_id
       WHERE 1=1
     `;
 
@@ -104,12 +104,12 @@ export async function POST(request: NextRequest) {
       shortDescription,
       basePrice,
       categoryId,
-      vendorId,
+      vendorInfoId,
       isActive = true
     } = body;
 
     // Validate required fields
-    if (!name || !slug || !shortDescription || !basePrice || !categoryId || !vendorId) {
+    if (!name || !slug || !shortDescription || !basePrice || !categoryId || !vendorInfoId) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest) {
         updated_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING product_id`,
-      [name, slug, shortDescription, basePrice, categoryId, vendorId, isActive]
+      [name, slug, shortDescription, basePrice, categoryId, vendorInfoId, isActive]
     );
 
     return NextResponse.json({
