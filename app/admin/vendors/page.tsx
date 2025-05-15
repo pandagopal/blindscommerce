@@ -16,35 +16,43 @@ import {
   BuildingIcon,
   PhoneIcon,
   MailIcon,
-  MapPinIcon
+  MapPinIcon,
+  Building2,
+  Mail,
+  Phone,
+  MapPin
 } from 'lucide-react';
 
-interface Vendor {
+interface VendorInfo {
   vendor_info_id: number;
-  business_name: string;
-  business_email: string;
-  business_phone: string | null;
-  business_address: string | null;
-  tax_id: string | null;
+  user_id: number;
+  company_name: string;
+  contact_email: string;
+  contact_phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  tax_id: string;
+  business_license: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  user_email: string;
-  first_name: string | null;
-  last_name: string | null;
-  user_phone: string | null;
-  product_count: number;
-  total_sales: number;
+  user: {
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
 }
 
 export default function AdminVendorsPage() {
   const router = useRouter();
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [vendors, setVendors] = useState<VendorInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortBy, setSortBy] = useState('company_name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalVendors, setTotalVendors] = useState(0);
   const vendorsPerPage = 10;
@@ -111,12 +119,35 @@ export default function AdminVendorsPage() {
     }).format(amount);
   };
 
+  const toggleVendorStatus = async (vendorId: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/vendors/${vendorId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_active: !currentStatus
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update vendor status');
+      }
+
+      // Refresh vendors list
+      fetchVendors();
+    } catch (error) {
+      console.error('Error updating vendor status:', error);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Vendors</h1>
-          <p className="text-gray-500">Manage vendor accounts and products</p>
+          <p className="text-gray-500">Manage vendor accounts and profiles</p>
         </div>
         <div className="flex space-x-2">
           <button
@@ -179,39 +210,23 @@ export default function AdminVendorsPage() {
               <tr>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('business_name')}
+                  onClick={() => handleSort('company_name')}
                 >
                   <div className="flex items-center">
-                    Vendor
-                    {sortBy === 'business_name' && (
+                    Company
+                    {sortBy === 'company_name' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact
+                  Contact Person
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('product_count')}
-                >
-                  <div className="flex items-center">
-                    Products
-                    {sortBy === 'product_count' && (
-                      sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
-                    )}
-                  </div>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contact Info
                 </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('total_sales')}
-                >
-                  <div className="flex items-center">
-                    Total Sales
-                    {sortBy === 'total_sales' && (
-                      sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
-                    )}
-                  </div>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Location
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
@@ -250,59 +265,54 @@ export default function AdminVendorsPage() {
                   <tr key={vendor.vendor_info_id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                          <BuildingIcon className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div className="ml-4">
+                        <Building2 className="h-5 w-5 text-gray-400 mr-2" />
+                        <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {vendor.business_name}
+                            {vendor.company_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {[vendor.first_name, vendor.last_name].filter(Boolean).join(' ')}
+                            ID: {vendor.vendor_info_id}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 space-y-1">
-                        <div className="flex items-center">
-                          <MailIcon size={14} className="text-gray-400 mr-1" />
-                          {vendor.business_email}
-                        </div>
-                        {vendor.business_phone && (
-                          <div className="flex items-center">
-                            <PhoneIcon size={14} className="text-gray-400 mr-1" />
-                            {vendor.business_phone}
-                          </div>
-                        )}
-                        {vendor.business_address && (
-                          <div className="flex items-center">
-                            <MapPinIcon size={14} className="text-gray-400 mr-1" />
-                            {vendor.business_address}
-                          </div>
-                        )}
+                      <div className="text-sm text-gray-900">
+                        {vendor.user.first_name} {vendor.user.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {vendor.user.email}
                       </div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {vendor.product_count} products
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(vendor.total_sales)}
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm text-gray-900">
+                        <Mail className="h-4 w-4 text-gray-400 mr-1" />
+                        {vendor.contact_email}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone className="h-4 w-4 text-gray-400 mr-1" />
+                        {vendor.contact_phone}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        {vendor.is_active ? (
-                          <>
-                            <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
-                            <span className="text-sm text-green-900">Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircleIcon className="h-5 w-5 text-red-500 mr-1.5" />
-                            <span className="text-sm text-red-900">Inactive</span>
-                          </>
-                        )}
+                        <MapPin className="h-4 w-4 text-gray-400 mr-1" />
+                        <div className="text-sm text-gray-900">
+                          {vendor.city}, {vendor.state}
+                        </div>
                       </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => toggleVendorStatus(vendor.vendor_info_id, vendor.is_active)}
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          vendor.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {vendor.is_active ? 'Active' : 'Inactive'}
+                      </button>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(vendor.created_at)}

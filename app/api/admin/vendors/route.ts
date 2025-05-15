@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { hashPassword } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,43 +10,40 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '10', 10);
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-    const search = url.searchParams.get('search');
-    const status = url.searchParams.get('status');
-    const sortBy = url.searchParams.get('sortBy') || 'created_at';
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+    const searchParams = request.nextUrl.searchParams;
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const sortBy = searchParams.get('sortBy') || 'business_name';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
+    const search = searchParams.get('search') || '';
 
     const pool = await getPool();
     let query = `
-      SELECT 
-        v.vendor_info_id,
-        v.business_name,
-        v.business_email,
-        v.business_phone,
-        v.business_address,
-        v.tax_id,
-        v.is_active,
-        v.created_at,
-        v.updated_at,
-        u.email as user_email,
-        u.first_name,
-        u.last_name,
-        u.phone as user_phone,
-        (
-          SELECT COUNT(*)
-          FROM blinds.products p
-          WHERE p.vendor_id = v.vendor_info_id
-        ) as product_count,
-        (
-          SELECT COALESCE(SUM(oi.subtotal), 0)
-          FROM blinds.order_items oi
-          JOIN blinds.products p ON oi.product_id = p.product_id
-          WHERE p.vendor_id = v.vendor_info_id
-        ) as total_sales
-      FROM blinds.vendor_info v
-      JOIN blinds.users u ON v.user_id = u.user_id
+      WITH vendor_users AS (
+        SELECT 
+          u.user_id,
+          u.email,
+          u.first_name,
+          u.last_name,
+          u.is_active as user_is_active,
+          COALESCE(vi.vendor_info_id, 0) as vendor_info_id,
+          COALESCE(vi.business_name, CONCAT(u.first_name, ' ', u.last_name, '''s Business')) as business_name,
+          COALESCE(vi.business_email, u.email) as business_email,
+          vi.business_phone as contact_phone,
+          vi.business_description,
+          COALESCE(vi.is_active, true) as is_active,
+          vi.is_verified,
+          vi.approval_status,
+          COALESCE(vi.created_at, u.created_at) as created_at,
+          COALESCE(vi.updated_at, u.updated_at) as updated_at
+        FROM blinds.users u
+        LEFT JOIN blinds.vendor_info vi ON u.user_id = vi.user_id
+        WHERE EXISTS (
+          SELECT 1 FROM blinds.vendor_info v
+          WHERE v.user_id = u.user_id
+        )
+      )
+      SELECT * FROM vendor_users
       WHERE 1=1
     `;
 
@@ -54,41 +52,25 @@ export async function GET(request: NextRequest) {
 
     if (search) {
       query += ` AND (
-        v.business_name ILIKE $${paramCount} OR 
-        v.business_email ILIKE $${paramCount} OR 
-        v.business_phone ILIKE $${paramCount} OR
-        u.email ILIKE $${paramCount} OR
-        u.first_name ILIKE $${paramCount} OR
-        u.last_name ILIKE $${paramCount}
+        business_name ILIKE $${paramCount} OR
+        business_email ILIKE $${paramCount} OR
+        contact_phone ILIKE $${paramCount} OR
+        email ILIKE $${paramCount} OR
+        first_name ILIKE $${paramCount} OR
+        last_name ILIKE $${paramCount}
       )`;
       queryParams.push(`%${search}%`);
       paramCount++;
     }
 
-    if (status === 'active') {
-      query += ` AND v.is_active = true`;
-    } else if (status === 'inactive') {
-      query += ` AND v.is_active = false`;
-    }
-
     // Add sorting
-    const validSortFields = ['business_name', 'created_at', 'total_sales', 'product_count'];
+    const validSortFields = ['business_name', 'created_at', 'business_email'];
     const validSortOrders = ['asc', 'desc'];
 
-    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
-    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
+    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'business_name';
+    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'asc';
 
-    if (finalSortBy === 'total_sales') {
-      query = `WITH vendor_data AS (${query})
-        SELECT * FROM vendor_data
-        ORDER BY total_sales ${finalSortOrder}`;
-    } else if (finalSortBy === 'product_count') {
-      query = `WITH vendor_data AS (${query})
-        SELECT * FROM vendor_data
-        ORDER BY product_count ${finalSortOrder}`;
-    } else {
-      query += ` ORDER BY v.${finalSortBy} ${finalSortOrder}`;
-    }
+    query += ` ORDER BY ${finalSortBy} ${finalSortOrder}`;
 
     // Add pagination
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -98,25 +80,58 @@ export async function GET(request: NextRequest) {
 
     // Get total count
     const countQuery = `
-      SELECT COUNT(*) 
-      FROM blinds.vendor_info v
-      JOIN blinds.users u ON v.user_id = u.user_id
-      WHERE 1=1
-      ${search ? `AND (
-        v.business_name ILIKE $1 OR 
-        v.business_email ILIKE $1 OR 
-        v.business_phone ILIKE $1 OR
-        u.email ILIKE $1 OR
-        u.first_name ILIKE $1 OR
-        u.last_name ILIKE $1
-      )` : ''}
-      ${status === 'active' ? 'AND v.is_active = true' : ''}
-      ${status === 'inactive' ? 'AND v.is_active = false' : ''}
+      SELECT COUNT(*)
+      FROM (
+        SELECT u.user_id
+        FROM blinds.users u
+        WHERE EXISTS (
+          SELECT 1 FROM blinds.vendor_info v
+          WHERE v.user_id = u.user_id
+        )
+        ${search ? `AND (
+          u.email ILIKE $1 OR
+          u.first_name ILIKE $1 OR
+          u.last_name ILIKE $1 OR
+          EXISTS (
+            SELECT 1 FROM blinds.vendor_info v
+            WHERE v.user_id = u.user_id
+            AND (
+              v.business_name ILIKE $1 OR
+              v.business_email ILIKE $1 OR
+              v.contact_phone ILIKE $1
+            )
+          )
+        )` : ''}
+      ) as count_query
     `;
-    const countResult = await pool.query(countQuery, search ? [`%${search}%`] : []);
+
+    const countResult = await pool.query(
+      countQuery,
+      search ? [`%${search}%`] : []
+    );
+
+    // Format the response
+    const vendors = result.rows.map(row => ({
+      vendor_info_id: row.vendor_info_id,
+      user_id: row.user_id,
+      company_name: row.business_name,
+      contact_email: row.business_email,
+      contact_phone: row.contact_phone,
+      business_description: row.business_description,
+      is_active: row.is_active && row.user_is_active,
+      is_verified: row.is_verified,
+      approval_status: row.approval_status,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+      user: {
+        email: row.email,
+        first_name: row.first_name,
+        last_name: row.last_name
+      }
+    }));
 
     return NextResponse.json({
-      vendors: result.rows,
+      vendors,
       total: parseInt(countResult.rows[0].count, 10)
     });
   } catch (error) {
@@ -141,17 +156,14 @@ export async function POST(request: NextRequest) {
       password,
       firstName,
       lastName,
-      phone,
-      businessName,
-      businessEmail,
-      businessPhone,
-      businessAddress,
-      taxId,
-      isActive = true
+      companyName,
+      contactEmail,
+      contactPhone,
+      businessDescription
     } = body;
 
     // Validate required fields
-    if (!email || !password || !businessName || !businessEmail) {
+    if (!email || !password || !firstName || !lastName || !companyName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -171,48 +183,43 @@ export async function POST(request: NextRequest) {
           password_hash,
           first_name,
           last_name,
-          phone,
+          is_admin,
           is_active,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+          is_verified
+        ) VALUES ($1, $2, $3, $4, FALSE, TRUE, TRUE)
         RETURNING user_id`,
-        [email, password, firstName, lastName, phone, isActive]
+        [email, await hashPassword(password), firstName, lastName]
       );
 
       const userId = userResult.rows[0].user_id;
 
       // Create vendor info
-      const vendorResult = await client.query(
+      await client.query(
         `INSERT INTO blinds.vendor_info (
           user_id,
           business_name,
           business_email,
           business_phone,
-          business_address,
-          tax_id,
+          business_description,
           is_active,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-        RETURNING vendor_info_id`,
+          is_verified,
+          approval_status
+        ) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, 'pending')`,
         [
           userId,
-          businessName,
-          businessEmail,
-          businessPhone || null,
-          businessAddress || null,
-          taxId || null,
-          isActive
+          companyName,
+          contactEmail,
+          contactPhone,
+          businessDescription
         ]
       );
 
       await client.query('COMMIT');
 
-      return NextResponse.json({
-        success: true,
-        vendorId: vendorResult.rows[0].vendor_info_id
-      });
+      return NextResponse.json(
+        { message: 'Vendor created successfully' },
+        { status: 201 }
+      );
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
