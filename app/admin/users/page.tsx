@@ -132,29 +132,43 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (userId: number) => {
+  const handleStatusToggle = async (userId: number, currentStatus: boolean) => {
     if (currentUser?.user_id === userId) {
-      alert('You cannot delete your own account');
+      alert('You cannot change your own account status');
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this user?')) {
+    const action = currentStatus ? 'deactivate' : 'activate';
+    const confirmed = window.confirm(
+      `Are you sure you want to ${action} this user? ${
+        action === 'deactivate' 
+          ? 'The user will not be able to log in until reactivated.'
+          : 'The user will regain access to the system.'
+      }`
+    );
+
+    if (!confirmed) {
       return;
     }
 
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
-        method: 'DELETE',
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: !currentStatus }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete user');
+        throw new Error('Failed to update user status');
       }
 
+      // Refresh the users list
       fetchUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      console.error('Error updating user status:', error);
+      alert('Failed to update user status');
     }
   };
 
@@ -307,19 +321,15 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {user.is_active ? (
-                          <>
-                            <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
-                            <span className="text-sm text-green-900">Active</span>
-                          </>
-                        ) : (
-                          <>
-                            <XCircleIcon className="h-5 w-5 text-red-500 mr-1.5" />
-                            <span className="text-sm text-red-900">Inactive</span>
-                          </>
-                        )}
-                      </div>
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          user.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.last_login)}
@@ -342,10 +352,14 @@ export default function AdminUsersPage() {
                       </Link>
                       {currentUser?.user_id !== user.user_id && (
                         <button
-                          onClick={() => handleDelete(user.user_id)}
-                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleStatusToggle(user.user_id, user.is_active)}
+                          className={`${
+                            user.is_active
+                              ? 'text-red-600 hover:text-red-900'
+                              : 'text-green-600 hover:text-green-900'
+                          }`}
                         >
-                          Delete
+                          {user.is_active ? 'Deactivate' : 'Activate'}
                         </button>
                       )}
                     </td>

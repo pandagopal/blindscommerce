@@ -5,7 +5,7 @@ import bcrypt from 'bcrypt';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -14,11 +14,11 @@ export async function GET(
     }
 
     // Ensure params.id exists and parse it
-    if (!params?.id) {
+    if (!context.params?.id) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    const userId = parseInt(params.id);
+    const userId = parseInt(context.params.id);
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
@@ -68,7 +68,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -112,7 +112,7 @@ export async function PUT(
       }
 
       // Update user
-      updateValues.push(params.id);
+      updateValues.push(context.params.id);
       await client.query(
         `UPDATE blinds.users 
          SET ${updateFields.join(', ')} 
@@ -120,8 +120,8 @@ export async function PUT(
         updateValues
       );
 
-      // Handle role-specific updates
-      const currentRole = await client.query(
+      // Get current role
+      const roleResult = await client.query(
         `SELECT 
           CASE 
             WHEN vi.vendor_info_id IS NOT NULL THEN 'vendor'
@@ -135,49 +135,50 @@ export async function PUT(
         LEFT JOIN blinds.sales_staff ss ON u.user_id = ss.user_id
         LEFT JOIN blinds.installers i ON u.user_id = i.user_id
         WHERE u.user_id = $1`,
-        [params.id]
+        [context.params.id]
       );
 
-      const currentRoleValue = currentRole.rows[0]?.role;
+      const currentRoleValue = roleResult.rows[0]?.role || 'customer';
 
-      // Remove existing role-specific entries if role has changed
-      if (currentRoleValue !== role) {
+      // Update role if changed
+      if (role !== currentRoleValue) {
+        // Remove current role
         if (currentRoleValue === 'vendor') {
-          await client.query('DELETE FROM blinds.vendor_info WHERE user_id = $1', [params.id]);
+          await client.query('UPDATE blinds.vendor_info SET is_active = $1 WHERE user_id = $2', [isActive, context.params.id]);
         } else if (currentRoleValue === 'sales') {
-          await client.query('DELETE FROM blinds.sales_staff WHERE user_id = $1', [params.id]);
+          await client.query('UPDATE blinds.sales_staff SET is_active = $1 WHERE user_id = $2', [isActive, context.params.id]);
         } else if (currentRoleValue === 'installer') {
-          await client.query('DELETE FROM blinds.installers WHERE user_id = $1', [params.id]);
+          await client.query('UPDATE blinds.installers SET is_active = $1 WHERE user_id = $2', [isActive, context.params.id]);
         }
 
         // Add new role-specific entry
         if (role === 'vendor') {
           await client.query(
             `INSERT INTO blinds.vendor_info (
-              user_id, business_name, business_email, created_at, updated_at
-            ) VALUES ($1, $2, $3, NOW(), NOW())`,
-            [params.id, `${firstName} ${lastName}'s Business`, email]
+              user_id, business_name, business_email, is_active, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, NOW(), NOW())`,
+            [context.params.id, `${firstName} ${lastName}'s Business`, email, isActive]
           );
         } else if (role === 'sales') {
           await client.query(
             `INSERT INTO blinds.sales_staff (
-              user_id, hire_date, created_at, updated_at
-            ) VALUES ($1, NOW(), NOW(), NOW())`,
-            [params.id]
+              user_id, hire_date, is_active, created_at, updated_at
+            ) VALUES ($1, NOW(), $2, NOW(), NOW())`,
+            [context.params.id, isActive]
           );
         } else if (role === 'installer') {
           await client.query(
             `INSERT INTO blinds.installers (
-              user_id, created_at, updated_at
-            ) VALUES ($1, NOW(), NOW())`,
-            [params.id]
+              user_id, is_active, created_at, updated_at
+            ) VALUES ($1, $2, NOW(), NOW())`,
+            [context.params.id, isActive]
           );
         }
 
         // Update admin status
         await client.query(
           'UPDATE blinds.users SET is_admin = $1 WHERE user_id = $2',
-          [role === 'admin', params.id]
+          [role === 'admin', context.params.id]
         );
       }
 
@@ -199,31 +200,35 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
-    // First await the current user check
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ensure params.id exists and parse it
-    if (!params?.id) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
-    }
-
-    const userId = parseInt(params.id);
+    const userId = parseInt(context.params.id);
     if (isNaN(userId)) {
       return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
     }
 
-    // Prevent self-deletion
-    if (user.user_id === userId) {
+    // Prevent self-deactivation
+    if (user.userId === userId) {
       return NextResponse.json(
-        { error: 'Cannot delete your own account' },
+        { error: 'Cannot change your own account status' },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { is_active } = body;
+
+    if (typeof is_active !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Invalid status value' },
         { status: 400 }
       );
     }
@@ -234,24 +239,31 @@ export async function DELETE(
     try {
       await client.query('BEGIN');
 
-      // Delete role-specific entries first
-      await client.query('DELETE FROM blinds.vendor_info WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM blinds.sales_staff WHERE user_id = $1', [userId]);
-      await client.query('DELETE FROM blinds.installers WHERE user_id = $1', [userId]);
-
-      // Delete the user
-      const result = await client.query(
-        'DELETE FROM blinds.users WHERE user_id = $1 RETURNING user_id',
-        [userId]
+      // Update user status
+      await client.query(
+        'UPDATE blinds.users SET is_active = $1, updated_at = NOW() WHERE user_id = $2',
+        [is_active, userId]
       );
 
-      if (result.rows.length === 0) {
-        await client.query('ROLLBACK');
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
-      }
+      // Update role-specific status
+      await client.query(
+        'UPDATE blinds.vendor_info SET is_active = $1 WHERE user_id = $2',
+        [is_active, userId]
+      );
+      await client.query(
+        'UPDATE blinds.sales_staff SET is_active = $1 WHERE user_id = $2',
+        [is_active, userId]
+      );
+      await client.query(
+        'UPDATE blinds.installers SET is_active = $1 WHERE user_id = $2',
+        [is_active, userId]
+      );
 
       await client.query('COMMIT');
-      return NextResponse.json({ success: true });
+
+      return NextResponse.json({ 
+        message: `User ${is_active ? 'activated' : 'deactivated'} successfully` 
+      });
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -259,9 +271,9 @@ export async function DELETE(
       client.release();
     }
   } catch (error) {
-    console.error('Error deleting user:', error);
+    console.error('Error updating user status:', error);
     return NextResponse.json(
-      { error: 'Failed to delete user' },
+      { error: 'Failed to update user status' },
       { status: 500 }
     );
   }
