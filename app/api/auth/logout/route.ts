@@ -3,13 +3,24 @@ import { logoutUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear the auth cookie using our updated function
-    await logoutUser();
-
-    return NextResponse.json(
+    // Clear the auth cookie
+    const response = NextResponse.json(
       { message: 'Logged out successfully' },
       { status: 200 }
     );
+    
+    // Clear the auth cookie
+    response.cookies.set({
+      name: 'auth_token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0
+    });
+
+    return response;
   } catch (error) {
     console.error('Logout error:', error);
     return NextResponse.json(
@@ -22,17 +33,36 @@ export async function POST(request: NextRequest) {
 // Also handle GET requests for simple logout via URL
 export async function GET(request: NextRequest) {
   try {
-    // Remove the auth cookie
-    await logoutUser();
-
-    // Get the redirect URL from query parameters or default to home
+    // Create response with redirect
     const url = new URL(request.url);
     const redirectUrl = url.searchParams.get('redirect') || '/';
+    const response = NextResponse.redirect(new URL(redirectUrl, request.url));
+    
+    // Clear the auth cookie
+    response.cookies.set({
+      name: 'auth_token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0
+    });
 
-    // Redirect to the specified URL
-    return NextResponse.redirect(new URL(redirectUrl, request.url));
+    return response;
   } catch (error) {
     console.error('Logout error:', error);
-    return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.redirect(new URL('/', request.url));
+    // Still try to clear the cookie even if there's an error
+    response.cookies.set({
+      name: 'auth_token',
+      value: '',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0
+    });
+    return response;
   }
 }

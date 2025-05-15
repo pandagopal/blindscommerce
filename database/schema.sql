@@ -225,6 +225,34 @@ CREATE TABLE vendor_info (
 );
 
 ----------------------------------------------------------
+-- SALES STAFF
+----------------------------------------------------------
+CREATE TABLE sales_staff (
+    sales_staff_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    hire_date DATE NOT NULL,
+    territory VARCHAR(100),
+    commission_rate DECIMAL(5,2) DEFAULT 0.00,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+----------------------------------------------------------
+-- INSTALLERS
+----------------------------------------------------------
+CREATE TABLE installers (
+    installer_id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(user_id) ON DELETE CASCADE,
+    certification_number VARCHAR(50),
+    certification_expiry DATE,
+    service_area VARCHAR(100),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+----------------------------------------------------------
 -- ADDRESSES
 ----------------------------------------------------------
 CREATE TABLE addresses (
