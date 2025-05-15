@@ -33,6 +33,14 @@ interface Order {
   item_count: number;
 }
 
+interface User {
+  userId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+}
+
 export default function AdminOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -43,7 +51,25 @@ export default function AdminOrdersPage() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const ordersPerPage = 10;
+
+  useEffect(() => {
+    // Fetch current user
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data.user);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -126,6 +152,9 @@ export default function AdminOrdersPage() {
     }
   };
 
+  // Check if user has permission to create orders
+  const canCreateOrder = currentUser?.role && ['customer', 'sales', 'installer'].includes(currentUser.role);
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -148,13 +177,15 @@ export default function AdminOrdersPage() {
             <FileDownIcon size={16} className="mr-1" />
             <span className="text-sm">Export</span>
           </Link>
-          <Link
-            href="/admin/orders/new"
-            className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
-          >
-            <PlusIcon size={16} className="mr-1" />
-            <span className="text-sm">Create Order</span>
-          </Link>
+          {canCreateOrder && (
+            <Link
+              href="/admin/orders/new"
+              className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
+            >
+              <PlusIcon size={16} className="mr-1" />
+              <span className="text-sm">Create Order</span>
+            </Link>
+          )}
         </div>
       </div>
 
