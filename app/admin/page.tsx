@@ -20,35 +20,46 @@ export default function AdminDashboard() {
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user.role !== 'admin') {
-            router.push('/');
-            return;
-          }
-          setUser(data.user);
-        } else {
-          router.push('/login?redirect=/admin');
+        if (!res.ok) {
+          router.replace('/login?redirect=/admin');
+          return;
         }
+
+        const data = await res.json();
+        if (data.user.role !== 'admin') {
+          router.replace('/');
+          return;
+        }
+
+        setUser(data.user);
       } catch (error) {
         console.error('Error fetching user:', error);
+        router.replace('/login?redirect=/admin');
       } finally {
         setLoading(false);
       }
     };
+
+    // Check if we have a token before making the API call
+    const token = document.cookie.includes('auth_token=');
+    if (!token) {
+      router.replace('/login?redirect=/admin');
+      setLoading(false);
+      return;
+    }
 
     fetchUser();
   }, [router]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[50vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
       </div>
     );
   }
 
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     return null;
   }
 

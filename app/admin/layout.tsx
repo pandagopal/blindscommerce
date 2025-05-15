@@ -32,40 +32,53 @@ export default function AdminLayout({
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-
-          // If user is not an admin, redirect to home
-          if (data.user.role !== 'admin') {
-            router.push('/');
-          }
-        } else {
+        if (!res.ok) {
           // Not authenticated, redirect to login
-          router.push('/login?redirect=/admin');
+          if (pathname !== '/login') {
+            router.replace('/login?redirect=/admin');
+          }
+          return;
         }
+
+        const data = await res.json();
+        if (data.user.role !== 'admin') {
+          // Not an admin, redirect to home
+          router.replace('/');
+          return;
+        }
+
+        setUser(data.user);
       } catch (error) {
         console.error('Error fetching user:', error);
+        if (pathname !== '/login') {
+          router.replace('/login?redirect=/admin');
+        }
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUser();
-  }, [router]);
+    // Only fetch user data if we're not already on the login page
+    if (pathname !== '/login') {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, [router, pathname]);
 
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
+      router.replace('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
   };
 
+  // Show loading state
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 flex justify-center">
+      <div className="flex justify-center items-center min-h-screen bg-gray-100">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
           <div className="h-4 bg-gray-200 rounded w-32 mb-8"></div>
@@ -75,9 +88,9 @@ export default function AdminLayout({
     );
   }
 
-  // Redirect if not authenticated (should be handled by middleware, but this is a fallback)
-  if (!user && !loading) {
-    router.push('/login?redirect=/admin');
+  // If not authenticated or not an admin, don't render anything
+  // The useEffect above will handle the redirect
+  if (!user || user.role !== 'admin') {
     return null;
   }
 

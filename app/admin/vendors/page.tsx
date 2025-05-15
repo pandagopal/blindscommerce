@@ -10,51 +10,55 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   SearchIcon,
-  FilterIcon
+  FilterIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  BuildingIcon,
+  PhoneIcon,
+  MailIcon,
+  MapPinIcon
 } from 'lucide-react';
 
-interface Order {
-  order_id: number;
-  order_number: string;
+interface Vendor {
+  vendor_info_id: number;
+  business_name: string;
+  business_email: string;
+  business_phone: string | null;
+  business_address: string | null;
+  tax_id: string | null;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  subtotal: number;
-  shipping_cost: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  shipping_method: string;
-  payment_method: string;
-  notes: string | null;
-  status: string;
-  customer_email: string;
-  customer_first_name: string | null;
-  customer_last_name: string | null;
-  item_count: number;
+  user_email: string;
+  first_name: string | null;
+  last_name: string | null;
+  user_phone: string | null;
+  product_count: number;
+  total_sales: number;
 }
 
-export default function AdminOrdersPage() {
+export default function AdminVendorsPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const ordersPerPage = 10;
+  const [totalVendors, setTotalVendors] = useState(0);
+  const vendorsPerPage = 10;
 
   useEffect(() => {
-    fetchOrders();
+    fetchVendors();
   }, [currentPage, statusFilter, sortBy, sortOrder]);
 
-  const fetchOrders = async () => {
+  const fetchVendors = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * ordersPerPage;
+      const offset = (currentPage - 1) * vendorsPerPage;
       const queryParams = new URLSearchParams({
-        limit: ordersPerPage.toString(),
+        limit: vendorsPerPage.toString(),
         offset: offset.toString(),
         sortBy,
         sortOrder,
@@ -62,16 +66,16 @@ export default function AdminOrdersPage() {
         ...(statusFilter !== 'all' && { status: statusFilter })
       });
 
-      const response = await fetch(`/api/admin/orders?${queryParams}`);
+      const response = await fetch(`/api/admin/vendors?${queryParams}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        throw new Error('Failed to fetch vendors');
       }
 
       const data = await response.json();
-      setOrders(data.orders);
-      setTotalOrders(data.total);
+      setVendors(data.vendors);
+      setTotalVendors(data.total);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching vendors:', error);
     } finally {
       setLoading(false);
     }
@@ -89,16 +93,14 @@ export default function AdminOrdersPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders();
+    fetchVendors();
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
@@ -109,51 +111,34 @@ export default function AdminOrdersPage() {
     }).format(amount);
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-green-100 text-green-800';
-      case 'delivered':
-        return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-gray-500">Manage customer orders</p>
+          <h1 className="text-2xl font-bold">Vendors</h1>
+          <p className="text-gray-500">Manage vendor accounts and products</p>
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => fetchOrders()}
+            onClick={() => fetchVendors()}
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <RefreshCwIcon size={16} className="mr-1" />
             <span className="text-sm">Refresh</span>
           </button>
           <Link
-            href="/admin/orders/export"
+            href="/admin/vendors/export"
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <FileDownIcon size={16} className="mr-1" />
             <span className="text-sm">Export</span>
           </Link>
           <Link
-            href="/admin/orders/new"
+            href="/admin/vendors/new"
             className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
           >
             <PlusIcon size={16} className="mr-1" />
-            <span className="text-sm">Create Order</span>
+            <span className="text-sm">Add Vendor</span>
           </Link>
         </div>
       </div>
@@ -164,7 +149,7 @@ export default function AdminOrdersPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search orders..."
+              placeholder="Search vendors..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
@@ -180,16 +165,13 @@ export default function AdminOrdersPage() {
           }}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
         >
-          <option value="all">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="all">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
         </select>
       </div>
 
-      {/* Orders Table */}
+      {/* Vendors Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -197,46 +179,49 @@ export default function AdminOrdersPage() {
               <tr>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('order_number')}
+                  onClick={() => handleSort('business_name')}
                 >
                   <div className="flex items-center">
-                    Order
-                    {sortBy === 'order_number' && (
+                    Vendor
+                    {sortBy === 'business_name' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Contact
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('total_amount')}
+                  onClick={() => handleSort('product_count')}
                 >
                   <div className="flex items-center">
-                    Total
-                    {sortBy === 'total_amount' && (
+                    Products
+                    {sortBy === 'product_count' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('status')}
+                  onClick={() => handleSort('total_sales')}
                 >
                   <div className="flex items-center">
-                    Status
-                    {sortBy === 'status' && (
+                    Total Sales
+                    {sortBy === 'total_sales' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('created_at')}
                 >
                   <div className="flex items-center">
-                    Date
+                    Joined
                     {sortBy === 'created_at' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
@@ -250,66 +235,94 @@ export default function AdminOrdersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : vendors.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
-                    No orders found
+                  <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
+                    No vendors found
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
-                  <tr key={order.order_id} className="hover:bg-gray-50">
+                vendors.map((vendor) => (
+                  <tr key={vendor.vendor_info_id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div>
+                        <div className="flex-shrink-0 h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <BuildingIcon className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">
-                            {order.order_number}
+                            {vendor.business_name}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {order.item_count} items
+                            {[vendor.first_name, vendor.last_name].filter(Boolean).join(' ')}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {[order.customer_first_name, order.customer_last_name].filter(Boolean).join(' ')}
+                      <div className="text-sm text-gray-900 space-y-1">
+                        <div className="flex items-center">
+                          <MailIcon size={14} className="text-gray-400 mr-1" />
+                          {vendor.business_email}
+                        </div>
+                        {vendor.business_phone && (
+                          <div className="flex items-center">
+                            <PhoneIcon size={14} className="text-gray-400 mr-1" />
+                            {vendor.business_phone}
+                          </div>
+                        )}
+                        {vendor.business_address && (
+                          <div className="flex items-center">
+                            <MapPinIcon size={14} className="text-gray-400 mr-1" />
+                            {vendor.business_address}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {order.customer_email}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(order.total_amount)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(order.status)}`}>
-                        {order.status}
-                      </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(order.created_at)}
+                      {vendor.product_count} products
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(vendor.total_sales)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {vendor.is_active ? (
+                          <>
+                            <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
+                            <span className="text-sm text-green-900">Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircleIcon className="h-5 w-5 text-red-500 mr-1.5" />
+                            <span className="text-sm text-red-900">Inactive</span>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(vendor.created_at)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        href={`/admin/orders/${order.order_id}`}
+                        href={`/admin/vendors/${vendor.vendor_info_id}`}
                         className="text-purple-600 hover:text-purple-900 mr-3"
                       >
                         View
                       </Link>
                       <Link
-                        href={`/admin/orders/${order.order_id}/edit`}
+                        href={`/admin/vendors/${vendor.vendor_info_id}/edit`}
                         className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => {
-                          if (confirm('Are you sure you want to delete this order?')) {
+                          if (confirm('Are you sure you want to delete this vendor?')) {
                             // Handle delete
                           }
                         }}
@@ -326,7 +339,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Pagination */}
-        {totalOrders > ordersPerPage && (
+        {totalVendors > vendorsPerPage && (
           <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
@@ -338,8 +351,8 @@ export default function AdminOrdersPage() {
                   Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                  disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalVendors / vendorsPerPage), page + 1))}
+                  disabled={currentPage === Math.ceil(totalVendors / vendorsPerPage)}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Next
@@ -350,13 +363,13 @@ export default function AdminOrdersPage() {
                   <p className="text-sm text-gray-700">
                     Showing{' '}
                     <span className="font-medium">
-                      {Math.min((currentPage - 1) * ordersPerPage + 1, totalOrders)}
+                      {Math.min((currentPage - 1) * vendorsPerPage + 1, totalVendors)}
                     </span>{' '}
                     to{' '}
                     <span className="font-medium">
-                      {Math.min(currentPage * ordersPerPage, totalOrders)}
+                      {Math.min(currentPage * vendorsPerPage, totalVendors)}
                     </span>{' '}
-                    of <span className="font-medium">{totalOrders}</span> results
+                    of <span className="font-medium">{totalVendors}</span> results
                   </p>
                 </div>
                 <div>
@@ -376,18 +389,18 @@ export default function AdminOrdersPage() {
                       Previous
                     </button>
                     <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      Page {currentPage} of {Math.ceil(totalOrders / ordersPerPage)}
+                      Page {currentPage} of {Math.ceil(totalVendors / vendorsPerPage)}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalVendors / vendorsPerPage), page + 1))}
+                      disabled={currentPage === Math.ceil(totalVendors / vendorsPerPage)}
                       className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Next
                     </button>
                     <button
-                      onClick={() => setCurrentPage(Math.ceil(totalOrders / ordersPerPage))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(Math.ceil(totalVendors / vendorsPerPage))}
+                      disabled={currentPage === Math.ceil(totalVendors / vendorsPerPage)}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Last
@@ -401,4 +414,4 @@ export default function AdminOrdersPage() {
       </div>
     </div>
   );
-}
+} 

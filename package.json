@@ -29,6 +29,7 @@
     "@radix-ui/react-toast": "^1.2.7",
     "@stripe/react-stripe-js": "^3.6.0",
     "@stripe/stripe-js": "^7.1.0",
+    "@types/bcrypt": "^5.0.2",
     "axios": "^1.8.4",
     "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
