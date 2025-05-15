@@ -2,7 +2,7 @@
 
 import { Metadata } from "next";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 
@@ -21,6 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    console.log('Login attempt with:', { email, password });
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -29,14 +30,23 @@ export default function LoginPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password, rememberMe }),
+        credentials: 'include', // Important: This ensures cookies are sent with the request
       });
 
       const data = await response.json();
+      console.log('Login response:', { status: response.status, data });
 
       if (response.ok) {
-        // If successful, redirect to the intended page or home
-        router.push(redirectUrl);
+        console.log('Login successful, redirecting to:', data.redirectUrl || redirectUrl);
+        
+        // Add a small delay before redirecting to ensure cookie is set
+        setTimeout(() => {
+          const targetUrl = data.redirectUrl || redirectUrl;
+          console.log('Executing redirect to:', targetUrl);
+          window.location.href = targetUrl; // Use window.location.href for hard redirect
+        }, 100);
       } else {
+        console.log('Login failed:', data.error);
         setError(data.error || 'Invalid email or password. Please try again.');
       }
     } catch (error) {
@@ -93,7 +103,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
               required
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-red focus:border-primary-red"
+              className="w-full p-2 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-red focus:border-primary-red bg-white text-gray-900"
             />
           </div>
 
@@ -120,7 +130,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-primary-red focus:border-primary-red"
+              className="w-full p-2 border-2 border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary-red focus:border-primary-red bg-white text-gray-900"
             />
           </div>
 

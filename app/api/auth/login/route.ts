@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { loginUser, generateToken, setAuthCookie } from '@/lib/auth';
+import { loginUser, generateToken } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,9 +27,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate JWT token
-    const token = generateToken(user);
+    const token = await generateToken(user);
 
-    // Create response
+    // Create response with redirect URL
     const response = NextResponse.json({
       success: true,
       user: {
@@ -38,11 +39,30 @@ export async function POST(req: NextRequest) {
         lastName: user.lastName || null,
         role: user.role || 'customer',
         isAdmin: user.isAdmin
-      }
+      },
+      redirectUrl: user.role === 'admin' ? '/admin' : 
+                  user.role === 'vendor' ? '/vendor' :
+                  user.role === 'sales' ? '/sales' :
+                  user.role === 'installer' ? '/installer' :
+                  '/account'
     });
 
-    // Set auth cookie
-    setAuthCookie(response, token);
+    // Set the auth cookie with proper options
+    response.cookies.set({
+      name: 'auth_token',
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+
+    console.log('Login successful:', {
+      tokenPreview: typeof token === 'string' ? token.substring(0, 20) + '...' : 'Invalid token',
+      role: user.role,
+      redirectUrl: response.headers.get('location')
+    });
 
     return response;
   } catch (error) {

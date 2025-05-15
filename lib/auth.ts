@@ -1,9 +1,7 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-// Fix TypeScript error by adding a declaration for jsonwebtoken
-// @ts-ignore - Add this to bypass the TypeScript error for jsonwebtoken
-import jwt from 'jsonwebtoken';
-import { getPool, hashPassword } from './db';
+import * as jose from 'jose';
+import { getPool, hashPassword, comparePassword } from './db';
 
 // Types for user data
 export interface User {
@@ -26,26 +24,32 @@ export interface User {
 // };
 
 // Helper to generate JWT token
-export function generateToken(user: User): string {
+export async function generateToken(user: User): Promise<string> {
   const payload = {
     userId: user.userId,
     email: user.email,
-    isAdmin: user.isAdmin
+    isAdmin: user.isAdmin,
+    role: user.role || 'customer'
   };
 
-  const token = jwt.sign(
-    payload,
-    process.env.JWT_SECRET || 'smartblindshub_secret',
-    { expiresIn: '3h' }
-  );
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'smartblindshub_secret');
+  const alg = 'HS256';
+
+  const token = await new jose.SignJWT(payload)
+    .setProtectedHeader({ alg })
+    .setIssuedAt()
+    .setExpirationTime('24h')
+    .sign(secret);
 
   return token;
 }
 
 // Helper to verify JWT token
-export function verifyToken(token: string): any {
+export async function verifyToken(token: string): Promise<any> {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'smartblindshub_secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'smartblindshub_secret');
+    const { payload } = await jose.jwtVerify(token, secret);
+    return payload;
   } catch (error) {
     return null;
   }
@@ -77,8 +81,8 @@ export function clearAuthCookie(res: NextResponse): void {
 
 // Get current user from auth token
 export async function getCurrentUser(): Promise<User | null> {
-   try {
-    // Get token from cookies - fix the cookies().get issue
+  try {
+    // Get token from cookies
     const cookieStore = await cookies();
     const token = cookieStore.get('auth_token')?.value;
 
@@ -87,55 +91,49 @@ export async function getCurrentUser(): Promise<User | null> {
     }
 
     // Verify token
-    const decoded = verifyToken(token);
+    const decoded = await verifyToken(token);
     if (!decoded) {
       return null;
     }
 
-    // Get user from database
+    // Get user from database with role
     const query = `
       SELECT
-        user_id as "userId",
-        email,
-        first_name as "firstName",
-        last_name as "lastName",
-        is_admin as "isAdmin"
+        u.user_id as "userId",
+        u.email,
+        u.first_name as "firstName",
+        u.last_name as "lastName",
+        u.is_admin as "isAdmin",
+        CASE 
+          WHEN u.is_admin THEN 'admin'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.vendor_info v
+            WHERE v.user_id = u.user_id AND v.is_active = TRUE
+          ) THEN 'vendor'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.sales_staff s
+            WHERE s.user_id = u.user_id AND s.is_active = TRUE
+          ) THEN 'sales'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.installers i
+            WHERE i.user_id = u.user_id AND i.is_active = TRUE
+          ) THEN 'installer'
+          ELSE 'customer'
+        END as role
       FROM
-        blinds.users
+        blinds.users u
       WHERE
-        user_id = $1 AND is_active = TRUE
+        u.user_id = $1 AND u.is_active = TRUE
     `;
 
     const pool = await getPool();
     const result = await pool.query(query, [decoded.userId]);
-    const user = result.rows[0];
 
-    if (!user) {
+    if (result.rows.length === 0) {
       return null;
     }
 
-    // Get user role
-    const roleQuery = `
-      SELECT
-        CASE WHEN is_admin THEN 'admin'
-        WHEN EXISTS (
-          SELECT 1 FROM vendor_info
-          WHERE user_id = $1 AND is_active = TRUE
-        ) THEN 'vendor'
-        ELSE 'customer'
-        END as role
-      FROM
-        blinds.users
-      WHERE
-        user_id = $1
-    `;
-
-    const roleResult = await pool.query(roleQuery, [user.userId]);
-    if (roleResult.rows.length > 0) {
-      user.role = roleResult.rows[0].role;
-    }
-
-    return user;
+    return result.rows[0];
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
@@ -197,14 +195,10 @@ export function isAdmin(req: NextRequest): boolean {
 
 // Add a logoutUser function to handle user logout
 export async function logoutUser(): Promise<boolean> {
-  // In development, just return success
-  if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AUTH === 'true') {
-    return true;
-  }
-
   try {
-    // In a real app, we might invalidate the token in a database or
-    // add it to a blacklist, but for our purposes just returning success is enough
+    // Clear the auth cookie using the cookies API
+    const cookieStore = cookies();
+    cookieStore.delete('auth_token');
     return true;
   } catch (error) {
     console.error('Error logging out user:', error);
@@ -218,67 +212,55 @@ export async function loginUser(email: string, password: string): Promise<User |
     // Get user by email
     const query = `
       SELECT
-        user_id as "userId",
-        email,
-        password_hash as "passwordHash",
-        first_name as "firstName",
-        last_name as "lastName",
-        is_admin as "isAdmin"
+        u.user_id as "userId",
+        u.email,
+        u.password_hash as "passwordHash",
+        u.first_name as "firstName",
+        u.last_name as "lastName",
+        u.is_admin as "isAdmin",
+        CASE 
+          WHEN u.is_admin THEN 'admin'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.vendor_info v
+            WHERE v.user_id = u.user_id AND v.is_active = TRUE
+          ) THEN 'vendor'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.sales_staff s
+            WHERE s.user_id = u.user_id AND s.is_active = TRUE
+          ) THEN 'sales'
+          WHEN EXISTS (
+            SELECT 1 FROM blinds.installers i
+            WHERE i.user_id = u.user_id AND i.is_active = TRUE
+          ) THEN 'installer'
+          ELSE 'customer'
+        END as role
       FROM
-        blinds.users
+        blinds.users u
       WHERE
-        email = $1 AND is_active = TRUE
+        u.email = $1 AND u.is_active = TRUE
     `;
 
     const pool = await getPool();
     const result = await pool.query(query, [email]);
+
+    if (result.rows.length === 0) {
+      return null;
+    }
+
     const user = result.rows[0];
 
-    if (!user) {
+    // Verify password
+    const isValid = await comparePassword(password, user.passwordHash);
+    if (!isValid) {
       return null;
     }
 
-    // Verify password (in a real app, we would use bcrypt.compare)
-    const hashedPassword = await hashPassword(password);
-    if (hashedPassword !== user.passwordHash) {
-      return null;
-    }
-
-    // Get user role
-    const roleQuery = `
-      SELECT
-        CASE WHEN is_admin THEN 'admin'
-        WHEN EXISTS (
-          SELECT 1 FROM vendor_info
-          WHERE user_id = $1 AND is_active = TRUE
-        ) THEN 'vendor'
-        ELSE 'customer'
-        END as role
-      FROM
-        blinds.users
-      WHERE
-        user_id = $1
-    `;
-
-    const roleResult = await pool.query(roleQuery, [user.userId]);
-    if (roleResult.rows.length > 0) {
-      user.role = roleResult.rows[0].role;
-    }
-
-    // Remove password hash from user object
+    // Remove passwordHash from user object
     delete user.passwordHash;
-
-    // Update last login date
-    const updateQuery = `
-      UPDATE blinds.users
-      SET last_login = CURRENT_TIMESTAMP
-      WHERE user_id = $1
-    `;
-    await pool.query(updateQuery, [user.userId]);
 
     return user;
   } catch (error) {
-    console.error('Error logging in user:', error);
+    console.error('Login error:', error);
     return null;
   }
 }

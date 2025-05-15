@@ -1,4 +1,5 @@
 import { Pool, PoolClient } from 'pg';
+import bcrypt from 'bcryptjs';
 
 // Define types for query parameters
 interface ProductQueryParams {
@@ -135,16 +136,14 @@ async function executeQuery<T>(queryFn: () => Promise<T>, errorMessage: string, 
   }
 }
 
-// Helper function for password hashing - using Web Crypto API
+// Helper function for password hashing - using bcrypt
 export const hashPassword = async (password: string): Promise<string> => {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
 
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-
-  return hashHex;
+export const comparePassword = async (password: string, hash: string): Promise<boolean> => {
+  return bcrypt.compare(password, hash);
 };
 
 // Categories
@@ -253,7 +252,7 @@ export const getProductsCount = async ({
       p.is_active = TRUE
   `;
 
-  const queryParams: any[] = [];
+  const queryParams: unknown[] = [];
   let paramCount = 1;
 
   if (categoryId) {
@@ -327,7 +326,7 @@ export const getProducts = async ({
       p.is_active = TRUE
   `;
 
-  const queryParams: any[] = [];
+  const queryParams: unknown[] = [];
   let paramCount = 1;
 
   if (categoryId) {
