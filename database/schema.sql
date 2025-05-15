@@ -674,8 +674,8 @@ INSERT INTO price_matrix (product_id, width, height, price) VALUES
 -- Users (sample entries)
 INSERT INTO users (email, password_hash, first_name, last_name, phone, is_admin) VALUES
 ('admin@smartblindshub.com', '$2a$10$VB7AdWX.0up8e3vqXu4HF.JjfxMOHOXBqVfwklGQvExGg7BoWrJVW', 'Admin', 'User', '(425) 222-1088', TRUE),
-('customer@example.com', '$2a$10$bXJ9Qd4RvwVkqqvUxVo5p.uJb4c0AjB1Hg4M3V5F8k5u6fKdPz2o2', 'John', 'Doe', '(555) 123-4567', FALSE),
-('janedoe@example.com', '$2a$10$bXJ9Qd4RvwVkqqvUxVo5p.uJb4c0AjB1Hg4M3V5F8k5u6fKdPz2o2', 'Jane', 'Doe', '(555) 987-6543', FALSE);
+('customer@smartblindshub.com', '$2a$10$bXJ9Qd4RvwVkqqvUxVo5p.uJb4c0AjB1Hg4M3V5F8k5u6fKdPz2o2', 'John', 'Doe', '(555) 123-4567', FALSE),
+('vendor@smartblindshub.com', '$2a$10$bXJ9Qd4RvwVkqqvUxVo5p.uJb4c0AjB1Hg4M3V5F8k5u6fKdPz2o2', 'Jane', 'Doe', '(555) 987-6543', FALSE);
 
 -- Addresses (sample entries)
 INSERT INTO addresses (user_id, address_type, is_default, first_name, last_name, address_line1, city, state, postal_code, country, phone) VALUES

@@ -10,68 +10,82 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   SearchIcon,
-  FilterIcon
+  FilterIcon,
+  CheckCircleIcon,
+  XCircleIcon
 } from 'lucide-react';
 
-interface Order {
-  order_id: number;
-  order_number: string;
+interface User {
+  user_id: number;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  is_admin: boolean;
+  is_active: boolean;
+  last_login: string | null;
   created_at: string;
   updated_at: string;
-  subtotal: number;
-  shipping_cost: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  shipping_method: string;
-  payment_method: string;
-  notes: string | null;
-  status: string;
-  customer_email: string;
-  customer_first_name: string | null;
-  customer_last_name: string | null;
-  item_count: number;
+  is_verified: boolean;
+  role: 'admin' | 'vendor' | 'sales' | 'installer' | 'customer';
 }
 
-export default function AdminOrdersPage() {
+export default function AdminUsersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const ordersPerPage = 10;
+  const [totalUsers, setTotalUsers] = useState(0);
+  const usersPerPage = 10;
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    fetchOrders();
-  }, [currentPage, statusFilter, sortBy, sortOrder]);
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentUser(data.user);
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
 
-  const fetchOrders = async () => {
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [currentPage, roleFilter, sortBy, sortOrder]);
+
+  const fetchUsers = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * ordersPerPage;
+      const offset = (currentPage - 1) * usersPerPage;
       const queryParams = new URLSearchParams({
-        limit: ordersPerPage.toString(),
+        limit: usersPerPage.toString(),
         offset: offset.toString(),
         sortBy,
         sortOrder,
         ...(searchQuery && { search: searchQuery }),
-        ...(statusFilter !== 'all' && { status: statusFilter })
+        ...(roleFilter !== 'all' && { role: roleFilter })
       });
 
-      const response = await fetch(`/api/admin/orders?${queryParams}`);
+      const response = await fetch(`/api/admin/users?${queryParams}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        throw new Error('Failed to fetch users');
       }
 
       const data = await response.json();
-      setOrders(data.orders);
-      setTotalOrders(data.total);
+      setUsers(data.users);
+      setTotalUsers(data.total);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
     }
@@ -89,10 +103,11 @@ export default function AdminOrdersPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders();
+    fetchUsers();
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'Never';
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -102,27 +117,44 @@ export default function AdminOrdersPage() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-green-100 text-green-800';
-      case 'delivered':
+  const getRoleBadgeColor = (role: string) => {
+    switch (role) {
+      case 'admin':
         return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case 'vendor':
+        return 'bg-blue-100 text-blue-800';
+      case 'sales':
+        return 'bg-green-100 text-green-800';
+      case 'installer':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleDelete = async (userId: number) => {
+    if (currentUser?.user_id === userId) {
+      alert('You cannot delete your own account');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this user?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete user');
+      }
+
+      fetchUsers();
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
     }
   };
 
@@ -130,30 +162,30 @@ export default function AdminOrdersPage() {
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-gray-500">Manage customer orders</p>
+          <h1 className="text-2xl font-bold">Users</h1>
+          <p className="text-gray-500">Manage user accounts and permissions</p>
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => fetchOrders()}
+            onClick={() => fetchUsers()}
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <RefreshCwIcon size={16} className="mr-1" />
             <span className="text-sm">Refresh</span>
           </button>
           <Link
-            href="/admin/orders/export"
+            href="/admin/users/export"
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <FileDownIcon size={16} className="mr-1" />
             <span className="text-sm">Export</span>
           </Link>
           <Link
-            href="/admin/orders/new"
+            href="/admin/users/new"
             className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
           >
             <PlusIcon size={16} className="mr-1" />
-            <span className="text-sm">Create Order</span>
+            <span className="text-sm">Add User</span>
           </Link>
         </div>
       </div>
@@ -164,7 +196,7 @@ export default function AdminOrdersPage() {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search orders..."
+              placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
@@ -173,23 +205,23 @@ export default function AdminOrdersPage() {
           </div>
         </form>
         <select
-          value={statusFilter}
+          value={roleFilter}
           onChange={(e) => {
-            setStatusFilter(e.target.value);
+            setRoleFilter(e.target.value);
             setCurrentPage(1);
           }}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
         >
-          <option value="all">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
+          <option value="all">All Roles</option>
+          <option value="admin">Admins</option>
+          <option value="vendor">Vendors</option>
+          <option value="sales">Sales Staff</option>
+          <option value="installer">Installers</option>
+          <option value="customer">Customers</option>
         </select>
       </div>
 
-      {/* Orders Table */}
+      {/* Users Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -197,36 +229,28 @@ export default function AdminOrdersPage() {
               <tr>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('order_number')}
+                  onClick={() => handleSort('email')}
                 >
                   <div className="flex items-center">
-                    Order
-                    {sortBy === 'order_number' && (
+                    User
+                    {sortBy === 'email' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Role
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('total_amount')}
+                  onClick={() => handleSort('last_login')}
                 >
                   <div className="flex items-center">
-                    Total
-                    {sortBy === 'total_amount' && (
-                      sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
-                    )}
-                  </div>
-                </th>
-                <th
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('status')}
-                >
-                  <div className="flex items-center">
-                    Status
-                    {sortBy === 'status' && (
+                    Last Login
+                    {sortBy === 'last_login' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
@@ -236,7 +260,7 @@ export default function AdminOrdersPage() {
                   onClick={() => handleSort('created_at')}
                 >
                   <div className="flex items-center">
-                    Date
+                    Created
                     {sortBy === 'created_at' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
@@ -254,69 +278,76 @@ export default function AdminOrdersPage() {
                     Loading...
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
-                    No orders found
+                    No users found
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
-                  <tr key={order.order_id} className="hover:bg-gray-50">
+                users.map((user) => (
+                  <tr key={user.user_id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {order.order_number}
+                            {user.email}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {order.item_count} items
-                          </div>
+                          {(user.first_name || user.last_name) && (
+                            <div className="text-sm text-gray-500">
+                              {[user.first_name, user.last_name].filter(Boolean).join(' ')}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {[order.customer_first_name, order.customer_last_name].filter(Boolean).join(' ')}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.customer_email}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(order.total_amount)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(order.status)}`}>
-                        {order.status}
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
+                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </span>
                     </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        {user.is_active ? (
+                          <>
+                            <CheckCircleIcon className="h-5 w-5 text-green-500 mr-1.5" />
+                            <span className="text-sm text-green-900">Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircleIcon className="h-5 w-5 text-red-500 mr-1.5" />
+                            <span className="text-sm text-red-900">Inactive</span>
+                          </>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(order.created_at)}
+                      {formatDate(user.last_login)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(user.created_at)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        href={`/admin/orders/${order.order_id}`}
+                        href={`/admin/users/${user.user_id}`}
                         className="text-purple-600 hover:text-purple-900 mr-3"
                       >
                         View
                       </Link>
                       <Link
-                        href={`/admin/orders/${order.order_id}/edit`}
+                        href={`/admin/users/${user.user_id}/edit`}
                         className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         Edit
                       </Link>
-                      <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this order?')) {
-                            // Handle delete
-                          }
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Delete
-                      </button>
+                      {currentUser?.user_id !== user.user_id && (
+                        <button
+                          onClick={() => handleDelete(user.user_id)}
+                          className="text-red-600 hover:text-red-900"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
@@ -326,7 +357,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Pagination */}
-        {totalOrders > ordersPerPage && (
+        {totalUsers > usersPerPage && (
           <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
@@ -338,8 +369,8 @@ export default function AdminOrdersPage() {
                   Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                  disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalUsers / usersPerPage), page + 1))}
+                  disabled={currentPage === Math.ceil(totalUsers / usersPerPage)}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Next
@@ -350,13 +381,13 @@ export default function AdminOrdersPage() {
                   <p className="text-sm text-gray-700">
                     Showing{' '}
                     <span className="font-medium">
-                      {Math.min((currentPage - 1) * ordersPerPage + 1, totalOrders)}
+                      {Math.min((currentPage - 1) * usersPerPage + 1, totalUsers)}
                     </span>{' '}
                     to{' '}
                     <span className="font-medium">
-                      {Math.min(currentPage * ordersPerPage, totalOrders)}
+                      {Math.min(currentPage * usersPerPage, totalUsers)}
                     </span>{' '}
-                    of <span className="font-medium">{totalOrders}</span> results
+                    of <span className="font-medium">{totalUsers}</span> results
                   </p>
                 </div>
                 <div>
@@ -376,18 +407,18 @@ export default function AdminOrdersPage() {
                       Previous
                     </button>
                     <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      Page {currentPage} of {Math.ceil(totalOrders / ordersPerPage)}
+                      Page {currentPage} of {Math.ceil(totalUsers / usersPerPage)}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalUsers / usersPerPage), page + 1))}
+                      disabled={currentPage === Math.ceil(totalUsers / usersPerPage)}
                       className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Next
                     </button>
                     <button
-                      onClick={() => setCurrentPage(Math.ceil(totalOrders / ordersPerPage))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(Math.ceil(totalUsers / usersPerPage))}
+                      disabled={currentPage === Math.ceil(totalUsers / usersPerPage)}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Last
@@ -401,4 +432,4 @@ export default function AdminOrdersPage() {
       </div>
     </div>
   );
-}
+} 

@@ -1,5 +1,5 @@
 import { Pool, PoolClient } from 'pg';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 // Define types for query parameters
 interface ProductQueryParams {

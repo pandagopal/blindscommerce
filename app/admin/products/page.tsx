@@ -13,65 +13,58 @@ import {
   FilterIcon
 } from 'lucide-react';
 
-interface Order {
-  order_id: number;
-  order_number: string;
+interface Product {
+  product_id: number;
+  name: string;
+  slug: string;
+  short_description: string;
+  base_price: number;
+  is_active: boolean;
   created_at: string;
   updated_at: string;
-  subtotal: number;
-  shipping_cost: number;
-  tax_amount: number;
-  discount_amount: number;
-  total_amount: number;
-  shipping_method: string;
-  payment_method: string;
-  notes: string | null;
-  status: string;
-  customer_email: string;
-  customer_first_name: string | null;
-  customer_last_name: string | null;
-  item_count: number;
+  category_name: string;
+  vendor_name: string;
+  review_count: number;
+  average_rating: number;
 }
 
-export default function AdminOrdersPage() {
+export default function AdminProductsPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
-  const ordersPerPage = 10;
+  const [totalProducts, setTotalProducts] = useState(0);
+  const productsPerPage = 10;
 
   useEffect(() => {
-    fetchOrders();
-  }, [currentPage, statusFilter, sortBy, sortOrder]);
+    fetchProducts();
+  }, [currentPage, sortBy, sortOrder]);
 
-  const fetchOrders = async () => {
+  const fetchProducts = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * ordersPerPage;
+      const offset = (currentPage - 1) * productsPerPage;
       const queryParams = new URLSearchParams({
-        limit: ordersPerPage.toString(),
+        limit: productsPerPage.toString(),
         offset: offset.toString(),
         sortBy,
         sortOrder,
-        ...(searchQuery && { search: searchQuery }),
-        ...(statusFilter !== 'all' && { status: statusFilter })
+        ...(searchQuery && { search: searchQuery })
       });
 
-      const response = await fetch(`/api/admin/orders?${queryParams}`);
+      const response = await fetch(`/api/admin/products?${queryParams}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        throw new Error('Failed to fetch products');
       }
 
       const data = await response.json();
-      setOrders(data.orders);
-      setTotalOrders(data.total);
+      setProducts(data.products);
+      setTotalProducts(data.total);
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error('Error fetching products:', error);
     } finally {
       setLoading(false);
     }
@@ -89,16 +82,14 @@ export default function AdminOrdersPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders();
+    fetchProducts();
   };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+      day: 'numeric'
     });
   };
 
@@ -109,87 +100,63 @@ export default function AdminOrdersPage() {
     }).format(amount);
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-green-100 text-green-800';
-      case 'delivered':
-        return 'bg-purple-100 text-purple-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-gray-500">Manage customer orders</p>
+          <h1 className="text-2xl font-bold">Products</h1>
+          <p className="text-gray-500">Manage your product catalog</p>
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => fetchOrders()}
+            onClick={() => fetchProducts()}
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <RefreshCwIcon size={16} className="mr-1" />
             <span className="text-sm">Refresh</span>
           </button>
           <Link
-            href="/admin/orders/export"
+            href="/admin/products/export"
             className="flex items-center p-2 text-gray-600 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
           >
             <FileDownIcon size={16} className="mr-1" />
             <span className="text-sm">Export</span>
           </Link>
           <Link
-            href="/admin/orders/new"
+            href="/admin/products/new"
             className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
           >
             <PlusIcon size={16} className="mr-1" />
-            <span className="text-sm">Create Order</span>
+            <span className="text-sm">Add Product</span>
           </Link>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="mb-6 flex gap-4">
-        <form onSubmit={handleSearch} className="flex-1">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
-            <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+      <div className="mb-6">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="flex-1">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              />
+              <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+            </div>
           </div>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+          >
+            Search
+          </button>
         </form>
-        <select
-          value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setCurrentPage(1);
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
-        >
-          <option value="all">All Statuses</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Delivered">Delivered</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
       </div>
 
-      {/* Orders Table */}
+      {/* Products Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -197,46 +164,52 @@ export default function AdminOrdersPage() {
               <tr>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('order_number')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center">
-                    Order
-                    {sortBy === 'order_number' && (
+                    Product Name
+                    {sortBy === 'name' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
+                  Category
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vendor
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('total_amount')}
+                  onClick={() => handleSort('base_price')}
                 >
                   <div className="flex items-center">
-                    Total
-                    {sortBy === 'total_amount' && (
+                    Price
+                    {sortBy === 'base_price' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('status')}
+                  onClick={() => handleSort('average_rating')}
                 >
                   <div className="flex items-center">
-                    Status
-                    {sortBy === 'status' && (
+                    Rating
+                    {sortBy === 'average_rating' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('created_at')}
                 >
                   <div className="flex items-center">
-                    Date
+                    Created
                     {sortBy === 'created_at' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
@@ -250,66 +223,65 @@ export default function AdminOrdersPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
+                  <td colSpan={8} className="px-4 py-4 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
-              ) : orders.length === 0 ? (
+              ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
-                    No orders found
+                  <td colSpan={8} className="px-4 py-4 text-center text-gray-500">
+                    No products found
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
-                  <tr key={order.order_id} className="hover:bg-gray-50">
+                products.map((product) => (
+                  <tr key={product.product_id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {order.order_number}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {order.item_count} items
-                          </div>
-                        </div>
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                      <div className="text-sm text-gray-500">{product.short_description}</div>
                     </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {[order.customer_first_name, order.customer_last_name].filter(Boolean).join(' ')}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {order.customer_email}
-                      </div>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.category_name}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.vendor_name}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(order.total_amount)}
+                      {formatCurrency(product.base_price)}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {product.average_rating.toFixed(1)} ({product.review_count} reviews)
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeColor(order.status)}`}>
-                        {order.status}
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          product.is_active
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {product.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(order.created_at)}
+                      {formatDate(product.created_at)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        href={`/admin/orders/${order.order_id}`}
+                        href={`/admin/products/${product.product_id}`}
                         className="text-purple-600 hover:text-purple-900 mr-3"
                       >
                         View
                       </Link>
                       <Link
-                        href={`/admin/orders/${order.order_id}/edit`}
+                        href={`/admin/products/${product.product_id}/edit`}
                         className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         Edit
                       </Link>
                       <button
                         onClick={() => {
-                          if (confirm('Are you sure you want to delete this order?')) {
+                          if (confirm('Are you sure you want to delete this product?')) {
                             // Handle delete
                           }
                         }}
@@ -326,7 +298,7 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Pagination */}
-        {totalOrders > ordersPerPage && (
+        {totalProducts > productsPerPage && (
           <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
             <div className="flex items-center justify-between">
               <div className="flex-1 flex justify-between sm:hidden">
@@ -338,8 +310,8 @@ export default function AdminOrdersPage() {
                   Previous
                 </button>
                 <button
-                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                  disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                  onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalProducts / productsPerPage), page + 1))}
+                  disabled={currentPage === Math.ceil(totalProducts / productsPerPage)}
                   className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                 >
                   Next
@@ -350,13 +322,13 @@ export default function AdminOrdersPage() {
                   <p className="text-sm text-gray-700">
                     Showing{' '}
                     <span className="font-medium">
-                      {Math.min((currentPage - 1) * ordersPerPage + 1, totalOrders)}
+                      {Math.min((currentPage - 1) * productsPerPage + 1, totalProducts)}
                     </span>{' '}
                     to{' '}
                     <span className="font-medium">
-                      {Math.min(currentPage * ordersPerPage, totalOrders)}
+                      {Math.min(currentPage * productsPerPage, totalProducts)}
                     </span>{' '}
-                    of <span className="font-medium">{totalOrders}</span> results
+                    of <span className="font-medium">{totalProducts}</span> results
                   </p>
                 </div>
                 <div>
@@ -376,18 +348,18 @@ export default function AdminOrdersPage() {
                       Previous
                     </button>
                     <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                      Page {currentPage} of {Math.ceil(totalOrders / ordersPerPage)}
+                      Page {currentPage} of {Math.ceil(totalProducts / productsPerPage)}
                     </span>
                     <button
-                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalOrders / ordersPerPage), page + 1))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(page => Math.min(Math.ceil(totalProducts / productsPerPage), page + 1))}
+                      disabled={currentPage === Math.ceil(totalProducts / productsPerPage)}
                       className="relative inline-flex items-center px-2 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Next
                     </button>
                     <button
-                      onClick={() => setCurrentPage(Math.ceil(totalOrders / ordersPerPage))}
-                      disabled={currentPage === Math.ceil(totalOrders / ordersPerPage)}
+                      onClick={() => setCurrentPage(Math.ceil(totalProducts / productsPerPage))}
+                      disabled={currentPage === Math.ceil(totalProducts / productsPerPage)}
                       className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                     >
                       Last
@@ -401,4 +373,4 @@ export default function AdminOrdersPage() {
       </div>
     </div>
   );
-}
+} 
