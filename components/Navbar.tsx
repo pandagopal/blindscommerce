@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingCart, User, Menu, Search, LogOut, ChevronDown, Settings, Package, List, Heart } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useRef } from "react";
@@ -128,9 +129,13 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <span className="text-xl font-bold text-primary-red">
-                Smart Blinds Hub
-              </span>
+              <Image
+                src="/images/logo/SmartBlindsLogo.png"
+                alt="Smart Blinds Hub"
+                width={150}
+                height={50}
+                priority
+              />
             </Link>
           </div>
 

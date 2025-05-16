@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 
 const Footer = () => {
@@ -8,7 +9,15 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <h3 className="text-lg font-bold mb-4">Smart Blinds Hub</h3>
+            <div className="mb-4">
+              <Image
+                src="/images/logo/SmartBlindsLogo.png"
+                alt="Smart Blinds Hub"
+                width={150}
+                height={50}
+                className="dark:brightness-200"
+              />
+            </div>
             <p className="text-gray-300 mb-4">
               The best destination for all your window treatment needs. Quality
               custom blinds, shades, and shutters at great prices.
@@ -169,10 +178,10 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/blog"
+                  href="/wiki"
                   className="text-gray-300 hover:text-white transition-colors"
                 >
-                  Blog
+                  Wiki
                 </Link>
               </li>
               <li>
