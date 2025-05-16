@@ -5,6 +5,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { defaultMetadata, dynamic, revalidate } from './config';
+//import LiveChat from "./components/chat/LiveChat";
+//import LiveChat from "@/components/chat/LiveChat";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +32,7 @@ export default function RootLayout({
             <Navbar />
             <main className="flex-1">{children}</main>
             <Footer />
+           {/* <LiveChat /> */}
           </div>
         </CartProvider>
       </body>

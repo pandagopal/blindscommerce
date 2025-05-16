@@ -1,0 +1,118 @@
+// Swatch related models
+model Swatch {
+  id          String        @id @default(cuid())
+  name        String
+  color       String
+  material    String
+  image       String
+  isActive    Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  swatchOrders SwatchOrder[] @relation("SwatchToOrder")
+}
+
+model SwatchOrder {
+  id          String      @id @default(cuid())
+  status      String      // PENDING, SHIPPED, DELIVERED
+  name        String
+  email       String
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  swatches    Swatch[]    @relation("SwatchToOrder")
+}
+
+// Product comparison related models
+model ProductComparison {
+  id          String   @id @default(cuid())
+  productId1  String
+  productId2  String
+  count       Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product1    Product  @relation("ComparisonProduct1", fields: [productId1], references: [id])
+  product2    Product  @relation("ComparisonProduct2", fields: [productId2], references: [id])
+
+  @@unique([productId1, productId2])
+}
+
+// Extend Product model with new fields
+model Product {
+  // ... existing fields ...
+
+  // New fields for enhanced features
+  features        ProductFeature[]
+  specifications  ProductSpecification[]
+  materials       ProductMaterial[]
+  dimensions      Json?               // Store as {width: number, height: number, depth: number}
+  warranty        String?
+  energyEfficiency String?
+  
+  // Relations for product comparison
+  comparisons1    ProductComparison[] @relation("ComparisonProduct1")
+  comparisons2    ProductComparison[] @relation("ComparisonProduct2")
+}
+
+model ProductFeature {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model ProductSpecification {
+  id          String   @id @default(cuid())
+  name        String
+  value       String
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model ProductMaterial {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+// Room Visualizer related models
+model RoomVisualization {
+  id          String   @id @default(cuid())
+  userId      String
+  productId   String
+  roomImage   String
+  resultImage String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+// Measurement related models
+model SavedMeasurement {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   // e.g., "Living Room Window"
+  width       Float
+  height      Float
+  depth       Float?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+// Extend User model with new fields
+model User {
+  // ... existing fields ...
+
+  // New relations for enhanced features
+  savedMeasurements  SavedMeasurement[]
+  roomVisualizations RoomVisualization[]
+  favoriteProducts   Product[]          @relation("UserFavorites")
+  recentlyViewed     Product[]          @relation("RecentlyViewed")
+} 
