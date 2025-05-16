@@ -4,9 +4,17 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  User, Package, LogOut, ChevronRight, Home,
-  ShoppingBag, Settings, BarChart2, FileText,
-  ShoppingCart, CreditCard, Truck, Bell
+  Home,
+  ShoppingBag,
+  ShoppingCart,
+  CreditCard,
+  Truck,
+  BarChart2,
+  Bell,
+  Settings,
+  User,
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 
 interface UserData {
@@ -28,20 +36,17 @@ export default function VendorLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch current user data
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          setUser(data.user);
-
-          // If user is not a vendor or admin, redirect to home
           if (data.user.role !== 'vendor' && data.user.role !== 'admin') {
             router.push('/');
+            return;
           }
+          setUser(data.user);
         } else {
-          // Not authenticated, redirect to login
           router.push('/login?redirect=/vendor');
         }
       } catch (error) {
@@ -75,9 +80,7 @@ export default function VendorLayout({
     );
   }
 
-  // Redirect if not authenticated (should be handled by middleware, but this is a fallback)
-  if (!user && !loading) {
-    router.push('/login?redirect=/vendor');
+  if (!user) {
     return null;
   }
 
@@ -99,26 +102,26 @@ export default function VendorLayout({
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Link href="/vendor" className="text-xl font-bold text-blue-700">
+              <Link href="/vendor" className="text-xl font-bold text-primary-red">
                 Vendor Portal
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link href="/" className="text-sm text-gray-600 hover:text-gray-900">
+              <Link href="/" className="text-sm text-secondary hover:text-primary">
                 Back to Store
               </Link>
               <div className="relative">
                 <button className="flex items-center space-x-2 text-sm focus:outline-none">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
                     {user?.firstName && user?.lastName ? (
-                      <span className="text-blue-700 font-medium">
+                      <span className="text-primary-red font-medium">
                         {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                       </span>
                     ) : (
-                      <User size={16} className="text-blue-700" />
+                      <User size={16} className="text-primary-red" />
                     )}
                   </div>
-                  <span className="hidden md:block text-gray-700">
+                  <span className="hidden md:block text-primary">
                     {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
                   </span>
                 </button>
@@ -128,7 +131,7 @@ export default function VendorLayout({
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
           <aside className="w-full md:w-64 shrink-0">
@@ -140,8 +143,8 @@ export default function VendorLayout({
                     href={item.href}
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
+                        : 'text-secondary hover:bg-default'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
@@ -154,12 +157,33 @@ export default function VendorLayout({
 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
                 >
                   <span className="mr-3"><LogOut size={18} /></span>
                   <span>Logout</span>
                 </button>
               </nav>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
+              <h3 className="font-medium text-primary mb-2">Quick Access</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/vendor/products/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">➕</span> Add New Product
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vendor/orders?status=pending" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">⏱️</span> View Pending Orders
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vendor/analytics" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📊</span> View Sales Report
+                  </Link>
+                </li>
+              </ul>
             </div>
           </aside>
 
