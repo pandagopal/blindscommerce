@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
-import { verifyPassword } from '@/lib/auth';
+import { getPool, comparePassword } from '@/lib/db';
 import { sign } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isValid = await verifyPassword(password, user.password_hash);
+    const isValid = await comparePassword(password, user.password_hash);
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
@@ -74,24 +73,28 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     );
 
-    // Set cookie
-    const cookieStore = cookies();
-    cookieStore.set('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 60 * 60 * 24 // 24 hours
-    });
-
-    return NextResponse.json({
+    // Create the response with redirect URL
+    const response = NextResponse.json({
       user: {
         userId: user.user_id,
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
         role: role
-      }
+      },
+      redirectUrl: role === 'admin' ? '/admin' : '/account'
     });
+
+    // Set cookie in the response
+    response.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 // 24 hours
+    });
+
+    return response;
+
   } catch (error) {
     console.error('Error during login:', error);
     return NextResponse.json(

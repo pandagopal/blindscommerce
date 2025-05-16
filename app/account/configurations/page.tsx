@@ -248,7 +248,7 @@ export default function SavedConfigurationsPage() {
 
                   <div className="flex justify-between text-sm font-semibold border-t pt-2 mt-2">
                     <span>Price:</span>
-                    <span className="text-primary-red">${config.config.currentPrice.toFixed(2)}</span>
+                    <span className="text-primary-red">${(config.config.currentPrice || 0).toFixed(2)}</span>
                   </div>
                 </div>
 

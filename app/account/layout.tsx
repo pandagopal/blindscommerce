@@ -4,8 +4,16 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  User, Package, Heart, Settings, LogOut,
-  ChevronRight, Home, Ruler, Bell, Shield
+  Home,
+  ShoppingBag,
+  ShoppingCart,
+  MapPin,
+  User,
+  Settings,
+  Ruler,
+  BookmarkIcon,
+  ChevronRight,
+  LogOut
 } from 'lucide-react';
 
 interface UserData {
@@ -27,7 +35,6 @@ export default function AccountLayout({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch current user data
     const fetchUser = async () => {
       try {
         const res = await fetch('/api/auth/me');
@@ -35,7 +42,6 @@ export default function AccountLayout({
           const data = await res.json();
           setUser(data.user);
         } else {
-          // Not authenticated, redirect to login
           router.push('/login?redirect=/account');
         }
       } catch (error) {
@@ -69,115 +75,150 @@ export default function AccountLayout({
     );
   }
 
-  // Redirect if not authenticated (should be handled by middleware, but this is a fallback)
-  if (!user && !loading) {
-    router.push('/login?redirect=/account');
+  if (!user) {
     return null;
   }
 
   const menuItems = [
     { href: '/account', label: 'Dashboard', icon: <Home size={18} /> },
-    { href: '/account/orders', label: 'My Orders', icon: <Package size={18} /> },
-    { href: '/account/measurements', label: 'My Measurements', icon: <Ruler size={18} /> },
-    { href: '/account/wishlist', label: 'Saved Items', icon: <Heart size={18} /> },
-    { href: '/account/notifications', label: 'Notifications', icon: <Bell size={18} /> },
-    { href: '/account/profile', label: 'Profile Settings', icon: <User size={18} /> },
-    { href: '/account/security', label: 'Security', icon: <Shield size={18} /> },
+    { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+    { href: '/account/addresses', label: 'Addresses', icon: <MapPin size={18} /> },
+    { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
+    { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
+    { href: '/account/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 shrink-0">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <div className="text-center mb-6">
-              <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-3">
-                {user?.firstName && user?.lastName ? (
-                  <span className="text-xl font-semibold text-gray-700">
-                    {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+    <div className="bg-gray-50 min-h-screen">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/account" className="text-xl font-bold text-primary-red">
+                My Account
+              </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-sm text-secondary hover:text-primary">
+                Back to Store
+              </Link>
+              <div className="relative">
+                <button className="flex items-center space-x-2 text-sm focus:outline-none">
+                  <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                    {user?.firstName && user?.lastName ? (
+                      <span className="text-primary-red font-medium">
+                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                      </span>
+                    ) : (
+                      <User size={16} className="text-primary-red" />
+                    )}
+                  </div>
+                  <span className="hidden md:block text-primary">
+                    {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
                   </span>
-                ) : (
-                  <User size={32} className="text-gray-400" />
-                )}
+                </button>
               </div>
-              <h3 className="font-bold text-gray-800">
-                {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
-              </h3>
-              <p className="text-sm text-gray-500 mt-1">
-                {user?.role === 'admin' ? 'Admin' :
-                 user?.role === 'vendor' ? 'Vendor' : 'Customer'}
-              </p>
             </div>
+          </div>
+        </div>
+      </header>
 
-            <nav className="space-y-1">
-              {menuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
-                    pathname === item.href
-                      ? 'bg-primary-red text-white'
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <nav className="mt-2">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 transition-colors ${
+                      pathname === item.href
+                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
+                        : 'text-secondary hover:bg-default'
+                    }`}
+                  >
+                    <span className="mr-3">{item.icon}</span>
+                    <span>{item.label}</span>
+                    {pathname === item.href && (
+                      <ChevronRight size={16} className="ml-auto" />
+                    )}
+                  </Link>
+                ))}
+
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
                 >
-                  <span className="mr-3">{item.icon}</span>
-                  <span>{item.label}</span>
-                  {pathname === item.href && (
-                    <ChevronRight size={16} className="ml-auto" />
-                  )}
+                  <span className="mr-3"><LogOut size={18} /></span>
+                  <span>Logout</span>
+                </button>
+              </nav>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
+              <h3 className="font-medium text-primary mb-2">Quick Access</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/account/measurements/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📏</span> Add New Measurement
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account/addresses/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📍</span> Add New Address
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account/orders" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📦</span> Track Orders
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {user?.role === 'admin' && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
+                <h3 className="font-medium text-primary mb-2">Admin Access</h3>
+                <p className="text-sm text-secondary mb-3">
+                  Manage your site, users, and products in the admin dashboard.
+                </p>
+                <Link
+                  href="/admin"
+                  className="text-primary-red hover:text-primary-dark text-sm font-medium flex items-center"
+                >
+                  Go to Admin Dashboard
+                  <ChevronRight size={16} className="ml-1" />
                 </Link>
-              ))}
+              </div>
+            )}
 
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-3 py-2 rounded-md text-sm hover:bg-gray-50 text-gray-700 transition-colors"
-              >
-                <span className="mr-3"><LogOut size={18} /></span>
-                <span>Logout</span>
-              </button>
-            </nav>
-          </div>
+            {user?.role === 'vendor' && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
+                <h3 className="font-medium text-primary mb-2">Vendor Access</h3>
+                <p className="text-sm text-secondary mb-3">
+                  Manage your products and orders in the vendor dashboard.
+                </p>
+                <Link
+                  href="/vendor"
+                  className="text-primary-red hover:text-primary-dark text-sm font-medium flex items-center"
+                >
+                  Go to Vendor Dashboard
+                  <ChevronRight size={16} className="ml-1" />
+                </Link>
+              </div>
+            )}
+          </aside>
 
-          {user?.role === 'vendor' && (
-            <div className="bg-blue-50 rounded-lg shadow-sm border border-blue-200 p-4">
-              <h3 className="font-medium text-blue-800 mb-2">Vendor Portal</h3>
-              <p className="text-sm text-blue-600 mb-3">
-                Manage your product listings and orders in the vendor portal.
-              </p>
-              <Link
-                href="/vendor"
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
-              >
-                Go to Vendor Portal
-                <ChevronRight size={16} className="ml-1" />
-              </Link>
+          {/* Main Content */}
+          <main className="flex-1">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              {children}
             </div>
-          )}
-
-          {user?.role === 'admin' && (
-            <div className="bg-purple-50 rounded-lg shadow-sm border border-purple-200 p-4">
-              <h3 className="font-medium text-purple-800 mb-2">Admin Dashboard</h3>
-              <p className="text-sm text-purple-600 mb-3">
-                Manage your site, users, and products in the admin dashboard.
-              </p>
-              <Link
-                href="/admin"
-                className="text-purple-600 hover:text-purple-800 text-sm font-medium flex items-center"
-              >
-                Go to Admin Dashboard
-                <ChevronRight size={16} className="ml-1" />
-              </Link>
-            </div>
-          )}
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </div>
   );

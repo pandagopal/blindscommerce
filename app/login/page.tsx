@@ -19,9 +19,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setLoading(true);
-    console.log('Login attempt with:', { email, password });
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -29,41 +28,37 @@ export default function LoginPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password, rememberMe }),
-        credentials: 'include', // Important: This ensures cookies are sent with the request
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
       });
 
       const data = await response.json();
-      console.log('Login response:', { status: response.status, data });
 
       if (response.ok) {
-        console.log('Login successful, redirecting to:', data.redirectUrl || redirectUrl);
-        
-        // Add a small delay before redirecting to ensure cookie is set
-        setTimeout(() => {
-          const targetUrl = data.redirectUrl || redirectUrl;
-          console.log('Executing redirect to:', targetUrl);
-          window.location.href = targetUrl; // Use window.location.href for hard redirect
-        }, 100);
+        // Reset loading state before navigation
+        setLoading(false);
+        // Use the redirect URL from the response, fallback to the URL param, or default to /account
+        const targetUrl = data.redirectUrl || redirectUrl || '/account';
+        router.push(targetUrl);
+        router.refresh(); // Force a refresh to update authentication state
       } else {
-        console.log('Login failed:', data.error);
-        setError(data.error || 'Invalid email or password. Please try again.');
+        setError(data.error || 'Invalid email or password');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Login error:', error);
       setError('An error occurred during login. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
 
   // Simplified role-specific login credentials for demo
   const loginExamples = [
-    { role: 'Customer', email: 'customer@example.com', password: 'password123' },
-    { role: 'Admin', email: 'admin@smartblindshub.com', password: 'admin123' },
-    { role: 'Vendor', email: 'vendor@example.com', password: 'vendor123' },
-    { role: 'Sales', email: 'sales@smartblindshub.com', password: 'sales123' },
-    { role: 'Installer', email: 'installer@smartblindshub.com', password: 'installer123' }
+    { role: 'Customer', email: 'customer@smartblindshub.com', password: 'password123' },
+    { role: 'Admin', email: 'admin@smartblindshub.com', password: 'password123' },
+    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'password123' },
+    { role: 'Sales', email: 'sales@smartblindshub.com', password: 'password123' },
+    { role: 'Installer', email: 'installer@smartblindshub.com', password: 'password123' }
   ];
 
   const fillCredentials = (email: string, password: string) => {
