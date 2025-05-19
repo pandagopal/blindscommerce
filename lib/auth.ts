@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import * as jose from 'jose';
 import { getPool, hashPassword, comparePassword } from './db';
+import { RowDataPacket } from 'mysql2';
 
 // Types for user data
 export interface User {
@@ -99,41 +100,41 @@ export async function getCurrentUser(): Promise<User | null> {
     // Get user from database with role
     const query = `
       SELECT
-        u.user_id as "userId",
+        u.user_id as userId,
         u.email,
-        u.first_name as "firstName",
-        u.last_name as "lastName",
-        u.is_admin as "isAdmin",
+        u.first_name as firstName,
+        u.last_name as lastName,
+        u.is_admin as isAdmin,
         CASE 
           WHEN u.is_admin THEN 'admin'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.vendor_info v
+            SELECT 1 FROM vendor_info v
             WHERE v.user_id = u.user_id AND v.is_active = TRUE
           ) THEN 'vendor'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.sales_staff s
+            SELECT 1 FROM sales_staff s
             WHERE s.user_id = u.user_id AND s.is_active = TRUE
           ) THEN 'sales'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.installers i
+            SELECT 1 FROM installers i
             WHERE i.user_id = u.user_id AND i.is_active = TRUE
           ) THEN 'installer'
           ELSE 'customer'
         END as role
       FROM
-        blinds.users u
+        users u
       WHERE
-        u.user_id = $1 AND u.is_active = TRUE
+        u.user_id = ? AND u.is_active = TRUE
     `;
 
     const pool = await getPool();
-    const result = await pool.query(query, [decoded.userId]);
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [decoded.userId]);
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return null;
     }
 
-    return result.rows[0];
+    return rows[0];
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
@@ -212,42 +213,42 @@ export async function loginUser(email: string, password: string): Promise<User |
     // Get user by email
     const query = `
       SELECT
-        u.user_id as "userId",
+        u.user_id as userId,
         u.email,
-        u.password_hash as "passwordHash",
-        u.first_name as "firstName",
-        u.last_name as "lastName",
-        u.is_admin as "isAdmin",
+        u.password_hash as passwordHash,
+        u.first_name as firstName,
+        u.last_name as lastName,
+        u.is_admin as isAdmin,
         CASE 
           WHEN u.is_admin THEN 'admin'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.vendor_info v
+            SELECT 1 FROM vendor_info v
             WHERE v.user_id = u.user_id AND v.is_active = TRUE
           ) THEN 'vendor'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.sales_staff s
+            SELECT 1 FROM sales_staff s
             WHERE s.user_id = u.user_id AND s.is_active = TRUE
           ) THEN 'sales'
           WHEN EXISTS (
-            SELECT 1 FROM blinds.installers i
+            SELECT 1 FROM installers i
             WHERE i.user_id = u.user_id AND i.is_active = TRUE
           ) THEN 'installer'
           ELSE 'customer'
         END as role
       FROM
-        blinds.users u
+        users u
       WHERE
-        u.email = $1 AND u.is_active = TRUE
+        u.email = ? AND u.is_active = TRUE
     `;
 
     const pool = await getPool();
-    const result = await pool.query(query, [email]);
+    const [rows] = await pool.execute<RowDataPacket[]>(query, [email]);
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return null;
     }
 
-    const user = result.rows[0];
+    const user = rows[0];
 
     // Verify password
     const isValid = await comparePassword(password, user.passwordHash);
@@ -274,31 +275,19 @@ export async function registerUser(
   phone?: string,
   role?: string
 ): Promise<User | null> {
-  // Use mock data in development
-  if (process.env.NODE_ENV !== 'production' || process.env.MOCK_AUTH === 'true') {
-    return Promise.resolve({
-      userId: 0,
-      email,
-      firstName,
-      lastName,
-      isAdmin: false,
-      role: role || 'customer'
-    });
-  }
-
   try {
     // Hash password
     const hashedPassword = await hashPassword(password);
 
     // Start a transaction
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
       // Insert new user
       const query = `
-        INSERT INTO blinds.users (
+        INSERT INTO users (
           email,
           password_hash,
           first_name,
@@ -308,41 +297,51 @@ export async function registerUser(
           is_active,
           is_verified
         )
-        VALUES ($1, $2, $3, $4, $5, FALSE, TRUE, FALSE)
-        RETURNING
-          user_id as "userId",
-          email,
-          first_name as "firstName",
-          last_name as "lastName",
-          is_admin as "isAdmin"
+        VALUES (?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
       `;
 
-      const result = await client.query(query, [
+      const [result] = await connection.execute(query, [
         email,
         hashedPassword,
         firstName,
         lastName,
         phone || null
       ]);
-      const user = result.rows[0];
+
+      const userId = (result as any).insertId;
+
+      // Get the inserted user
+      const [userRows] = await connection.execute<RowDataPacket[]>(
+        `SELECT 
+          user_id as userId,
+          email,
+          first_name as firstName,
+          last_name as lastName,
+          is_admin as isAdmin
+        FROM users 
+        WHERE user_id = ?`,
+        [userId]
+      );
+
+      const user = userRows[0];
 
       // Create empty wishlist for user
       const wishlistQuery = `
-        INSERT INTO blinds.wishlist (user_id) VALUES ($1)
+        INSERT INTO wishlist (user_id) VALUES (?)
       `;
-      await client.query(wishlistQuery, [user.userId]);
+      await connection.execute(wishlistQuery, [userId]);
 
-      await client.query('COMMIT');
+      await connection.commit();
 
       // Add role property
       user.role = role || 'customer';
 
       return user;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.rollback();
       throw error;
     } finally {
-      client.release();
+      connection.release();
     }
   } catch (error) {
     console.error('Error registering user:', error);

@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { getPool } from '@/lib/db';
-import { hashPassword } from '@/lib/auth';
+import { getPool, hashPassword } from '@/lib/db';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
+
+interface VendorData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  contactEmail: string;
+  contactPhone: string;
+  businessDescription?: string;
+}
+
+interface VendorRow extends RowDataPacket {
+  user_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  business_name: string;
+  business_email: string;
+  business_phone: string;
+  vendor_active: boolean;
+  vendor_verified: boolean;
+  approval_status: string;
+  total_sales: number;
+  rating: number;
+  created_at: Date;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,120 +46,122 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     let query = `
-      WITH vendor_users AS (
-        SELECT 
-          u.user_id,
-          u.email,
-          u.first_name,
-          u.last_name,
-          u.is_active as user_is_active,
-          COALESCE(vi.vendor_info_id, 0) as vendor_info_id,
-          COALESCE(vi.business_name, CONCAT(u.first_name, ' ', u.last_name, '''s Business')) as business_name,
-          COALESCE(vi.business_email, u.email) as business_email,
-          vi.business_phone as contact_phone,
-          vi.business_description,
-          COALESCE(vi.is_active, true) as is_active,
-          vi.is_verified,
-          vi.approval_status,
-          COALESCE(vi.created_at, u.created_at) as created_at,
-          COALESCE(vi.updated_at, u.updated_at) as updated_at
-        FROM blinds.users u
-        LEFT JOIN blinds.vendor_info vi ON u.user_id = vi.user_id
-        WHERE EXISTS (
-          SELECT 1 FROM blinds.vendor_info v
-          WHERE v.user_id = u.user_id
-        )
-      )
-      SELECT * FROM vendor_users
-      WHERE 1=1
+      SELECT 
+        u.user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.phone,
+        u.role,
+        u.is_active,
+        u.is_verified,
+        u.created_at,
+        u.last_login,
+        v.business_name,
+        v.business_email,
+        v.business_phone,
+        v.approval_status as vendor_status,
+        v.is_verified as vendor_verified,
+        v.is_active as vendor_active,
+        v.total_sales,
+        v.rating
+      FROM users u
+      LEFT JOIN vendor_info v ON u.user_id = v.user_id
+      WHERE u.role = 'vendor'
     `;
 
-    const queryParams: any[] = [];
-    let paramCount = 1;
+    const values: any[] = [];
 
     if (search) {
       query += ` AND (
-        business_name ILIKE $${paramCount} OR
-        business_email ILIKE $${paramCount} OR
-        contact_phone ILIKE $${paramCount} OR
-        email ILIKE $${paramCount} OR
-        first_name ILIKE $${paramCount} OR
-        last_name ILIKE $${paramCount}
+        u.email LIKE ? OR 
+        u.first_name LIKE ? OR 
+        u.last_name LIKE ? OR 
+        u.phone LIKE ? OR
+        v.business_name LIKE ? OR
+        v.business_email LIKE ? OR
+        v.business_phone LIKE ?
       )`;
-      queryParams.push(`%${search}%`);
-      paramCount++;
+      const searchPattern = `%${search}%`;
+      values.push(
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern,
+        searchPattern
+      );
     }
 
     // Add sorting
-    const validSortFields = ['business_name', 'created_at', 'business_email'];
+    const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'business_name', 'total_sales', 'rating'];
     const validSortOrders = ['asc', 'desc'];
 
-    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'business_name';
-    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'asc';
+    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
 
-    query += ` ORDER BY ${finalSortBy} ${finalSortOrder}`;
+    query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
 
     // Add pagination
-    query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    queryParams.push(limit, offset);
+    query += ` LIMIT ? OFFSET ?`;
+    values.push(limit, offset);
 
-    const result = await pool.query(query, queryParams);
+    console.log('Query:', query);
+    console.log('Values:', values);
+
+    const [result] = await pool.query<VendorRow[]>(query, values);
 
     // Get total count
     const countQuery = `
       SELECT COUNT(*)
-      FROM (
-        SELECT u.user_id
-        FROM blinds.users u
-        WHERE EXISTS (
-          SELECT 1 FROM blinds.vendor_info v
-          WHERE v.user_id = u.user_id
-        )
-        ${search ? `AND (
-          u.email ILIKE $1 OR
-          u.first_name ILIKE $1 OR
-          u.last_name ILIKE $1 OR
-          EXISTS (
-            SELECT 1 FROM blinds.vendor_info v
-            WHERE v.user_id = u.user_id
-            AND (
-              v.business_name ILIKE $1 OR
-              v.business_email ILIKE $1 OR
-              v.contact_phone ILIKE $1
-            )
-          )
-        )` : ''}
-      ) as count_query
+      FROM users u
+      LEFT JOIN vendor_info v ON u.user_id = v.user_id
+      WHERE u.role = 'vendor'
+      ${search ? `AND (
+        u.email LIKE ? OR
+        u.first_name LIKE ? OR
+        u.last_name LIKE ? OR
+        u.phone LIKE ? OR
+        v.business_name LIKE ? OR
+        v.business_email LIKE ? OR
+        v.business_phone LIKE ?
+      )` : ''}
     `;
 
-    const countResult = await pool.query(
+    const [countResult] = await pool.query(
       countQuery,
-      search ? [`%${search}%`] : []
+      search ? [
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`,
+        `%${search}%`
+      ] : []
     );
 
     // Format the response
-    const vendors = result.rows.map(row => ({
-      vendor_info_id: row.vendor_info_id,
-      user_id: row.user_id,
-      company_name: row.business_name,
-      contact_email: row.business_email,
-      contact_phone: row.contact_phone,
-      business_description: row.business_description,
-      is_active: row.is_active && row.user_is_active,
-      is_verified: row.is_verified,
-      approval_status: row.approval_status,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      user: {
-        email: row.email,
-        first_name: row.first_name,
-        last_name: row.last_name
-      }
+    const vendors = result.map(row => ({
+      id: row.user_id,
+      email: row.email,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      companyName: row.business_name || `${row.first_name} ${row.last_name}'s Business`,
+      contactEmail: row.business_email || row.email,
+      contactPhone: row.business_phone || row.phone,
+      isActive: row.vendor_active ?? row.is_active,
+      isVerified: row.vendor_verified ?? false,
+      approvalStatus: row.vendor_status || 'pending',
+      totalSales: row.total_sales || 0,
+      rating: row.rating || 0,
+      createdAt: row.created_at
     }));
 
     return NextResponse.json({
       vendors,
-      total: parseInt(countResult.rows[0].count, 10)
+      total: parseInt((countResult as any[])[0].count, 10)
     });
   } catch (error) {
     console.error('Error fetching vendors:', error);
@@ -150,20 +179,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const {
-      email,
-      password,
-      firstName,
-      lastName,
-      companyName,
-      contactEmail,
-      contactPhone,
-      businessDescription
-    } = body;
-
+    const data = await request.json() as VendorData;
+    
     // Validate required fields
-    if (!email || !password || !firstName || !lastName || !companyName) {
+    if (!data.email || !data.password || !data.firstName || !data.lastName || !data.companyName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -171,31 +190,30 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
-      // Create user account
-      const userResult = await client.query(
-        `INSERT INTO blinds.users (
+      // Create user
+      const [userResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO users (
           email,
           password_hash,
           first_name,
           last_name,
-          is_admin,
+          role,
           is_active,
           is_verified
-        ) VALUES ($1, $2, $3, $4, FALSE, TRUE, TRUE)
-        RETURNING user_id`,
-        [email, await hashPassword(password), firstName, lastName]
+        ) VALUES (?, ?, ?, ?, 'vendor', true, true)`,
+        [data.email, await hashPassword(data.password), data.firstName, data.lastName]
       );
 
-      const userId = userResult.rows[0].user_id;
+      const userId = userResult.insertId;
 
       // Create vendor info
-      await client.query(
-        `INSERT INTO blinds.vendor_info (
+      await connection.execute(
+        `INSERT INTO vendor_info (
           user_id,
           business_name,
           business_email,
@@ -204,27 +222,27 @@ export async function POST(request: NextRequest) {
           is_active,
           is_verified,
           approval_status
-        ) VALUES ($1, $2, $3, $4, $5, TRUE, FALSE, 'pending')`,
+        ) VALUES (?, ?, ?, ?, ?, true, false, 'pending')`,
         [
           userId,
-          companyName,
-          contactEmail,
-          contactPhone,
-          businessDescription
+          data.companyName,
+          data.contactEmail,
+          data.contactPhone,
+          data.businessDescription
         ]
       );
 
-      await client.query('COMMIT');
+      await connection.commit();
 
-      return NextResponse.json(
-        { message: 'Vendor created successfully' },
-        { status: 201 }
-      );
+      return NextResponse.json({
+        message: 'Vendor created successfully',
+        vendorId: userId
+      });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.rollback();
       throw error;
     } finally {
-      client.release();
+      connection.release();
     }
   } catch (error) {
     console.error('Error creating vendor:', error);

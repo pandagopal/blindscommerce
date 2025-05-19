@@ -1,5 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    DB_USER: 'root',
+    DB_PASSWORD: 'Test@1234',
+    DB_HOST: '127.0.0.1',
+    DB_PORT: '3307',
+    DB_NAME: 'smartblindshub',
+  },
   // Output standalone build for Netlify deployment
   output: 'standalone',
 

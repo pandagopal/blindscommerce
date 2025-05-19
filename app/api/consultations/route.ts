@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Create the consultation
-      const result = await client.query(
-        `INSERT INTO consultations (
+      const consultationQuery = `
+        INSERT INTO consultations (
           user_id,
           expert_id,
           date,
@@ -57,30 +57,40 @@ export async function POST(req: NextRequest) {
           created_at,
           updated_at
         ) VALUES ($1, $2, $3, $4, $5, $6, 'scheduled', NOW(), NOW())
-        RETURNING consultation_id`,
-        [user.userId, expertId, date, timeSlot, consultationType, notes]
-      );
+      `;
+
+      const [result] = await client.execute(consultationQuery, [
+        user.userId,
+        expertId,
+        date,
+        timeSlot,
+        consultationType,
+        notes
+      ]);
+
+      const consultationId = (result as any).insertId;
 
       // Send notification to expert (in a real app, this would use a notification service)
-      await client.query(
-        `INSERT INTO notifications (
+      const notificationQuery = `
+        INSERT INTO notifications (
           user_id,
           type,
           title,
           message,
           created_at
-        ) VALUES ($1, 'new_consultation', 'New Consultation Booked', $2, NOW())`,
-        [
-          expertId,
-          `New consultation booked for ${date} at ${timeSlot}`
-        ]
-      );
+        ) VALUES ($1, 'new_consultation', 'New Consultation Booked', $2, NOW())
+      `;
+
+      await client.execute(notificationQuery, [
+        expertId,
+        `New consultation booked for ${date} at ${timeSlot}`
+      ]);
 
       await client.query('COMMIT');
 
       return NextResponse.json({
         message: 'Consultation booked successfully',
-        consultationId: result.rows[0].consultation_id
+        consultationId: consultationId
       });
 
     } catch (error) {
@@ -111,41 +121,40 @@ export async function GET(req: NextRequest) {
 
     const pool = await getPool();
     
-    let query = `
+    // Get expert's availability
+    const availabilityQuery = `
+      SELECT *
+      FROM expert_availability
+      WHERE expert_id = ?
+      AND date >= CURRENT_DATE
+      ORDER BY date, start_time`;
+
+    // Get user's consultations
+    const consultationsQuery = `
       SELECT 
-        c.consultation_id,
-        c.date,
-        c.time_slot,
-        c.consultation_type,
-        c.notes,
-        c.status,
-        c.created_at,
-        e.user_id as expert_id,
-        e.name as expert_name,
-        e.specialty as expert_specialty,
-        e.image as expert_image
+        c.*,
+        e.first_name as expert_first_name,
+        e.last_name as expert_last_name
       FROM consultations c
-      JOIN experts e ON c.expert_id = e.user_id
-      WHERE c.user_id = $1
-    `;
+      JOIN experts e ON c.expert_id = e.expert_id
+      WHERE c.user_id = ?
+      ORDER BY c.consultation_date DESC, c.start_time DESC`;
 
     const values: any[] = [user.userId];
     let valueIndex = 2;
 
     if (status) {
-      query += ` AND c.status = $${valueIndex}`;
+      consultationsQuery += ` AND c.status = ?`;
       values.push(status);
       valueIndex++;
     }
 
     if (expertId) {
-      query += ` AND c.expert_id = $${valueIndex}`;
+      consultationsQuery += ` AND c.expert_id = ?`;
       values.push(expertId);
     }
 
-    query += ' ORDER BY c.date DESC, c.time_slot ASC';
-
-    const result = await pool.query(query, values);
+    const result = await pool.query(consultationsQuery, values);
 
     return NextResponse.json({
       consultations: result.rows

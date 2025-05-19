@@ -46,8 +46,8 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
             socket_id,
             status,
             created_at
-          ) VALUES ($1, $2, $3, NOW())`,
-          [userId, socket.id, 'active']
+          ) VALUES (?, ?, 'active', NOW())`,
+          [userId, socket.id]
         );
       });
 
@@ -62,10 +62,10 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
             sender,
             created_at
           ) VALUES (
-            (SELECT session_id FROM chat_sessions WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1),
-            $1,
-            $2,
-            $3,
+            (SELECT session_id FROM chat_sessions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1),
+            ?,
+            ?,
+            ?,
             NOW()
           )`,
           [userId, message.content, message.sender]
@@ -99,9 +99,9 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
               sender,
               created_at
             ) VALUES (
-              (SELECT session_id FROM chat_sessions WHERE user_id = $1 AND status = 'active' ORDER BY created_at DESC LIMIT 1),
-              $1,
-              $2,
+              (SELECT session_id FROM chat_sessions WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1),
+              ?,
+              ?,
               'agent',
               NOW()
             )`,
@@ -126,7 +126,7 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
         await pool.query(
           `UPDATE chat_sessions 
            SET status = 'ended', ended_at = NOW() 
-           WHERE socket_id = $1`,
+           WHERE socket_id = ?`,
           [socket.id]
         );
       });

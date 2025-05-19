@@ -4,7 +4,7 @@ import { getPool } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -12,60 +12,58 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const vendorId = parseInt(context.params.id);
+    const vendorId = parseInt(params.id);
     if (isNaN(vendorId)) {
       return NextResponse.json({ error: 'Invalid vendor ID' }, { status: 400 });
     }
 
     const pool = await getPool();
-    const result = await pool.query(
+    const [result] = await pool.query(
       `SELECT 
-        vi.vendor_info_id,
-        vi.user_id,
-        vi.business_name as company_name,
-        vi.business_email as contact_email,
-        vi.business_phone as contact_phone,
-        vi.business_description,
-        vi.is_active,
-        vi.is_verified,
-        vi.approval_status,
-        vi.created_at,
-        vi.updated_at,
-        u.email as user_email,
+        u.user_id,
+        u.email,
         u.first_name,
         u.last_name,
-        u.is_active as user_is_active
-      FROM blinds.vendor_info vi
-      JOIN blinds.users u ON vi.user_id = u.user_id
-      WHERE vi.vendor_info_id = $1`,
+        u.phone,
+        u.role,
+        u.is_active,
+        u.is_verified,
+        u.created_at,
+        v.business_name,
+        v.business_email,
+        v.business_phone,
+        v.business_description,
+        v.is_active as vendor_active,
+        v.is_verified as vendor_verified,
+        v.approval_status,
+        v.total_sales,
+        v.rating
+      FROM users u
+      LEFT JOIN vendor_info v ON u.user_id = v.user_id
+      WHERE u.user_id = ? AND u.role = 'vendor'`,
       [vendorId]
     );
 
-    if (result.rows.length === 0) {
+    if (!result || (result as any[]).length === 0) {
       return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
     }
 
-    const vendor = {
-      vendor_info_id: result.rows[0].vendor_info_id,
-      user_id: result.rows[0].user_id,
-      company_name: result.rows[0].company_name,
-      contact_email: result.rows[0].contact_email,
-      contact_phone: result.rows[0].contact_phone,
-      business_description: result.rows[0].business_description,
-      is_active: result.rows[0].is_active && result.rows[0].user_is_active,
-      is_verified: result.rows[0].is_verified,
-      approval_status: result.rows[0].approval_status,
-      created_at: result.rows[0].created_at,
-      updated_at: result.rows[0].updated_at,
-      user: {
-        email: result.rows[0].user_email,
-        first_name: result.rows[0].first_name,
-        last_name: result.rows[0].last_name,
-        is_active: result.rows[0].user_is_active
-      }
-    };
-
-    return NextResponse.json(vendor);
+    const vendor = (result as any[])[0];
+    return NextResponse.json({
+      id: vendor.user_id,
+      email: vendor.email,
+      firstName: vendor.first_name,
+      lastName: vendor.last_name,
+      companyName: vendor.business_name || `${vendor.first_name} ${vendor.last_name}'s Business`,
+      contactEmail: vendor.business_email || vendor.email,
+      contactPhone: vendor.business_phone || vendor.phone,
+      isActive: vendor.vendor_active ?? vendor.is_active,
+      isVerified: vendor.vendor_verified ?? false,
+      approvalStatus: vendor.approval_status || 'pending',
+      totalSales: vendor.total_sales || 0,
+      rating: vendor.rating || 0,
+      createdAt: vendor.created_at
+    });
   } catch (error) {
     console.error('Error fetching vendor:', error);
     return NextResponse.json(
@@ -176,7 +174,7 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const user = await getCurrentUser();
@@ -184,58 +182,49 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const vendorId = parseInt(context.params.id);
+    const vendorId = parseInt(params.id);
     if (isNaN(vendorId)) {
       return NextResponse.json({ error: 'Invalid vendor ID' }, { status: 400 });
     }
 
     const body = await request.json();
-    const { is_active } = body;
+    const { isActive } = body;
 
-    if (typeof is_active !== 'boolean') {
+    if (typeof isActive !== 'boolean') {
       return NextResponse.json(
-        { error: 'Invalid status value' },
+        { error: 'isActive must be a boolean' },
         { status: 400 }
       );
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
-      // Get user_id for the vendor
-      const vendorResult = await client.query(
-        'SELECT user_id FROM blinds.vendor_info WHERE vendor_info_id = $1',
-        [vendorId]
+      // Update user status
+      await connection.execute(
+        'UPDATE users SET is_active = ? WHERE user_id = ? AND role = ?',
+        [isActive, vendorId, 'vendor']
       );
 
-      if (vendorResult.rows.length === 0) {
-        return NextResponse.json({ error: 'Vendor not found' }, { status: 404 });
-      }
-
-      // Update both vendor_info and user status
-      await client.query(
-        'UPDATE blinds.vendor_info SET is_active = $1, updated_at = NOW() WHERE vendor_info_id = $2',
-        [is_active, vendorId]
+      // Update vendor_info status if it exists
+      await connection.execute(
+        'UPDATE vendor_info SET is_active = ? WHERE user_id = ?',
+        [isActive, vendorId]
       );
 
-      await client.query(
-        'UPDATE blinds.users SET is_active = $1, updated_at = NOW() WHERE user_id = $2',
-        [is_active, vendorResult.rows[0].user_id]
-      );
-
-      await client.query('COMMIT');
+      await connection.commit();
 
       return NextResponse.json({ 
-        message: `Vendor ${is_active ? 'activated' : 'deactivated'} successfully` 
+        message: `Vendor ${isActive ? 'activated' : 'deactivated'} successfully` 
       });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.rollback();
       throw error;
     } finally {
-      client.release();
+      connection.release();
     }
   } catch (error) {
     console.error('Error updating vendor status:', error);

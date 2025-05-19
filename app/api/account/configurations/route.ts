@@ -71,11 +71,11 @@ export async function GET(req: NextRequest) {
         sc.created_at,
         sc.configuration_data as config
       FROM
-        blinds.saved_configurations sc
+        saved_configurations sc
       JOIN
-        blinds.products p ON sc.product_id = p.product_id
+        products p ON sc.product_id = p.product_id
       WHERE
-        sc.user_id = $1
+        sc.user_id = ?
       ORDER BY
         sc.created_at DESC
     `;
@@ -135,13 +135,13 @@ export async function POST(req: NextRequest) {
 
     // Insert the configuration into the database
     const query = `
-      INSERT INTO blinds.saved_configurations (
+      INSERT INTO saved_configurations (
         user_id,
         product_id,
         name,
         configuration_data
       )
-      VALUES ($1, $2, $3, $4)
+      VALUES (?, ?, ?, ?)
       RETURNING
         configuration_id as id,
         name,
@@ -160,7 +160,7 @@ export async function POST(req: NextRequest) {
     const result = await pool.query(query, values);
 
     // Get product name
-    const productQuery = `SELECT name FROM blinds.products WHERE product_id = $1`;
+    const productQuery = `SELECT name FROM products WHERE product_id = ?`;
     const productResult = await pool.query(productQuery, [productId]);
     const productName = productResult.rows[0]?.name || 'Unknown Product';
 
@@ -214,13 +214,10 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete the configuration
-    const query = `
-      DELETE FROM blinds.saved_configurations
-      WHERE configuration_id = $1 AND user_id = $2
-    `;
+    const deleteQuery = `DELETE FROM saved_configurations WHERE configuration_id = ? AND user_id = ?`;
 
     const pool = await getPool();
-    const result = await pool.query(query, [configId, user.userId]);
+    const result = await pool.query(deleteQuery, [configId, user.userId]);
 
     if (result.rowCount === 0) {
       return NextResponse.json(
@@ -241,3 +238,33 @@ export async function DELETE(req: NextRequest) {
     );
   }
 }
+
+// Update user configuration
+const configQuery = `
+  INSERT INTO user_configurations (
+    user_id,
+    theme,
+    notifications_enabled,
+    language,
+    created_at,
+    updated_at
+  ) VALUES (?, ?, ?, ?, NOW(), NOW())
+  ON DUPLICATE KEY UPDATE
+    theme = VALUES(theme),
+    notifications_enabled = VALUES(notifications_enabled),
+    language = VALUES(language),
+    updated_at = NOW()
+`;
+
+const [configResult] = await client.execute(configQuery, [
+  userId,
+  theme,
+  notificationsEnabled,
+  language
+]);
+
+// Get updated configuration
+const [updatedConfig] = await client.execute(
+  'SELECT * FROM user_configurations WHERE user_id = ?',
+  [userId]
+);

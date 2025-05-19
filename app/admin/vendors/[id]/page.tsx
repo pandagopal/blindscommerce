@@ -12,49 +12,45 @@ import {
   Calendar,
   FileText,
   Edit,
-  Trash2
+  Trash2,
+  ArrowLeft
 } from 'lucide-react';
 
-interface VendorData {
-  vendor_info_id: number;
-  user_id: number;
-  company_name: string;
-  contact_email: string;
-  contact_phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  tax_id: string;
-  business_license: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  user: {
-    email: string;
-    first_name: string;
-    last_name: string;
-  };
+interface VendorDetails {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  contactEmail: string;
+  contactPhone: string;
+  isActive: boolean;
+  isVerified: boolean;
+  approvalStatus: string;
+  totalSales: number;
+  rating: number;
+  createdAt: string;
 }
 
-export default function VendorDetailsPage() {
-  const params = useParams();
+export default function VendorDetailsPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [vendor, setVendor] = useState<VendorData | null>(null);
+  const [vendor, setVendor] = useState<VendorDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchVendor = async () => {
       try {
         const response = await fetch(`/api/admin/vendors/${params.id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch vendor data');
+          const data = await response.json();
+          throw new Error(data.error || 'Failed to fetch vendor');
         }
         const data = await response.json();
         setVendor(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        console.error('Error fetching vendor:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch vendor');
       } finally {
         setLoading(false);
       }
@@ -63,54 +59,9 @@ export default function VendorDetailsPage() {
     fetchVendor();
   }, [params.id]);
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this vendor?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/admin/vendors/${params.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete vendor');
-      }
-
-      router.push('/admin/vendors');
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
-  const toggleStatus = async () => {
-    if (!vendor) return;
-
-    try {
-      const response = await fetch(`/api/admin/vendors/${params.id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          is_active: !vendor.is_active
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update vendor status');
-      }
-
-      setVendor(prev => prev ? { ...prev, is_active: !prev.is_active } : null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
+      <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
@@ -118,163 +69,137 @@ export default function VendorDetailsPage() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-        {error}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => router.push('/admin/vendors')}
+            className="mt-4 text-purple-600 hover:text-purple-900"
+          >
+            Back to Vendors
+          </button>
+        </div>
       </div>
     );
   }
 
   if (!vendor) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
-        Vendor not found
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <p className="text-gray-600">Vendor not found</p>
+          <button
+            onClick={() => router.push('/admin/vendors')}
+            className="mt-4 text-purple-600 hover:text-purple-900"
+          >
+            Back to Vendors
+          </button>
+        </div>
       </div>
     );
   }
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
     <div>
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">{vendor.company_name}</h1>
-          <p className="text-gray-500">Vendor Details</p>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={toggleStatus}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${
-              vendor.is_active
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
-            }`}
-          >
-            {vendor.is_active ? 'Active' : 'Inactive'}
-          </button>
-          <Link
-            href={`/admin/vendors/${vendor.vendor_info_id}/edit`}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            <Edit size={16} className="mr-1" />
-            Edit
-          </Link>
-          <button
-            onClick={handleDelete}
-            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-          >
-            <Trash2 size={16} className="mr-1" />
-            Delete
-          </button>
-        </div>
+      <div className="flex items-center mb-6">
+        <button
+          onClick={() => router.push('/admin/vendors')}
+          className="text-gray-600 hover:text-gray-900 mr-4"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="text-2xl font-bold">Vendor Details</h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Company Information</h2>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <Building2 className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Company Name</div>
-                <div className="text-gray-600">{vendor.company_name}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <Mail className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Business Email</div>
-                <div className="text-gray-600">{vendor.contact_email}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <Phone className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Business Phone</div>
-                <div className="text-gray-600">{vendor.contact_phone || 'Not provided'}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <FileText className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Tax ID</div>
-                <div className="text-gray-600">{vendor.tax_id || 'Not provided'}</div>
-              </div>
-            </div>
-            <div className="flex items-start">
-              <FileText className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Business License</div>
-                <div className="text-gray-600">{vendor.business_license || 'Not provided'}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Contact Person</h2>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <User className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Name</div>
-                <div className="text-gray-600">
-                  {vendor.user.first_name} {vendor.user.last_name}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Contact Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <div className="font-medium">Name</div>
+                  <div className="text-gray-600">
+                    {vendor.firstName} {vendor.lastName}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium">Email</div>
+                  <div className="text-gray-600">{vendor.email}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Phone</div>
+                  <div className="text-gray-600">{vendor.contactPhone || 'Not provided'}</div>
                 </div>
               </div>
             </div>
-            <div className="flex items-start">
-              <Mail className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Email</div>
-                <div className="text-gray-600">{vendor.user.email}</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Address</h2>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <MapPin className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Business Address</div>
-                <div className="text-gray-600">
-                  {vendor.address}
-                  <br />
-                  {vendor.city}, {vendor.state} {vendor.zip_code}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Business Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <div className="font-medium">Company Name</div>
+                  <div className="text-gray-600">{vendor.companyName}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Business Email</div>
+                  <div className="text-gray-600">{vendor.contactEmail}</div>
+                </div>
+                <div>
+                  <div className="font-medium">Status</div>
+                  <div className="text-gray-600">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        vendor.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      {vendor.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium mb-4">Account Details</h2>
-          <div className="space-y-4">
-            <div className="flex items-start">
-              <Calendar className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Created</div>
-                <div className="text-gray-600">{formatDate(vendor.created_at)}</div>
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold mb-4">Performance Metrics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500">Total Sales</div>
+                <div className="text-2xl font-semibold">
+                  ${vendor.totalSales.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500">Rating</div>
+                <div className="text-2xl font-semibold">
+                  {vendor.rating.toFixed(1)} / 5.0
+                </div>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="text-sm text-gray-500">Member Since</div>
+                <div className="text-2xl font-semibold">
+                  {new Date(vendor.createdAt).toLocaleDateString()}
+                </div>
               </div>
             </div>
-            <div className="flex items-start">
-              <Calendar className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
-              <div>
-                <div className="font-medium">Last Updated</div>
-                <div className="text-gray-600">{formatDate(vendor.updated_at)}</div>
-              </div>
-            </div>
+          </div>
+
+          <div className="mt-8 flex justify-end space-x-4">
+            <Link
+              href={`/admin/vendors/${vendor.id}/edit`}
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+            >
+              Edit Vendor
+            </Link>
+            <button
+              onClick={() => router.push('/admin/vendors')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Back to List
+            </button>
           </div>
         </div>
       </div>
