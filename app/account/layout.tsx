@@ -82,7 +82,6 @@ export default function AccountLayout({
   const menuItems = [
     { href: '/account', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/account/addresses', label: 'Addresses', icon: <MapPin size={18} /> },
     { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
     { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
     { href: '/account/settings', label: 'Settings', icon: <Settings size={18} /> },
@@ -164,11 +163,6 @@ export default function AccountLayout({
                 <li>
                   <Link href="/account/measurements/new" className="text-primary-red hover:text-primary-dark flex items-center">
                     <span className="mr-2">📏</span> Add New Measurement
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/account/addresses/new" className="text-primary-red hover:text-primary-dark flex items-center">
-                    <span className="mr-2">📍</span> Add New Address
                   </Link>
                 </li>
                 <li>

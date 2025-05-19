@@ -44,7 +44,33 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       // Get the redirect URL from the response
-      const targetUrl = data.redirectUrl || '/account';
+      let targetUrl = data.redirectUrl;
+      if (!targetUrl) {
+        // If not provided by backend, determine by user role
+        // Fetch user info
+        const userRes = await fetch('/api/auth/me', { credentials: 'include' });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          switch (userData.role) {
+            case 'admin':
+              targetUrl = '/admin';
+              break;
+            case 'vendor':
+              targetUrl = '/vendor';
+              break;
+            case 'sales':
+              targetUrl = '/sales';
+              break;
+            case 'installer':
+              targetUrl = '/installer';
+              break;
+            default:
+              targetUrl = '/account';
+          }
+        } else {
+          targetUrl = '/account';
+        }
+      }
       console.log('Current URL:', window.location.href);
       console.log('Redirecting to:', targetUrl);
 

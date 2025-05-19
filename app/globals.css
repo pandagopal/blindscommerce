@@ -36,6 +36,13 @@
 
     /* Component radius */
     --radius: 0.5rem;
+
+    /* Chart colors */
+    --chart-1: 346 83% 41%;
+    --chart-2: 215 100% 23%;
+    --chart-3: 142 76% 36%;
+    --chart-4: 27 92% 45%;
+    --chart-5: 199 89% 48%;
   }
 
   .dark {
@@ -58,6 +65,15 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 346 83% 41%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-main;
+  }
+  body {
+    @apply bg-main text-default antialiased;
   }
 }
 
@@ -85,15 +101,6 @@
   }
   .border-light {
     border-color: var(--border-light);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-main;
-  }
-  body {
-    @apply bg-main text-default;
   }
 }
 
