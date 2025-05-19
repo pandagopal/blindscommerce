@@ -27,22 +27,31 @@ export async function POST(req: NextRequest) {
 
       // Save each measurement
       for (const measurement of measurements) {
-        await client.query(
-          `INSERT INTO window_measurements (
+        const measurementQuery = `
+          INSERT INTO measurements (
             user_id,
-            label,
+            room_type,
+            window_count,
             width,
             height,
-            points,
             created_at
-          ) VALUES ($1, $2, $3, $4, $5, NOW())`,
-          [
-            user.userId,
-            measurement.label,
-            measurement.distance, // Using distance as width for now
-            0, // Height will be added when measuring height
-            JSON.stringify(measurement.points)
-          ]
+          ) VALUES (?, ?, ?, ?, ?, NOW())
+        `;
+
+        const [measurementResult] = await client.execute(measurementQuery, [
+          user.userId,
+          measurement.roomType,
+          measurement.windowCount,
+          measurement.width,
+          measurement.height
+        ]);
+
+        const measurementId = (measurementResult as any).insertId;
+
+        // Get saved measurement
+        const [savedMeasurement] = await client.execute(
+          'SELECT * FROM measurements WHERE measurement_id = ?',
+          [measurementId]
         );
       }
 
@@ -74,12 +83,12 @@ export async function GET(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const result = await pool.query(
-      `SELECT * FROM window_measurements 
-       WHERE user_id = $1 
-       ORDER BY created_at DESC`,
-      [user.userId]
-    );
+    const query = `
+      SELECT *
+      FROM measurements
+      WHERE user_id = ?
+      ORDER BY created_at DESC`;
+    const result = await pool.query(query, [user.userId]);
 
     return NextResponse.json({
       measurements: result.rows

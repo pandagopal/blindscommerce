@@ -1,7 +1,8 @@
-import { Pool, PoolClient } from 'pg';
+import * as mysql from 'mysql2/promise';
+import { RowDataPacket, FieldPacket, ResultSetHeader, OkPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
 
-// Define types for query parameters
+// Define types for query parameters and results
 interface ProductQueryParams {
   limit?: number;
   offset?: number;
@@ -13,88 +14,105 @@ interface ProductQueryParams {
   sortOrder?: string;
 }
 
+interface BaseRow extends RowDataPacket {
+  id: string;
+  name?: string;
+  slug?: string;
+  description?: string;
+  image?: string;
+  is_active?: boolean;
+}
+
+interface UserRow extends RowDataPacket {
+  user_id: string;
+  email: string;
+  password_hash: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  is_admin: boolean;
+  is_active: boolean;
+}
+
+// Define result types
+type QueryResult<T> = [T[], FieldPacket[]];
+type SingleQueryResult<T> = [T[], FieldPacket[]];
+type CountQueryResult = [RowDataPacket & { total: number }[], FieldPacket[]];
+
 // Use a singleton pattern for the database connection
-let pool: Pool | null = null;
+let pool: mysql.Pool | null = null;
 let isConnecting = false;
 let connectionRetries = 0;
 const MAX_RETRIES = 5;
 const RETRY_INTERVAL = 2000; // 2 seconds
-let dbConnectionFailed = false; // Add a flag to track if the DB connection failed
+let dbConnectionFailed = false;
 
 // Function to get the database connection pool
-export const getPool = async (): Promise<Pool> => {
+export const getPool = async (): Promise<mysql.Pool> => {
   if (pool) return pool;
 
   if (isConnecting) {
-    // If already attempting to connect, wait for current attempt
     await new Promise(resolve => setTimeout(resolve, 100));
     return getPool();
   }
 
-  // In development, limit connection attempts more aggressively
   const maxRetries = process.env.NODE_ENV === 'production' ? MAX_RETRIES : 1;
 
   if (dbConnectionFailed && connectionRetries >= maxRetries) {
-    // If we've already tried and failed all retries, return a minimal pool
-    // that will trigger the fallback data in query functions
-    console.warn('Using minimal pool - previous connection attempts failed');
-    const minimalPool = new Pool();
-    // Override the query method to always throw an error
-    // This ensures consistent behavior for fallback data
-    minimalPool.query = async () => {
-      throw new Error('Database connection is not available');
-    };
-    return minimalPool;
+    throw new Error('Database connection is not available after all retries');
   }
 
   isConnecting = true;
 
   try {
-    pool = new Pool({
-      user: process.env.DB_USER || 'postgres',
-      host: process.env.DB_HOST || 'localhost',
+    // Log connection attempt
+    console.log('Attempting database connection with config:', {
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: parseInt(process.env.DB_PORT || '3307'),
+      user: process.env.DB_USER || 'root',
+      database: process.env.DB_NAME || 'smartblindshub'
+    });
+
+    pool = mysql.createPool({
+      host: process.env.DB_HOST || '127.0.0.1',
+      port: parseInt(process.env.DB_PORT || '3307'),
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || 'Test@1234',
       database: process.env.DB_NAME || 'smartblindshub',
-      password: process.env.DB_PASSWORD || 'postgres',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      ssl: process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false,
-      // Add connection timeout to avoid hanging on connection issues
-      connectionTimeoutMillis: 5000,
-      // Limit concurrent connections
-      max: 20,
-      // How long a client can remain idle before being closed
-      idleTimeoutMillis: 30000
-    });
-
-    // Set the search path
-    pool.on('connect', (client: PoolClient) => {
-      client.query('SET search_path TO blinds, public')
-        .catch(err => console.error('Error setting search path:', err));
-    });
-
-    // Log database connection errors
-    pool.on('error', (err) => {
-      console.error('Unexpected database error:', err);
-      // Reset the pool on connection error so we create a new one next time
-      pool = null;
-      isConnecting = false;
+      waitForConnections: true,
+      connectionLimit: 3,
+      queueLimit: 0,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0,
+      connectTimeout: 10000,
+      multipleStatements: false
     });
 
     // Test connection
-    const client = await pool.connect();
-    client.release();
-    console.log('Successfully connected to database');
+    const connection = await pool.getConnection();
+    await connection.ping();
+    
+    // Log successful connection
+    const [result] = await connection.execute<RowDataPacket[]>('SELECT VERSION() as version');
+    console.log('Successfully connected to database. Server info:', result);
+    
+    connection.release();
     connectionRetries = 0;
     isConnecting = false;
-    dbConnectionFailed = false; // Reset the failure flag on successful connection
+    dbConnectionFailed = false;
     return pool;
   } catch (error) {
-    console.error('Failed to create database pool:', error);
+    console.error('Failed to create database pool:', {
+      error,
+      host: process.env.DB_HOST,
+      port: process.env.DB_PORT,
+      user: process.env.DB_USER,
+      database: process.env.DB_NAME
+    });
+
     pool = null;
     isConnecting = false;
 
-    // Retry connection if not exceeded max retries
     if (connectionRetries < maxRetries) {
       connectionRetries++;
       console.log(`Retrying database connection (${connectionRetries}/${maxRetries}) in ${RETRY_INTERVAL/1000} seconds...`);
@@ -102,37 +120,59 @@ export const getPool = async (): Promise<Pool> => {
       return getPool();
     }
 
-    // Set the failure flag
     dbConnectionFailed = true;
-
-    // In development, use a minimal pool that will return errors when used
-    console.warn('Using minimal pool - no database connection available after all retries');
-    const minimalPool = new Pool();
-    // Override the query method to always throw an error
-    // This ensures consistent behavior for fallback data
-    minimalPool.query = async () => {
-      throw new Error('Database connection is not available');
-    };
-    return minimalPool;
+    throw new Error('Database connection failed after all retries');
   }
 };
 
 // Helper function to execute queries with proper error handling
-async function executeQuery<T>(queryFn: () => Promise<T>, errorMessage: string, defaultValue?: T): Promise<T> {
+async function executeQuery<T extends RowDataPacket>(
+  pool: mysql.Pool,
+  query: string,
+  params: any[],
+  errorMessage: string
+): Promise<T[]> {
   try {
-    return await queryFn();
+    const [results] = await pool.execute<T[]>(query, params);
+    return results;
   } catch (error) {
     console.error(`${errorMessage}:`, error);
+    return [];
+  }
+}
 
-    if (defaultValue !== undefined) {
-      // In development, log that we're using fallback data
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`Using fallback data for: ${errorMessage}`);
-      }
-      return defaultValue;
+// Helper function for single row queries
+async function executeSingleRowQuery<T extends RowDataPacket>(
+  pool: mysql.Pool,
+  query: string,
+  params: any[],
+  errorMessage: string
+): Promise<T | null> {
+  try {
+    const [results] = await pool.execute<T[]>(query, params);
+    return results[0] || null;
+  } catch (error) {
+    console.error(`${errorMessage}:`, error);
+    return null;
+  }
+}
+
+// Helper function for count queries
+async function executeCountQuery(
+  pool: mysql.Pool,
+  query: string,
+  params: any[],
+  errorMessage: string
+): Promise<number> {
+  try {
+    interface CountResult extends RowDataPacket {
+      total: number;
     }
-
-    throw error;
+    const [results] = await pool.execute<CountResult[]>(query, params);
+    return results[0]?.total || 0;
+  } catch (error) {
+    console.error(`${errorMessage}:`, error);
+    return 0;
   }
 }
 
@@ -143,11 +183,23 @@ export const hashPassword = async (password: string): Promise<string> => {
 };
 
 export const comparePassword = async (password: string, hash: string): Promise<boolean> => {
-  return bcrypt.compare(password, hash);
+  console.log('Comparing password...');
+  console.log('Password length:', password.length);
+  console.log('Password type:', typeof password);
+  console.log('Hash length:', hash.length);
+  console.log('Hash type:', typeof hash);
+  try {
+    const result = await bcrypt.compare(password, hash);
+    console.log('Bcrypt comparison result:', result);
+    return result;
+  } catch (error) {
+    console.error('Error during password comparison:', error);
+    return false;
+  }
 };
 
 // Categories
-export const getCategories = async () => {
+export const getCategories = async (): Promise<BaseRow[]> => {
   const query = `
     SELECT
       category_id as id,
@@ -158,26 +210,25 @@ export const getCategories = async () => {
       parent_id,
       is_active
     FROM
-      blinds.categories
+      categories
     WHERE
       is_active = TRUE
     ORDER BY
       display_order ASC, name ASC
   `;
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query);
-      return result.rows;
-    },
-    'Database error fetching categories',
-    [] // Return empty array as fallback
-  );
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.execute<BaseRow[]>(query);
+    return rows;
+  } catch (error) {
+    console.error('Database error fetching categories:', error);
+    return [];
+  }
 };
 
 // Get a single category by slug
-export const getCategoryBySlug = async (slug: string) => {
+export const getCategoryBySlug = async (slug: string): Promise<BaseRow | null> => {
   const query = `
     SELECT
       category_id as id,
@@ -188,20 +239,19 @@ export const getCategoryBySlug = async (slug: string) => {
       parent_id,
       is_active
     FROM
-      blinds.categories
+      categories
     WHERE
-      slug = $1 AND is_active = TRUE
+      slug = ? AND is_active = TRUE
   `;
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [slug]);
-      return result.rows[0] || null;
-    },
-    `Database error fetching category by slug: ${slug}`,
-    null
-  );
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.execute<BaseRow[]>(query, [slug]);
+    return rows[0] || null;
+  } catch (error) {
+    console.error(`Database error fetching category by slug: ${slug}:`, error);
+    return null;
+  }
 };
 
 // Get subcategories for a parent category
@@ -216,21 +266,18 @@ export const getSubcategories = async (parentId: number) => {
       parent_id,
       is_active
     FROM
-      blinds.categories
+      categories
     WHERE
-      parent_id = $1 AND is_active = TRUE
+      parent_id = ? AND is_active = TRUE
     ORDER BY
       display_order ASC, name ASC
   `;
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [parentId]);
-      return result.rows;
-    },
-    `Database error fetching subcategories for parent ID: ${parentId}`,
-    []
+    await getPool(),
+    query,
+    [parentId],
+    `Database error fetching subcategories for parent ID: ${parentId}`
   );
 };
 
@@ -245,9 +292,9 @@ export const getProductsCount = async ({
     SELECT
       COUNT(*) as total
     FROM
-      blinds.products p
+      products p
     JOIN
-      blinds.categories c ON p.category_id = c.category_id
+      categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE
   `;
@@ -256,37 +303,34 @@ export const getProductsCount = async ({
   let paramCount = 1;
 
   if (categoryId) {
-    query += ` AND (p.category_id = $${paramCount} OR c.parent_id = $${paramCount})`;
-    queryParams.push(categoryId);
+    query += ` AND (p.category_id = ? OR c.parent_id = ?)`;
+    queryParams.push(categoryId, categoryId);
     paramCount++;
   }
 
   if (search) {
-    query += ` AND (p.name ILIKE $${paramCount} OR p.short_description ILIKE $${paramCount})`;
-    queryParams.push(`%${search}%`);
+    query += ` AND (LOWER(p.name) LIKE LOWER(?) OR LOWER(p.short_description) LIKE LOWER(?))`;
+    queryParams.push(`%${search}%`, `%${search}%`);
     paramCount++;
   }
 
   if (minPrice !== null) {
-    query += ` AND p.base_price >= $${paramCount}`;
+    query += ` AND p.base_price >= ?`;
     queryParams.push(minPrice);
     paramCount++;
   }
 
   if (maxPrice !== null) {
-    query += ` AND p.base_price <= $${paramCount}`;
+    query += ` AND p.base_price <= ?`;
     queryParams.push(maxPrice);
     paramCount++;
   }
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, queryParams);
-      return parseInt(result.rows[0].total, 10);
-    },
-    'Database error fetching product count',
-    0
+  return executeCountQuery(
+    await getPool(),
+    query,
+    queryParams,
+    'Database error fetching product count'
   );
 };
 
@@ -314,14 +358,14 @@ export const getProducts = async ({
       c.slug as category_slug,
       (
         SELECT image_url
-        FROM blinds.product_images
+        FROM product_images
         WHERE product_id = p.product_id AND is_primary = TRUE
         LIMIT 1
       ) as primary_image
     FROM
-      blinds.products p
+      products p
     JOIN
-      blinds.categories c ON p.category_id = c.category_id
+      categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE
   `;
@@ -331,25 +375,25 @@ export const getProducts = async ({
 
   if (categoryId) {
     // Include both direct category and its subcategories
-    query += ` AND (p.category_id = $${paramCount} OR c.parent_id = $${paramCount})`;
-    queryParams.push(categoryId);
+    query += ` AND (p.category_id = ? OR c.parent_id = ?)`;
+    queryParams.push(categoryId, categoryId);
     paramCount++;
   }
 
   if (search) {
-    query += ` AND (p.name ILIKE $${paramCount} OR p.short_description ILIKE $${paramCount})`;
-    queryParams.push(`%${search}%`);
+    query += ` AND (LOWER(p.name) LIKE LOWER(?) OR LOWER(p.short_description) LIKE LOWER(?))`;
+    queryParams.push(`%${search}%`, `%${search}%`);
     paramCount++;
   }
 
   if (minPrice !== null) {
-    query += ` AND p.base_price >= $${paramCount}`;
+    query += ` AND p.base_price >= ?`;
     queryParams.push(minPrice);
     paramCount++;
   }
 
   if (maxPrice !== null) {
-    query += ` AND p.base_price <= $${paramCount}`;
+    query += ` AND p.base_price <= ?`;
     queryParams.push(maxPrice);
     paramCount++;
   }
@@ -366,116 +410,52 @@ export const getProducts = async ({
   query += ` ORDER BY p.${finalSortBy} ${finalSortOrder}`;
 
   // Add pagination
-  query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+  query += ` LIMIT ? OFFSET ?`;
   queryParams.push(limit, offset);
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, queryParams);
-      return result.rows;
-    },
-    'Database error fetching products',
-    []
+    await getPool(),
+    query,
+    queryParams,
+    'Database error fetching products'
   );
 };
 
 // Get a single product by slug
 export const getProductBySlug = async (slug: string) => {
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const productQuery = `
-        SELECT
-          p.product_id
-        FROM
-          blinds.products p
-        WHERE
-          p.slug = $1 AND p.is_active = TRUE
-      `;
-
-      const productResult = await pool.query(productQuery, [slug]);
-
-      if (productResult.rows.length === 0) {
-        return null;
-      }
-
-      return getProductById(productResult.rows[0].product_id);
-    },
-    `Database error fetching product by slug: ${slug}`,
-    null
+  return executeSingleRowQuery(
+    await getPool(),
+    `
+      SELECT
+        p.product_id
+      FROM
+        products p
+      WHERE
+        p.slug = ? AND p.is_active = TRUE
+    `,
+    [slug],
+    `Database error fetching product by slug: ${slug}`
   );
 };
 
 // Get a single product by ID
 export const getProductById = async (productId: number) => {
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const productQuery = `
-        SELECT
-          p.*,
-          c.name as category_name,
-          c.slug as category_slug
-        FROM
-          blinds.products p
-        JOIN
-          blinds.categories c ON p.category_id = c.category_id
-        WHERE
-          p.product_id = $1 AND p.is_active = TRUE
-      `;
-
-      const productResult = await pool.query(productQuery, [productId]);
-
-      if (productResult.rows.length === 0) {
-        return null;
-      }
-
-      const product = productResult.rows[0];
-
-      // Get product images
-      const imagesQuery = `
-        SELECT * FROM blinds.product_images
-        WHERE product_id = $1
-        ORDER BY is_primary DESC, display_order ASC
-      `;
-      const imagesResult = await pool.query(imagesQuery, [productId]);
-      product.images = imagesResult.rows;
-
-      // Get product features
-      const featuresQuery = `
-        SELECT f.name, f.description, pf.value
-        FROM blinds.product_features pf
-        JOIN blinds.features f ON pf.feature_id = f.feature_id
-        WHERE pf.product_id = $1
-      `;
-      const featuresResult = await pool.query(featuresQuery, [productId]);
-      product.features = featuresResult.rows;
-
-      // Get product colors
-      const colorsQuery = `
-        SELECT c.*, pc.price_modifier, pc.image_url as swatch_image, pc.is_default
-        FROM blinds.product_colors pc
-        JOIN blinds.colors c ON pc.color_id = c.color_id
-        WHERE pc.product_id = $1 AND c.is_active = TRUE
-      `;
-      const colorsResult = await pool.query(colorsQuery, [productId]);
-      product.colors = colorsResult.rows;
-
-      // Get product materials
-      const materialsQuery = `
-        SELECT m.*, pm.price_modifier, pm.is_default
-        FROM blinds.product_materials pm
-        JOIN blinds.materials m ON pm.material_id = m.material_id
-        WHERE pm.product_id = $1 AND m.is_active = TRUE
-      `;
-      const materialsResult = await pool.query(materialsQuery, [productId]);
-      product.materials = materialsResult.rows;
-
-      return product;
-    },
-    `Database error fetching product by ID: ${productId}`,
-    null
+  return executeSingleRowQuery(
+    await getPool(),
+    `
+      SELECT
+        p.*,
+        c.name as category_name,
+        c.slug as category_slug
+      FROM
+        products p
+      JOIN
+        categories c ON p.category_id = c.category_id
+      WHERE
+        p.product_id = ? AND p.is_active = TRUE
+    `,
+    [productId],
+    `Database error fetching product by ID: ${productId}`
   );
 };
 
@@ -499,24 +479,21 @@ export const getFeaturedProducts = async (limit = 6) => {
         LIMIT 1
       ) as primary_image
     FROM
-      blinds.products p
+      products p
     JOIN
-      blinds.categories c ON p.category_id = c.category_id
+      categories c ON p.category_id = c.category_id
     WHERE
       p.is_active = TRUE AND p.is_featured = TRUE
     ORDER BY
       p.rating DESC, p.review_count DESC
-    LIMIT $1
+    LIMIT ?
   `;
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [limit]);
-      return result.rows;
-    },
-    'Database error fetching featured products',
-    []
+    await getPool(),
+    query,
+    [limit],
+    'Database error fetching featured products'
   );
 };
 
@@ -528,7 +505,7 @@ export const getProductFeatures = async () => {
       name,
       description
     FROM
-      blinds.features
+      features
     WHERE
       is_active = TRUE
     ORDER BY
@@ -536,20 +513,17 @@ export const getProductFeatures = async () => {
   `;
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query);
-      return result.rows;
-    },
-    'Database error fetching product features',
-    []
+    await getPool(),
+    query,
+    [],
+    'Database error fetching product features'
   );
 };
 
 // User functions
 
 // Get user by ID
-export const getUserById = async (userId: number) => {
+export const getUserById = async (userId: number): Promise<UserRow | null> => {
   const query = `
     SELECT
       user_id,
@@ -560,24 +534,23 @@ export const getUserById = async (userId: number) => {
       is_admin,
       is_active
     FROM
-      blinds.users
+      users
     WHERE
-      user_id = $1 AND is_active = TRUE
+      user_id = ? AND is_active = TRUE
   `;
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [userId]);
-      return result.rows[0] || null;
-    },
-    `Database error fetching user by ID: ${userId}`,
-    null
-  );
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.execute<UserRow[]>(query, [userId]);
+    return rows[0] || null;
+  } catch (error) {
+    console.error(`Database error fetching user by ID: ${userId}:`, error);
+    return null;
+  }
 };
 
 // Get user by email
-export const getUserByEmail = async (email: string) => {
+export const getUserByEmail = async (email: string): Promise<UserRow | null> => {
   const query = `
     SELECT
       user_id,
@@ -585,60 +558,31 @@ export const getUserByEmail = async (email: string) => {
       password_hash,
       first_name,
       last_name,
-      phone,
       is_admin,
       is_active
-    FROM
-      blinds.users
-    WHERE
-      email = $1 AND is_active = TRUE
+    FROM users
+    WHERE email = ? AND is_active = TRUE
   `;
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [email]);
-      return result.rows[0] || null;
-    },
-    `Database error fetching user by email: ${email}`,
-    null
-  );
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.execute<UserRow[]>(query, [email]);
+    return rows[0] || null;
+  } catch (error) {
+    console.error(`Database error fetching user by email: ${email}:`, error);
+    return null;
+  }
 };
 
 // Get user role (admin, vendor, customer, etc.)
 export const getUserRole = async (userId: number) => {
-  return executeQuery(
-    async () => {
-      // First check if the user is an admin
-      const pool = await getPool();
-      const userQuery = `
-        SELECT is_admin FROM blinds.users WHERE user_id = $1 AND is_active = TRUE
-      `;
-      const userResult = await pool.query(userQuery, [userId]);
-
-      if (!userResult.rows.length) {
-        return null;
-      }
-
-      if (userResult.rows[0].is_admin) {
-        return 'admin';
-      }
-
-      // Check if user is a vendor
-      const vendorQuery = `
-        SELECT * FROM blinds.vendor_info WHERE user_id = $1 AND is_active = TRUE
-      `;
-      const vendorResult = await pool.query(vendorQuery, [userId]);
-
-      if (vendorResult.rows.length > 0) {
-        return 'vendor';
-      }
-
-      // Default role is customer
-      return 'customer';
-    },
-    `Database error getting user role for user ID: ${userId}`,
-    'customer'
+  return executeSingleRowQuery(
+    await getPool(),
+    `
+      SELECT is_admin FROM users WHERE user_id = ? AND is_active = TRUE
+    `,
+    [userId],
+    `Database error getting user role for user ID: ${userId}`
   );
 };
 
@@ -655,11 +599,11 @@ export const getUserOrders = async (userId: number) => {
     FROM
       orders o
     JOIN
-      blinds.order_status s ON o.status_id = s.status_id
+      order_status s ON o.status_id = s.status_id
     LEFT JOIN
-      blinds.order_items oi ON o.order_id = oi.order_id
+      order_items oi ON o.order_id = oi.order_id
     WHERE
-      o.user_id = $1
+      o.user_id = ?
     GROUP BY
       o.order_id, o.order_number, o.created_at, o.total_amount, s.name
     ORDER BY
@@ -667,13 +611,10 @@ export const getUserOrders = async (userId: number) => {
   `;
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [userId]);
-      return result.rows;
-    },
-    `Database error fetching orders for user ID: ${userId}`,
-    []
+    await getPool(),
+    query,
+    [userId],
+    `Database error fetching orders for user ID: ${userId}`
   );
 };
 
@@ -684,8 +625,8 @@ export const getOrderById = async (orderId: number, userId: number | null = null
     SELECT
       o.*,
       s.name as status_name,
-      json_agg(
-        json_build_object(
+      JSON_ARRAYAGG(
+        JSON_OBJECT(
           'order_item_id', oi.order_item_id,
           'product_id', oi.product_id,
           'product_name', oi.product_name,
@@ -699,19 +640,19 @@ export const getOrderById = async (orderId: number, userId: number | null = null
         )
       ) as items
     FROM
-      blinds.orders o
+      orders o
     JOIN
-      blinds.order_status s ON o.status_id = s.status_id
+      order_status s ON o.status_id = s.status_id
     LEFT JOIN
-      blinds.order_items oi ON o.order_id = oi.order_id
+      order_items oi ON o.order_id = oi.order_id
     WHERE
-      o.order_id = $1
+      o.order_id = ?
   `;
 
   // If userId is provided, restrict to orders for that user
   const params = [orderId];
   if (userId !== null) {
-    query += ` AND o.user_id = $2`;
+    query += ` AND o.user_id = ?`;
     params.push(userId);
   }
 
@@ -720,19 +661,11 @@ export const getOrderById = async (orderId: number, userId: number | null = null
       o.order_id, s.name
   `;
 
-  return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, params);
-
-      if (result.rows.length === 0) {
-        return null;
-      }
-
-      return result.rows[0];
-    },
-    `Database error fetching order details for order ID: ${orderId}`,
-    null
+  return executeSingleRowQuery(
+    await getPool(),
+    query,
+    params,
+    `Database error fetching order details for order ID: ${orderId}`
   );
 };
 
@@ -752,21 +685,88 @@ export const getVendorProducts = async (vendorId: number) => {
     FROM
       vendor_products
     WHERE
-      vendor_id = $1
+      vendor_id = ?
     ORDER BY
       created_at DESC
   `;
 
   return executeQuery(
-    async () => {
-      const pool = await getPool();
-      const result = await pool.query(query, [vendorId]);
-      return result.rows;
-    },
-    `Database error fetching products for vendor ID: ${vendorId}`,
-    []
+    await getPool(),
+    query,
+    [vendorId],
+    `Database error fetching products for vendor ID: ${vendorId}`
   );
 };
+
+// Room Visualizer related functions
+interface RoomVisualization {
+  id: string;
+  resultImage: string;
+  createdAt: Date;
+  product: {
+    id: string;
+    name: string;
+    price: number;
+  };
+}
+
+interface RoomVisualizationRow extends RowDataPacket {
+  id: string;
+  result_image: string;
+  created_at: string;
+  product_id: string;
+  product_name: string;
+  product_price: string;
+}
+
+export const createRoomVisualization = async (
+  userId: string,
+  productId: string,
+  roomImage: string,
+  resultImage: string
+): Promise<{ id: string }> => {
+  const pool = await getPool();
+  const id = generateId();
+  await pool.execute<ResultSetHeader>(
+    'INSERT INTO room_visualizations (id, user_id, product_id, room_image, result_image, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
+    [id, userId, productId, roomImage, resultImage]
+  );
+  return { id };
+};
+
+export const getRoomVisualizations = async (userId: string): Promise<RoomVisualization[]> => {
+  const pool = await getPool();
+  const [results] = await pool.execute<RoomVisualizationRow[]>(
+    `SELECT 
+      rv.id,
+      rv.result_image,
+      rv.created_at,
+      p.id as product_id,
+      p.name as product_name,
+      p.price as product_price
+    FROM room_visualizations rv
+    JOIN products p ON rv.product_id = p.id
+    WHERE rv.user_id = ?
+    ORDER BY rv.created_at DESC`,
+    [userId]
+  );
+  
+  return results.map(row => ({
+    id: row.id,
+    resultImage: row.result_image,
+    createdAt: new Date(row.created_at),
+    product: {
+      id: row.product_id,
+      name: row.product_name,
+      price: parseFloat(row.product_price)
+    }
+  }));
+};
+
+// Helper function to generate CUID-like IDs
+function generateId(): string {
+  return 'c' + Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+}
 
 // Export the pool getter for direct use in API routes
 export default getPool;

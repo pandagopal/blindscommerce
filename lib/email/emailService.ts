@@ -39,11 +39,11 @@ class EmailService {
 
   private async getTemplate(templateName: string): Promise<EmailTemplate | null> {
     const pool = await getPool();
-    const result = await pool.query(
-      'SELECT * FROM email_templates WHERE name = $1 AND is_active = true',
+    const [rows] = await pool.execute<EmailTemplate[]>(
+      'SELECT * FROM email_templates WHERE name = ? AND is_active = true',
       [templateName]
     );
-    return result.rows[0] || null;
+    return rows[0] || null;
   }
 
   private replaceVariables(text: string, variables: Record<string, any>): string {
@@ -59,10 +59,10 @@ class EmailService {
     variables: Record<string, any>
   ): Promise<boolean> {
     const pool = await getPool();
-    const client = await pool.connect();
+    const client = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await client.beginTransaction();
 
       // Get the email template
       const template = await this.getTemplate(templateName);
@@ -75,7 +75,7 @@ class EmailService {
       const body = this.replaceVariables(template.body, variables);
 
       // Queue the email
-      await client.query(
+      await client.execute(
         `INSERT INTO email_queue (
           template_id,
           recipient_email,
@@ -85,7 +85,7 @@ class EmailService {
           variables,
           status,
           next_retry_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'pending', NOW())`,
+        ) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`,
         [
           template.template_id,
           recipientEmail,
@@ -96,10 +96,10 @@ class EmailService {
         ]
       );
 
-      await client.query('COMMIT');
+      await client.commit();
       return true;
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.rollback();
       console.error('Error queueing email:', error);
       return false;
     } finally {
@@ -109,13 +109,13 @@ class EmailService {
 
   async processEmailQueue(): Promise<void> {
     const pool = await getPool();
-    const client = await pool.connect();
+    const client = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await client.beginTransaction();
 
       // Get pending emails that are ready to be sent
-      const result = await client.query<QueuedEmail>(
+      const [emails] = await client.execute<QueuedEmail[]>(
         `SELECT * FROM email_queue 
          WHERE status = 'pending' 
          AND next_retry_at <= NOW() 
@@ -124,7 +124,7 @@ class EmailService {
          LIMIT 10`
       );
 
-      for (const email of result.rows) {
+      for (const email of emails) {
         try {
           // Send the email
           await this.transporter.sendMail({
@@ -136,34 +136,34 @@ class EmailService {
           });
 
           // Update email status to sent
-          await client.query(
+          await client.execute(
             `UPDATE email_queue 
              SET status = 'sent', 
                  sent_at = NOW(), 
                  updated_at = NOW() 
-             WHERE email_id = $1`,
+             WHERE email_id = ?`,
             [email.email_id]
           );
         } catch (error) {
           console.error(`Error sending email ${email.email_id}:`, error);
 
           // Update retry count and next retry time
-          await client.query(
+          await client.execute(
             `UPDATE email_queue 
              SET status = 'failed', 
                  retry_count = retry_count + 1,
-                 next_retry_at = NOW() + INTERVAL '1 hour',
-                 error_message = $2,
+                 next_retry_at = DATE_ADD(NOW(), INTERVAL 1 HOUR),
+                 error_message = ?,
                  updated_at = NOW()
-             WHERE email_id = $1`,
-            [email.email_id, (error as Error).message]
+             WHERE email_id = ?`,
+            [(error as Error).message, email.email_id]
           );
         }
       }
 
-      await client.query('COMMIT');
+      await client.commit();
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.rollback();
       console.error('Error processing email queue:', error);
     } finally {
       client.release();

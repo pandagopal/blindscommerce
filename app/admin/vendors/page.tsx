@@ -24,25 +24,19 @@ import {
 } from 'lucide-react';
 
 interface VendorInfo {
-  vendor_info_id: number;
-  user_id: number;
-  company_name: string;
-  contact_email: string;
-  contact_phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  tax_id: string;
-  business_license: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  user: {
-    email: string;
-    first_name: string;
-    last_name: string;
-  };
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  contactEmail: string;
+  contactPhone: string;
+  isActive: boolean;
+  isVerified: boolean;
+  approvalStatus: string;
+  totalSales: number;
+  rating: number;
+  createdAt: string;
 }
 
 export default function AdminVendorsPage() {
@@ -51,11 +45,12 @@ export default function AdminVendorsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('company_name');
+  const [sortBy, setSortBy] = useState('companyName');
   const [sortOrder, setSortOrder] = useState('asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalVendors, setTotalVendors] = useState(0);
   const vendorsPerPage = 10;
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchVendors();
@@ -64,26 +59,15 @@ export default function AdminVendorsPage() {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const offset = (currentPage - 1) * vendorsPerPage;
-      const queryParams = new URLSearchParams({
-        limit: vendorsPerPage.toString(),
-        offset: offset.toString(),
-        sortBy,
-        sortOrder,
-        ...(searchQuery && { search: searchQuery }),
-        ...(statusFilter !== 'all' && { status: statusFilter })
-      });
-
-      const response = await fetch(`/api/admin/vendors?${queryParams}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch vendors');
-      }
-
-      const data = await response.json();
+      const response = await fetch(
+        `/api/admin/vendors?limit=${vendorsPerPage}&offset=${(currentPage - 1) * vendorsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}${searchQuery ? `&search=${searchQuery}` : ''}`
+      );
+      const data = await response.json() as { vendors: VendorInfo[], total: number };
       setVendors(data.vendors);
       setTotalVendors(data.total);
     } catch (error) {
       console.error('Error fetching vendors:', error);
+      setError('Failed to fetch vendors');
     } finally {
       setLoading(false);
     }
@@ -98,10 +82,16 @@ export default function AdminVendorsPage() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = (e.target as HTMLInputElement).value;
+    setSearchQuery(value);
     setCurrentPage(1);
-    fetchVendors();
+  };
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = (e.target as HTMLSelectElement).value;
+    setStatusFilter(value);
+    setCurrentPage(1);
   };
 
   const formatDate = (dateString: string) => {
@@ -126,17 +116,19 @@ export default function AdminVendorsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ is_active: !currentStatus }),
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update vendor status');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update vendor status');
       }
 
       // Refresh the vendors list
       fetchVendors();
     } catch (err) {
       console.error('Error updating vendor status:', err instanceof Error ? err.message : 'Failed to update vendor status');
+      setError(err instanceof Error ? err.message : 'Failed to update vendor status');
     }
   };
 
@@ -180,7 +172,7 @@ export default function AdminVendorsPage() {
               type="text"
               placeholder="Search vendors..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearch}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -188,10 +180,7 @@ export default function AdminVendorsPage() {
         </form>
         <select
           value={statusFilter}
-          onChange={(e) => {
-            setStatusFilter(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={handleStatusFilter}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
         >
           <option value="all">All Status</option>
@@ -208,11 +197,11 @@ export default function AdminVendorsPage() {
               <tr>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('company_name')}
+                  onClick={() => handleSort('companyName')}
                 >
                   <div className="flex items-center">
                     Company
-                    {sortBy === 'company_name' && (
+                    {sortBy === 'companyName' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
@@ -231,11 +220,11 @@ export default function AdminVendorsPage() {
                 </th>
                 <th
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('created_at')}
+                  onClick={() => handleSort('createdAt')}
                 >
                   <div className="flex items-center">
                     Joined
-                    {sortBy === 'created_at' && (
+                    {sortBy === 'createdAt' && (
                       sortOrder === 'asc' ? <ChevronUpIcon size={16} /> : <ChevronDownIcon size={16} />
                     )}
                   </div>
@@ -260,37 +249,30 @@ export default function AdminVendorsPage() {
                 </tr>
               ) : (
                 vendors.map((vendor) => (
-                  <tr key={vendor.vendor_info_id} className="hover:bg-gray-50">
+                  <tr key={vendor.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <Building2 className="h-5 w-5 text-gray-400 mr-2" />
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {vendor.company_name}
+                            {vendor.companyName}
                           </div>
                           <div className="text-sm text-gray-500">
-                            ID: {vendor.vendor_info_id}
+                            ID: {vendor.id}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {vendor.user.first_name} {vendor.user.last_name}
+                        {vendor.firstName} {vendor.lastName}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {vendor.user.email}
-                      </div>
+                      <div className="text-sm text-gray-500">{vendor.email}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900">
-                        <Mail className="h-4 w-4 text-gray-400 mr-1" />
-                        {vendor.contact_email}
-                      </div>
-                      <div className="flex items-center text-sm text-gray-500">
-                        <Phone className="h-4 w-4 text-gray-400 mr-1" />
-                        {vendor.contact_phone}
-                      </div>
+                      <div className="text-sm text-gray-900">{vendor.companyName}</div>
+                      <div className="text-sm text-gray-500">{vendor.contactEmail}</div>
+                      <div className="text-sm text-gray-500">{vendor.contactPhone}</div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -303,39 +285,39 @@ export default function AdminVendorsPage() {
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span
                         className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          vendor.is_active
+                          vendor.isActive
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
                         }`}
                       >
-                        {vendor.is_active ? 'Active' : 'Inactive'}
+                        {vendor.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(vendor.created_at)}
+                      {formatDate(vendor.createdAt)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        href={`/admin/vendors/${vendor.vendor_info_id}`}
+                        href={`/admin/vendors/${vendor.id}`}
                         className="text-purple-600 hover:text-purple-900 mr-3"
                       >
                         View
                       </Link>
                       <Link
-                        href={`/admin/vendors/${vendor.vendor_info_id}/edit`}
+                        href={`/admin/vendors/${vendor.id}/edit`}
                         className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         Edit
                       </Link>
                       <button
-                        onClick={() => handleStatusToggle(vendor.vendor_info_id, vendor.is_active)}
+                        onClick={() => handleStatusToggle(vendor.id, vendor.isActive)}
                         className={`${
-                          vendor.is_active
+                          vendor.isActive
                             ? 'text-red-600 hover:text-red-900'
                             : 'text-green-600 hover:text-green-900'
                         }`}
                       >
-                        {vendor.is_active ? 'Deactivate' : 'Activate'}
+                        {vendor.isActive ? 'Deactivate' : 'Activate'}
                       </button>
                     </td>
                   </tr>

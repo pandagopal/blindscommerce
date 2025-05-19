@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logoutUser } from '@/lib/auth';
+import { cookies } from 'next/headers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +20,9 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 0
     });
+
+    // Clear the token cookie
+    cookies().delete('token');
 
     return response;
   } catch (error) {
@@ -49,6 +53,9 @@ export async function GET(request: NextRequest) {
       maxAge: 0
     });
 
+    // Clear the token cookie
+    cookies().delete('token');
+
     return response;
   } catch (error) {
     console.error('Logout error:', error);
@@ -63,6 +70,8 @@ export async function GET(request: NextRequest) {
       path: '/',
       maxAge: 0
     });
+    // Clear the token cookie
+    cookies().delete('token');
     return response;
   }
 }

@@ -42,6 +42,7 @@ export default function AdminUsersPage() {
   const [totalUsers, setTotalUsers] = useState(0);
   const usersPerPage = 10;
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -66,6 +67,7 @@ export default function AdminUsersPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       const offset = (currentPage - 1) * usersPerPage;
       const queryParams = new URLSearchParams({
         limit: usersPerPage.toString(),
@@ -78,7 +80,8 @@ export default function AdminUsersPage() {
 
       const response = await fetch(`/api/admin/users?${queryParams}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch users');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch users');
       }
 
       const data = await response.json();
@@ -86,6 +89,7 @@ export default function AdminUsersPage() {
       setTotalUsers(data.total);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setError(error instanceof Error ? error.message : 'Failed to fetch users');
     } finally {
       setLoading(false);
     }
@@ -100,10 +104,14 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
     setCurrentPage(1);
-    fetchUsers();
+  };
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRoleFilter(e.target.value);
+    setCurrentPage(1);
   };
 
   const formatDate = (dateString: string | null) => {
@@ -134,7 +142,7 @@ export default function AdminUsersPage() {
 
   const handleStatusToggle = async (userId: number, currentStatus: boolean) => {
     if (currentUser?.user_id === userId) {
-      alert('You cannot change your own account status');
+      setError('You cannot change your own account status');
       return;
     }
 
@@ -152,6 +160,7 @@ export default function AdminUsersPage() {
     }
 
     try {
+      setError(null);
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
@@ -161,14 +170,15 @@ export default function AdminUsersPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update user status');
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to update user status');
       }
 
       // Refresh the users list
       fetchUsers();
     } catch (error) {
       console.error('Error updating user status:', error);
-      alert('Failed to update user status');
+      setError(error instanceof Error ? error.message : 'Failed to update user status');
     }
   };
 
@@ -204,26 +214,29 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-md">
+          {error}
+        </div>
+      )}
+
       {/* Search and Filters */}
       <div className="mb-6 flex gap-4">
-        <form onSubmit={handleSearch} className="flex-1">
+        <div className="flex-1">
           <div className="relative">
             <input
               type="text"
               placeholder="Search users..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearch}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
-        </form>
+        </div>
         <select
           value={roleFilter}
-          onChange={(e) => {
-            setRoleFilter(e.target.value);
-            setCurrentPage(1);
-          }}
+          onChange={handleStatusFilter}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
         >
           <option value="all">All Roles</option>

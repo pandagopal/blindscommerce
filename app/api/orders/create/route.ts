@@ -44,86 +44,68 @@ export async function POST(req: NextRequest) {
     try {
       await client.query('BEGIN');
 
-      // Get default status ID (usually "Pending")
+      // Get order status ID
       const statusResult = await client.query(
-        'SELECT status_id FROM blinds.order_status WHERE name = $1',
-        ['Pending']
+        'SELECT status_id FROM order_status WHERE name = ?',
+        ['pending']
       );
       const statusId = statusResult.rows[0]?.status_id || 1;
 
       // Generate unique order number
       const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 1000)}`;
 
-      // Insert order record
+      // Create order
       const orderQuery = `
-        INSERT INTO blinds.orders (
+        INSERT INTO orders (
           user_id,
-          order_number,
-          status_id,
-          subtotal,
-          shipping_cost,
-          tax_amount,
-          discount_amount,
           total_amount,
-          shipping_method,
+          shipping_address,
+          billing_address,
           payment_method,
-          notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        RETURNING order_id
+          payment_status,
+          shipping_status,
+          order_status,
+          tracking_number,
+          notes,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `;
 
-      const orderValues = [
+      const [orderResult] = await client.execute(orderQuery, [
         user.userId,
-        orderNumber,
-        statusId,
-        body.subtotal || 0,
-        body.shippingCost || 0,
-        body.taxAmount || 0,
-        body.discountAmount || 0,
         body.totalAmount || 0,
-        body.shippingMethod || 'Standard',
+        body.shippingAddress || '',
+        body.billingAddress || '',
         body.paymentMethod || 'Credit Card',
+        'pending',
+        'pending',
+        'pending',
+        null,
         body.notes || ''
-      ];
+      ]);
 
-      const orderResult = await client.query(orderQuery, orderValues);
-      const orderId = orderResult.rows[0].order_id;
+      const orderId = (orderResult as any).insertId;
 
-      // Insert order items
+      // Create order items
+      const orderItemsQuery = `
+        INSERT INTO order_items (
+          order_id,
+          product_id,
+          quantity,
+          price,
+          options,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, NOW())
+      `;
+
       const itemPromises = body.items.map(async (item) => {
-        const itemQuery = `
-          INSERT INTO order_items (
-            order_id,
-            product_id,
-            product_name,
-            width,
-            height,
-            color_id,
-            color_name,
-            material_id,
-            material_name,
-            quantity,
-            unit_price,
-            subtotal
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        `;
-
-        const itemValues = [
+        await client.execute(orderItemsQuery, [
           orderId,
           item.productId,
-          item.name,
-          item.width || null,
-          item.height || null,
-          item.colorId || null,
-          item.colorName || null,
-          item.materialId || null,
-          item.materialName || null,
           item.quantity,
           item.price,
-          item.price * item.quantity
-        ];
-
-        return client.query(itemQuery, itemValues);
+          JSON.stringify(item.options)
+        ]);
       });
 
       await Promise.all(itemPromises);
@@ -131,7 +113,7 @@ export async function POST(req: NextRequest) {
       // Create payment record if payment information is provided
       if (body.payment && body.payment.transactionId) {
         const paymentQuery = `
-          INSERT INTO blinds.payments (
+          INSERT INTO payments (
             order_id,
             transaction_id,
             payment_method,

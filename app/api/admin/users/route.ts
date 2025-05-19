@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role');
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const client = await pool.getConnection();
 
     try {
       let query = `
@@ -69,74 +69,96 @@ export async function GET(request: NextRequest) {
           u.first_name,
           u.last_name,
           u.phone,
-          u.is_admin,
+          u.role,
           u.is_active,
-          u.last_login,
-          u.created_at,
-          u.updated_at,
           u.is_verified,
-          CASE 
-            WHEN vi.vendor_info_id IS NOT NULL THEN 'vendor'
-            WHEN ss.sales_staff_id IS NOT NULL THEN 'sales'
-            WHEN i.installer_id IS NOT NULL THEN 'installer'
-            WHEN u.is_admin THEN 'admin'
-            ELSE 'customer'
-          END as role
-        FROM blinds.users u
-        LEFT JOIN blinds.vendor_info vi ON u.user_id = vi.user_id
-        LEFT JOIN blinds.sales_staff ss ON u.user_id = ss.user_id
-        LEFT JOIN blinds.installers i ON u.user_id = i.user_id
+          u.created_at,
+          u.last_login,
+          v.business_name,
+          v.business_email,
+          v.business_phone,
+          v.approval_status as vendor_status,
+          v.is_verified as vendor_verified,
+          v.is_active as vendor_active,
+          s.territory as sales_territory,
+          s.commission_rate,
+          s.is_active as sales_active,
+          i.certification_number,
+          i.service_area,
+          i.is_active as installer_active
+        FROM users u
+        LEFT JOIN vendor_info v ON u.user_id = v.user_id
+        LEFT JOIN sales_staff s ON u.user_id = s.user_id
+        LEFT JOIN installers i ON u.user_id = i.user_id
         WHERE 1=1
       `;
 
       const values: any[] = [];
-      let valueIndex = 1;
 
       if (search) {
         query += ` AND (
-          u.email ILIKE $${valueIndex} OR 
-          u.first_name ILIKE $${valueIndex} OR 
-          u.last_name ILIKE $${valueIndex} OR 
-          u.phone ILIKE $${valueIndex}
+          u.email LIKE ? OR 
+          u.first_name LIKE ? OR 
+          u.last_name LIKE ? OR 
+          u.phone LIKE ?
         )`;
-        values.push(`%${search}%`);
-        valueIndex++;
+        const searchPattern = `%${search}%`;
+        values.push(searchPattern, searchPattern, searchPattern, searchPattern);
       }
 
       if (role && role !== 'all') {
         if (role === 'admin') {
-          query += ` AND u.is_admin = true`;
+          query += ` AND u.role = 'admin'`;
         } else if (role === 'vendor') {
-          query += ` AND vi.vendor_info_id IS NOT NULL`;
+          query += ` AND v.business_name IS NOT NULL`;
         } else if (role === 'sales') {
-          query += ` AND ss.sales_staff_id IS NOT NULL`;
+          query += ` AND s.territory IS NOT NULL`;
         } else if (role === 'installer') {
-          query += ` AND i.installer_id IS NOT NULL`;
+          query += ` AND i.certification_number IS NOT NULL`;
         } else if (role === 'customer') {
-          query += ` AND NOT u.is_admin 
-            AND vi.vendor_info_id IS NULL 
-            AND ss.sales_staff_id IS NULL 
-            AND i.installer_id IS NULL`;
+          query += ` AND u.role NOT IN ('admin', 'vendor', 'sales', 'installer')`;
         }
       }
 
-      // Get total count
-      const countResult = await client.query(
-        `SELECT COUNT(*) FROM (${query}) as count_query`,
-        values
-      );
-      const total = parseInt(countResult.rows[0].count);
+      // Add sorting
+      const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'last_login'];
+      const validSortOrders = ['asc', 'desc'];
 
-      // Add sorting and pagination
-      query += ` ORDER BY ${sortBy} ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
-      query += ` LIMIT $${valueIndex} OFFSET $${valueIndex + 1}`;
+      const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+      const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
+
+      query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
+
+      // Add pagination
+      query += ` LIMIT ? OFFSET ?`;
       values.push(limit, offset);
 
-      const result = await client.query(query, values);
+      console.log('Query:', query);
+      console.log('Values:', values);
+
+      const [result] = await client.query(query, values);
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(*) as count
+        FROM users u
+        WHERE 1=1
+        ${search ? `AND (
+          u.email LIKE ? OR
+          u.first_name LIKE ? OR
+          u.last_name LIKE ? OR
+          u.phone LIKE ?
+        )` : ''}
+      `;
+
+      const [countResult] = await client.query(
+        countQuery,
+        search ? [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : []
+      );
 
       return NextResponse.json({
-        users: result.rows,
-        total
+        users: result,
+        total: parseInt((countResult as any[])[0].count)
       });
     } finally {
       client.release();
@@ -193,18 +215,18 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const client = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await client.beginTransaction();
 
       // Check if email already exists
-      const existingUser = await client.query(
-        'SELECT user_id FROM blinds.users WHERE email = $1',
+      const [existingUser] = await client.execute(
+        'SELECT user_id FROM users WHERE email = ?',
         [email]
       );
 
-      if (existingUser.rows.length > 0) {
+      if ((existingUser as any[]).length > 0) {
         return NextResponse.json(
           { error: 'Email already exists' },
           { status: 400 }
@@ -215,64 +237,112 @@ export async function POST(request: NextRequest) {
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Insert new user
-      const result = await client.query(
-        `INSERT INTO blinds.users (
+      const userQuery = `
+        INSERT INTO users (
           email,
           password_hash,
           first_name,
           last_name,
           phone,
-          is_admin,
+          role,
           is_active,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-        RETURNING user_id`,
-        [
-          email,
-          hashedPassword,
-          firstName || null,
-          lastName || null,
-          phone || null,
-          role === 'admin',
-          isActive
-        ]
-      );
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `;
 
-      const userId = result.rows[0].user_id;
+      const [userResult] = await client.execute(userQuery, [
+        email,
+        hashedPassword,
+        firstName,
+        lastName,
+        phone,
+        role,
+        isActive
+      ]);
+
+      const userId = (userResult as any).insertId;
 
       // Add role-specific entry
       if (role === 'vendor') {
-        await client.query(
-          `INSERT INTO blinds.vendor_info (
-            user_id, business_name, business_email, created_at, updated_at
-          ) VALUES ($1, $2, $3, NOW(), NOW())`,
-          [userId, `${firstName || ''} ${lastName || ''}'s Business`.trim(), email]
+        await client.execute(
+          `INSERT INTO vendor_info (
+            user_id,
+            business_name,
+            business_email,
+            business_phone,
+            is_active,
+            is_verified,
+            approval_status,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          [
+            userId,
+            `${firstName || ''} ${lastName || ''}'s Business`.trim(),
+            email,
+            phone,
+            isActive,
+            false,
+            'pending'
+          ]
         );
       } else if (role === 'sales') {
-        await client.query(
-          `INSERT INTO blinds.sales_staff (
+        await client.execute(
+          `INSERT INTO sales_staff (
             user_id, hire_date, created_at, updated_at
-          ) VALUES ($1, NOW(), NOW(), NOW())`,
+          ) VALUES (?, NOW(), NOW(), NOW())`,
           [userId]
         );
       } else if (role === 'installer') {
-        await client.query(
-          `INSERT INTO blinds.installers (
+        await client.execute(
+          `INSERT INTO installers (
             user_id, created_at, updated_at
-          ) VALUES ($1, NOW(), NOW())`,
+          ) VALUES (?, NOW(), NOW())`,
           [userId]
         );
       }
 
-      await client.query('COMMIT');
+      // Create user preferences
+      const preferencesQuery = `
+        INSERT INTO user_preferences (
+          user_id,
+          created_at,
+          updated_at
+        ) VALUES (?, NOW(), NOW())
+      `;
+
+      await client.execute(preferencesQuery, [userId]);
+
+      // Create user notifications
+      const notificationsQuery = `
+        INSERT INTO user_notifications (
+          user_id,
+          created_at,
+          updated_at
+        ) VALUES (?, NOW(), NOW())
+      `;
+
+      await client.execute(notificationsQuery, [userId]);
+
+      // Create user wishlist
+      const wishlistQuery = `
+        INSERT INTO wishlist (
+          user_id,
+          created_at
+        ) VALUES (?, NOW())
+      `;
+
+      await client.execute(wishlistQuery, [userId]);
+
+      await client.commit();
 
       return NextResponse.json({ 
         success: true,
         user_id: userId
       });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.rollback();
       throw error;
     } finally {
       client.release();

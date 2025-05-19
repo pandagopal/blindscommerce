@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { pusher } from '@/lib/pusher';
+import { RowDataPacket } from 'mysql2';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,68 +19,76 @@ export async function POST(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
-      // Insert the message
-      const result = await client.query(
-        `INSERT INTO chat_messages (
+      // Create message
+      const messageQuery = `
+        INSERT INTO chat_messages (
           chat_id,
-          user_id,
+          sender_id,
           message,
           created_at
-        ) VALUES ($1, $2, $3, NOW())
-        RETURNING message_id, created_at`,
-        [chatId || null, user.userId, message]
+        ) VALUES (?, ?, ?, NOW())
+      `;
+
+      const [messageResult] = await connection.execute(messageQuery, [
+        chatId,
+        user.userId,
+        message
+      ]);
+
+      const messageId = (messageResult as any).insertId;
+
+      // Get message with timestamp
+      const [messageRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT message_id, created_at FROM chat_messages WHERE message_id = ?',
+        [messageId]
       );
 
-      const messageId = result.rows[0].message_id;
-      const createdAt = result.rows[0].created_at;
+      // Create chat if it doesn't exist
+      const chatQuery = `
+        INSERT INTO chats (
+          user_id,
+          status,
+          created_at,
+          updated_at
+        ) VALUES (?, 'active', NOW(), NOW())
+      `;
 
-      // If this is a new chat, create a chat session
-      if (!chatId) {
-        const chatResult = await client.query(
-          `INSERT INTO chat_sessions (
-            user_id,
-            status,
-            created_at,
-            updated_at
-          ) VALUES ($1, 'active', NOW(), NOW())
-          RETURNING chat_id`,
-          [user.userId]
-        );
+      const [chatResult] = await connection.execute(chatQuery, [user.userId]);
+      const newChatId = (chatResult as any).insertId;
 
-        // Update the message with the new chat_id
-        await client.query(
-          'UPDATE chat_messages SET chat_id = $1 WHERE message_id = $2',
-          [chatResult.rows[0].chat_id, messageId]
-        );
-      }
+      // Update the message with the new chat_id
+      await connection.execute(
+        'UPDATE chat_messages SET chat_id = ? WHERE message_id = ?',
+        [newChatId, messageId]
+      );
 
-      await client.query('COMMIT');
+      await connection.commit();
 
       // Trigger real-time update via Pusher
       await pusher.trigger('chat', 'new-message', {
         messageId,
-        chatId,
+        chatId: newChatId,
         userId: user.userId,
         message,
-        createdAt
+        createdAt: (messageRows[0] as any).created_at
       });
 
       return NextResponse.json({
         message: 'Message sent successfully',
         messageId,
-        createdAt
+        createdAt: (messageRows[0] as any).created_at
       });
 
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.rollback();
       throw error;
     } finally {
-      client.release();
+      connection.release();
     }
   } catch (error) {
     console.error('Error sending message:', error);
@@ -120,18 +129,18 @@ export async function GET(req: NextRequest) {
       JOIN users u ON cm.user_id = u.user_id
     `;
 
-    const values: any[] = [];
+    const params: any[] = [];
     if (chatId) {
-      query += ' WHERE cm.chat_id = $1';
-      values.push(chatId);
+      query += ' WHERE cm.chat_id = ?';
+      params.push(chatId);
     } else {
-      query += ' WHERE cm.user_id = $1';
-      values.push(user.userId);
+      query += ' WHERE cm.user_id = ?';
+      params.push(user.userId);
     }
 
     query += ' ORDER BY cm.created_at DESC LIMIT 50';
 
-    const result = await pool.query(query, values);
+    const result = await pool.query(query, params);
 
     return NextResponse.json({
       messages: result.rows

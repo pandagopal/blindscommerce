@@ -3,121 +3,135 @@ import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
+  let connection;
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '10', 10);
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
-    const search = url.searchParams.get('search');
-    const status = url.searchParams.get('status');
-    const sortBy = url.searchParams.get('sortBy') || 'created_at';
-    const sortOrder = url.searchParams.get('sortOrder') || 'desc';
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const offset = parseInt(searchParams.get('offset') || '0');
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
 
     const pool = await getPool();
+    connection = await pool.getConnection();
+
+    // Build the base query
     let query = `
       SELECT 
         o.order_id,
         o.order_number,
-        o.created_at,
-        o.updated_at,
+        o.user_id,
+        o.status_id,
         o.subtotal,
         o.shipping_cost,
         o.tax_amount,
-        o.discount_amount,
         o.total_amount,
-        o.shipping_method,
+        o.shipping_address_id,
+        o.billing_address_id,
         o.payment_method,
+        o.payment_status,
         o.notes,
-        os.name as status,
-        u.email as customer_email,
-        u.first_name as customer_first_name,
-        u.last_name as customer_last_name,
-        (
-          SELECT COUNT(*)
-          FROM blinds.order_items oi
-          WHERE oi.order_id = o.order_id
-        ) as item_count
-      FROM blinds.orders o
-      JOIN blinds.order_status os ON o.status_id = os.status_id
-      JOIN blinds.users u ON o.user_id = u.user_id
-      WHERE 1=1
+        o.created_at,
+        o.updated_at,
+        u.first_name,
+        u.last_name,
+        u.email,
+        os.name as status_name,
+        COUNT(oi.order_item_id) as total_items
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN order_status os ON o.status_id = os.status_id
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
     `;
 
-    const queryParams: any[] = [];
-    let paramCount = 1;
+    const conditions = [];
+    const values = [];
 
+    // Add search condition
     if (search) {
-      query += ` AND (
-        o.order_number ILIKE $${paramCount} OR 
-        u.email ILIKE $${paramCount} OR 
-        u.first_name ILIKE $${paramCount} OR 
-        u.last_name ILIKE $${paramCount}
-      )`;
-      queryParams.push(`%${search}%`);
-      paramCount++;
+      conditions.push('(o.order_number LIKE ? OR u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)');
+      values.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`);
     }
 
+    // Add status filter
     if (status) {
-      query += ` AND os.name = $${paramCount}`;
-      queryParams.push(status);
-      paramCount++;
+      conditions.push('os.name = ?');
+      values.push(status);
     }
+
+    // Add WHERE clause if there are conditions
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    // Add GROUP BY
+    query += ' GROUP BY o.order_id';
 
     // Add sorting
-    const validSortFields = ['order_number', 'created_at', 'total_amount', 'status'];
+    const validSortFields = ['order_number', 'total_amount', 'status_name', 'created_at', 'total_items'];
     const validSortOrders = ['asc', 'desc'];
-
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
-    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
-
-    query += ` ORDER BY o.${finalSortBy === 'status' ? 'status_id' : finalSortBy} ${finalSortOrder}`;
+    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
+    
+    // Handle special case for status_name sorting
+    if (finalSortBy === 'status_name') {
+      query += ` ORDER BY os.name ${finalSortOrder}`;
+    } else {
+      query += ` ORDER BY o.${finalSortBy} ${finalSortOrder}`;
+    }
 
     // Add pagination
-    query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    queryParams.push(limit, offset);
+    query += ' LIMIT ? OFFSET ?';
+    values.push(limit, offset);
 
-    const result = await pool.query(query, queryParams);
+    // Execute the query
+    const [rows] = await connection.query(query, values);
 
     // Get total count
-    const countQuery = `
-      SELECT COUNT(*) 
-      FROM blinds.orders o
-      JOIN blinds.order_status os ON o.status_id = os.status_id
-      JOIN blinds.users u ON o.user_id = u.user_id
-      WHERE 1=1
-      ${search ? `AND (
-        o.order_number ILIKE $1 OR 
-        u.email ILIKE $1 OR 
-        u.first_name ILIKE $1 OR 
-        u.last_name ILIKE $1
-      )` : ''}
-      ${status ? `AND os.name = $${search ? '2' : '1'}` : ''}
+    let countQuery = `
+      SELECT COUNT(DISTINCT o.order_id) as total
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN order_status os ON o.status_id = os.status_id
     `;
-    const countResult = await pool.query(
-      countQuery,
-      status
-        ? search ? [`%${search}%`, status] : [status]
-        : search ? [`%${search}%`] : []
-    );
+
+    if (conditions.length > 0) {
+      countQuery += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    const [countRows] = await connection.query(countQuery, values.slice(0, -2));
+    const total = countRows[0]?.total || 0;
 
     return NextResponse.json({
-      orders: result.rows,
-      total: parseInt(countResult.rows[0].count, 10)
+      orders: rows || [],
+      total,
+      page: Math.floor(offset / limit) + 1,
+      totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
     console.error('Error fetching orders:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch orders' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      orders: [],
+      total: 0,
+      page: 1,
+      totalPages: 0,
+      error: 'Failed to fetch orders'
+    }, { status: 500 });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 }
 
 export async function POST(request: NextRequest) {
+  let connection;
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
@@ -131,12 +145,14 @@ export async function POST(request: NextRequest) {
       subtotal,
       shippingCost = 0,
       taxAmount = 0,
-      discountAmount = 0,
       totalAmount,
       shippingMethod = 'Standard',
       paymentMethod = 'Credit Card',
       notes = '',
-      status = 'Pending'
+      status = 'Pending',
+      shippingAddressId,
+      billingAddressId,
+      paymentStatus = 'Pending'
     } = body;
 
     // Validate required fields
@@ -148,95 +164,103 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
+    connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.query('BEGIN');
 
       // Get status ID
-      const statusResult = await client.query(
-        'SELECT status_id FROM blinds.order_status WHERE name = $1',
+      const [statusResult] = await connection.query(
+        'SELECT status_id FROM order_status WHERE name = ?',
         [status]
       );
 
-      if (!statusResult.rows.length) {
+      if (!statusResult.length) {
         throw new Error(`Invalid status: ${status}`);
       }
 
-      const statusId = statusResult.rows[0].status_id;
+      const statusId = statusResult[0].status_id;
+
+      // Generate order number
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
       // Create order
-      const orderResult = await client.query(
-        `INSERT INTO blinds.orders (
+      const [orderResult] = await connection.query(
+        `INSERT INTO orders (
           user_id,
+          order_number,
           status_id,
           subtotal,
           shipping_cost,
           tax_amount,
-          discount_amount,
           total_amount,
-          shipping_method,
+          shipping_address_id,
+          billing_address_id,
           payment_method,
+          payment_status,
           notes,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-        RETURNING order_id`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
           userId,
+          orderNumber,
           statusId,
           subtotal,
           shippingCost,
           taxAmount,
-          discountAmount,
           totalAmount,
-          shippingMethod,
+          shippingAddressId,
+          billingAddressId,
           paymentMethod,
+          paymentStatus,
           notes
         ]
       );
 
-      const orderId = orderResult.rows[0].order_id;
+      const orderId = orderResult.insertId;
 
       // Create order items
       for (const item of items) {
-        await client.query(
-          `INSERT INTO blinds.order_items (
+        await connection.query(
+          `INSERT INTO order_items (
             order_id,
             product_id,
+            product_name,
             quantity,
             unit_price,
             subtotal,
             width,
             height,
-            color_id,
-            material_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+            color_name,
+            material_name,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
           [
             orderId,
             item.productId,
+            item.productName,
             item.quantity,
             item.unitPrice,
-            item.quantity * item.unitPrice,
-            item.width || null,
-            item.height || null,
-            item.colorId || null,
-            item.materialId || null
+            item.subtotal,
+            item.width,
+            item.height,
+            item.colorName,
+            item.materialName
           ]
         );
       }
 
-      await client.query('COMMIT');
+      await connection.query('COMMIT');
 
       return NextResponse.json({
-        success: true,
-        orderId
+        message: 'Order created successfully',
+        order_id: orderId,
+        order_number: orderNumber
       });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.query('ROLLBACK');
       throw error;
-    } finally {
-      client.release();
     }
   } catch (error) {
     console.error('Error creating order:', error);
@@ -244,5 +268,9 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create order' },
       { status: 500 }
     );
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 } 

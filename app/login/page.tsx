@@ -19,10 +19,11 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
+    setError('');
 
     try {
+      console.log('Attempting login...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -33,32 +34,37 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+      console.log('Login response:', data);
 
-      if (response.ok) {
-        // Reset loading state before navigation
-        setLoading(false);
-        // Use the redirect URL from the response, fallback to the URL param, or default to /account
-        const targetUrl = data.redirectUrl || redirectUrl || '/account';
-        router.push(targetUrl);
-        router.refresh(); // Force a refresh to update authentication state
-      } else {
-        setError(data.error || 'Invalid email or password');
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data.error || 'Login failed');
       }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred during login. Please try again.');
+
+      // Wait a moment to ensure cookie is set
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Get the redirect URL from the response
+      const targetUrl = data.redirectUrl || '/account';
+      console.log('Current URL:', window.location.href);
+      console.log('Redirecting to:', targetUrl);
+
+      // Use replace to prevent back button from returning to login
+      window.location.replace(targetUrl);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
       setLoading(false);
     }
   };
 
   // Simplified role-specific login credentials for demo
   const loginExamples = [
-    { role: 'Customer', email: 'customer@smartblindshub.com', password: 'password123' },
-    { role: 'Admin', email: 'admin@smartblindshub.com', password: 'password123' },
-    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'password123' },
-    { role: 'Sales', email: 'sales@smartblindshub.com', password: 'password123' },
-    { role: 'Installer', email: 'installer@smartblindshub.com', password: 'password123' }
+    { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
+    { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
+    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'Admin@1234' },
+    { role: 'Sales', email: 'sales@smartblindshub.com', password: 'Admin@1234' },
+    { role: 'Installer', email: 'installer@smartblindshub.com', password: 'Admin@1234' }
   ];
 
   const fillCredentials = (email: string, password: string) => {

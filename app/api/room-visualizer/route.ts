@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { db } from '@/lib/db';
+import { getPool, createRoomVisualization, getRoomVisualizations } from '@/lib/db';
 import {
   processRoomImage,
   processProductImage,
@@ -33,23 +33,26 @@ export async function POST(request: Request) {
     );
 
     // Get product image
-    const product = await db.product.findUnique({
-      where: { id: validatedData.productId },
-      select: { primaryImage: true }
-    });
-
-    if (!product) {
+    const pool = await getPool();
+    const [products] = await pool.execute(
+      'SELECT primary_image FROM products WHERE id = ?',
+      [validatedData.productId]
+    );
+    
+    if (!products || !Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
         { success: false, message: 'Product not found' },
         { status: 404 }
       );
     }
 
+    const product = products[0] as { primary_image: string };
+
     // Process images
     const processedRoomImage = await processRoomImage(roomImageBuffer);
     
     // Fetch product image (assuming it's stored as a URL)
-    const productImageResponse = await fetch(product.primaryImage);
+    const productImageResponse = await fetch(product.primary_image);
     const productImageBuffer = Buffer.from(await productImageResponse.arrayBuffer());
     const processedProductImage = await processProductImage(
       productImageBuffer,
@@ -90,22 +93,21 @@ export async function POST(request: Request) {
 
     // Optimize for web
     const optimizedResult = await optimizeImageForWeb(compositeResult);
+    const resultImageBase64 = `data:image/jpeg;base64,${optimizedResult.toString('base64')}`;
 
-    // Save visualization to database
-    const visualization = await db.roomVisualization.create({
-      data: {
-        userId: validatedData.userId,
-        productId: validatedData.productId,
-        roomImage: validatedData.roomImage,
-        resultImage: `data:image/jpeg;base64,${optimizedResult.toString('base64')}`
-      }
-    });
+    // Save visualization to database using MySQL2
+    const visualization = await createRoomVisualization(
+      validatedData.userId,
+      validatedData.productId,
+      validatedData.roomImage,
+      resultImageBase64
+    );
 
     return NextResponse.json({
       success: true,
       visualization: {
         id: visualization.id,
-        resultImage: visualization.resultImage
+        resultImage: resultImageBase64
       }
     });
   } catch (error) {
@@ -137,22 +139,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const visualizations = await db.roomVisualization.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        resultImage: true,
-        createdAt: true,
-        product: {
-          select: {
-            id: true,
-            name: true,
-            price: true
-          }
-        }
-      }
-    });
+    const visualizations = await getRoomVisualizations(userId);
 
     return NextResponse.json({
       success: true,
