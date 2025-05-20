@@ -105,22 +105,7 @@ export async function getCurrentUser(): Promise<User | null> {
         u.first_name as firstName,
         u.last_name as lastName,
         u.is_admin as isAdmin,
-        CASE 
-          WHEN u.is_admin THEN 'admin'
-          WHEN EXISTS (
-            SELECT 1 FROM vendor_info v
-            WHERE v.user_id = u.user_id AND v.is_active = TRUE
-          ) THEN 'vendor'
-          WHEN EXISTS (
-            SELECT 1 FROM sales_staff s
-            WHERE s.user_id = u.user_id AND s.is_active = TRUE
-          ) THEN 'sales'
-          WHEN EXISTS (
-            SELECT 1 FROM installers i
-            WHERE i.user_id = u.user_id AND i.is_active = TRUE
-          ) THEN 'installer'
-          ELSE 'customer'
-        END as role
+        u.role as role
       FROM
         users u
       WHERE
@@ -219,22 +204,7 @@ export async function loginUser(email: string, password: string): Promise<User |
         u.first_name as firstName,
         u.last_name as lastName,
         u.is_admin as isAdmin,
-        CASE 
-          WHEN u.is_admin THEN 'admin'
-          WHEN EXISTS (
-            SELECT 1 FROM vendor_info v
-            WHERE v.user_id = u.user_id AND v.is_active = TRUE
-          ) THEN 'vendor'
-          WHEN EXISTS (
-            SELECT 1 FROM sales_staff s
-            WHERE s.user_id = u.user_id AND s.is_active = TRUE
-          ) THEN 'sales'
-          WHEN EXISTS (
-            SELECT 1 FROM installers i
-            WHERE i.user_id = u.user_id AND i.is_active = TRUE
-          ) THEN 'installer'
-          ELSE 'customer'
-        END as role
+        u.role as role
       FROM
         users u
       WHERE

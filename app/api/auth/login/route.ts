@@ -46,7 +46,12 @@ export async function POST(request: NextRequest) {
     console.log('Cookie set');
 
     // Determine redirect URL based on role
-    const redirectUrl = user.role === 'admin' ? '/admin' : '/account';
+    let redirectUrl = '/account';
+    if (user.role === 'admin') redirectUrl = '/admin';
+    else if (user.role === 'vendor') redirectUrl = '/vendor';
+    else if (user.role === 'sales') redirectUrl = '/sales';
+    else if (user.role === 'installer') redirectUrl = '/installer';
+
     console.log('Redirecting to:', redirectUrl);
 
     return NextResponse.json({
