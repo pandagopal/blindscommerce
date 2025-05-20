@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
 
-    // Verify the token
+      // Verify the token
     const isValid = await verifyToken(token);
     if (!isValid) {
       console.log('Invalid token, redirecting to login');

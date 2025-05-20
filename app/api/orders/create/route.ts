@@ -88,15 +88,15 @@ export async function POST(req: NextRequest) {
 
       // Create order items
       const orderItemsQuery = `
-        INSERT INTO order_items (
-          order_id,
-          product_id,
-          quantity,
+          INSERT INTO order_items (
+            order_id,
+            product_id,
+            quantity,
           price,
           options,
           created_at
         ) VALUES (?, ?, ?, ?, ?, NOW())
-      `;
+        `;
 
       const itemPromises = body.items.map(async (item) => {
         await client.execute(orderItemsQuery, [

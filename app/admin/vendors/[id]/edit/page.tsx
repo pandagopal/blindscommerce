@@ -24,32 +24,44 @@ export default function EditVendorPage() {
   const [vendor, setVendor] = useState<VendorData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    firstName: '',
+    lastName: '',
+    companyName: '',
+    contactEmail: '',
+    contactPhone: '',
+    businessDescription: ''
+  });
 
   useEffect(() => {
-    async function fetchVendor() {
+    const fetchVendor = async () => {
       try {
-        if (!params?.id) {
-          setError('Vendor ID is required');
-          setLoading(false);
-          return;
-        }
-
         const response = await fetch(`/api/admin/vendors/${params.id}`);
         if (!response.ok) {
-          throw new Error('Failed to fetch vendor data');
+          throw new Error('Failed to fetch vendor');
         }
-
         const data = await response.json();
         setVendor(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
+        setFormData({
+          email: data.user.email,
+          firstName: data.user.first_name,
+          lastName: data.user.last_name,
+          companyName: data.company_name,
+          contactEmail: data.contact_email,
+          contactPhone: data.contact_phone,
+          businessDescription: data.business_description || ''
+        });
+      } catch (error) {
+        console.error('Error fetching vendor:', error);
+        setError('Failed to fetch vendor data');
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchVendor();
-  }, [params?.id]);
+  }, [params.id]);
 
   if (loading) {
     return <div>Loading...</div>;

@@ -67,7 +67,7 @@ export default function LoginPage() {
             default:
               targetUrl = '/account';
           }
-        } else {
+      } else {
           targetUrl = '/account';
         }
       }
