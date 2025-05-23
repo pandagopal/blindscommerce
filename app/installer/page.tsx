@@ -38,6 +38,13 @@ interface User {
   role: string;
 }
 
+interface Material {
+  id: number;
+  name: string;
+  quantity: number;
+  status: string;
+}
+
 export default function InstallerDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -51,6 +58,9 @@ export default function InstallerDashboard() {
     pendingJobs: 0,
     completedJobs: 0
   });
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [matForm, setMatForm] = useState<Partial<Material>>({ name: '', quantity: 1, status: 'in stock' });
+  const [editingMatId, setEditingMatId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -192,6 +202,30 @@ export default function InstallerDashboard() {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const m = localStorage.getItem('installer_materials');
+      if (m) setMaterials(JSON.parse(m));
+    }
+  }, []);
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('installer_materials', JSON.stringify(materials)); }, [materials]);
+
+  // Material handlers
+  const handleMatChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setMatForm({ ...matForm, [e.target.name]: e.target.value });
+  const handleMatSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!matForm.name || !matForm.quantity) return;
+    if (editingMatId) {
+      setMaterials((prev) => prev.map((m) => m.id === editingMatId ? { ...m, ...matForm, quantity: Number(matForm.quantity) } as Material : m));
+      setEditingMatId(null);
+    } else {
+      setMaterials((prev) => [...prev, { ...matForm, id: Date.now(), quantity: Number(matForm.quantity) } as Material]);
+    }
+    setMatForm({ name: '', quantity: 1, status: 'in stock' });
+  };
+  const handleMatEdit = (id: number) => { const m = materials.find((m) => m.id === id); if (m) { setMatForm(m); setEditingMatId(id); } };
+  const handleMatDelete = (id: number) => { setMaterials((prev) => prev.filter((m) => m.id !== id)); if (editingMatId === id) { setMatForm({ name: '', quantity: 1, status: 'in stock' }); setEditingMatId(null); } };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -288,6 +322,35 @@ export default function InstallerDashboard() {
           <p className="text-gray-500">No recent completions</p>
         </div>
       </div>
+
+      {/* Material Tracking Section */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Material Tracking</h2>
+        <form onSubmit={handleMatSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="name" value={matForm.name || ''} onChange={handleMatChange} placeholder="Material Name" className="border p-2 rounded" required />
+          <input name="quantity" type="number" min="1" value={matForm.quantity || 1} onChange={handleMatChange} placeholder="Quantity" className="border p-2 rounded w-24" required />
+          <select name="status" value={matForm.status || 'in stock'} onChange={handleMatChange} className="border p-2 rounded">
+            <option value="in stock">In Stock</option>
+            <option value="used">Used</option>
+            <option value="ordered">Ordered</option>
+          </select>
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingMatId ? 'Update' : 'Add'}</button>
+          {editingMatId && <button type="button" onClick={() => { setMatForm({ name: '', quantity: 1, status: 'in stock' }); setEditingMatId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {materials.length === 0 ? <p className="text-gray-600">No materials tracked.</p> : (
+          <ul className="space-y-2">
+            {materials.map((m) => (
+              <li key={m.id} className="flex gap-4 items-center">
+                <span className="font-medium w-48">{m.name}</span>
+                <span>Qty: {m.quantity}</span>
+                <span className="text-xs text-gray-500">{m.status}</span>
+                <button onClick={() => handleMatEdit(m.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleMatDelete(m.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

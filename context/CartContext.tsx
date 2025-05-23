@@ -3,17 +3,19 @@
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
 
 export interface CartItem {
-  id: number;
-  productId: number;
-  name: string;
-  slug: string;
-  price: number;
+  cart_item_id: number;
+  cart_id: number;
+  product_id: number;
   quantity: number;
-  width: number;
-  height: number;
-  colorId?: number; // make optional with undefined
+  width?: number;
+  height?: number;
+  color_id?: number;
+  material_id?: number;
+  unit_price: number;
+  // UI fields
+  name?: string;
+  slug?: string;
   colorName?: string;
-  materialId?: number; // make optional with undefined
   materialName?: string;
   mountType?: number;
   mountTypeName?: string;
@@ -22,116 +24,96 @@ export interface CartItem {
   headrailName?: string;
   bottomRailId?: number;
   bottomRailName?: string;
-  image: string;
-  totalPrice: number;
+  image?: string;
+  totalPrice?: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  clearCart: () => void;
+  addItem: (item: CartItem) => Promise<void>;
+  removeItem: (cart_item_id: number) => Promise<void>;
+  updateQuantity: (cart_item_id: number, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   itemCount: number;
   subtotal: number;
 }
 
-// Create context with default values
 const CartContext = createContext<CartContextType>({
   items: [],
-  addItem: () => {},
-  removeItem: () => {},
-  updateQuantity: () => {},
-  clearCart: () => {},
+  addItem: async () => {},
+  removeItem: async () => {},
+  updateQuantity: async () => {},
+  clearCart: async () => {},
   itemCount: 0,
   subtotal: 0,
 });
 
-// Hook to use the cart context
 export const useCart = () => useContext(CartContext);
 
-// Provider component
 export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [initialized, setInitialized] = useState(false);
+  const [cartId, setCartId] = useState<number | null>(null);
 
-  // Load cart from local storage on component mount
+  // Fetch cart from API on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-          setItems(JSON.parse(savedCart));
-        }
-        setInitialized(true);
-      } catch (error) {
-        console.error('Error loading cart from local storage:', error);
-        setInitialized(true);
-      }
-    }
+    fetch('/api/account/cart')
+      .then(res => res.json())
+      .then(data => {
+        setItems(data.items || []);
+        setCartId(data.cart?.cart_id || null);
+      });
   }, []);
 
-  // Save cart to local storage whenever it changes
-  useEffect(() => {
-    if (initialized && typeof window !== 'undefined') {
-      localStorage.setItem('cart', JSON.stringify(items));
-    }
-  }, [items, initialized]);
-
   // Add an item to cart
-  const addItem = (newItem: CartItem) => {
-    setItems((prev) => {
-      // Check if item already exists in cart with same configuration
-      const existingItemIndex = prev.findIndex(
-        (item) =>
-          item.productId === newItem.productId &&
-          item.width === newItem.width &&
-          item.height === newItem.height &&
-          item.colorId === newItem.colorId &&
-          item.materialId === newItem.materialId &&
-          item.mountType === newItem.mountType &&
-          item.controlType === newItem.controlType &&
-          item.headrailId === newItem.headrailId &&
-          item.bottomRailId === newItem.bottomRailId
-      );
-
-      if (existingItemIndex >= 0) {
-        // Update existing item quantity
-        const updatedItems = [...prev];
-        updatedItems[existingItemIndex].quantity += newItem.quantity;
-        updatedItems[existingItemIndex].totalPrice =
-          updatedItems[existingItemIndex].price * updatedItems[existingItemIndex].quantity;
-        return updatedItems;
-      } else {
-        // Add new item
-        return [...prev, newItem];
-      }
+  const addItem = async (newItem: CartItem) => {
+    const res = await fetch('/api/account/cart', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: newItem.product_id,
+        quantity: newItem.quantity,
+        width: newItem.width,
+        height: newItem.height,
+        color_id: newItem.color_id,
+        material_id: newItem.material_id,
+        unit_price: newItem.unit_price,
+      })
     });
+    const data = await res.json();
+    setItems(items => [...items, { ...data.item, ...newItem }]);
   };
 
   // Remove an item from cart
-  const removeItem = (id: number) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = async (cart_item_id: number) => {
+    await fetch('/api/account/cart', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cart_item_id })
+    });
+    setItems(items => items.filter(item => item.cart_item_id !== cart_item_id));
   };
 
   // Update item quantity
-  const updateQuantity = (id: number, quantity: number) => {
+  const updateQuantity = async (cart_item_id: number, quantity: number) => {
+    const item = items.find(i => i.cart_item_id === cart_item_id);
+    if (!item) return;
     if (quantity <= 0) {
-      removeItem(id);
+      await removeItem(cart_item_id);
       return;
     }
-
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity, totalPrice: item.price * quantity }
-          : item
-      )
-    );
+    const res = await fetch('/api/account/cart', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...item, quantity })
+    });
+    const data = await res.json();
+    setItems(items => items.map(i => i.cart_item_id === cart_item_id ? { ...i, quantity } : i));
   };
 
   // Clear cart
-  const clearCart = () => {
+  const clearCart = async () => {
+    // Remove all items one by one (API does not support bulk delete)
+    await Promise.all(items.map(item => removeItem(item.cart_item_id)));
     setItems([]);
   };
 
@@ -139,7 +121,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
   // Calculate subtotal
-  const subtotal = items.reduce((total, item) => total + item.totalPrice, 0);
+  const subtotal = items.reduce((total, item) => total + (item.unit_price * item.quantity), 0);
 
   return (
     <CartContext.Provider

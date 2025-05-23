@@ -45,6 +45,21 @@ interface User {
   role: string;
 }
 
+interface Appointment {
+  id: number;
+  customer: string;
+  date: string;
+  time: string;
+  status: string;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export default function SalesDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -59,6 +74,14 @@ export default function SalesDashboard() {
     conversionRate: 0,
     averageOrderValue: 0
   });
+  // Appointments
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [apptForm, setApptForm] = useState<Partial<Appointment>>({ customer: '', date: '', time: '', status: 'scheduled' });
+  const [editingApptId, setEditingApptId] = useState<number | null>(null);
+  // Customers
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [custForm, setCustForm] = useState<Partial<Customer>>({ name: '', email: '', phone: '' });
+  const [editingCustId, setEditingCustId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -182,6 +205,49 @@ export default function SalesDashboard() {
     fetchDashboardData();
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const a = localStorage.getItem('sales_appointments');
+      if (a) setAppointments(JSON.parse(a));
+      const c = localStorage.getItem('sales_customers');
+      if (c) setCustomers(JSON.parse(c));
+    }
+  }, []);
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('sales_appointments', JSON.stringify(appointments)); }, [appointments]);
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('sales_customers', JSON.stringify(customers)); }, [customers]);
+
+  // Appointment handlers
+  const handleApptChange = (e: React.ChangeEvent<HTMLInputElement>) => setApptForm({ ...apptForm, [e.target.name]: e.target.value });
+  const handleApptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!apptForm.customer || !apptForm.date || !apptForm.time) return;
+    if (editingApptId) {
+      setAppointments((prev) => prev.map((a) => a.id === editingApptId ? { ...a, ...apptForm } as Appointment : a));
+      setEditingApptId(null);
+    } else {
+      setAppointments((prev) => [...prev, { ...apptForm, id: Date.now() } as Appointment]);
+    }
+    setApptForm({ customer: '', date: '', time: '', status: 'scheduled' });
+  };
+  const handleApptEdit = (id: number) => { const a = appointments.find((a) => a.id === id); if (a) { setApptForm(a); setEditingApptId(id); } };
+  const handleApptDelete = (id: number) => { setAppointments((prev) => prev.filter((a) => a.id !== id)); if (editingApptId === id) { setApptForm({ customer: '', date: '', time: '', status: 'scheduled' }); setEditingApptId(null); } };
+
+  // Customer handlers
+  const handleCustChange = (e: React.ChangeEvent<HTMLInputElement>) => setCustForm({ ...custForm, [e.target.name]: e.target.value });
+  const handleCustSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!custForm.name || !custForm.email || !custForm.phone) return;
+    if (editingCustId) {
+      setCustomers((prev) => prev.map((c) => c.id === editingCustId ? { ...c, ...custForm } as Customer : c));
+      setEditingCustId(null);
+    } else {
+      setCustomers((prev) => [...prev, { ...custForm, id: Date.now() } as Customer]);
+    }
+    setCustForm({ name: '', email: '', phone: '' });
+  };
+  const handleCustEdit = (id: number) => { const c = customers.find((c) => c.id === id); if (c) { setCustForm(c); setEditingCustId(id); } };
+  const handleCustDelete = (id: number) => { setCustomers((prev) => prev.filter((c) => c.id !== id)); if (editingCustId === id) { setCustForm({ name: '', email: '', phone: '' }); setEditingCustId(null); } };
+
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -276,6 +342,55 @@ export default function SalesDashboard() {
           <p className="text-gray-500">No active leads</p>
         </div>
       </div>
+
+      {/* Appointments Section */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Appointments</h2>
+        <form onSubmit={handleApptSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="customer" value={apptForm.customer || ''} onChange={handleApptChange} placeholder="Customer Name" className="border p-2 rounded" required />
+          <input name="date" type="date" value={apptForm.date || ''} onChange={handleApptChange} className="border p-2 rounded" required />
+          <input name="time" type="time" value={apptForm.time || ''} onChange={handleApptChange} className="border p-2 rounded" required />
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingApptId ? 'Update' : 'Add'}</button>
+          {editingApptId && <button type="button" onClick={() => { setApptForm({ customer: '', date: '', time: '', status: 'scheduled' }); setEditingApptId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {appointments.length === 0 ? <p className="text-gray-600">No appointments scheduled.</p> : (
+          <ul className="space-y-2">
+            {appointments.map((a) => (
+              <li key={a.id} className="flex gap-4 items-center">
+                <span className="font-medium w-48">{a.customer}</span>
+                <span>{a.date} {a.time}</span>
+                <span className="text-xs text-gray-500">{a.status}</span>
+                <button onClick={() => handleApptEdit(a.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleApptDelete(a.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+      {/* Customers Section */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Customers</h2>
+        <form onSubmit={handleCustSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="name" value={custForm.name || ''} onChange={handleCustChange} placeholder="Name" className="border p-2 rounded" required />
+          <input name="email" type="email" value={custForm.email || ''} onChange={handleCustChange} placeholder="Email" className="border p-2 rounded" required />
+          <input name="phone" value={custForm.phone || ''} onChange={handleCustChange} placeholder="Phone" className="border p-2 rounded" required />
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingCustId ? 'Update' : 'Add'}</button>
+          {editingCustId && <button type="button" onClick={() => { setCustForm({ name: '', email: '', phone: '' }); setEditingCustId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {customers.length === 0 ? <p className="text-gray-600">No customers found.</p> : (
+          <ul className="space-y-2">
+            {customers.map((c) => (
+              <li key={c.id} className="flex gap-4 items-center">
+                <span className="font-medium w-48">{c.name}</span>
+                <span>{c.email}</span>
+                <span>{c.phone}</span>
+                <button onClick={() => handleCustEdit(c.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleCustDelete(c.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

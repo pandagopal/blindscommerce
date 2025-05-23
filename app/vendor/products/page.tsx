@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   PlusIcon, SearchIcon, FilterIcon, EyeIcon,
@@ -11,14 +11,19 @@ import {
 
 // Types
 interface Product {
-  id: number;
+  product_id: number;
   name: string;
   slug: string;
-  type: string;
-  base_price: number;
+  type_id: number;
+  series_name?: string;
+  material_type?: string;
+  short_description?: string;
+  full_description?: string;
+  features?: string[];
+  benefits?: string[];
   is_active: boolean;
   is_listing_enabled: boolean;
-  image: string;
+  base_price: number;
   created_at: string;
   updated_at: string;
 }
@@ -45,96 +50,10 @@ export default function VendorProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-
-      // In a real application, this would call an API
-      // Mock data for demonstration
-      const mockProducts: Product[] = [];
-
-      const types = ['Blinds', 'Shades', 'Drapes', 'Shutters'];
-      const images = [
-        '/images/products/faux-wood-blinds.jpg',
-        '/images/products/cellular-shades.jpg',
-        '/images/products/roman-shades.jpg',
-        '/images/products/wood-blinds.jpg',
-        '/images/products/roller-shades.jpg',
-      ];
-
-      for (let i = 1; i <= 30; i++) {
-        const type = types[Math.floor(Math.random() * types.length)];
-        const isActive = Math.random() > 0.2;
-        const isListingEnabled = isActive && Math.random() > 0.3;
-        const image = images[Math.floor(Math.random() * images.length)];
-        const basePrice = Math.floor(Math.random() * 300) + 50;
-
-        // Create product with random data
-        const product: Product = {
-          id: i,
-          name: `${type} - Premium Series ${i}`,
-          slug: `${type.toLowerCase()}-premium-series-${i}`,
-          type,
-          base_price: basePrice,
-          is_active: isActive,
-          is_listing_enabled: isListingEnabled,
-          image,
-          created_at: new Date(Date.now() - Math.floor(Math.random() * 10000000000)).toISOString(),
-          updated_at: new Date(Date.now() - Math.floor(Math.random() * 1000000000)).toISOString()
-        };
-
-        mockProducts.push(product);
-      }
-
-      // Apply filters
-      let filteredProducts = [...mockProducts];
-
-      // Type filter
-      if (typeFilter !== 'all') {
-        filteredProducts = filteredProducts.filter(p => p.type.toLowerCase() === typeFilter.toLowerCase());
-      }
-
-      // Status filter
-      if (statusFilter === 'active') {
-        filteredProducts = filteredProducts.filter(p => p.is_active);
-      } else if (statusFilter === 'inactive') {
-        filteredProducts = filteredProducts.filter(p => !p.is_active);
-      } else if (statusFilter === 'listed') {
-        filteredProducts = filteredProducts.filter(p => p.is_listing_enabled);
-      } else if (statusFilter === 'unlisted') {
-        filteredProducts = filteredProducts.filter(p => !p.is_listing_enabled);
-      }
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        filteredProducts = filteredProducts.filter(p =>
-          p.name.toLowerCase().includes(query) ||
-          p.slug.toLowerCase().includes(query) ||
-          p.type.toLowerCase().includes(query)
-        );
-      }
-
-      // Apply sorting
-      filteredProducts.sort((a, b) => {
-        if (sortBy === 'name') {
-          return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
-        } else if (sortBy === 'type') {
-          return sortOrder === 'asc' ? a.type.localeCompare(b.type) : b.type.localeCompare(a.type);
-        } else if (sortBy === 'base_price') {
-          return sortOrder === 'asc' ? a.base_price - b.base_price : b.base_price - a.base_price;
-        } else {
-          // Default sort by created_at
-          return sortOrder === 'asc'
-            ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-        }
-      });
-
-      setTotalProducts(filteredProducts.length);
-
-      // Apply pagination
-      const start = (currentPage - 1) * productsPerPage;
-      const paginatedProducts = filteredProducts.slice(start, start + productsPerPage);
-
-      setProducts(paginatedProducts);
+      const res = await fetch('/api/vendor/products');
+      if (!res.ok) throw new Error('Failed to fetch products');
+      const data = await res.json();
+      setProducts(data.products || []);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {
@@ -182,7 +101,7 @@ export default function VendorProductsPage() {
       // In a real app, this would call an API to update the product status
       // For now, just update the local state
       const updatedProducts = products.map(p => {
-        if (p.id === product.id) {
+        if (p.product_id === product.product_id) {
           return { ...p, [field]: !p[field] };
         }
         return p;
@@ -200,24 +119,45 @@ export default function VendorProductsPage() {
   // Handle delete product
   const handleDeleteProduct = async () => {
     if (!productToDelete) return;
-
     try {
-      // In a real app, this would call an API to delete the product
-      // For now, just update the local state
-      const updatedProducts = products.filter(p => p.id !== productToDelete.id);
-      setProducts(updatedProducts);
-      setTotalProducts(prev => prev - 1);
-
-      // Close the modal
+      setLoading(true);
+      const res = await fetch('/api/vendor/products', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productToDelete.product_id }),
+      });
+      if (!res.ok) throw new Error('Failed to delete product');
+      setProducts((prev) => prev.filter((p) => p.product_id !== productToDelete.product_id));
       setShowDeleteModal(false);
       setProductToDelete(null);
-
-      // Show success message (in a real app)
-      console.log(`Deleted product: ${productToDelete.name}`);
     } catch (error) {
       console.error('Error deleting product:', error);
+    } finally {
+      setLoading(false);
     }
   };
+
+  // Filter, search, and sort products
+  let filteredProducts = products;
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    filteredProducts = filteredProducts.filter((p) =>
+      p.name.toLowerCase().includes(query) ||
+      p.slug.toLowerCase().includes(query)
+    );
+  }
+  filteredProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === 'name') {
+      return sortOrder === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+    } else if (sortBy === 'base_price') {
+      return sortOrder === 'asc' ? a.base_price - b.base_price : b.base_price - a.base_price;
+    } else {
+      // Default sort by created_at
+      return sortOrder === 'asc'
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+  });
 
   return (
     <div>
@@ -352,7 +292,7 @@ export default function VendorProductsPage() {
             <div key={i} className="h-16 bg-gray-200 rounded-md"></div>
           ))}
         </div>
-      ) : products.length > 0 ? (
+      ) : filteredProducts.length > 0 ? (
         <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -372,104 +312,55 @@ export default function VendorProductsPage() {
                 <th
                   scope="col"
                   className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('type')}
-                >
-                  <div className="flex items-center">
-                    Type
-                    {sortBy === 'type' && (
-                      <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
-                </th>
-                <th
-                  scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('base_price')}
                 >
                   <div className="flex items-center">
-                    Base Price
+                    Price
                     {sortBy === 'base_price' && (
                       <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                     )}
                   </div>
                 </th>
-                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Status
                 </th>
                 <th
                   scope="col"
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('created_at')}
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  <div className="flex items-center">
-                    Created
-                    {sortBy === 'created_at' && (
-                      <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
-                    )}
-                  </div>
+                  Listing
                 </th>
-                <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
+                <th
+                  scope="col"
+                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Created
                 </th>
+                <th className="px-4 py-3"></th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50">
+              {filteredProducts.map((product) => (
+                <tr key={product.product_id} className="hover:bg-gray-50">
                   <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <img
-                          className="h-10 w-10 rounded-md object-cover"
-                          src={product.image || '/images/placeholder-product.jpg'}
-                          alt={product.name}
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-500">{product.slug}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {product.type}
+                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className="text-sm text-gray-500">{product.slug}</div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                     {formatCurrency(product.base_price)}
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="flex flex-col space-y-1">
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => handleToggleStatus(product, 'is_active')}
-                          className={`flex items-center text-xs font-medium rounded-full px-2.5 py-0.5 ${
-                            product.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {product.is_active ? (
-                            <ToggleRightIcon className="h-3 w-3 mr-1" />
-                          ) : (
-                            <ToggleLeftIcon className="h-3 w-3 mr-1" />
-                          )}
-                          {product.is_active ? 'Active' : 'Inactive'}
-                        </button>
-                      </div>
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => handleToggleStatus(product, 'is_listing_enabled')}
-                          className={`flex items-center text-xs font-medium rounded-full px-2.5 py-0.5 ${
-                            product.is_listing_enabled ? 'bg-blue-100 text-blue-800' : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {product.is_listing_enabled ? (
-                            <EyeIcon className="h-3 w-3 mr-1" />
-                          ) : (
-                            <AlertTriangleIcon className="h-3 w-3 mr-1" />
-                          )}
-                          {product.is_listing_enabled ? 'Listed' : 'Unlisted'}
-                        </button>
-                      </div>
-                    </div>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    <span className={product.is_active ? 'text-green-600' : 'text-red-600'}>
+                      {product.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                    <span className={product.is_listing_enabled ? 'text-blue-600' : 'text-gray-400'}>
+                      {product.is_listing_enabled ? 'Listed' : 'Unlisted'}
+                    </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(product.created_at)}
@@ -484,7 +375,7 @@ export default function VendorProductsPage() {
                         <EyeIcon className="h-5 w-5" />
                       </Link>
                       <Link
-                        href={`/vendor/products/${product.id}/edit`}
+                        href={`/vendor/products/${product.product_id}/edit`}
                         className="text-blue-600 hover:text-blue-900"
                         title="Edit Product"
                       >
@@ -501,7 +392,7 @@ export default function VendorProductsPage() {
                         <TrashIcon className="h-5 w-5" />
                       </button>
                       <Link
-                        href={`/vendor/products/${product.id}/options`}
+                        href={`/vendor/products/${product.product_id}/options`}
                         className="text-purple-600 hover:text-purple-900"
                         title="Manage Product Options"
                       >

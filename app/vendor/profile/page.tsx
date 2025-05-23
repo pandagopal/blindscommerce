@@ -42,6 +42,24 @@ interface VendorProfile {
   };
 }
 
+interface BusinessHour {
+  id: number;
+  day: string;
+  open: string;
+  close: string;
+}
+
+interface LegalDoc {
+  id: number;
+  name: string;
+  url: string;
+}
+
+interface ShippingAddress {
+  id: number;
+  address: string;
+}
+
 export default function VendorProfilePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<VendorProfile | null>(null);
@@ -58,6 +76,21 @@ export default function VendorProfilePage() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Business Hours
+  const [hours, setHours] = useState<BusinessHour[]>([]);
+  const [hourForm, setHourForm] = useState<Partial<BusinessHour>>({ day: '', open: '', close: '' });
+  const [editingHourId, setEditingHourId] = useState<number | null>(null);
+
+  // Legal Docs
+  const [docs, setDocs] = useState<LegalDoc[]>([]);
+  const [docForm, setDocForm] = useState<Partial<LegalDoc>>({ name: '', url: '' });
+  const [editingDocId, setEditingDocId] = useState<number | null>(null);
+
+  // Shipping Addresses
+  const [shipping, setShipping] = useState<ShippingAddress[]>([]);
+  const [shipForm, setShipForm] = useState<Partial<ShippingAddress>>({ address: '' });
+  const [editingShipId, setEditingShipId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchVendorProfile = async () => {
@@ -78,6 +111,21 @@ export default function VendorProfilePage() {
 
     fetchVendorProfile();
   }, [router]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const h = localStorage.getItem('vendor_hours');
+      if (h) setHours(JSON.parse(h));
+      const d = localStorage.getItem('vendor_docs');
+      if (d) setDocs(JSON.parse(d));
+      const s = localStorage.getItem('vendor_shipping');
+      if (s) setShipping(JSON.parse(s));
+    }
+  }, []);
+
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('vendor_hours', JSON.stringify(hours)); }, [hours]);
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('vendor_docs', JSON.stringify(docs)); }, [docs]);
+  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('vendor_shipping', JSON.stringify(shipping)); }, [shipping]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,6 +238,54 @@ export default function VendorProfilePage() {
       setUpdating(false);
     }
   };
+
+  // Handlers for business hours
+  const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => setHourForm({ ...hourForm, [e.target.name]: e.target.value });
+  const handleHourSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hourForm.day || !hourForm.open || !hourForm.close) return;
+    if (editingHourId) {
+      setHours((prev) => prev.map((h) => h.id === editingHourId ? { ...h, ...hourForm } as BusinessHour : h));
+      setEditingHourId(null);
+    } else {
+      setHours((prev) => [...prev, { ...hourForm, id: Date.now() } as BusinessHour]);
+    }
+    setHourForm({ day: '', open: '', close: '' });
+  };
+  const handleHourEdit = (id: number) => { const h = hours.find((h) => h.id === id); if (h) { setHourForm(h); setEditingHourId(id); } };
+  const handleHourDelete = (id: number) => { setHours((prev) => prev.filter((h) => h.id !== id)); if (editingHourId === id) { setHourForm({ day: '', open: '', close: '' }); setEditingHourId(null); } };
+
+  // Handlers for legal docs
+  const handleDocChange = (e: React.ChangeEvent<HTMLInputElement>) => setDocForm({ ...docForm, [e.target.name]: e.target.value });
+  const handleDocSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!docForm.name || !docForm.url) return;
+    if (editingDocId) {
+      setDocs((prev) => prev.map((d) => d.id === editingDocId ? { ...d, ...docForm } as LegalDoc : d));
+      setEditingDocId(null);
+    } else {
+      setDocs((prev) => [...prev, { ...docForm, id: Date.now() } as LegalDoc]);
+    }
+    setDocForm({ name: '', url: '' });
+  };
+  const handleDocEdit = (id: number) => { const d = docs.find((d) => d.id === id); if (d) { setDocForm(d); setEditingDocId(id); } };
+  const handleDocDelete = (id: number) => { setDocs((prev) => prev.filter((d) => d.id !== id)); if (editingDocId === id) { setDocForm({ name: '', url: '' }); setEditingDocId(null); } };
+
+  // Handlers for shipping addresses
+  const handleShipChange = (e: React.ChangeEvent<HTMLInputElement>) => setShipForm({ ...shipForm, [e.target.name]: e.target.value });
+  const handleShipSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!shipForm.address) return;
+    if (editingShipId) {
+      setShipping((prev) => prev.map((s) => s.id === editingShipId ? { ...s, ...shipForm } as ShippingAddress : s));
+      setEditingShipId(null);
+    } else {
+      setShipping((prev) => [...prev, { ...shipForm, id: Date.now() } as ShippingAddress]);
+    }
+    setShipForm({ address: '' });
+  };
+  const handleShipEdit = (id: number) => { const s = shipping.find((s) => s.id === id); if (s) { setShipForm(s); setEditingShipId(id); } };
+  const handleShipDelete = (id: number) => { setShipping((prev) => prev.filter((s) => s.id !== id)); if (editingShipId === id) { setShipForm({ address: '' }); setEditingShipId(null); } };
 
   if (loading) {
     return (
@@ -537,6 +633,74 @@ export default function VendorProfilePage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Business Hours */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Business Hours</h2>
+        <form onSubmit={handleHourSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="day" value={hourForm.day || ''} onChange={handleHourChange} placeholder="Day" className="border p-2 rounded" required />
+          <input name="open" value={hourForm.open || ''} onChange={handleHourChange} placeholder="Open (e.g. 09:00)" className="border p-2 rounded" required />
+          <input name="close" value={hourForm.close || ''} onChange={handleHourChange} placeholder="Close (e.g. 17:00)" className="border p-2 rounded" required />
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingHourId ? 'Update' : 'Add'}</button>
+          {editingHourId && <button type="button" onClick={() => { setHourForm({ day: '', open: '', close: '' }); setEditingHourId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {hours.length === 0 ? <p className="text-gray-600">No business hours set.</p> : (
+          <ul className="space-y-2">
+            {hours.map((h) => (
+              <li key={h.id} className="flex gap-4 items-center">
+                <span className="font-medium w-24">{h.day}</span>
+                <span>{h.open} - {h.close}</span>
+                <button onClick={() => handleHourEdit(h.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleHourDelete(h.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Legal Documents */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Legal Documents</h2>
+        <form onSubmit={handleDocSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="name" value={docForm.name || ''} onChange={handleDocChange} placeholder="Document Name" className="border p-2 rounded" required />
+          <input name="url" value={docForm.url || ''} onChange={handleDocChange} placeholder="URL" className="border p-2 rounded" required />
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingDocId ? 'Update' : 'Add'}</button>
+          {editingDocId && <button type="button" onClick={() => { setDocForm({ name: '', url: '' }); setEditingDocId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {docs.length === 0 ? <p className="text-gray-600">No legal documents uploaded.</p> : (
+          <ul className="space-y-2">
+            {docs.map((d) => (
+              <li key={d.id} className="flex gap-4 items-center">
+                <span className="font-medium w-48">{d.name}</span>
+                <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-primary-red hover:underline">View</a>
+                <button onClick={() => handleDocEdit(d.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleDocDelete(d.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* Shipping Addresses */}
+      <section className="mt-8">
+        <h2 className="text-xl font-semibold mb-2">Shipping Addresses</h2>
+        <form onSubmit={handleShipSubmit} className="flex gap-2 mb-4 flex-wrap">
+          <input name="address" value={shipForm.address || ''} onChange={handleShipChange} placeholder="Address" className="border p-2 rounded w-96" required />
+          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingShipId ? 'Update' : 'Add'}</button>
+          {editingShipId && <button type="button" onClick={() => { setShipForm({ address: '' }); setEditingShipId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
+        </form>
+        {shipping.length === 0 ? <p className="text-gray-600">No shipping addresses set.</p> : (
+          <ul className="space-y-2">
+            {shipping.map((s) => (
+              <li key={s.id} className="flex gap-4 items-center">
+                <span className="font-medium w-96">{s.address}</span>
+                <button onClick={() => handleShipEdit(s.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleShipDelete(s.id)} className="text-red-600 hover:underline ml-2">Delete</button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 } 
