@@ -1,0 +1,58 @@
+# Allow all crawlers
+User-agent: *
+Disallow:
+
+# Explicitly allow major bots (optional but clear)
+User-agent: Googlebot
+Disallow:
+
+User-agent: Bingbot
+Disallow:
+
+User-agent: GPTBot
+Disallow:
+
+User-agent: anthropic-ai
+Disallow:
+
+User-agent: CCBot
+Disallow:
+
+User-agent: FacebookBot
+Disallow:
+
+User-agent: Twitterbot
+Disallow:
+
+User-agent: DuckDuckBot
+Disallow:
+
+User-agent: Yandex
+Disallow:
+
+User-agent: Baiduspider
+Disallow:
+
+User-agent: Applebot
+Disallow:
+
+User-agent: Sogou
+Disallow:
+
+User-agent: Slurp
+Disallow:
+
+User-agent: SemrushBot
+Disallow:
+
+User-agent: AhrefsBot
+Disallow:
+
+User-agent: PetalBot
+Disallow:
+
+User-agent: MJ12bot
+Disallow:
+
+# Your sitemap for search engine indexing
+Sitemap: https://smartblindshub.com/sitemap.xml

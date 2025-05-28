@@ -115,4 +115,63 @@ model User {
   roomVisualizations RoomVisualization[]
   favoriteProducts   Product[]          @relation("UserFavorites")
   recentlyViewed     Product[]          @relation("RecentlyViewed")
+}
+
+// --- Sales Dashboard Models ---
+model SalesCustomer {
+  id          String   @id @default(cuid())
+  userId      String?  // Link to User if registered
+  name        String
+  email       String
+  phone       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  appointments SalesAppointment[]
+  leads        SalesLead[]
+}
+
+model SalesAppointment {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    SalesCustomer @relation(fields: [customerId], references: [id])
+  date        DateTime
+  status      String   // scheduled, completed, cancelled
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SalesLead {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    SalesCustomer @relation(fields: [customerId], references: [id])
+  status      String   // new, contacted, qualified, proposal, closed
+  source      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SalesMaterial {
+  id          String   @id @default(cuid())
+  name        String
+  quantity    Int
+  status      String   // in-stock, ordered, used
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SalesNotification {
+  id          String   @id @default(cuid())
+  userId      String
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model SalesReport {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // e.g., 'performance', 'conversion', etc.
+  data        Json
+  createdAt   DateTime @default(now())
 } 
