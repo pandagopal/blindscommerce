@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
+import { auth } from '@/lib/auth';
 import { getPool, createRoomVisualization, getRoomVisualizations } from '@/lib/db';
 import {
   processRoomImage,
@@ -8,23 +8,26 @@ import {
   detectWindows,
   optimizeImageForWeb
 } from '@/lib/utils/imageProcessing';
+import { VisualizationRequestSchema, VisualizationResponseSchema } from './models';
 
-const VisualizationRequestSchema = z.object({
-  roomImage: z.string(), // Base64 encoded image
-  productId: z.string(),
-  userId: z.string(),
-  placement: z.object({
-    x: z.number(),
-    y: z.number(),
-    scale: z.number().optional(),
-    rotation: z.number().optional()
-  }).optional()
-});
+import { getServerSession } from 'next-auth';
 
 export async function POST(request: Request) {
   try {
+    // Check authentication
+    const session = await getServerSession();
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const validatedData = VisualizationRequestSchema.parse(body);
+    const validatedData = VisualizationRequestSchema.parse({
+      ...body,
+      userId: session.user.id
+    });
 
     // Decode base64 room image
     const roomImageBuffer = Buffer.from(
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
     // Get product image
     const pool = await getPool();
     const [products] = await pool.execute(
-      'SELECT primary_image FROM products WHERE id = ?',
+      'SELECT primary_image, width, height FROM products WHERE id = ?',
       [validatedData.productId]
     );
     
@@ -46,17 +49,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const product = products[0] as { primary_image: string };
+    const product = products[0] as { primary_image: string; width: number; height: number };
 
     // Process images
     const processedRoomImage = await processRoomImage(roomImageBuffer);
     
-    // Fetch product image (assuming it's stored as a URL)
+    // Fetch and process product image
     const productImageResponse = await fetch(product.primary_image);
     const productImageBuffer = Buffer.from(await productImageResponse.arrayBuffer());
     const processedProductImage = await processProductImage(
       productImageBuffer,
-      Math.round(processedRoomImage.width * 0.3) // Product takes up ~30% of room width
+      Math.round(processedRoomImage.width * 0.3)
     );
 
     let placement = validatedData.placement;
@@ -67,6 +70,8 @@ export async function POST(request: Request) {
         placement = {
           x: windows[0].x,
           y: windows[0].y,
+          width: product.width,
+          height: product.height,
           scale: 1,
           rotation: 0
         };
@@ -75,13 +80,15 @@ export async function POST(request: Request) {
         placement = {
           x: (processedRoomImage.width - processedProductImage.width) / 2,
           y: (processedRoomImage.height - processedProductImage.height) / 2,
+          width: product.width,
+          height: product.height,
           scale: 1,
           rotation: 0
         };
       }
     }
 
-    // Composite images
+    // Composite images with accurate product dimensions
     const compositeResult = await compositeImages(
       processedRoomImage,
       processedProductImage,
@@ -95,30 +102,38 @@ export async function POST(request: Request) {
     const optimizedResult = await optimizeImageForWeb(compositeResult);
     const resultImageBase64 = `data:image/jpeg;base64,${optimizedResult.toString('base64')}`;
 
-    // Save visualization to database using MySQL2
+    // Save visualization to database
     const visualization = await createRoomVisualization(
       validatedData.userId,
       validatedData.productId,
       validatedData.roomImage,
-      resultImageBase64
+      resultImageBase64,
+      placement
     );
 
-    return NextResponse.json({
-      success: true,
-      visualization: {
-        id: visualization.id,
-        resultImage: resultImageBase64
-      }
+    // Format response according to schema
+    const response = VisualizationResponseSchema.parse({
+      id: visualization.id,
+      roomImage: validatedData.roomImage,
+      resultImage: resultImageBase64,
+      productId: validatedData.productId,
+      userId: validatedData.userId,
+      placement,
+      createdAt: visualization.created_at,
+      updatedAt: visualization.updated_at
     });
+
+    return NextResponse.json(response);
+
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    if (error instanceof Error) {
+      console.error('Error processing room visualization:', error);
       return NextResponse.json(
-        { success: false, errors: error.errors },
-        { status: 400 }
+        { success: false, message: error.message },
+        { status: 500 }
       );
     }
 
-    console.error('Error processing room visualization:', error);
     return NextResponse.json(
       { success: false, message: 'Internal server error' },
       { status: 500 }
