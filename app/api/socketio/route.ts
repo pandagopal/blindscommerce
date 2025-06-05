@@ -1,19 +1,6 @@
-import { Server } from 'socket.io';
 import { NextApiRequest } from 'next';
 import { NextApiResponse } from 'next';
-import { getPool } from '@/lib/db';
-
-interface ChatMessage {
-  userId: string;
-  message: {
-    id: string;
-    content: string;
-    sender: 'user' | 'agent';
-    timestamp: Date;
-    agentName?: string;
-    agentAvatar?: string;
-  };
-}
+import { initSocketManager } from '@/lib/socket/socketManager';
 
 const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
   if (!res.socket.server.io) {

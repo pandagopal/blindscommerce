@@ -85,6 +85,7 @@ export default function LoginPage() {
   };
 
   // Simplified role-specific login credentials for demo
+  // $2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6
   const loginExamples = [
     { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
