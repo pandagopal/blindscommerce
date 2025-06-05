@@ -50,71 +50,90 @@ const CartContext = createContext<CartContextType>({
 
 export const useCart = () => useContext(CartContext);
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [cartId, setCartId] = useState<number | null>(null);
+interface CartProviderProps {
+  children: ReactNode;
+}
 
-  // Fetch cart from API on mount
+export function CartProvider({ children }: CartProviderProps) {
+  const [items, setItems] = useState<CartItem[]>([]);
+
   useEffect(() => {
-    fetch('/api/account/cart')
-      .then(res => res.json())
-      .then(data => {
-        setItems(data.items || []);
-        setCartId(data.cart?.cart_id || null);
-      });
+    // Load cart from localStorage on mount
+    const loadCart = async () => {
+      try {
+        const response = await fetch('/api/cart/items');
+        if (response.ok) {
+          const data = await response.json();
+          setItems(data.items || []);
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    };
+    loadCart();
   }, []);
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
-    const res = await fetch('/api/account/cart', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        product_id: newItem.product_id,
-        quantity: newItem.quantity,
-        width: newItem.width,
-        height: newItem.height,
-        color_id: newItem.color_id,
-        material_id: newItem.material_id,
-        unit_price: newItem.unit_price,
-      })
-    });
-    const data = await res.json();
-    setItems(items => [...items, { ...data.item, ...newItem }]);
+    try {
+      const response = await fetch('/api/cart/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newItem)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.items);
+      }
+    } catch (error) {
+      console.error('Error adding item to cart:', error);
+    }
   };
 
   // Remove an item from cart
   const removeItem = async (cart_item_id: number) => {
-    await fetch('/api/account/cart', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cart_item_id })
-    });
-    setItems(items => items.filter(item => item.cart_item_id !== cart_item_id));
+    try {
+      const response = await fetch(`/api/cart/items/${cart_item_id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.items);
+      }
+    } catch (error) {
+      console.error('Error removing item from cart:', error);
+    }
   };
 
   // Update item quantity
   const updateQuantity = async (cart_item_id: number, quantity: number) => {
-    const item = items.find(i => i.cart_item_id === cart_item_id);
-    if (!item) return;
-    if (quantity <= 0) {
-      await removeItem(cart_item_id);
-      return;
+    try {
+      const response = await fetch(`/api/cart/items/${cart_item_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setItems(data.items);
+      }
+    } catch (error) {
+      console.error('Error updating cart item:', error);
     }
-    const res = await fetch('/api/account/cart', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...item, quantity })
-    });
-    const data = await res.json();
-    setItems(items => items.map(i => i.cart_item_id === cart_item_id ? { ...i, quantity } : i));
   };
 
   // Clear cart
   const clearCart = async () => {
-    // Remove all items one by one (API does not support bulk delete)
-    await Promise.all(items.map(item => removeItem(item.cart_item_id)));
-    setItems([]);
+    try {
+      const response = await fetch('/api/cart/items', {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        setItems([]);
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
   };
 
   // Calculate total number of items
@@ -132,12 +151,12 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         updateQuantity,
         clearCart,
         itemCount,
-        subtotal,
+        subtotal
       }}
     >
       {children}
     </CartContext.Provider>
   );
-};
+}
 
 export default CartContext;
