@@ -102,6 +102,48 @@
   .border-light {
     border-color: var(--border-light);
   }
+
+  /* Swiper customization */
+  .swiper-button-next,
+  .swiper-button-prev {
+    @apply w-12 h-12 bg-black/30 rounded-full backdrop-blur-sm transition-all duration-300;
+  }
+
+  .swiper-button-next:hover,
+  .swiper-button-prev:hover {
+    @apply bg-black/50;
+  }
+
+  .swiper-button-next::after,
+  .swiper-button-prev::after {
+    @apply text-2xl;
+  }
+
+  .swiper-pagination-bullet {
+    @apply w-2 h-2 bg-white/70 transition-all duration-300;
+  }
+
+  .swiper-pagination-bullet-active {
+    @apply w-4 rounded-full;
+  }
+
+  /* Custom animations */
+  .hover-lift {
+    @apply transition-all duration-300;
+  }
+
+  .hover-lift:hover {
+    @apply -translate-y-1 shadow-lg;
+  }
+
+  /* Custom gradient overlays */
+  .gradient-overlay-bottom {
+    @apply absolute inset-0 bg-gradient-to-t from-black/60 to-transparent;
+  }
+
+  .gradient-overlay-right {
+    @apply absolute inset-0 bg-gradient-to-l from-black/60 to-transparent;
+  }
 }
 
 /* Custom utility classes */
