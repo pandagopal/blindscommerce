@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Generate a unique room ID for video chat
+      const roomId = `consultation-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       // Create the consultation
       const consultationQuery = `
         INSERT INTO consultations (
@@ -54,9 +57,11 @@ export async function POST(req: NextRequest) {
           consultation_type,
           notes,
           status,
+          room_id,
+          meeting_link,
           created_at,
           updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, 'scheduled', NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, 'scheduled', $7, $8, NOW(), NOW())
       `;
 
       const [result] = await client.execute(consultationQuery, [
