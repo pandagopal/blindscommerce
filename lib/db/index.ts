@@ -70,7 +70,7 @@ export const getPool = async (): Promise<mysql.Pool> => {
       host: process.env.DB_HOST || '127.0.0.1',
       port: parseInt(process.env.DB_PORT || '3307'),
       user: process.env.DB_USER || 'root',
-      database: process.env.DB_NAME || 'smartblindshub'
+      database: process.env.DB_NAME || 'Blinds'
     });
 
     pool = mysql.createPool({
@@ -78,7 +78,7 @@ export const getPool = async (): Promise<mysql.Pool> => {
       port: parseInt(process.env.DB_PORT || '3307'),
       user: process.env.DB_USER || 'root',
       password: process.env.DB_PASSWORD || 'Test@1234',
-      database: process.env.DB_NAME || 'smartblindshub',
+      database: process.env.DB_NAME || 'Blinds',
       waitForConnections: true,
       connectionLimit: 3,
       queueLimit: 0,

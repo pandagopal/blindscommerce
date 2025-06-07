@@ -7,7 +7,7 @@ async function createAdminUser() {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     host: process.env.DB_HOST || 'localhost',
-    database: process.env.DB_NAME || 'smartblindshub',
+    database: process.env.DB_NAME || 'Blinds',
     port: parseInt(process.env.DB_PORT || '3306'),
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
@@ -17,7 +17,7 @@ async function createAdminUser() {
   try {
     // Admin user details
     const adminUser = {
-      email: 'admin@smartblindshub.com',
+      email: 'admin@Bsmartblindshub.com',
       password: 'Admin@123', // This is a temporary password that should be changed after first login
       firstName: 'Admin',
       lastName: 'User',

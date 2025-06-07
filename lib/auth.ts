@@ -33,7 +33,7 @@ export async function generateToken(user: User): Promise<string> {
     role: user.role || 'customer'
   };
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'smartblindshub_secret');
+  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'Blinds_secret');
   const alg = 'HS256';
 
   const token = await new jose.SignJWT(payload)
@@ -48,7 +48,7 @@ export async function generateToken(user: User): Promise<string> {
 // Helper to verify JWT token
 export async function verifyToken(token: string): Promise<any> {
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'smartblindshub_secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'Blinds_secret');
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;
   } catch (error) {

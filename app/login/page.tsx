@@ -89,7 +89,7 @@ export default function LoginPage() {
   const loginExamples = [
     { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
-    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'Admin@1234' },
+    { role: 'Vendor', email: 'vendor@Bsmartblindshub.com', password: 'Admin@1234' },
     { role: 'Sales', email: 'sales@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Installer', email: 'installer@smartblindshub.com', password: 'Admin@1234' }
   ];
