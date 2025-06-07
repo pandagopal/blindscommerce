@@ -7,6 +7,7 @@ import { Metadata } from "next";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
+import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { defaultMetadata, dynamic, revalidate } from './config';
 //import LiveChat from "./components/chat/LiveChat";
 //import LiveChat from "@/components/chat/LiveChat";
@@ -37,12 +38,14 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <CartProvider>
-          <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-           {/* <LiveChat /> */}
-          </div>
+          <RecentlyViewedProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+             {/* <LiveChat /> */}
+            </div>
+          </RecentlyViewedProvider>
         </CartProvider>
       </body>
     </html>
