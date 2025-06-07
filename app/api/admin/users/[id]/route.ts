@@ -66,8 +66,8 @@ export async function GET(
         last_name: userData.last_name,
         phone: userData.phone,
         role: userData.role,
-        is_active: userData.is_active,
-        is_verified: userData.is_verified,
+        is_active: Boolean(userData.is_active),
+        is_verified: Boolean(userData.is_verified),
         last_login: userData.last_login,
         created_at: userData.created_at,
         updated_at: userData.updated_at,
@@ -77,18 +77,18 @@ export async function GET(
           business_email: userData.business_email,
           business_phone: userData.business_phone,
           approval_status: userData.vendor_status,
-          is_verified: userData.vendor_verified,
-          is_active: userData.vendor_active
+          is_verified: Boolean(userData.vendor_verified),
+          is_active: Boolean(userData.vendor_active)
         } : null,
         sales_info: userData.role === 'sales' ? {
           territory: userData.sales_territory,
           commission_rate: userData.commission_rate,
-          is_active: userData.sales_active
+          is_active: Boolean(userData.sales_active)
         } : null,
         installer_info: userData.role === 'installer' ? {
           certification_number: userData.certification_number,
           service_area: userData.service_area,
-          is_active: userData.installer_active
+          is_active: Boolean(userData.installer_active)
         } : null
       }
     });

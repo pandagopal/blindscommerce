@@ -22,8 +22,10 @@ interface VendorRow extends RowDataPacket {
   business_name: string;
   business_email: string;
   business_phone: string;
-  vendor_active: boolean;
-  vendor_verified: boolean;
+  vendor_active: number; // MySQL TINYINT(1) returns 0/1
+  vendor_verified: number; // MySQL TINYINT(1) returns 0/1
+  is_active: number; // MySQL TINYINT(1) returns 0/1
+  is_verified: number; // MySQL TINYINT(1) returns 0/1
   approval_status: string;
   total_sales: number;
   rating: number;
@@ -151,8 +153,8 @@ export async function GET(request: NextRequest) {
       companyName: row.business_name || `${row.first_name} ${row.last_name}'s Business`,
       contactEmail: row.business_email || row.email,
       contactPhone: row.business_phone || row.phone,
-      isActive: row.vendor_active ?? row.is_active,
-      isVerified: row.vendor_verified ?? false,
+      isActive: Boolean(row.vendor_active ?? row.is_active), // Convert 0/1 to false/true
+      isVerified: Boolean(row.vendor_verified ?? row.is_verified), // Convert 0/1 to false/true
       approvalStatus: row.vendor_status || 'pending',
       totalSales: row.total_sales || 0,
       rating: row.rating || 0,
@@ -205,7 +207,7 @@ export async function POST(request: NextRequest) {
           role,
           is_active,
           is_verified
-        ) VALUES (?, ?, ?, ?, 'vendor', true, true)`,
+        ) VALUES (?, ?, ?, ?, 'vendor', 1, 1)`,  # Convert boolean to 0/1
         [data.email, await hashPassword(data.password), data.firstName, data.lastName]
       );
 
@@ -222,7 +224,7 @@ export async function POST(request: NextRequest) {
           is_active,
           is_verified,
           approval_status
-        ) VALUES (?, ?, ?, ?, ?, true, false, 'pending')`,
+        ) VALUES (?, ?, ?, ?, ?, 1, 0, 'pending')`,  # Convert boolean to 0/1
         [
           userId,
           data.companyName,
