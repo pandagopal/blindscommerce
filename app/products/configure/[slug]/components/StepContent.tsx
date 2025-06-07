@@ -18,6 +18,37 @@ const StepContent = () => {
     roomRecommendations,
   } = useConfig();
 
+  const [dimensionErrors, setDimensionErrors] = React.useState({
+    width: '',
+    height: '',
+  });
+
+  const validateDimension = (value: number, type: 'width' | 'height') => {
+    const minVal = 12;
+    const maxVal = type === 'width' ? 96 : 108;
+    const isValidStep = (value * 8) % 1 === 0; // Check if it's a multiple of 1/8"
+
+    if (value < minVal) {
+      return `${type === 'width' ? 'Width' : 'Height'} must be at least ${minVal} inches`;
+    }
+    if (value > maxVal) {
+      return `${type === 'width' ? 'Width' : 'Height'} must be at most ${maxVal} inches`;
+    }
+    if (!isValidStep) {
+      return 'Measurements must be in 1/8 inch increments';
+    }
+    return '';
+  };
+
+  const handleDimensionChange = (type: 'width' | 'height', value: number) => {
+    const error = validateDimension(value, type);
+    setDimensionErrors(prev => ({ ...prev, [type]: error }));
+    
+    if (!error) {
+      setConfig({ ...config, [type]: value });
+    }
+  };
+
   if (!product) return null;
 
   switch (config.step) {
@@ -68,25 +99,32 @@ const StepContent = () => {
                     max="96"
                     step="0.125"
                     value={config.width}
-                    onChange={(e) => setConfig({ ...config, width: parseFloat(e.target.value) || 12 })}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value) || 12)}
+                    className={`w-full p-2 border rounded-md ${
+                      dimensionErrors.width ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   <div className="ml-2 flex items-center">
                     <button
                       className="p-1 border border-gray-300 rounded-l-md"
-                      onClick={() => setConfig({ ...config, width: Math.max(12, config.width - 0.125) })}
+                      onClick={() => handleDimensionChange('width', Math.max(12, config.width - 0.125))}
                     >
                       -
                     </button>
                     <button
                       className="p-1 border-t border-r border-b border-gray-300 rounded-r-md"
-                      onClick={() => setConfig({ ...config, width: Math.min(96, config.width + 0.125) })}
+                      onClick={() => handleDimensionChange('width', Math.min(96, config.width + 0.125))}
                     >
                       +
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Min: 12" - Max: 96"</p>
+                <div className="mt-1">
+                  <p className="text-xs text-gray-500">Min: 12" - Max: 96"</p>
+                  {dimensionErrors.width && (
+                    <p className="text-xs text-red-500 mt-1">{dimensionErrors.width}</p>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -99,25 +137,32 @@ const StepContent = () => {
                     max="108"
                     step="0.125"
                     value={config.height}
-                    onChange={(e) => setConfig({ ...config, height: parseFloat(e.target.value) || 12 })}
-                    className="w-full p-2 border border-gray-300 rounded-md"
+                    onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value) || 12)}
+                    className={`w-full p-2 border rounded-md ${
+                      dimensionErrors.height ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
                   <div className="ml-2 flex items-center">
                     <button
                       className="p-1 border border-gray-300 rounded-l-md"
-                      onClick={() => setConfig({ ...config, height: Math.max(12, config.height - 0.125) })}
+                      onClick={() => handleDimensionChange('height', Math.max(12, config.height - 0.125))}
                     >
                       -
                     </button>
                     <button
                       className="p-1 border-t border-r border-b border-gray-300 rounded-r-md"
-                      onClick={() => setConfig({ ...config, height: Math.min(108, config.height + 0.125) })}
+                      onClick={() => handleDimensionChange('height', Math.min(108, config.height + 0.125))}
                     >
                       +
                     </button>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Min: 12" - Max: 108"</p>
+                <div className="mt-1">
+                  <p className="text-xs text-gray-500">Min: 12" - Max: 108"</p>
+                  {dimensionErrors.height && (
+                    <p className="text-xs text-red-500 mt-1">{dimensionErrors.height}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
@@ -125,6 +170,25 @@ const StepContent = () => {
                 <Info size={14} className="mr-1 flex-shrink-0" />
                 <span>For the most accurate fit, measure to the nearest 1/8 inch.</span>
               </div>
+            </div>
+            <div className="mt-4 p-2 bg-gray-50 border border-gray-200 rounded">
+              <p className="text-sm text-gray-600">
+                Standard sizes for <span className="font-medium">{config.mountType === 1 ? 'Inside' : 'Outside'}</span> mount:
+                <br />
+                {config.mountType === 1 ? (
+                  <span className="text-xs">
+                    • Deduct 1/4" from exact window opening for proper operation
+                    <br />
+                    • Minimum depth required: 2" for standard mount, 3.5" for flush mount
+                  </span>
+                ) : (
+                  <span className="text-xs">
+                    • Add 3" to width for light gap coverage (1.5" per side)
+                    <br />
+                    • Add 2-3" to height if mounting above window frame
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </div>

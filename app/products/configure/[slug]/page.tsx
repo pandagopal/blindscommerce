@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { ChevronRight, ChevronLeft, Check, Bookmark, ShoppingCart, Info, CheckCircle } from "lucide-react";
@@ -98,8 +98,44 @@ function ConfiguratorContent({ slug }: { slug: string }) {
     saveSuccess,
     saveConfiguration,
     addToCart,
-    toggleRoomView
+    toggleRoomView,
+    canProceedToNextStep,
+    stepValidation,
   } = useConfig();
+
+  // Helper function to get step status
+  const getStepStatus = (stepNumber: number) => {
+    if (config.step > stepNumber) {
+      return stepValidation[stepNumber] ? 'completed' : 'error';
+    }
+    if (config.step === stepNumber) {
+      return 'current';
+    }
+    return 'upcoming';
+  };
+
+  // Get text for next button based on validation
+  const getNextButtonText = () => {
+    if (!canProceedToNextStep) {
+      switch (config.step) {
+        case 1:
+          return 'Please enter valid dimensions';
+        case 2:
+          return 'Please select a color';
+        case 3:
+          return 'Please select a material';
+        case 4:
+          return 'Please select control type';
+        case 5:
+          return 'Please select rail options';
+        case 6:
+          return 'Please select room type';
+        default:
+          return 'Complete required fields';
+      }
+    }
+    return 'Next';
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -128,24 +164,39 @@ function ConfiguratorContent({ slug }: { slug: string }) {
 
         {/* Progress steps */}
         <div className="flex justify-between mb-8">
-          {['Dimensions', 'Colors', 'Materials', 'Controls', 'Rail Options', 'Room View', 'Review'].map((step, index) => (
-            <div
-              key={index}
-              className={`flex flex-col items-center cursor-pointer transition-colors ${
-                config.step > index + 1 ? 'text-primary-red' : config.step === index + 1 ? 'text-primary-red' : 'text-gray-400'
-              }`}
-              onClick={() => setConfig({ ...config, step: index + 1 })}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
-                config.step > index + 1 ? 'bg-primary-red text-white' :
-                config.step === index + 1 ? 'border-2 border-primary-red text-primary-red' :
-                'border border-gray-300 text-gray-400'
-              }`}>
-                {config.step > index + 1 ? <Check size={16} /> : index + 1}
+          {['Dimensions', 'Colors', 'Materials', 'Controls', 'Rail Options', 'Room View', 'Review'].map((step, index) => {
+            const status = getStepStatus(index + 1);
+            return (
+              <div
+                key={index}
+                className={`flex flex-col items-center cursor-pointer transition-colors ${
+                  status === 'completed' ? 'text-primary-red' :
+                  status === 'current' ? 'text-primary-red' :
+                  status === 'error' ? 'text-red-500' :
+                  'text-gray-400'
+                }`}
+                onClick={() => {
+                  // Only allow clicking on completed steps or the next available step
+                  if (status === 'completed' || (index + 1) === config.step) {
+                    setConfig({ ...config, step: index + 1 });
+                  }
+                }}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${
+                  status === 'completed' ? 'bg-primary-red text-white' :
+                  status === 'current' ? 'border-2 border-primary-red text-primary-red' :
+                  status === 'error' ? 'border-2 border-red-500 text-red-500' :
+                  'border border-gray-300 text-gray-400'
+                }`}>
+                  {status === 'completed' ? <Check size={16} /> : index + 1}
+                </div>
+                <span className="text-xs hidden sm:block">{step}</span>
+                {status === 'error' && (
+                  <span className="absolute mt-12 text-xs text-red-500">Required</span>
+                )}
               </div>
-              <span className="text-xs hidden sm:block">{step}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -219,9 +270,15 @@ function ConfiguratorContent({ slug }: { slug: string }) {
               {config.step < 7 ? (
                 <button
                   onClick={nextStep}
-                  className="flex items-center ml-auto px-4 py-2 bg-primary-red text-white rounded-md hover:bg-primary-red-dark"
+                  disabled={!canProceedToNextStep}
+                  className={`flex items-center ml-auto px-4 py-2 rounded-md transition-colors ${
+                    canProceedToNextStep
+                      ? 'bg-primary-red text-white hover:bg-primary-red-dark'
+                      : 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                  }`}
+                  title={!canProceedToNextStep ? getNextButtonText() : undefined}
                 >
-                  Next
+                  {getNextButtonText()}
                   <ChevronRight size={16} className="ml-1" />
                 </button>
               ) : (
