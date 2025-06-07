@@ -7,7 +7,7 @@ async function updatePasswords() {
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     host: process.env.DB_HOST || 'localhost',
-    database: 'smartblindshub',
+    database: 'Blinds',
     port: parseInt(process.env.DB_PORT || '3306'),
     ssl: process.env.NODE_ENV === 'production'
       ? { rejectUnauthorized: false }
@@ -46,8 +46,8 @@ async function updatePasswords() {
     console.log('Admin: admin@smartblindshub.com / password123');
     console.log('Customer: customer@example.com / password123');
     console.log('Vendor: vendor@example.com / password123');
-    console.log('Sales: sales@smartblindshub.com / password123');
-    console.log('Installer: installer@smartblindshub.com / password123');
+    console.log('Sales: sales@Blinds.com / password123');
+    console.log('Installer: installer@Blinds.com / password123');
 
     conn.release();
   } catch (error) {
