@@ -1,48 +1,49 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import {
-  Calendar, CheckSquare, MapPin, Clock,
-  ArrowUpRight, Truck, AlertTriangle,
-  Phone, MessageSquare, Users
-} from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, Tool, Truck } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
-// Types for the installer dashboard
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface Appointment {
-  id: number;
-  customer: string;
+  id: string;
+  customerName: string;
   address: string;
   date: string;
   time: string;
-  jobType: 'measurement' | 'installation' | 'repair';
-  status: 'scheduled' | 'completed' | 'cancelled' | 'in-progress';
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  type: 'installation' | 'measurement' | 'repair';
 }
 
 interface Job {
   id: string;
-  customer: string;
+  customerName: string;
   address: string;
-  date: string;
-  description: string;
-  status: 'pending' | 'in-progress' | 'completed' | 'issue';
-  products: string[];
-}
-
-interface User {
-  userId: number;
-  email: string;
-  firstName?: string;
-  lastName?: string;
-  role: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  type: 'installation' | 'repair';
+  materials: Material[];
+  notes: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
 interface Material {
-  id: number;
+  id: string;
   name: string;
   quantity: number;
-  status: string;
+  status: 'in stock' | 'low stock' | 'out of stock';
 }
 
 export default function InstallerDashboard() {
@@ -60,7 +61,7 @@ export default function InstallerDashboard() {
   });
   const [materials, setMaterials] = useState<Material[]>([]);
   const [matForm, setMatForm] = useState<Partial<Material>>({ name: '', quantity: 1, status: 'in stock' });
-  const [editingMatId, setEditingMatId] = useState<number | null>(null);
+  const [editingMatId, setEditingMatId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -87,270 +88,437 @@ export default function InstallerDashboard() {
   }, [router]);
 
   useEffect(() => {
-    // In a real app, this would fetch data from an API
-    const fetchDashboardData = async () => {
-      try {
-        // Mock data for today's appointments
-        const mockTodayAppointments = [
-          {
-            id: 1,
-            customer: 'John Smith',
-            address: '123 Main St, Seattle, WA 98101',
-            date: '2023-10-20',
-            time: '09:00 AM',
-            jobType: 'installation' as const,
-            status: 'scheduled' as const
-          },
-          {
-            id: 2,
-            customer: 'Emily Johnson',
-            address: '456 Oak Ave, Seattle, WA 98102',
-            date: '2023-10-20',
-            time: '11:30 AM',
-            jobType: 'measurement' as const,
-            status: 'scheduled' as const
-          },
-          {
-            id: 3,
-            customer: 'Michael Davis',
-            address: '789 Pine St, Seattle, WA 98103',
-            date: '2023-10-20',
-            time: '02:00 PM',
-            jobType: 'installation' as const,
-            status: 'in-progress' as const
-          }
-        ];
-        setTodayAppointments(mockTodayAppointments);
-
-        // Mock data for upcoming appointments
-        const mockUpcomingAppointments = [
-          {
-            id: 4,
-            customer: 'Sarah Wilson',
-            address: '321 Elm St, Seattle, WA 98104',
-            date: '2023-10-21',
-            time: '10:00 AM',
-            jobType: 'installation' as const,
-            status: 'scheduled' as const
-          },
-          {
-            id: 5,
-            customer: 'Robert Brown',
-            address: '654 Maple Ave, Seattle, WA 98105',
-            date: '2023-10-22',
-            time: '01:30 PM',
-            jobType: 'repair' as const,
-            status: 'scheduled' as const
-          },
-          {
-            id: 6,
-            customer: 'Jennifer Miller',
-            address: '987 Cedar Blvd, Seattle, WA 98106',
-            date: '2023-10-23',
-            time: '09:30 AM',
-            jobType: 'measurement' as const,
-            status: 'scheduled' as const
-          }
-        ];
-        setUpcomingAppointments(mockUpcomingAppointments);
-
-        // Mock data for recent jobs
-        const mockRecentJobs = [
-          {
-            id: 'JOB-10245',
-            customer: 'Lisa Taylor',
-            address: '753 Birch St, Seattle, WA 98107',
-            date: '2023-10-19',
-            description: 'Install 4 cellular shades in bedroom and living room',
-            status: 'completed' as const,
-            products: ['Premium Cellular Shades (2)', 'Blackout Cellular Shades (2)']
-          },
-          {
-            id: 'JOB-10243',
-            customer: 'Daniel Wilson',
-            address: '159 Spruce Ave, Seattle, WA 98108',
-            date: '2023-10-18',
-            description: 'Install wooden blinds in kitchen and dining room',
-            status: 'completed' as const,
-            products: ['Premium Wooden Blinds (3)']
-          },
-          {
-            id: 'JOB-10240',
-            customer: 'Karen Martinez',
-            address: '357 Oak Lane, Seattle, WA 98109',
-            date: '2023-10-17',
-            description: 'Repair motorized blinds in home office',
-            status: 'issue' as const,
-            products: ['Motorized Roller Blinds (1)']
-          }
-        ];
-        setRecentJobs(mockRecentJobs);
-
-        // Mock statistics
-        setStats({
-          completedToday: 1,
-          scheduledToday: 3,
-          pendingJobs: 8,
-          completedJobs: 42
-        });
-
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchDashboardData();
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const m = localStorage.getItem('installer_materials');
-      if (m) setMaterials(JSON.parse(m));
+    if (user) {
+      fetchDashboardData();
     }
-  }, []);
-  useEffect(() => { if (typeof window !== 'undefined') localStorage.setItem('installer_materials', JSON.stringify(materials)); }, [materials]);
+  }, [user]);
 
-  // Material handlers
-  const handleMatChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setMatForm({ ...matForm, [e.target.name]: e.target.value });
-  const handleMatSubmit = (e: React.FormEvent) => {
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch appointments
+      const appointmentsRes = await fetch('/api/installer/appointments');
+      const appointmentsData = await appointmentsRes.json();
+      
+      const today = new Date().toISOString().split('T')[0];
+      const todayApps = appointmentsData.filter((app: Appointment) => 
+        app.date === today && app.status !== 'cancelled'
+      );
+      const upcomingApps = appointmentsData.filter((app: Appointment) => 
+        app.date > today && app.status !== 'cancelled'
+      );
+
+      setTodayAppointments(todayApps);
+      setUpcomingAppointments(upcomingApps);
+
+      // Fetch jobs
+      const jobsRes = await fetch('/api/installer/jobs');
+      const jobsData = await jobsRes.json();
+      setRecentJobs(jobsData);
+
+      // Calculate stats
+      const completedToday = jobsData.filter((job: Job) => 
+        job.status === 'completed' && 
+        new Date(job.completedAt!).toISOString().split('T')[0] === today
+      ).length;
+
+      const pendingJobs = jobsData.filter((job: Job) => 
+        job.status === 'pending'
+      ).length;
+
+      const completedJobs = jobsData.filter((job: Job) => 
+        job.status === 'completed'
+      ).length;
+
+      setStats({
+        completedToday,
+        scheduledToday: todayApps.length,
+        pendingJobs,
+        completedJobs
+      });
+
+      // Fetch materials
+      const materialsRes = await fetch('/api/installer/materials');
+      const materialsData = await materialsRes.json();
+      setMaterials(materialsData);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const handleMaterialSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!matForm.name || !matForm.quantity) return;
-    if (editingMatId) {
-      setMaterials((prev) => prev.map((m) => m.id === editingMatId ? { ...m, ...matForm, quantity: Number(matForm.quantity) } as Material : m));
-      setEditingMatId(null);
-    } else {
-      setMaterials((prev) => [...prev, { ...matForm, id: Date.now(), quantity: Number(matForm.quantity) } as Material]);
-    }
-    setMatForm({ name: '', quantity: 1, status: 'in stock' });
-  };
-  const handleMatEdit = (id: number) => { const m = materials.find((m) => m.id === id); if (m) { setMatForm(m); setEditingMatId(id); } };
-  const handleMatDelete = (id: number) => { setMaterials((prev) => prev.filter((m) => m.id !== id)); if (editingMatId === id) { setMatForm({ name: '', quantity: 1, status: 'in stock' }); setEditingMatId(null); } };
+    try {
+      const url = editingMatId 
+        ? `/api/installer/materials/${editingMatId}`
+        : '/api/installer/materials';
+      
+      const method = editingMatId ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(matForm)
+      });
 
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'in-progress':
-        return 'bg-amber-100 text-amber-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-gray-100 text-gray-800';
-      case 'pending':
-        return 'bg-purple-100 text-purple-800';
-      case 'issue':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      if (res.ok) {
+        fetchDashboardData();
+        setMatForm({ name: '', quantity: 1, status: 'in stock' });
+        setEditingMatId(null);
+      }
+    } catch (error) {
+      console.error('Error saving material:', error);
     }
   };
 
-  // Get job type badge color
-  const getJobTypeColor = (jobType: string) => {
-    switch (jobType.toLowerCase()) {
-      case 'measurement':
-        return 'bg-purple-100 text-purple-800';
-      case 'installation':
-        return 'bg-blue-100 text-blue-800';
-      case 'repair':
-        return 'bg-amber-100 text-amber-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleMaterialEdit = (material: Material) => {
+    setMatForm(material);
+    setEditingMatId(material.id);
+  };
+
+  const handleMaterialDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/installer/materials/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error deleting material:', error);
+    }
+  };
+
+  const handleAppointmentStatus = async (id: string, status: Appointment['status']) => {
+    try {
+      const res = await fetch(`/api/installer/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+
+      if (res.ok) {
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+    }
+  };
+
+  const handleJobStatus = async (id: string, status: Job['status']) => {
+    try {
+      const res = await fetch(`/api/installer/jobs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status,
+          completedAt: status === 'completed' ? new Date().toISOString() : undefined
+        })
+      });
+
+      if (res.ok) {
+        fetchDashboardData();
+      }
+    } catch (error) {
+      console.error('Error updating job:', error);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
+    return <div>Loading...</div>;
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Installer Dashboard</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Quick Stats */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Pending Jobs</h3>
-          <p className="text-3xl font-bold">{stats.pendingJobs}</p>
+    <div className="container mx-auto p-6">
+      <div className="grid gap-6">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Today's Appointments</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.scheduledToday}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
+              <Tool className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completedToday}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Jobs</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pendingJobs}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Completed</CardTitle>
+              <Truck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.completedJobs}</div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Completed Jobs</h3>
-          <p className="text-3xl font-bold">{stats.completedJobs}</p>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Today's Schedule</h3>
-          <p className="text-3xl font-bold">{stats.scheduledToday}</p>
-        </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Rating</h3>
-          <p className="text-3xl font-bold">5.0</p>
-        </div>
+
+        {/* Main Content */}
+        <Tabs defaultValue="appointments" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="appointments">Appointments</TabsTrigger>
+            <TabsTrigger value="jobs">Jobs</TabsTrigger>
+            <TabsTrigger value="materials">Materials</TabsTrigger>
+          </TabsList>
+
+          {/* Appointments Tab */}
+          <TabsContent value="appointments" className="space-y-4">
+            {/* Today's Appointments */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Today's Appointments</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {todayAppointments.map(appointment => (
+                    <div
+                      key={appointment.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{appointment.customerName}</h4>
+                          <Badge variant={
+                            appointment.status === 'scheduled' ? 'default' :
+                            appointment.status === 'in-progress' ? 'secondary' :
+                            appointment.status === 'completed' ? 'success' : 'destructive'
+                          }>
+                            {appointment.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>{appointment.time}</span>
+                          <MapPin className="h-4 w-4 ml-2" />
+                          <span>{appointment.address}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        {appointment.status === 'scheduled' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleAppointmentStatus(appointment.id, 'in-progress')}
+                          >
+                            Start
+                          </Button>
+                        )}
+                        {appointment.status === 'in-progress' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleAppointmentStatus(appointment.id, 'completed')}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                        {appointment.status !== 'completed' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleAppointmentStatus(appointment.id, 'cancelled')}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Appointments */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Appointments</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {upcomingAppointments.map(appointment => (
+                    <div
+                      key={appointment.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{appointment.customerName}</h4>
+                          <Badge variant="default">{appointment.status}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>{appointment.date}</span>
+                          <Clock className="h-4 w-4 ml-2" />
+                          <span>{appointment.time}</span>
+                          <MapPin className="h-4 w-4 ml-2" />
+                          <span>{appointment.address}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Jobs Tab */}
+          <TabsContent value="jobs" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Jobs</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {recentJobs.map(job => (
+                    <div
+                      key={job.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{job.customerName}</h4>
+                          <Badge variant={
+                            job.status === 'pending' ? 'default' :
+                            job.status === 'in-progress' ? 'secondary' :
+                            'success'
+                          }>
+                            {job.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="h-4 w-4" />
+                          <span>{job.address}</span>
+                          <Package className="h-4 w-4 ml-2" />
+                          <span>{job.type}</span>
+                        </div>
+                        {job.notes && (
+                          <p className="text-sm text-muted-foreground">{job.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        {job.status === 'pending' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleJobStatus(job.id, 'in-progress')}
+                          >
+                            Start
+                          </Button>
+                        )}
+                        {job.status === 'in-progress' && (
+                          <Button
+                            variant="outline"
+                            onClick={() => handleJobStatus(job.id, 'completed')}
+                          >
+                            Complete
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Materials Tab */}
+          <TabsContent value="materials" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Materials Management</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleMaterialSubmit} className="space-y-4 mb-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Input
+                      placeholder="Material name"
+                      value={matForm.name}
+                      onChange={(e) => setMatForm({ ...matForm, name: e.target.value })}
+                    />
+                    <Input
+                      type="number"
+                      placeholder="Quantity"
+                      value={matForm.quantity}
+                      onChange={(e) => setMatForm({ ...matForm, quantity: parseInt(e.target.value) })}
+                    />
+                    <Select
+                      value={matForm.status}
+                      onValueChange={(value: Material['status']) => 
+                        setMatForm({ ...matForm, status: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in stock">In Stock</SelectItem>
+                        <SelectItem value="low stock">Low Stock</SelectItem>
+                        <SelectItem value="out of stock">Out of Stock</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit">
+                    {editingMatId ? 'Update Material' : 'Add Material'}
+                  </Button>
+                </form>
+
+                <div className="space-y-4">
+                  {materials.map(material => (
+                    <div
+                      key={material.id}
+                      className="flex items-center justify-between p-4 border rounded-lg"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium">{material.name}</h4>
+                          <Badge variant={
+                            material.status === 'in stock' ? 'success' :
+                            material.status === 'low stock' ? 'warning' :
+                            'destructive'
+                          }>
+                            {material.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Quantity: {material.quantity}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleMaterialEdit(material)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => handleMaterialDelete(material.id)}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Upcoming Installations */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Upcoming Installations</h2>
-          <p className="text-gray-500">No installations scheduled</p>
-        </div>
-
-        {/* Recent Completions */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Recent Completions</h2>
-          <p className="text-gray-500">No recent completions</p>
-        </div>
-      </div>
-
-      {/* Material Tracking Section */}
-      <section className="mt-8">
-        <h2 className="text-xl font-semibold mb-2">Material Tracking</h2>
-        <form onSubmit={handleMatSubmit} className="flex gap-2 mb-4 flex-wrap">
-          <input name="name" value={matForm.name || ''} onChange={handleMatChange} placeholder="Material Name" className="border p-2 rounded" required />
-          <input name="quantity" type="number" min="1" value={matForm.quantity || 1} onChange={handleMatChange} placeholder="Quantity" className="border p-2 rounded w-24" required />
-          <select name="status" value={matForm.status || 'in stock'} onChange={handleMatChange} className="border p-2 rounded">
-            <option value="in stock">In Stock</option>
-            <option value="used">Used</option>
-            <option value="ordered">Ordered</option>
-          </select>
-          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingMatId ? 'Update' : 'Add'}</button>
-          {editingMatId && <button type="button" onClick={() => { setMatForm({ name: '', quantity: 1, status: 'in stock' }); setEditingMatId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
-        </form>
-        {materials.length === 0 ? <p className="text-gray-600">No materials tracked.</p> : (
-          <ul className="space-y-2">
-            {materials.map((m) => (
-              <li key={m.id} className="flex gap-4 items-center">
-                <span className="font-medium w-48">{m.name}</span>
-                <span>Qty: {m.quantity}</span>
-                <span className="text-xs text-gray-500">{m.status}</span>
-                <button onClick={() => handleMatEdit(m.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
-                <button onClick={() => handleMatDelete(m.id)} className="text-red-600 hover:underline ml-2">Delete</button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
     </div>
   );
 }

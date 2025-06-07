@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Feature {
   id: string;
@@ -18,6 +19,29 @@ interface FeaturesProps {
   features: Feature[];
   onChange: (features: Feature[]) => void;
 }
+
+const AVAILABLE_ICONS = [
+  { value: 'check', label: 'Check Mark' },
+  { value: 'star', label: 'Star' },
+  { value: 'shield', label: 'Shield' },
+  { value: 'award', label: 'Award' },
+  { value: 'heart', label: 'Heart' },
+  { value: 'sun', label: 'Sun' },
+  { value: 'moon', label: 'Moon' },
+  { value: 'leaf', label: 'Leaf' },
+  { value: 'droplet', label: 'Droplet' },
+  { value: 'flame', label: 'Flame' },
+  { value: 'zap', label: 'Lightning' },
+  { value: 'wind', label: 'Wind' },
+  { value: 'cloud', label: 'Cloud' },
+  { value: 'mountain', label: 'Mountain' },
+  { value: 'home', label: 'Home' },
+  { value: 'building', label: 'Building' },
+  { value: 'truck', label: 'Truck' },
+  { value: 'package', label: 'Package' },
+  { value: 'tag', label: 'Tag' },
+  { value: 'percent', label: 'Percent' },
+];
 
 export default function Features({ features, onChange }: FeaturesProps) {
   const [newFeature, setNewFeature] = useState<Feature>({
@@ -71,6 +95,15 @@ export default function Features({ features, onChange }: FeaturesProps) {
     setDraggedIndex(null);
   };
 
+  const handleUpdateFeature = (index: number, field: keyof Feature, value: string) => {
+    const newFeatures = [...features];
+    newFeatures[index] = {
+      ...newFeatures[index],
+      [field]: value
+    };
+    onChange(newFeatures);
+  };
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -93,13 +126,25 @@ export default function Features({ features, onChange }: FeaturesProps) {
                 setNewFeature({ ...newFeature, description: e.target.value })
               }
             />
-            <Input
-              placeholder="Icon name (optional)"
-              value={newFeature.icon || ''}
-              onChange={(e) =>
-                setNewFeature({ ...newFeature, icon: e.target.value })
+            <Select
+              value={newFeature.icon}
+              onValueChange={(value) =>
+                setNewFeature({ ...newFeature, icon: value })
               }
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select an icon (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                {AVAILABLE_ICONS.map((icon) => (
+                  <SelectItem key={icon.value} value={icon.value}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4">{icon.label}</span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button onClick={handleAddFeature}>
               <PlusIcon className="h-4 w-4 mr-2" />
               Add Feature
@@ -107,7 +152,7 @@ export default function Features({ features, onChange }: FeaturesProps) {
           </div>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-4">
           {features.map((feature, index) => (
             <div
               key={feature.id}
@@ -119,9 +164,13 @@ export default function Features({ features, onChange }: FeaturesProps) {
                 ${draggedIndex === index ? 'opacity-50' : ''}`}
             >
               <GripVertical className="h-5 w-5 mt-1 cursor-move text-muted-foreground" />
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium">{feature.title}</h4>
+                  <Input
+                    value={feature.title}
+                    onChange={(e) => handleUpdateFeature(index, 'title', e.target.value)}
+                    className="max-w-[300px]"
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -130,14 +179,27 @@ export default function Features({ features, onChange }: FeaturesProps) {
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {feature.description}
-                </p>
-                {feature.icon && (
-                  <p className="text-xs text-muted-foreground">
-                    Icon: {feature.icon}
-                  </p>
-                )}
+                <Textarea
+                  value={feature.description}
+                  onChange={(e) => handleUpdateFeature(index, 'description', e.target.value)}
+                />
+                <Select
+                  value={feature.icon}
+                  onValueChange={(value) => handleUpdateFeature(index, 'icon', value)}
+                >
+                  <SelectTrigger className="max-w-[200px]">
+                    <SelectValue placeholder="Select an icon" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {AVAILABLE_ICONS.map((icon) => (
+                      <SelectItem key={icon.value} value={icon.value}>
+                        <div className="flex items-center gap-2">
+                          <span className="w-4 h-4">{icon.label}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           ))}
