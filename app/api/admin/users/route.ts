@@ -258,7 +258,7 @@ export async function POST(request: NextRequest) {
         lastName,
         phone,
         role,
-        isActive
+        isActive ? 1 : 0 // Convert boolean to 0/1
       ]);
 
       const userId = (userResult as any).insertId;
@@ -282,8 +282,8 @@ export async function POST(request: NextRequest) {
             `${firstName || ''} ${lastName || ''}'s Business`.trim(),
             email,
             phone,
-            isActive,
-            false,
+            isActive ? 1 : 0, // Convert boolean to 0/1
+            0, // Convert boolean to 0/1
             'pending'
           ]
         );

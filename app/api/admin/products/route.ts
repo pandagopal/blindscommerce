@@ -85,6 +85,12 @@ export async function GET(request: NextRequest) {
     // Execute the query
     const [rows] = await connection.query(query, values);
 
+    // Convert boolean fields for each product
+    const products = (rows || []).map(product => ({
+      ...product,
+      is_active: Boolean(product.is_active)
+    }));
+
     // Get total count
     let countQuery = `
       SELECT COUNT(DISTINCT p.product_id) as total
@@ -100,7 +106,7 @@ export async function GET(request: NextRequest) {
     const total = countRows[0]?.total || 0;
 
     return NextResponse.json({
-      products: rows || [],
+      products,
       total,
       page: Math.floor(offset / limit) + 1,
       totalPages: Math.ceil(total / limit)

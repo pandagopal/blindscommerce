@@ -256,6 +256,8 @@ export default function CheckoutPage() {
   const [orderNumber, setOrderNumber] = useState("");
   const [activeStep, setActiveStep] = useState(1); // 1: Shipping, 2: Billing, 3: Payment
   const [paymentData, setPaymentData] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
+  const [showGuestOptions, setShowGuestOptions] = useState(true);
 
   // Simplified checkout state
   const [formData, setFormData] = useState({
@@ -288,6 +290,11 @@ export default function CheckoutPage() {
     // Other
     specialInstructions: "",
     acceptTerms: false,
+    
+    // Guest options
+    createAccount: false,
+    guestPassword: "",
+    guestConfirmPassword: "",
   });
 
   // Shipping and tax calculations
@@ -300,6 +307,20 @@ export default function CheckoutPage() {
     if (items.length === 0 && !orderCompleted) {
       router.push("/cart");
     }
+    
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (!response.ok) {
+          setIsGuest(true);
+        }
+      } catch (error) {
+        setIsGuest(true);
+      }
+    };
+    
+    checkAuth();
   }, [items, router, orderCompleted]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -351,14 +372,14 @@ export default function CheckoutPage() {
       // Create order in database after successful payment
       const orderData = {
         items: items.map(item => ({
-          id: item.id || 0,
+          id: item.product_id || 0,
           quantity: item.quantity,
-          price: item.price,
+          price: item.unit_price,
           name: item.name,
           width: item.width,
           height: item.height,
           colorName: item.colorName || '',
-          colorId: item.colorId || 0,
+          colorId: item.color_id || 0,
         })),
         shipping: {
           firstName: formData.firstName,
@@ -393,13 +414,25 @@ export default function CheckoutPage() {
         special_instructions: formData.specialInstructions
       };
 
-      // Make API call to orders endpoint
-      const response = await fetch('/api/orders/create', {
+      // Choose API endpoint based on authentication status
+      const apiEndpoint = isGuest ? '/api/orders/guest' : '/api/orders/create';
+      
+      // Prepare order data for guest or authenticated user
+      const finalOrderData = isGuest ? {
+        ...orderData,
+        createAccount: formData.createAccount,
+        guestPassword: formData.guestPassword,
+        guestConfirmPassword: formData.guestConfirmPassword,
+        payment: paymentData
+      } : orderData;
+
+      // Make API call to appropriate orders endpoint
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(orderData),
+        body: JSON.stringify(finalOrderData),
       });
 
       if (!response.ok) {
@@ -469,6 +502,49 @@ export default function CheckoutPage() {
         <div className="lg:col-span-2">
           <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
             <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+            
+            {/* Guest Checkout Options */}
+            {isGuest && showGuestOptions && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-medium mb-3">Checkout Options</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="guestCheckout"
+                      name="checkoutType"
+                      value="guest"
+                      checked={!formData.createAccount}
+                      onChange={() => setFormData(prev => ({ ...prev, createAccount: false }))}
+                      className="h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300"
+                    />
+                    <label htmlFor="guestCheckout" className="ml-2 text-sm font-medium text-gray-700">
+                      Continue as Guest
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="radio"
+                      id="createAccount"
+                      name="checkoutType"
+                      value="account"
+                      checked={formData.createAccount}
+                      onChange={() => setFormData(prev => ({ ...prev, createAccount: true }))}
+                      className="h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300"
+                    />
+                    <label htmlFor="createAccount" className="ml-2 text-sm font-medium text-gray-700">
+                      Create Account & Checkout
+                    </label>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowGuestOptions(false)}
+                  className="mt-3 text-sm text-primary-red hover:text-primary-red-dark"
+                >
+                  Continue →
+                </button>
+              </div>
+            )}
 
             {/* Progress steps */}
             <div className="flex items-center justify-between mb-8">
@@ -655,6 +731,43 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+
+                {/* Guest Account Creation Fields */}
+                {isGuest && formData.createAccount && (
+                  <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Account Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Password *
+                        </label>
+                        <input
+                          type="password"
+                          name="guestPassword"
+                          value={formData.guestPassword}
+                          onChange={handleInputChange}
+                          required={formData.createAccount}
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          placeholder="Create a password"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Confirm Password *
+                        </label>
+                        <input
+                          type="password"
+                          name="guestConfirmPassword"
+                          value={formData.guestConfirmPassword}
+                          onChange={handleInputChange}
+                          required={formData.createAccount}
+                          className="w-full p-2 border border-gray-300 rounded-md"
+                          placeholder="Confirm password"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -848,7 +961,7 @@ export default function CheckoutPage() {
 
             <div className="max-h-80 overflow-y-auto mb-4">
               {items.map((item) => (
-                <div key={item.id} className="flex items-start py-3 border-b border-gray-200 last:border-b-0">
+                <div key={item.cart_item_id} className="flex items-start py-3 border-b border-gray-200 last:border-b-0">
                   <div className="w-16 h-16 flex-shrink-0 rounded overflow-hidden border border-gray-200 mr-3">
                     {item.image ? (
                       <img
@@ -876,7 +989,7 @@ export default function CheckoutPage() {
                     )}
                     <div className="flex justify-between mt-1">
                       <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                      <span className="text-sm font-medium">${item.price.toFixed(2)}</span>
+                      <span className="text-sm font-medium">${item.unit_price.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

@@ -7,34 +7,74 @@ interface Category {
   id: number;
   name: string;
   slug: string;
+  count?: number;
 }
 
 interface Feature {
   id: number;
   name: string;
   description: string;
+  count?: number;
+}
+
+interface Brand {
+  id: number;
+  name: string;
+  count?: number;
+}
+
+interface Color {
+  name: string;
+  count: number;
+}
+
+interface Material {
+  name: string;
+  count: number;
+}
+
+interface PriceRange {
+  min_price: number;
+  max_price: number;
+  avg_price: number;
 }
 
 interface ProductFiltersProps {
   categories: Category[];
   features: Feature[];
+  brands?: Brand[];
+  colors?: Color[];
+  materials?: Material[];
+  priceRange?: PriceRange;
   defaultCategoryId?: number | null;
   initialMinPrice?: number | null;
   initialMaxPrice?: number | null;
   initialSort?: string;
   initialFeatures?: number[];
+  initialBrands?: string[];
+  initialColors?: string[];
+  initialMaterials?: string[];
   productCount: number;
+  showAdvancedFilters?: boolean;
 }
 
 export default function ProductFilters({
   categories,
   features,
+  brands = [],
+  colors = [],
+  materials = [],
+  priceRange,
   defaultCategoryId = null,
   initialMinPrice = null,
   initialMaxPrice = null,
   initialSort = 'recommended',
   initialFeatures = [],
-  productCount
+  initialBrands = [],
+  initialColors = [],
+  initialMaterials = [],
+  productCount,
+  showAdvancedFilters = true
 }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +85,12 @@ export default function ProductFilters({
   const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice ? initialMaxPrice.toString() : '');
   const [sortBy, setSortBy] = useState<string>(initialSort);
   const [selectedFeatures, setSelectedFeatures] = useState<number[]>(initialFeatures);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(initialBrands);
+  const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(initialMaterials);
+  const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState<boolean>(false);
+  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
   // Initialize state from URL parameters when component mounts
   useEffect(() => {
