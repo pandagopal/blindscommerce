@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const VisualizationRequestSchema = z.object({
   roomImage: z.string(),
   resultImage: z.string().optional(),
-  productId: z.string(),
-  userId: z.string(),
+  productId: z.coerce.number(),
+  userId: z.coerce.number(),
   placement: z.object({
     x: z.number(),
     y: z.number(),
@@ -19,8 +19,8 @@ export const VisualizationResponseSchema = z.object({
   id: z.string(),
   roomImage: z.string(),
   resultImage: z.string(),
-  productId: z.string(),
-  userId: z.string(),
+  productId: z.number(),
+  userId: z.number(),
   placement: z.object({
     x: z.number(),
     y: z.number(),

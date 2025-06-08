@@ -17,6 +17,7 @@ interface VendorData {
 interface VendorRow extends RowDataPacket {
   user_id: number;
   email: string;
+  phone?: string;
   first_name: string;
   last_name: string;
   business_name: string;
@@ -26,10 +27,15 @@ interface VendorRow extends RowDataPacket {
   vendor_verified: number; // MySQL TINYINT(1) returns 0/1
   is_active: number; // MySQL TINYINT(1) returns 0/1
   is_verified: number; // MySQL TINYINT(1) returns 0/1
-  approval_status: string;
+  vendor_status: string;
   total_sales: number;
   rating: number;
   created_at: Date;
+  updated_at: Date;
+}
+
+interface CountRow extends RowDataPacket {
+  count: string;
 }
 
 export async function GET(request: NextRequest) {
@@ -72,7 +78,7 @@ export async function GET(request: NextRequest) {
       WHERE u.role = 'vendor'
     `;
 
-    const values: any[] = [];
+    const values: (string | number)[] = [];
 
     if (search) {
       query += ` AND (
@@ -103,20 +109,17 @@ export async function GET(request: NextRequest) {
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
     const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
 
-    query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
+    query += ` ORDER BY ${finalSortBy === 'business_name' ? 'v' : 'u'}.${finalSortBy} ${finalSortOrder}`;
 
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
     values.push(limit, offset);
 
-    console.log('Query:', query);
-    console.log('Values:', values);
-
-    const [result] = await pool.query<VendorRow[]>(query, values);
+    const [result] = await pool.execute<VendorRow[]>(query, values);
 
     // Get total count
     const countQuery = `
-      SELECT COUNT(*)
+      SELECT COUNT(*) as count
       FROM users u
       LEFT JOIN vendor_info v ON u.user_id = v.user_id
       WHERE u.role = 'vendor'
@@ -131,7 +134,7 @@ export async function GET(request: NextRequest) {
       )` : ''}
     `;
 
-    const [countResult] = await pool.query(
+    const [countResult] = await pool.execute<CountRow[]>(
       countQuery,
       search ? [
         `%${search}%`,
@@ -152,9 +155,9 @@ export async function GET(request: NextRequest) {
       lastName: row.last_name,
       companyName: row.business_name || `${row.first_name} ${row.last_name}'s Business`,
       contactEmail: row.business_email || row.email,
-      contactPhone: row.business_phone || row.phone,
-      isActive: Boolean(row.vendor_active ?? row.is_active), // Convert 0/1 to false/true
-      isVerified: Boolean(row.vendor_verified ?? row.is_verified), // Convert 0/1 to false/true
+      contactPhone: row.business_phone || row.phone || '',
+      isActive: Boolean(row.vendor_active ?? row.is_active),
+      isVerified: Boolean(row.vendor_verified ?? row.is_verified),
       approvalStatus: row.vendor_status || 'pending',
       totalSales: row.total_sales || 0,
       rating: row.rating || 0,
@@ -163,7 +166,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       vendors,
-      total: parseInt((countResult as any[])[0].count, 10)
+      total: parseInt(countResult[0].count, 10)
     });
   } catch (error) {
     console.error('Error fetching vendors:', error);
@@ -207,14 +210,14 @@ export async function POST(request: NextRequest) {
           role,
           is_active,
           is_verified
-        ) VALUES (?, ?, ?, ?, 'vendor', 1, 1)`,  # Convert boolean to 0/1
+        ) VALUES (?, ?, ?, ?, 'vendor', 1, 1)`,
         [data.email, await hashPassword(data.password), data.firstName, data.lastName]
       );
 
       const userId = userResult.insertId;
 
       // Create vendor info
-      await connection.execute(
+      await connection.execute<ResultSetHeader>(
         `INSERT INTO vendor_info (
           user_id,
           business_name,
@@ -224,13 +227,13 @@ export async function POST(request: NextRequest) {
           is_active,
           is_verified,
           approval_status
-        ) VALUES (?, ?, ?, ?, ?, 1, 0, 'pending')`,  # Convert boolean to 0/1
+        ) VALUES (?, ?, ?, ?, ?, 1, 0, 'pending')`,
         [
           userId,
           data.companyName,
           data.contactEmail,
           data.contactPhone,
-          data.businessDescription
+          data.businessDescription || null
         ]
       );
 
@@ -253,4 +256,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

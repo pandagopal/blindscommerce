@@ -26,6 +26,15 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50);
     const sessionId = searchParams.get('sessionId') || req.headers.get('x-session-id');
     
+    // If no session ID or user, return empty results immediately
+    if (!sessionId) {
+      return NextResponse.json({
+        success: true,
+        products: [],
+        total: 0
+      });
+    }
+
     const user = await getCurrentUser();
     const pool = await getPool();
 

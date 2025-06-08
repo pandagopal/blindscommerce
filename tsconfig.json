@@ -43,13 +43,17 @@
     }
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "./scripts/**/*.ts"
   ],
   "include": [
-    "./scripts/**/*.ts",
     ".next/types/**/*.ts",
     "./app/**/*.ts",
     "./app/**/*.tsx",
-    "./lib/**/*.ts"
+    "./lib/**/*.ts",
+    "./components/**/*.ts",
+    "./components/**/*.tsx",
+    "./context/**/*.ts",
+    "./context/**/*.tsx"
   ]
 }

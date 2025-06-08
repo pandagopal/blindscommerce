@@ -1,5 +1,6 @@
 import { getPool } from '@/lib/db';
 import type { VisualizationRequest } from './models';
+import type { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 interface PlacementData {
   x: number;
@@ -10,16 +11,27 @@ interface PlacementData {
   rotation: number;
 }
 
+interface RoomVisualizationRow extends RowDataPacket {
+  id: string;
+  user_id: number;
+  product_id: number;
+  room_image: string;
+  result_image: string;
+  placement: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export async function createRoomVisualization(
-  userId: string,
-  productId: string,
+  userId: number,
+  productId: number,
   roomImage: string,
   resultImage: string,
   placement: PlacementData
 ) {
   const pool = await getPool();
   
-  const [result] = await pool.execute(
+  const [result] = await pool.execute<ResultSetHeader>(
     `INSERT INTO room_visualizations 
      (user_id, product_id, room_image, result_image, placement) 
      VALUES (?, ?, ?, ?, ?)`,
@@ -27,37 +39,37 @@ export async function createRoomVisualization(
   );
 
   // Get the inserted visualization
-  const [visualizations] = await pool.execute(
+  const [visualizations] = await pool.execute<RoomVisualizationRow[]>(
     `SELECT * FROM room_visualizations WHERE id = ?`,
-    [(result as any).insertId]
+    [result.insertId]
   );
 
-  return (visualizations as any[])[0];
+  return visualizations[0];
 }
 
-export async function getRoomVisualizations(userId: string) {
+export async function getRoomVisualizations(userId: number) {
   const pool = await getPool();
   
-  const [visualizations] = await pool.execute(
+  const [visualizations] = await pool.execute<RoomVisualizationRow[]>(
     `SELECT * FROM room_visualizations WHERE user_id = ? ORDER BY created_at DESC`,
     [userId]
   );
 
-  return visualizations as any[];
+  return visualizations;
 }
 
 export async function getRoomVisualization(id: string) {
   const pool = await getPool();
   
-  const [visualizations] = await pool.execute(
+  const [visualizations] = await pool.execute<RoomVisualizationRow[]>(
     `SELECT * FROM room_visualizations WHERE id = ?`,
     [id]
   );
 
-  return (visualizations as any[])[0];
+  return visualizations[0];
 }
 
-export async function deleteRoomVisualization(id: string, userId: string) {
+export async function deleteRoomVisualization(id: string, userId: number) {
   const pool = await getPool();
   
   await pool.execute(
@@ -68,13 +80,13 @@ export async function deleteRoomVisualization(id: string, userId: string) {
 
 export async function updateRoomVisualization(
   id: string,
-  userId: string,
+  userId: number,
   data: Partial<VisualizationRequest>
 ) {
   const pool = await getPool();
   
   const updates: string[] = [];
-  const values: any[] = [];
+  const values: (string | number | PlacementData)[] = [];
 
   if (data.placement) {
     updates.push('placement = ?');
