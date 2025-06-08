@@ -57,7 +57,12 @@ export async function executeQuery<T extends RowDataPacket>(
     const [rows] = await pool.execute<T[]>(query, params);
     return rows;
   } catch (error) {
-    console.error(errorMessage, error);
+    // Log error safely without exposing sensitive data
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(errorMessage, error);
+    } else {
+      console.error(errorMessage);
+    }
     throw new Error(errorMessage);
   }
 }
@@ -80,19 +85,35 @@ export const getPool = async (): Promise<mysql.Pool> => {
   isConnecting = true;
 
   try {
+    // Validate required environment variables
+    const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+    for (const envVar of requiredEnvVars) {
+      if (!process.env[envVar]) {
+        throw new Error(`Required environment variable ${envVar} is not set`);
+      }
+    }
+
     pool = mysql.createPool({
-      host: process.env.DB_HOST || '127.0.0.1',
-      port: parseInt(process.env.DB_PORT || '3307'),
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || 'Test@1234',
-      database: process.env.DB_NAME || 'Blinds',
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT),
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
       waitForConnections: true,
       connectionLimit: 3,
       queueLimit: 0,
       enableKeepAlive: true,
       keepAliveInitialDelay: 0,
       connectTimeout: 10000,
-      multipleStatements: false
+      acquireTimeout: 60000,
+      timeout: 60000,
+      multipleStatements: false, // Prevent SQL injection via multiple statements
+      ssl: process.env.NODE_ENV === 'production' ? {
+        rejectUnauthorized: true,
+        ca: process.env.DB_SSL_CA,
+        cert: process.env.DB_SSL_CERT,
+        key: process.env.DB_SSL_KEY
+      } : false,
     });
 
     const connection = await pool.getConnection();
@@ -104,7 +125,12 @@ export const getPool = async (): Promise<mysql.Pool> => {
     dbConnectionFailed = false;
     return pool;
   } catch (error) {
-    console.error('Failed to create database pool:', error);
+    // Safe error logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Failed to create database pool:', error);
+    } else {
+      console.error('Database connection failed');
+    }
     pool = null;
     isConnecting = false;
 
@@ -129,7 +155,12 @@ export const comparePassword = async (password: string, hash: string): Promise<b
   try {
     return await bcrypt.compare(password, hash);
   } catch (error) {
-    console.error('Error during password comparison:', error);
+    // Safe error logging without exposing details
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error during password comparison:', error);
+    } else {
+      console.error('Password comparison failed');
+    }
     return false;
   }
 };

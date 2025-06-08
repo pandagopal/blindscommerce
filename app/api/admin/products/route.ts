@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const pool = await getPool();
     connection = await pool.getConnection();
 
-    // Build the base query
+    // Build the base query with many-to-many categories
     let query = `
       SELECT 
         p.product_id,
@@ -31,14 +31,15 @@ export async function GET(request: NextRequest) {
         p.sku,
         p.base_price,
         p.stock_status,
-        p.category_id,
         p.is_active,
         p.created_at,
         p.updated_at,
-        c.name as category_name,
-        COALESCE(SUM(oi.quantity), 0) as total_sold
+        GROUP_CONCAT(DISTINCT c.name ORDER BY pc.is_primary DESC, c.name ASC) as category_names,
+        GROUP_CONCAT(DISTINCT c.category_id ORDER BY pc.is_primary DESC, c.name ASC) as category_ids,
+        COALESCE(SUM(DISTINCT oi.quantity), 0) as total_sold
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_categories pc ON p.product_id = pc.product_id
+      LEFT JOIN categories c ON pc.category_id = c.category_id
       LEFT JOIN order_items oi ON p.product_id = oi.product_id
     `;
 
@@ -51,9 +52,9 @@ export async function GET(request: NextRequest) {
       values.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
 
-    // Add category filter
+    // Add category filter - now supports many-to-many
     if (category) {
-      conditions.push('p.category_id = ?');
+      conditions.push('EXISTS (SELECT 1 FROM product_categories pc2 WHERE pc2.product_id = p.product_id AND pc2.category_id = ?)');
       values.push(category);
     }
 
@@ -95,7 +96,8 @@ export async function GET(request: NextRequest) {
     let countQuery = `
       SELECT COUNT(DISTINCT p.product_id) as total
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_categories pc ON p.product_id = pc.product_id
+      LEFT JOIN categories c ON pc.category_id = c.category_id
     `;
 
     if (conditions.length > 0) {
@@ -142,7 +144,7 @@ export async function POST(request: NextRequest) {
       sku,
       price,
       stock_status = 'in_stock',
-      category_id,
+      categories = [], // Changed to support multiple categories
       is_active = true,
       images = [],
       variants = []
@@ -154,7 +156,7 @@ export async function POST(request: NextRequest) {
     try {
       await connection.query('BEGIN');
 
-      // Insert the product
+      // Insert the product (without category_id)
       const [productResult] = await connection.query(
         `INSERT INTO products (
           name,
@@ -162,15 +164,35 @@ export async function POST(request: NextRequest) {
           sku,
           base_price,
           stock_status,
-          category_id,
           is_active,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-        [name, description, sku, price, stock_status, category_id, is_active]
+        ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [name, description, sku, price, stock_status, is_active]
       );
 
       const productId = productResult.insertId;
+
+      // Insert product categories (many-to-many relationship)
+      if (categories.length > 0) {
+        const categoryQuery = `
+          INSERT INTO product_categories (
+            product_id,
+            category_id,
+            is_primary,
+            created_at
+          ) VALUES (?, ?, ?, NOW())
+        `;
+
+        for (let i = 0; i < categories.length; i++) {
+          const category = categories[i];
+          await connection.query(categoryQuery, [
+            productId,
+            category.category_id || category.id,
+            i === 0 // First category is primary
+          ]);
+        }
+      }
 
       // Insert product images if provided
       if (images.length > 0) {

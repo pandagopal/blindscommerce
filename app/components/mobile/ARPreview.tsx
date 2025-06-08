@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, RotateCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { apiRateLimiter } from '@/lib/security/validation';
 
 interface ARPreviewProps {
   productId: string;
@@ -21,16 +22,21 @@ export default function ARPreview({ productId, productImage, productDimensions }
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {
-    // Check if WebXR is supported
-    if ('xr' in navigator) {
-      (navigator as any).xr?.isSessionSupported('immersive-ar')
+    // Check if WebXR is supported with security validation
+    if ('xr' in navigator && typeof (navigator as any).xr?.isSessionSupported === 'function') {
+      (navigator as any).xr.isSessionSupported('immersive-ar')
         .then((supported: boolean) => {
           setIsARSupported(supported);
         })
         .catch((error: Error) => {
-          console.error('Error checking AR support:', error);
+          // Safe error logging
+          if (process.env.NODE_ENV !== 'production') {
+            console.error('Error checking AR support:', error);
+          }
           setIsARSupported(false);
         });
+    } else {
+      setIsARSupported(false);
     }
   }, []);
 

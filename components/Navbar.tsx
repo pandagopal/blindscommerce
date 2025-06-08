@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingCart, User, Menu, Search, LogOut, ChevronDown, Settings, Package, List, Heart } from "lucide-react";
+import { ShoppingCart, User, Menu, Search, LogOut, ChevronDown, Settings, Package, List, Heart, FileText } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -148,6 +148,15 @@ const Navbar = () => {
               Shop
             </Link>
             <Link
+              href="/ai-features"
+              className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+            >
+              AI Features
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                New
+              </span>
+            </Link>
+            <Link
               href="/measure-install"
               className="text-gray-600 hover:text-primary-red font-medium"
             >
@@ -216,6 +225,16 @@ const Navbar = () => {
                           <List size={16} className="mr-2" />
                           Saved Configurations
                         </Link>
+                        {user.role === 'customer' && (
+                          <Link
+                            href="/customer/commercial-templates"
+                            onClick={() => setDropdownOpen(false)}
+                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          >
+                            <FileText size={16} className="mr-2" />
+                            Commercial Orders (5+)
+                          </Link>
+                        )}
                         <Link
                           href="/account/wishlist"
                           onClick={() => setDropdownOpen(false)}

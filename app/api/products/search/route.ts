@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
+import { productSearchSchema, apiRateLimiter } from '@/lib/security/validation';
+import { z } from 'zod';
 
 interface SearchFilters {
   query?: string;
@@ -44,23 +46,59 @@ interface ProductSearchResult extends RowDataPacket {
 // GET /api/products/search - Enhanced product search
 export async function GET(req: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+    
+    // Check rate limiting
+    if (apiRateLimiter.isRateLimited(clientIP)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     
+    // Validate and sanitize search parameters
+    let validatedFilters;
+    try {
+      const searchData = {
+        query: searchParams.get('q') || '',
+        category: searchParams.get('categories')?.split(',')[0] || undefined,
+        minPrice: searchParams.get('priceMin') ? parseFloat(searchParams.get('priceMin')!) : undefined,
+        maxPrice: searchParams.get('priceMax') ? parseFloat(searchParams.get('priceMax')!) : undefined,
+        page: parseInt(searchParams.get('page') || '1'),
+        limit: Math.min(parseInt(searchParams.get('limit') || '24'), 100)
+      };
+      
+      validatedFilters = productSearchSchema.parse(searchData);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid search parameters', details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+    
     const filters: SearchFilters = {
-      query: searchParams.get('q') || '',
-      categories: searchParams.get('categories')?.split(',').map(Number).filter(Boolean) || [],
-      priceMin: searchParams.get('priceMin') ? parseFloat(searchParams.get('priceMin')!) : undefined,
-      priceMax: searchParams.get('priceMax') ? parseFloat(searchParams.get('priceMax')!) : undefined,
-      rating: searchParams.get('rating') ? parseInt(searchParams.get('rating')!) : undefined,
-      features: searchParams.get('features')?.split(',').map(Number).filter(Boolean) || [],
-      colors: searchParams.get('colors')?.split(',').filter(Boolean) || [],
-      materials: searchParams.get('materials')?.split(',').filter(Boolean) || [],
-      brands: searchParams.get('brands')?.split(',').filter(Boolean) || [],
-      rooms: searchParams.get('rooms')?.split(',').filter(Boolean) || [],
-      sortBy: searchParams.get('sortBy') || 'relevance',
-      sortOrder: searchParams.get('sortOrder') || 'desc',
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: Math.min(parseInt(searchParams.get('limit') || '24'), 100)
+      query: validatedFilters.query,
+      categories: searchParams.get('categories')?.split(',').map(Number).filter(n => !isNaN(n) && n > 0) || [],
+      priceMin: validatedFilters.minPrice,
+      priceMax: validatedFilters.maxPrice,
+      rating: searchParams.get('rating') ? Math.max(1, Math.min(5, parseInt(searchParams.get('rating')!))) : undefined,
+      features: searchParams.get('features')?.split(',').map(Number).filter(n => !isNaN(n) && n > 0) || [],
+      colors: searchParams.get('colors')?.split(',').filter(c => /^[a-zA-Z0-9\s]+$/.test(c)) || [],
+      materials: searchParams.get('materials')?.split(',').filter(m => /^[a-zA-Z0-9\s]+$/.test(m)) || [],
+      brands: searchParams.get('brands')?.split(',').filter(b => /^[a-zA-Z0-9\s]+$/.test(b)) || [],
+      rooms: searchParams.get('rooms')?.split(',').filter(r => /^[a-zA-Z0-9\s]+$/.test(r)) || [],
+      sortBy: ['price', 'rating', 'name', 'newest', 'popularity', 'relevance'].includes(searchParams.get('sortBy') || '') ? searchParams.get('sortBy')! : 'relevance',
+      sortOrder: ['asc', 'desc'].includes(searchParams.get('sortOrder') || '') ? searchParams.get('sortOrder')! : 'desc',
+      page: validatedFilters.page || 1,
+      limit: validatedFilters.limit || 24
     };
 
     const pool = await getPool();
@@ -79,7 +117,7 @@ export async function GET(req: NextRequest) {
         p.is_featured,
         p.is_new,
         p.is_on_sale,
-        c.name as category_name,
+        GROUP_CONCAT(DISTINCT c.name) as category_name,
         b.name as brand_name,
         (
           SELECT image_url
@@ -87,15 +125,16 @@ export async function GET(req: NextRequest) {
           WHERE product_id = p.product_id AND is_primary = TRUE
           LIMIT 1
         ) as primary_image,
-        GROUP_CONCAT(DISTINCT pc.color_name) as colors,
+        GROUP_CONCAT(DISTINCT pcolors.color_name) as colors,
         GROUP_CONCAT(DISTINCT pm.material_name) as materials,
         GROUP_CONCAT(DISTINCT pr.room_type) as room_types,
         GROUP_CONCAT(DISTINCT pf.feature_name) as features,
-        ${filters.query ? buildRelevanceScore(filters.query) : '0'} as search_relevance
+        ${filters.query ? buildRelevanceScore() : '0'} as search_relevance
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_categories prodcat ON p.product_id = prodcat.product_id
+      LEFT JOIN categories c ON prodcat.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
-      LEFT JOIN product_colors pc ON p.product_id = pc.product_id
+      LEFT JOIN product_colors pcolors ON p.product_id = pcolors.product_id
       LEFT JOIN product_materials pm ON p.product_id = pm.product_id
       LEFT JOIN product_rooms pr ON p.product_id = pr.product_id
       LEFT JOIN product_features pf ON p.product_id = pf.product_id
@@ -103,6 +142,13 @@ export async function GET(req: NextRequest) {
 
     const whereConditions: string[] = ['p.is_active = TRUE'];
     const queryParams: any[] = [];
+    
+    // Add relevance score parameters first (if search query exists)
+    if (filters.query) {
+      const searchTerm = `%${filters.query}%`;
+      // Parameters for relevance score: name LIKE, description LIKE, category LIKE, brand LIKE, MATCH AGAINST
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, filters.query);
+    }
 
     // Add search query condition
     if (filters.query) {
@@ -119,7 +165,11 @@ export async function GET(req: NextRequest) {
 
     // Add category filter
     if (filters.categories && filters.categories.length > 0) {
-      whereConditions.push(`p.category_id IN (${filters.categories.map(() => '?').join(',')})`);
+      whereConditions.push(`EXISTS (
+        SELECT 1 FROM product_categories pc_filter
+        WHERE pc_filter.product_id = p.product_id 
+        AND pc_filter.category_id IN (${filters.categories.map(() => '?').join(',')})
+      )`);
       queryParams.push(...filters.categories);
     }
 
@@ -260,15 +310,15 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Helper function to build relevance score
-function buildRelevanceScore(query: string): string {
+// Helper function to build relevance score (SQL safe - no user input injection)
+function buildRelevanceScore(): string {
   return `(
     CASE 
-      WHEN p.name LIKE '%${query}%' THEN 100
-      WHEN p.short_description LIKE '%${query}%' THEN 80
-      WHEN c.name LIKE '%${query}%' THEN 60
-      WHEN b.name LIKE '%${query}%' THEN 40
-      WHEN MATCH(p.name, p.short_description) AGAINST('${query}' IN NATURAL LANGUAGE MODE) THEN 90
+      WHEN p.name LIKE ? THEN 100
+      WHEN p.short_description LIKE ? THEN 80
+      WHEN EXISTS (SELECT 1 FROM product_categories pc_rel JOIN categories c_rel ON pc_rel.category_id = c_rel.category_id WHERE pc_rel.product_id = p.product_id AND c_rel.name LIKE ?) THEN 60
+      WHEN b.name LIKE ? THEN 40
+      WHEN MATCH(p.name, p.short_description) AGAINST(? IN NATURAL LANGUAGE MODE) THEN 90
       ELSE 0
     END
   )`;
@@ -301,9 +351,10 @@ async function getSearchFacets(filters: SearchFilters, pool: any) {
   try {
     // Get available categories with counts
     const [categories] = await pool.execute<RowDataPacket[]>(`
-      SELECT c.category_id, c.name, COUNT(p.product_id) as count
+      SELECT c.category_id, c.name, COUNT(DISTINCT p.product_id) as count
       FROM categories c
-      LEFT JOIN products p ON c.category_id = p.category_id AND p.is_active = TRUE
+      LEFT JOIN product_categories pc ON c.category_id = pc.category_id
+      LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
       GROUP BY c.category_id, c.name
       HAVING count > 0
       ORDER BY c.name

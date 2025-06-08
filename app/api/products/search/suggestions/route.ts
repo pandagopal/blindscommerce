@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         p.name,
         p.slug,
         p.base_price,
-        c.name as category_name,
+        GROUP_CONCAT(DISTINCT c.name) as category_name,
         (
           SELECT image_url
           FROM product_images
@@ -43,9 +43,11 @@ export async function GET(req: NextRequest) {
           LIMIT 1
         ) as primary_image
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_categories pc ON p.product_id = pc.product_id
+      LEFT JOIN categories c ON pc.category_id = c.category_id
       WHERE p.is_active = TRUE
         AND (p.name LIKE ? OR p.short_description LIKE ?)
+      GROUP BY p.product_id, p.name, p.slug, p.base_price
       ORDER BY 
         CASE WHEN p.name LIKE ? THEN 1 ELSE 2 END,
         p.rating DESC,
@@ -69,9 +71,10 @@ export async function GET(req: NextRequest) {
         c.category_id,
         c.name,
         c.slug,
-        COUNT(p.product_id) as product_count
+        COUNT(DISTINCT p.product_id) as product_count
       FROM categories c
-      LEFT JOIN products p ON c.category_id = p.category_id AND p.is_active = TRUE
+      LEFT JOIN product_categories pc ON c.category_id = pc.category_id
+      LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
       WHERE c.is_active = TRUE AND c.name LIKE ?
       GROUP BY c.category_id, c.name, c.slug
       HAVING product_count > 0

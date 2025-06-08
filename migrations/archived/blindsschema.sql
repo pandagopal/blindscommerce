@@ -9,8 +9,14 @@ SET collation_connection = utf8mb4_unicode_ci;
 -- Disable foreign key checks during migrations
 SET FOREIGN_KEY_CHECKS = 0;
 
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS tr_order_status_update;
+DROP TRIGGER IF EXISTS update_product_order_count;
+DROP TRIGGER IF EXISTS cleanup_recently_viewed;
+DROP TRIGGER IF EXISTS cleanup_old_recently_viewed;
+
 -- Core Foundation Tables (Required for all other tables)
-use blinds;
+use blindscommerce;
 -- Create users table (referenced by many other tables)
 CREATE TABLE IF NOT EXISTS users (
     user_id INT NOT NULL AUTO_INCREMENT,
@@ -466,8 +472,7 @@ CREATE TABLE IF NOT EXISTS recently_viewed (
     CONSTRAINT chk_user_or_session CHECK (user_id IS NOT NULL OR session_id IS NOT NULL)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add composite index for recently viewed products
-CREATE INDEX idx_product_viewed_at ON recently_viewed(product_id, viewed_at DESC);
+-- Composite index already exists in table definition above
 
 -- Room Visualization System
 CREATE TABLE IF NOT EXISTS room_visualizations (
@@ -1473,7 +1478,6 @@ CREATE TABLE IF NOT EXISTS product_variants (
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (variant_id),
-    UNIQUE KEY sku (sku),
     KEY product_id (product_id),
     KEY is_active (is_active),
     CONSTRAINT product_variants_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
@@ -1685,7 +1689,7 @@ CREATE TABLE IF NOT EXISTS warranty_claims (
     claim_id INT NOT NULL AUTO_INCREMENT,
     registration_id INT NOT NULL,
     user_id INT NOT NULL,
-    claim_number VARCHAR(50) UNIQUE NOT NULL,
+    claim_number VARCHAR(50) NOT NULL,
     claim_date TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     issue_description TEXT NOT NULL,
     claim_type ENUM('defect', 'damage', 'malfunction', 'installation_issue') NOT NULL,
@@ -1776,7 +1780,7 @@ CREATE TABLE IF NOT EXISTS trade_applications (
     business_phone VARCHAR(20) DEFAULT NULL,
     business_email VARCHAR(255) DEFAULT NULL,
     website_url VARCHAR(500) DEFAULT NULL,
-    references JSON DEFAULT NULL,
+    business_references JSON DEFAULT NULL,
     portfolio_links JSON DEFAULT NULL,
     application_status ENUM('pending', 'under_review', 'approved', 'denied', 'additional_info_needed') DEFAULT 'pending',
     reviewed_by INT DEFAULT NULL,
@@ -1897,6 +1901,495 @@ CREATE TABLE IF NOT EXISTS search_suggestions (
     KEY search_count (search_count),
     KEY is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- MISSING TABLES FROM SCHEMA.SQL
+-- ============================================================================
+
+-- Cart Management Tables
+CREATE TABLE IF NOT EXISTS carts (
+    cart_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT DEFAULT NULL,
+    session_id VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (cart_id),
+    KEY user_id (user_id),
+    CONSTRAINT carts_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS cart_items (
+    cart_item_id INT NOT NULL AUTO_INCREMENT,
+    cart_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT '1',
+    configuration JSON DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (cart_item_id),
+    KEY cart_id (cart_id),
+    KEY product_id (product_id),
+    CONSTRAINT cart_items_ibfk_1 FOREIGN KEY (cart_id) REFERENCES carts (cart_id) ON DELETE CASCADE,
+    CONSTRAINT cart_items_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product Configuration Tables
+CREATE TABLE IF NOT EXISTS colors (
+    color_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    hex_code VARCHAR(7) DEFAULT NULL,
+    color_family VARCHAR(50) DEFAULT NULL,
+    is_popular TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (color_id),
+    UNIQUE KEY name (name),
+    KEY color_family (color_family),
+    KEY is_popular (is_popular)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS materials (
+    material_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    material_type VARCHAR(50) DEFAULT NULL,
+    texture VARCHAR(50) DEFAULT NULL,
+    durability_rating INT DEFAULT NULL,
+    care_instructions TEXT,
+    is_popular TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (material_id),
+    UNIQUE KEY name (name),
+    KEY material_type (material_type),
+    KEY is_popular (is_popular)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS fabric_types (
+    fabric_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    light_filtering VARCHAR(50) DEFAULT NULL,
+    privacy_level VARCHAR(50) DEFAULT NULL,
+    energy_efficiency VARCHAR(50) DEFAULT NULL,
+    maintenance_level VARCHAR(50) DEFAULT NULL,
+    price_category ENUM('budget', 'mid-range', 'premium', 'luxury') DEFAULT 'mid-range',
+    is_popular TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (fabric_type_id),
+    UNIQUE KEY name (name),
+    KEY light_filtering (light_filtering),
+    KEY privacy_level (privacy_level)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS mount_types (
+    mount_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    installation_difficulty ENUM('easy', 'moderate', 'difficult') DEFAULT 'moderate',
+    tools_required TEXT,
+    is_popular TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (mount_type_id),
+    UNIQUE KEY name (name),
+    KEY installation_difficulty (installation_difficulty)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS control_types (
+    control_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    operation_method VARCHAR(50) DEFAULT NULL,
+    automation_compatible TINYINT(1) DEFAULT '0',
+    child_safety_features TEXT,
+    is_popular TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (control_type_id),
+    UNIQUE KEY name (name),
+    KEY operation_method (operation_method)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS headrail_options (
+    headrail_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    material VARCHAR(100) DEFAULT NULL,
+    color_options TEXT,
+    mounting_compatibility TEXT,
+    weight_capacity VARCHAR(50) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (headrail_id),
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS bottom_rail_options (
+    bottom_rail_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    material VARCHAR(100) DEFAULT NULL,
+    color_options TEXT,
+    weight_options TEXT,
+    compatibility_notes TEXT,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (bottom_rail_id),
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS specialty_options (
+    specialty_option_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    category VARCHAR(50) DEFAULT NULL,
+    price_adjustment DECIMAL(10,2) DEFAULT '0.00',
+    compatibility_requirements TEXT,
+    installation_notes TEXT,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (specialty_option_id),
+    UNIQUE KEY name (name),
+    KEY category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Pricing and Configuration Tables
+CREATE TABLE IF NOT EXISTS price_matrix (
+    price_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    width_min DECIMAL(5,2) NOT NULL,
+    width_max DECIMAL(5,2) NOT NULL,
+    height_min DECIMAL(5,2) NOT NULL,
+    height_max DECIMAL(5,2) NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL,
+    price_per_sqft DECIMAL(10,2) DEFAULT '0.00',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (price_id),
+    KEY product_id (product_id),
+    CONSTRAINT price_matrix_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS dimension_types (
+    dimension_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    unit VARCHAR(10) DEFAULT 'inches',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (dimension_type_id),
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_dimensions (
+    dimension_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    dimension_type_id INT NOT NULL,
+    min_value DECIMAL(8,3) NOT NULL,
+    max_value DECIMAL(8,3) NOT NULL,
+    increment_value DECIMAL(8,3) DEFAULT '0.125',
+    unit VARCHAR(10) DEFAULT 'inches',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (dimension_id),
+    UNIQUE KEY product_dimension_type (product_id, dimension_type_id),
+    KEY product_id (product_id),
+    KEY dimension_type_id (dimension_type_id),
+    CONSTRAINT product_dimensions_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_dimensions_ibfk_2 FOREIGN KEY (dimension_type_id) REFERENCES dimension_types (dimension_type_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS product_types (
+    product_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    category VARCHAR(50) DEFAULT NULL,
+    features TEXT,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_type_id),
+    UNIQUE KEY name (name),
+    KEY category (category)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Communication and Support Tables
+CREATE TABLE IF NOT EXISTS experts (
+    expert_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    specialization VARCHAR(100) DEFAULT NULL,
+    experience_years INT DEFAULT NULL,
+    certification_details TEXT,
+    availability_schedule JSON DEFAULT NULL,
+    hourly_rate DECIMAL(8,2) DEFAULT NULL,
+    rating DECIMAL(3,2) DEFAULT NULL,
+    total_consultations INT DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (expert_id),
+    UNIQUE KEY user_id (user_id),
+    CONSTRAINT experts_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    session_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT DEFAULT NULL,
+    expert_id INT DEFAULT NULL,
+    session_type ENUM('support', 'consultation', 'sales') DEFAULT 'support',
+    status ENUM('active', 'ended', 'waiting') DEFAULT 'active',
+    started_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP NULL DEFAULT NULL,
+    rating INT DEFAULT NULL,
+    feedback TEXT,
+    PRIMARY KEY (session_id),
+    KEY user_id (user_id),
+    KEY expert_id (expert_id),
+    CONSTRAINT chat_sessions_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    CONSTRAINT chat_sessions_ibfk_2 FOREIGN KEY (expert_id) REFERENCES experts (expert_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    message_id INT NOT NULL AUTO_INCREMENT,
+    session_id INT DEFAULT NULL,
+    user_id INT DEFAULT NULL,
+    message TEXT NOT NULL,
+    message_type VARCHAR(50) DEFAULT 'text',
+    sent_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    is_read TINYINT(1) DEFAULT '0',
+    PRIMARY KEY (message_id),
+    KEY session_id (session_id),
+    KEY user_id (user_id),
+    CONSTRAINT chat_messages_ibfk_1 FOREIGN KEY (session_id) REFERENCES chat_sessions (session_id) ON DELETE CASCADE,
+    CONSTRAINT chat_messages_ibfk_2 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Consultation and Installation Tables
+CREATE TABLE IF NOT EXISTS consultation_slots (
+    slot_id INT NOT NULL AUTO_INCREMENT,
+    expert_id INT NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_available TINYINT(1) DEFAULT '1',
+    max_bookings INT DEFAULT '1',
+    current_bookings INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (slot_id),
+    UNIQUE KEY expert_date_time (expert_id, date, start_time),
+    KEY expert_id (expert_id),
+    CONSTRAINT consultation_slots_ibfk_1 FOREIGN KEY (expert_id) REFERENCES experts (expert_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS consultation_bookings (
+    booking_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    expert_id INT DEFAULT NULL,
+    slot_id INT DEFAULT NULL,
+    consultation_type ENUM('virtual', 'in-home', 'phone') DEFAULT 'virtual',
+    status ENUM('scheduled', 'confirmed', 'completed', 'cancelled', 'rescheduled') DEFAULT 'scheduled',
+    scheduled_date DATE NOT NULL,
+    scheduled_time TIME NOT NULL,
+    duration_minutes INT DEFAULT '60',
+    notes TEXT,
+    confirmation_sent TINYINT(1) DEFAULT '0',
+    reminder_sent TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (booking_id),
+    KEY user_id (user_id),
+    KEY expert_id (expert_id),
+    KEY slot_id (slot_id),
+    CONSTRAINT consultation_bookings_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    CONSTRAINT consultation_bookings_ibfk_2 FOREIGN KEY (expert_id) REFERENCES experts (expert_id) ON DELETE SET NULL,
+    CONSTRAINT consultation_bookings_ibfk_3 FOREIGN KEY (slot_id) REFERENCES consultation_slots (slot_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS installation_slots (
+    slot_id INT NOT NULL AUTO_INCREMENT,
+    installer_id INT NOT NULL,
+    date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    is_available TINYINT(1) DEFAULT '1',
+    service_area VARCHAR(255) DEFAULT NULL,
+    max_installations INT DEFAULT '1',
+    current_installations INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (slot_id),
+    UNIQUE KEY installer_date_time (installer_id, date, start_time),
+    KEY installer_id (installer_id),
+    CONSTRAINT installation_slots_ibfk_1 FOREIGN KEY (installer_id) REFERENCES installers (installer_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS installation_bookings (
+    installation_booking_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    installer_id INT DEFAULT NULL,
+    order_id INT DEFAULT NULL,
+    slot_id INT DEFAULT NULL,
+    installation_type ENUM('standard', 'premium', 'custom') DEFAULT 'standard',
+    status ENUM('scheduled', 'confirmed', 'in_progress', 'completed', 'cancelled', 'rescheduled') DEFAULT 'scheduled',
+    scheduled_date DATE NOT NULL,
+    scheduled_time TIME NOT NULL,
+    estimated_duration_hours DECIMAL(3,1) DEFAULT '2.0',
+    special_requirements TEXT,
+    preparation_instructions TEXT,
+    confirmation_sent TINYINT(1) DEFAULT '0',
+    reminder_sent TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (installation_booking_id),
+    KEY user_id (user_id),
+    KEY installer_id (installer_id),
+    KEY order_id (order_id),
+    KEY slot_id (slot_id),
+    CONSTRAINT installation_bookings_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    CONSTRAINT installation_bookings_ibfk_2 FOREIGN KEY (installer_id) REFERENCES installers (installer_id) ON DELETE SET NULL,
+    CONSTRAINT installation_bookings_ibfk_3 FOREIGN KEY (order_id) REFERENCES orders (order_id) ON DELETE SET NULL,
+    CONSTRAINT installation_bookings_ibfk_4 FOREIGN KEY (slot_id) REFERENCES installation_slots (slot_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS installation_requests (
+    request_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    order_id INT DEFAULT NULL,
+    preferred_date DATE DEFAULT NULL,
+    preferred_time_start TIME DEFAULT NULL,
+    preferred_time_end TIME DEFAULT NULL,
+    alternative_dates JSON DEFAULT NULL,
+    property_type ENUM('house', 'apartment', 'condo', 'office', 'commercial') DEFAULT 'house',
+    access_instructions TEXT,
+    special_requirements TEXT,
+    tools_available TEXT,
+    pets_present TINYINT(1) DEFAULT '0',
+    status ENUM('pending', 'scheduled', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (request_id),
+    KEY user_id (user_id),
+    KEY order_id (order_id),
+    CONSTRAINT installation_requests_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    CONSTRAINT installation_requests_ibfk_2 FOREIGN KEY (order_id) REFERENCES orders (order_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Additional Support and Communication Tables
+CREATE TABLE IF NOT EXISTS customer_questions (
+    question_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT DEFAULT NULL,
+    product_id INT DEFAULT NULL,
+    question_text TEXT NOT NULL,
+    is_answered TINYINT(1) DEFAULT '0',
+    is_public TINYINT(1) DEFAULT '1',
+    helpful_votes INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (question_id),
+    KEY user_id (user_id),
+    KEY product_id (product_id),
+    CONSTRAINT customer_questions_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    CONSTRAINT customer_questions_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS question_replies (
+    reply_id INT NOT NULL AUTO_INCREMENT,
+    question_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    reply_text TEXT NOT NULL,
+    is_staff_reply TINYINT(1) DEFAULT '0',
+    helpful_votes INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (reply_id),
+    KEY question_id (question_id),
+    KEY user_id (user_id),
+    CONSTRAINT question_replies_ibfk_1 FOREIGN KEY (question_id) REFERENCES customer_questions (question_id) ON DELETE CASCADE,
+    CONSTRAINT question_replies_ibfk_2 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Additional System Tables
+CREATE TABLE IF NOT EXISTS room_types (
+    room_type_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    typical_humidity VARCHAR(50) DEFAULT NULL,
+    light_exposure VARCHAR(50) DEFAULT NULL,
+    privacy_requirements VARCHAR(50) DEFAULT NULL,
+    recommended_products TEXT,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (room_type_id),
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS order_status (
+    status_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    color_code VARCHAR(7) DEFAULT NULL,
+    is_final TINYINT(1) DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    sort_order INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (status_id),
+    UNIQUE KEY name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS measurement_requests (
+    request_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    order_id INT DEFAULT NULL,
+    property_address TEXT NOT NULL,
+    preferred_date DATE DEFAULT NULL,
+    preferred_time TIME DEFAULT NULL,
+    contact_phone VARCHAR(20) DEFAULT NULL,
+    special_instructions TEXT,
+    room_details JSON DEFAULT NULL,
+    status ENUM('pending', 'scheduled', 'completed', 'cancelled') DEFAULT 'pending',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (request_id),
+    KEY user_id (user_id),
+    KEY order_id (order_id),
+    CONSTRAINT measurement_requests_ibfk_1 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    CONSTRAINT measurement_requests_ibfk_2 FOREIGN KEY (order_id) REFERENCES orders (order_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS inventory_alerts (
+    alert_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    alert_type ENUM('low_stock', 'out_of_stock', 'reorder_point') DEFAULT 'low_stock',
+    threshold_quantity INT NOT NULL,
+    current_quantity INT NOT NULL,
+    alert_status ENUM('active', 'resolved', 'dismissed') DEFAULT 'active',
+    last_triggered TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (alert_id),
+    KEY product_id (product_id),
+    KEY alert_type (alert_type),
+    KEY alert_status (alert_status),
+    CONSTRAINT inventory_alerts_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- SAMPLE DATA SECTION
+-- ============================================================================
 
 -- Insert default categories if they don't exist
 INSERT IGNORE INTO categories (name, slug, description) VALUES 

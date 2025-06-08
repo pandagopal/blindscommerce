@@ -1,49 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { loginUser, generateToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { loginSchema, loginRateLimiter } from '@/lib/security/validation';
+import { z } from 'zod';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
-
-    console.log('Login attempt for:', email);
-
-    // Validate input
-    if (!email || !password) {
-      console.log('Missing email or password');
+    // Get client IP for rate limiting
+    const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                    request.headers.get('x-real-ip') || 
+                    'unknown';
+    
+    // Check rate limiting
+    if (loginRateLimiter.isRateLimited(clientIP)) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
+        { error: 'Too many login attempts. Please try again later.' },
+        { status: 429 }
       );
+    }
+
+    const body = await request.json();
+    
+    // Validate and sanitize input
+    let validatedData;
+    try {
+      validatedData = loginSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid input data', details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+    
+    const { email, password } = validatedData;
+
+    // Remove sensitive email logging in production
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Login attempt for:', email?.substring(0, 3) + '***');
     }
 
     // Attempt to login user
     const user = await loginUser(email, password);
-    console.log('Login result:', user ? 'Success' : 'Failed');
+    // Safe logging without exposing user data
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Login result:', user ? 'Success' : 'Failed');
+    }
 
     if (!user) {
-      console.log('Invalid credentials');
+      // Remove debug logging that could aid brute force attacks
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('Authentication failed');
+      }
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
+    
+    // Reset rate limit on successful login
+    loginRateLimiter.reset(clientIP);
 
     // Generate JWT token
     const token = await generateToken(user);
-    console.log('Token generated, length:', token.length);
+    // Remove token information logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Token generated successfully');
+    }
 
-    // Set cookie
+    // Set secure cookie
     const cookieStore = cookies();
     cookieStore.set('auth_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always use secure cookies
+      sameSite: 'strict', // Prevent CSRF attacks
       path: '/',
       maxAge: 60 * 60 * 24 // 24 hours
     });
-    console.log('Cookie set');
+    // Safe logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Authentication cookie set');
+    }
 
     // Determine redirect URL based on role
     let redirectUrl = '/account';
@@ -52,7 +91,10 @@ export async function POST(request: NextRequest) {
     else if (user.role === 'sales') redirectUrl = '/sales';
     else if (user.role === 'installer') redirectUrl = '/installer';
 
-    console.log('Redirecting to:', redirectUrl);
+    // Safe logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('Redirecting to:', redirectUrl);
+    }
 
     return NextResponse.json({
       user: {
@@ -65,7 +107,12 @@ export async function POST(request: NextRequest) {
       redirectUrl
     });
   } catch (error) {
-    console.error('Login error:', error);
+    // Safe error logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Login error:', error);
+    } else {
+      console.error('Authentication error occurred');
+    }
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

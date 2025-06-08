@@ -129,10 +129,10 @@ export async function PUT(
     } = body;
 
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
       // Update user table
       const updateFields = [
@@ -155,7 +155,7 @@ export async function PUT(
 
       // Update user
       updateValues.push(userId);
-      await client.query(
+      await connection.execute(
         `UPDATE users 
          SET ${updateFields.join(', ')} 
          WHERE user_id = ?`,
@@ -164,7 +164,7 @@ export async function PUT(
 
       // Handle role-specific updates
       if (role === 'vendor') {
-        await client.query(
+        await connection.execute(
           `INSERT INTO vendor_info (
             user_id, business_name, business_email, is_active, created_at, updated_at
           ) VALUES (?, ?, ?, ?, NOW(), NOW())
@@ -176,7 +176,7 @@ export async function PUT(
           [userId, `${firstName} ${lastName}'s Business`, email, isActive]
         );
       } else if (role === 'sales') {
-        await client.query(
+        await connection.execute(
           `INSERT INTO sales_staff (
             user_id, hire_date, is_active, created_at, updated_at
           ) VALUES (?, NOW(), ?, NOW(), NOW())
@@ -186,7 +186,7 @@ export async function PUT(
           [userId, isActive]
         );
       } else if (role === 'installer') {
-        await client.query(
+        await connection.execute(
           `INSERT INTO installers (
             user_id, is_active, created_at, updated_at
           ) VALUES (?, ?, NOW(), NOW())
@@ -197,17 +197,22 @@ export async function PUT(
         );
       }
 
-      await client.query('COMMIT');
+      await connection.commit();
 
       return NextResponse.json({ success: true });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await connection.rollback();
       throw error;
     } finally {
-      client.release();
+      connection.release();
     }
   } catch (error) {
-    console.error('Error updating user:', error);
+    // Safe error logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error updating user:', error);
+    } else {
+      console.error('User update failed');
+    }
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }

@@ -1,10 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { orderSchema, apiRateLimiter } from '@/lib/security/validation';
+import { z } from 'zod';
 
 // POST /api/orders/create
 export async function POST(req: NextRequest) {
   try {
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                    req.headers.get('x-real-ip') || 
+                    'unknown';
+    
+    // Check rate limiting
+    if (apiRateLimiter.isRateLimited(clientIP)) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
@@ -15,12 +30,18 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // Validate required fields
-    if (!body.items || !Array.isArray(body.items) || body.items.length === 0) {
-      return NextResponse.json(
-        { error: 'Order must contain at least one item' },
-        { status: 400 }
-      );
+    // Validate and sanitize input
+    let validatedData;
+    try {
+      validatedData = orderSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid order data', details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
     }
 
     // Check if we're in development/mock mode
@@ -39,17 +60,17 @@ export async function POST(req: NextRequest) {
 
     // Start a transaction
     const pool = await getPool();
-    const client = await pool.connect();
+    const connection = await pool.getConnection();
 
     try {
-      await client.query('BEGIN');
+      await connection.beginTransaction();
 
-      // Get order status ID
-      const statusResult = await client.query(
-        'SELECT status_id FROM order_status WHERE name = ?',
+      // Get order status ID using parameterized query
+      const [statusRows] = await connection.execute(
+        'SELECT status_id FROM order_status WHERE name = ? LIMIT 1',
         ['pending']
       );
-      const statusId = statusResult.rows[0]?.status_id || 1;
+      const statusId = (statusRows as any)[0]?.status_id || 1;
 
       // Generate unique order number
       const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 1000)}`;
@@ -71,17 +92,17 @@ export async function POST(req: NextRequest) {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `;
 
-      const [orderResult] = await client.execute(orderQuery, [
+      const [orderResult] = await connection.execute(orderQuery, [
         user.userId,
-        body.totalAmount || 0,
-        body.shippingAddress || '',
-        body.billingAddress || '',
-        body.paymentMethod || 'Credit Card',
+        validatedData.totalAmount,
+        validatedData.shippingAddress,
+        validatedData.billingAddress,
+        validatedData.paymentMethod,
         'pending',
         'pending',
         'pending',
         null,
-        body.notes || ''
+        validatedData.notes || ''
       ]);
 
       const orderId = (orderResult as any).insertId;
@@ -98,13 +119,13 @@ export async function POST(req: NextRequest) {
         ) VALUES (?, ?, ?, ?, ?, NOW())
         `;
 
-      const itemPromises = body.items.map(async (item) => {
-        await client.execute(orderItemsQuery, [
+      const itemPromises = validatedData.items.map(async (item) => {
+        await connection.execute(orderItemsQuery, [
           orderId,
           item.productId,
           item.quantity,
           item.price,
-          JSON.stringify(item.options)
+          JSON.stringify(item.options || {})
         ]);
       });
 
@@ -119,22 +140,20 @@ export async function POST(req: NextRequest) {
             payment_method,
             amount,
             status
-          ) VALUES ($1, $2, $3, $4, $5)
+          ) VALUES (?, ?, ?, ?, ?)
         `;
 
-        const paymentValues = [
+        await connection.execute(paymentQuery, [
           orderId,
           body.payment.transactionId,
           body.payment.method || 'Credit Card',
-          body.totalAmount,
+          validatedData.totalAmount,
           'Completed'
-        ];
-
-        await client.query(paymentQuery, paymentValues);
+        ]);
       }
 
       // Commit the transaction
-      await client.query('COMMIT');
+      await connection.commit();
 
       // Return the created order
       return NextResponse.json({
@@ -144,20 +163,30 @@ export async function POST(req: NextRequest) {
           order_number: orderNumber,
           created_at: new Date().toISOString(),
           status: 'Pending',
-          total_amount: body.totalAmount || 0
+          total_amount: validatedData.totalAmount
         }
       });
     } catch (error) {
       // Rollback transaction on error
-      await client.query('ROLLBACK');
-      console.error('Error creating order:', error);
+      await connection.rollback();
+      // Safe error logging
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('Error creating order:', error);
+      } else {
+        console.error('Order creation failed');
+      }
       throw error;
     } finally {
-      // Release client back to pool
-      client.release();
+      // Release connection back to pool
+      connection.release();
     }
   } catch (error) {
-    console.error('Error processing order:', error);
+    // Safe error logging
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Error processing order:', error);
+    } else {
+      console.error('Order processing failed');
+    }
     return NextResponse.json(
       { error: 'Failed to create order' },
       { status: 500 }
