@@ -55,9 +55,19 @@ export default function AdminVendorsPage() {
       const response = await fetch(
         `/api/admin/vendors?limit=${vendorsPerPage}&offset=${(currentPage - 1) * vendorsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}${searchQuery ? `&search=${searchQuery}` : ''}`
       );
-      const data = await response.json() as { vendors: VendorInfo[], total: number };
-      setVendors(data.vendors);
-      setTotalVendors(data.total);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vendors: ${response.status}`);
+      }
+      
+      const data = await response.json() as { vendors?: VendorInfo[], total?: number, error?: string };
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      setVendors(data.vendors || []);
+      setTotalVendors(data.total || 0);
     } catch (error) {
       console.error('Error fetching vendors:', error);
       setError('Failed to fetch vendors');
@@ -250,14 +260,14 @@ export default function AdminVendorsPage() {
                     Loading...
                   </td>
                 </tr>
-              ) : vendors.length === 0 ? (
+              ) : !vendors || vendors.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
                     No vendors found
                   </td>
                 </tr>
               ) : (
-                vendors.map((vendor) => (
+                (vendors || []).map((vendor) => (
                   <tr key={vendor.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">

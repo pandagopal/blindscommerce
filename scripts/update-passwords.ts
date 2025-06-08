@@ -44,10 +44,10 @@ async function updatePasswords() {
     console.log('\nAll passwords have been updated successfully');
     console.log('\nDefault credentials:');
     console.log('Admin: admin@smartblindshub.com / password123');
-    console.log('Customer: customer@example.com / password123');
-    console.log('Vendor: vendor@example.com / password123');
-    console.log('Sales: sales@Blinds.com / password123');
-    console.log('Installer: installer@Blinds.com / password123');
+    console.log('Customer: customer@smartblindshub.com / password123');
+    console.log('Vendor: vendor@smartblindshub.com / password123');
+    console.log('Sales: sales@smartblindshub.com / password123');
+    console.log('Installer: installer@smartblindshub.com / password123');
 
     conn.release();
   } catch (error) {

@@ -102,14 +102,29 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Add sorting
-    const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'business_name', 'total_sales', 'rating'];
+    // Add sorting with field mapping
+    const sortFieldMap: { [key: string]: string } = {
+      'companyName': 'business_name',
+      'email': 'email',
+      'first_name': 'first_name',
+      'last_name': 'last_name',
+      'created_at': 'created_at',
+      'createdAt': 'created_at',
+      'business_name': 'business_name',
+      'total_sales': 'total_sales',
+      'rating': 'rating'
+    };
+    
     const validSortOrders = ['asc', 'desc'];
-
-    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    
+    const mappedSortBy = sortFieldMap[sortBy] || 'created_at';
+    const finalSortBy = mappedSortBy;
     const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
 
-    query += ` ORDER BY ${finalSortBy === 'business_name' ? 'v' : 'u'}.${finalSortBy} ${finalSortOrder}`;
+    // Determine which table alias to use for sorting
+    const vendorFields = ['business_name', 'total_sales', 'rating'];
+    const tableAlias = vendorFields.includes(finalSortBy) ? 'v' : 'u';
+    query += ` ORDER BY ${tableAlias}.${finalSortBy} ${finalSortOrder}`;
 
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
