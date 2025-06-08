@@ -47,7 +47,6 @@ CREATE TABLE IF NOT EXISTS categories (
 -- Create products table (referenced by many other tables)
 CREATE TABLE IF NOT EXISTS products (
     product_id INT NOT NULL AUTO_INCREMENT,
-    category_id INT DEFAULT NULL,
     brand_id INT DEFAULT NULL,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL,
@@ -65,12 +64,23 @@ CREATE TABLE IF NOT EXISTS products (
     PRIMARY KEY (product_id),
     UNIQUE KEY slug (slug),
     UNIQUE KEY sku (sku),
-    KEY category_id (category_id),
     KEY brand_id (brand_id),
     KEY is_active (is_active),
     KEY stock_status (stock_status),
-    CONSTRAINT products_ibfk_1 FOREIGN KEY (category_id) REFERENCES categories (category_id),
-    CONSTRAINT products_ibfk_2 FOREIGN KEY (brand_id) REFERENCES brands (brand_id)
+    CONSTRAINT products_ibfk_1 FOREIGN KEY (brand_id) REFERENCES brands (brand_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create product_categories junction table (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS product_categories (
+    product_id INT NOT NULL,
+    category_id INT NOT NULL,
+    is_primary TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, category_id),
+    KEY product_id (product_id),
+    KEY category_id (category_id),
+    CONSTRAINT product_categories_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_categories_ibfk_2 FOREIGN KEY (category_id) REFERENCES categories (category_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Create orders table (referenced by many other tables)
