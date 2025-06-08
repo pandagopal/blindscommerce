@@ -27,9 +27,9 @@ export async function GET(request: NextRequest) {
         o.order_id,
         o.order_number,
         o.user_id,
-        o.status_id,
+        o.status,
         o.subtotal,
-        o.shipping_cost,
+        o.shipping_amount as shipping_cost,
         o.tax_amount,
         o.total_amount,
         o.shipping_address_id,
@@ -42,11 +42,10 @@ export async function GET(request: NextRequest) {
         u.first_name,
         u.last_name,
         u.email,
-        os.name as status_name,
+        o.status as status_name,
         COUNT(oi.order_item_id) as total_items
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN order_status os ON o.status_id = os.status_id
       LEFT JOIN order_items oi ON o.order_id = oi.order_id
     `;
 
@@ -98,7 +97,6 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(DISTINCT o.order_id) as total
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
-      LEFT JOIN order_status os ON o.status_id = os.status_id
     `;
 
     if (conditions.length > 0) {
@@ -169,17 +167,11 @@ export async function POST(request: NextRequest) {
     try {
       await connection.query('BEGIN');
 
-      // Get status ID
-      const [statusResult] = await connection.query(
-        'SELECT status_id FROM order_status WHERE name = ?',
-        [status]
-      );
-
-      if (!statusResult.length) {
+      // Validate status (direct ENUM value)
+      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+      if (!validStatuses.includes(status)) {
         throw new Error(`Invalid status: ${status}`);
       }
-
-      const statusId = statusResult[0].status_id;
 
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -189,23 +181,21 @@ export async function POST(request: NextRequest) {
         `INSERT INTO orders (
           user_id,
           order_number,
-          status_id,
+          status,
           subtotal,
-          shipping_cost,
+          shipping_amount,
           tax_amount,
           total_amount,
           shipping_address_id,
           billing_address_id,
           payment_method,
           payment_status,
-          notes,
-          created_at,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+          notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           userId,
           orderNumber,
-          statusId,
+          status,
           subtotal,
           shippingCost,
           taxAmount,

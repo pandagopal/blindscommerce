@@ -1,5 +1,6 @@
 import cron from 'node-cron';
 import { emailService } from './emailService';
+import { getPool } from '@/lib/db';
 
 // Process email queue every minute
 cron.schedule('* * * * *', async () => {

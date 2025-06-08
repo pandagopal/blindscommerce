@@ -239,32 +239,3 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// Update user configuration
-const configQuery = `
-  INSERT INTO user_configurations (
-    user_id,
-    theme,
-    notifications_enabled,
-    language,
-    created_at,
-    updated_at
-  ) VALUES (?, ?, ?, ?, NOW(), NOW())
-  ON DUPLICATE KEY UPDATE
-    theme = VALUES(theme),
-    notifications_enabled = VALUES(notifications_enabled),
-    language = VALUES(language),
-    updated_at = NOW()
-`;
-
-const [configResult] = await client.execute(configQuery, [
-  userId,
-  theme,
-  notificationsEnabled,
-  language
-]);
-
-// Get updated configuration
-const [updatedConfig] = await client.execute(
-  'SELECT * FROM user_configurations WHERE user_id = ?',
-  [userId]
-);

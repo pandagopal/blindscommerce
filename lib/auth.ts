@@ -119,7 +119,7 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    return rows[0];
+    return rows[0] as User;
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
@@ -226,10 +226,16 @@ export async function loginUser(email: string, password: string): Promise<User |
       return null;
     }
 
+    // Update last login timestamp
+    await pool.execute(
+      'UPDATE users SET last_login = NOW() WHERE user_id = ?',
+      [user.userId]
+    );
+
     // Remove passwordHash from user object
     delete user.passwordHash;
 
-    return user;
+    return user as User;
   } catch (error) {
     console.error('Login error:', error);
     return null;
@@ -263,11 +269,12 @@ export async function registerUser(
           first_name,
           last_name,
           phone,
+          role,
           is_admin,
           is_active,
           is_verified
         )
-        VALUES (?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
+        VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
       `;
 
       const [result] = await connection.execute(query, [
@@ -275,7 +282,8 @@ export async function registerUser(
         hashedPassword,
         firstName,
         lastName,
-        phone || null
+        phone || null,
+        role || 'customer'
       ]);
 
       const userId = (result as any).insertId;
@@ -287,13 +295,14 @@ export async function registerUser(
           email,
           first_name as firstName,
           last_name as lastName,
+          role,
           is_admin as isAdmin
         FROM users 
         WHERE user_id = ?`,
         [userId]
       );
 
-      const user = userRows[0];
+      const user = userRows[0] as User;
 
       // Create empty wishlist for user
       const wishlistQuery = `
@@ -302,9 +311,6 @@ export async function registerUser(
       await connection.execute(wishlistQuery, [userId]);
 
       await connection.commit();
-
-      // Add role property
-      user.role = role || 'customer';
 
       return user;
     } catch (error) {

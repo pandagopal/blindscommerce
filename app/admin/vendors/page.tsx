@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import {
   PlusIcon,
@@ -10,16 +9,7 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   SearchIcon,
-  FilterIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  BuildingIcon,
-  PhoneIcon,
-  MailIcon,
-  MapPinIcon,
   Building2,
-  Mail,
-  Phone,
   MapPin
 } from 'lucide-react';
 
@@ -31,18 +21,26 @@ interface VendorInfo {
   companyName: string;
   contactEmail: string;
   contactPhone: string;
+  // Address fields
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  // Status fields
   isActive: boolean;
   isVerified: boolean;
   approvalStatus: string;
+  // Business fields
+  businessDescription?: string;
   totalSales: number;
   rating: number;
   createdAt: string;
 }
 
 export default function AdminVendorsPage() {
-  const router = useRouter();
   const [vendors, setVendors] = useState<VendorInfo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('companyName');
@@ -50,28 +48,37 @@ export default function AdminVendorsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalVendors, setTotalVendors] = useState(0);
   const vendorsPerPage = 10;
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchVendors();
-  }, [currentPage, statusFilter, sortBy, sortOrder]);
-
-  const fetchVendors = async () => {
+  const fetchVendors = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(
         `/api/admin/vendors?limit=${vendorsPerPage}&offset=${(currentPage - 1) * vendorsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}${searchQuery ? `&search=${searchQuery}` : ''}`
       );
-      const data = await response.json() as { vendors: VendorInfo[], total: number };
-      setVendors(data.vendors);
-      setTotalVendors(data.total);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vendors: ${response.status}`);
+      }
+      
+      const data = await response.json() as { vendors?: VendorInfo[], total?: number, error?: string };
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      setVendors(data.vendors || []);
+      setTotalVendors(data.total || 0);
     } catch (error) {
       console.error('Error fetching vendors:', error);
       setError('Failed to fetch vendors');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, vendorsPerPage, sortBy, sortOrder, searchQuery]);
+
+  useEffect(() => {
+    fetchVendors();
+  }, [fetchVendors]);
 
   const handleSort = (field: string) => {
     if (sortBy === field) {
@@ -82,10 +89,14 @@ export default function AdminVendorsPage() {
     }
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = (e.target as HTMLInputElement).value;
-    setSearchQuery(value);
+  const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setCurrentPage(1);
+    fetchVendors();
   };
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -100,13 +111,6 @@ export default function AdminVendorsPage() {
       month: 'short',
       day: 'numeric'
     });
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
   };
 
   const handleStatusToggle = async (vendorId: number, currentStatus: boolean) => {
@@ -164,15 +168,30 @@ export default function AdminVendorsPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">{error}</h3>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Search and Filters */}
       <div className="mb-6 flex gap-4">
-        <form onSubmit={handleSearch} className="flex-1">
+        <form onSubmit={handleSearchSubmit} className="flex-1">
           <div className="relative">
             <input
               type="text"
               placeholder="Search vendors..."
               value={searchQuery}
-              onChange={handleSearch}
+              onChange={handleSearchInput}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
@@ -241,14 +260,14 @@ export default function AdminVendorsPage() {
                     Loading...
                   </td>
                 </tr>
-              ) : vendors.length === 0 ? (
+              ) : !vendors || vendors.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
                     No vendors found
                   </td>
                 </tr>
               ) : (
-                vendors.map((vendor) => (
+                (vendors || []).map((vendor) => (
                   <tr key={vendor.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -278,7 +297,7 @@ export default function AdminVendorsPage() {
                       <div className="flex items-center">
                         <MapPin className="h-4 w-4 text-gray-400 mr-1" />
                         <div className="text-sm text-gray-900">
-                          {vendor.city}, {vendor.state}
+                          {vendor.city && vendor.state ? `${vendor.city}, ${vendor.state}` : 'No address provided'}
                         </div>
                       </div>
                     </td>
@@ -403,4 +422,4 @@ export default function AdminVendorsPage() {
       </div>
     </div>
   );
-} 
+}

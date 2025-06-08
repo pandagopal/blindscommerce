@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import * as tf from '@tensorflow/tfjs-node';
+// import * as tf from '@tensorflow/tfjs-node';
 
 interface ProcessedImage {
   buffer: Buffer;
@@ -8,13 +8,13 @@ interface ProcessedImage {
 }
 
 // Load pre-trained window detection model
-let windowDetectionModel: tf.GraphModel | null = null;
-async function loadModel() {
-  if (!windowDetectionModel) {
-    windowDetectionModel = await tf.loadGraphModel('/models/window-detection/model.json');
-  }
-  return windowDetectionModel;
-}
+// let windowDetectionModel: tf.GraphModel | null = null;
+// async function loadModel() {
+//   if (!windowDetectionModel) {
+//     windowDetectionModel = await tf.loadGraphModel('/models/window-detection/model.json');
+//   }
+//   return windowDetectionModel;
+// }
 
 export async function processRoomImage(imageBuffer: Buffer): Promise<ProcessedImage> {
   try {

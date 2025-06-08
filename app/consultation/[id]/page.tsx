@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
-import VideoChat from '@/components/consultation/VideoChat';
+import VideoChat from '@/app/components/consultation/VideoChat';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, MessageSquare } from 'lucide-react';

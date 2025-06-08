@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
 import { getPool, createRoomVisualization, getRoomVisualizations } from '@/lib/db';
 import {
   processRoomImage,
@@ -9,8 +8,13 @@ import {
   optimizeImageForWeb
 } from '@/lib/utils/imageProcessing';
 import { VisualizationRequestSchema, VisualizationResponseSchema } from './models';
-
 import { getServerSession } from 'next-auth';
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -23,10 +27,12 @@ export async function POST(request: Request) {
       );
     }
 
+    const user = session.user as User;
+
     const body = await request.json();
     const validatedData = VisualizationRequestSchema.parse({
       ...body,
-      userId: session.user.id
+      userId: user.id
     });
 
     // Decode base64 room image
@@ -38,7 +44,7 @@ export async function POST(request: Request) {
     // Get product image
     const pool = await getPool();
     const [products] = await pool.execute(
-      'SELECT primary_image, width, height FROM products WHERE id = ?',
+      'SELECT primary_image, width, height FROM products WHERE product_id = ?',
       [validatedData.productId]
     );
     
@@ -107,20 +113,19 @@ export async function POST(request: Request) {
       validatedData.userId,
       validatedData.productId,
       validatedData.roomImage,
-      resultImageBase64,
-      placement
+      resultImageBase64
     );
 
     // Format response according to schema
     const response = VisualizationResponseSchema.parse({
       id: visualization.id,
-      roomImage: validatedData.roomImage,
-      resultImage: resultImageBase64,
-      productId: validatedData.productId,
-      userId: validatedData.userId,
-      placement,
-      createdAt: visualization.created_at,
-      updatedAt: visualization.updated_at
+      roomImage: visualization.roomImage,
+      resultImage: visualization.resultImage,
+      productId: visualization.productId,
+      userId: visualization.userId,
+      placement: visualization.placement,
+      createdAt: visualization.created_at.toISOString(),
+      updatedAt: visualization.updated_at.toISOString()
     });
 
     return NextResponse.json(response);
@@ -154,7 +159,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const visualizations = await getRoomVisualizations(userId);
+    const visualizations = await getRoomVisualizations(parseInt(userId, 10));
 
     return NextResponse.json({
       success: true,
@@ -167,4 +172,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}
