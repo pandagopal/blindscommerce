@@ -8,7 +8,8 @@ import {
   Settings,
   TrendingUp,
   MessageSquare,
-  BarChart
+  BarChart,
+  CreditCard
 } from 'lucide-react';
 
 const navigation = [
@@ -16,6 +17,7 @@ const navigation = [
   { name: 'Orders', href: '/admin/orders', icon: ShoppingBag },
   { name: 'Customers', href: '/admin/customers', icon: Users },
   { name: 'Products', href: '/admin/products', icon: Box },
+  { name: 'Payments', href: '/admin/payments', icon: CreditCard },
   { name: 'Analytics', href: '/admin/analytics', icon: BarChart },
   { name: 'Marketing', href: '/admin/marketing', icon: TrendingUp },
   { name: 'Support', href: '/admin/support', icon: MessageSquare },
