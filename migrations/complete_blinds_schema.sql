@@ -551,5 +551,678 @@ INSERT IGNORE INTO upload_security_config (config_key, config_value, config_type
 ('auto_approve_vendor_images', 'true', 'boolean', 'Whether to auto-approve vendor product images'),
 ('require_manual_review_documents', 'true', 'boolean', 'Whether business documents require manual review');
 
+-- =============================================================================
+-- CORE CART AND PAYMENT SYSTEM TABLES
+-- =============================================================================
+
+-- Products table (referenced by cart_items)
+CREATE TABLE IF NOT EXISTS products (
+    product_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10,2) NOT NULL DEFAULT '0.00',
+    sale_price DECIMAL(10,2) NULL,
+    sku VARCHAR(100) NULL,
+    category_id INT NULL,
+    vendor_id INT NULL,
+    image_url VARCHAR(500) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    stock_quantity INT DEFAULT '0',
+    weight DECIMAL(8,2) DEFAULT NULL,
+    dimensions VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id),
+    KEY category_id (category_id),
+    KEY vendor_id (vendor_id),
+    KEY is_active (is_active),
+    KEY sku (sku),
+    CONSTRAINT products_ibfk_1 FOREIGN KEY (category_id) REFERENCES categories(category_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Main carts table
+CREATE TABLE IF NOT EXISTS carts (
+    cart_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NULL,
+    session_id VARCHAR(255) NULL,
+    status ENUM('active', 'abandoned', 'converted', 'expired') DEFAULT 'active',
+    total_amount DECIMAL(10,2) DEFAULT '0.00',
+    tax_amount DECIMAL(10,2) DEFAULT '0.00',
+    shipping_amount DECIMAL(10,2) DEFAULT '0.00',
+    discount_amount DECIMAL(10,2) DEFAULT '0.00',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NULL,
+    PRIMARY KEY (cart_id),
+    KEY user_id (user_id),
+    KEY session_id (session_id),
+    KEY status (status),
+    KEY updated_at (updated_at),
+    CONSTRAINT carts_ibfk_1 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cart items table
+CREATE TABLE IF NOT EXISTS cart_items (
+    cart_item_id INT NOT NULL AUTO_INCREMENT,
+    cart_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT '1',
+    unit_price DECIMAL(10,2) NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    configuration JSON NULL COMMENT 'Product customization options',
+    saved_for_later BOOLEAN DEFAULT FALSE,
+    price_at_add DECIMAL(10,2) NULL COMMENT 'Price when item was added to track changes',
+    expiry_date TIMESTAMP NULL COMMENT 'When cart item expires',
+    notes TEXT NULL COMMENT 'Customer notes for this item',
+    is_gift BOOLEAN DEFAULT FALSE,
+    gift_message TEXT NULL,
+    scheduled_delivery_date DATE NULL,
+    installation_requested BOOLEAN DEFAULT FALSE,
+    sample_requested BOOLEAN DEFAULT FALSE,
+    added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (cart_item_id),
+    KEY cart_id (cart_id),
+    KEY product_id (product_id),
+    KEY updated_at (updated_at),
+    KEY saved_for_later (saved_for_later),
+    CONSTRAINT cart_items_ibfk_1 FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
+    CONSTRAINT cart_items_ibfk_2 FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Addresses table (for billing/shipping)
+CREATE TABLE IF NOT EXISTS addresses (
+    address_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    address_type ENUM('billing', 'shipping', 'both') DEFAULT 'shipping',
+    is_default TINYINT(1) DEFAULT '0',
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    company VARCHAR(255) NULL,
+    address_line_1 VARCHAR(255) NOT NULL,
+    address_line_2 VARCHAR(255) NULL,
+    city VARCHAR(100) NOT NULL,
+    state_province VARCHAR(100) NOT NULL,
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) DEFAULT 'United States',
+    phone VARCHAR(20) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (address_id),
+    KEY user_id (user_id),
+    KEY address_type (address_type),
+    KEY is_default (is_default),
+    CONSTRAINT addresses_ibfk_1 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Saved payment methods table
+CREATE TABLE IF NOT EXISTS saved_payment_methods (
+    payment_method_id INT NOT NULL AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    payment_type ENUM('credit_card', 'debit_card', 'bank_account', 'paypal', 'stripe') NOT NULL,
+    provider VARCHAR(50) DEFAULT 'stripe',
+    external_id VARCHAR(255) NULL,
+    payment_data JSON NULL,
+    is_default TINYINT(1) DEFAULT '0',
+    card_brand VARCHAR(50) NULL COMMENT 'visa, mastercard, amex, etc.',
+    last_four_digits VARCHAR(4) NULL,
+    expiry_month INT NULL,
+    expiry_year INT NULL,
+    cardholder_name VARCHAR(255) NULL,
+    billing_address_id INT NULL,
+    stripe_payment_method_id VARCHAR(255) NULL,
+    paypal_account_id VARCHAR(255) NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (payment_method_id),
+    KEY user_id (user_id),
+    KEY is_default (is_default),
+    KEY is_active (is_active),
+    KEY payment_type (payment_type),
+    KEY provider_external (provider, external_id),
+    CONSTRAINT saved_payment_methods_ibfk_1 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT saved_payment_methods_ibfk_2 FOREIGN KEY (billing_address_id) REFERENCES addresses(address_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Payments table
+CREATE TABLE IF NOT EXISTS payments (
+    payment_id INT NOT NULL AUTO_INCREMENT,
+    order_id INT NULL,
+    user_id INT NOT NULL,
+    payment_method ENUM('credit_card', 'debit_card', 'paypal', 'stripe', 'bank_transfer', 'klarna', 'afterpay', 'affirm', 'apple_pay', 'google_pay') NOT NULL,
+    payment_status ENUM('pending', 'processing', 'completed', 'failed', 'cancelled', 'refunded') DEFAULT 'pending',
+    amount DECIMAL(10,2) NOT NULL,
+    currency CHAR(3) DEFAULT 'USD',
+    transaction_id VARCHAR(255) NULL,
+    gateway_response JSON NULL,
+    payment_date TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (payment_id),
+    KEY order_id (order_id),
+    KEY user_id (user_id),
+    KEY payment_status (payment_status),
+    KEY transaction_id (transaction_id),
+    CONSTRAINT payments_ibfk_1 FOREIGN KEY (order_id) REFERENCES orders(order_id) ON DELETE SET NULL,
+    CONSTRAINT payments_ibfk_2 FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Payment intents table for tracking payment provider sessions
+CREATE TABLE IF NOT EXISTS payment_intents (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NULL,
+    provider ENUM('stripe', 'paypal', 'klarna', 'afterpay', 'affirm') NOT NULL,
+    provider_order_id VARCHAR(255) NOT NULL,
+    transaction_id VARCHAR(255) NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency CHAR(3) DEFAULT 'USD',
+    status ENUM('pending', 'completed', 'failed', 'cancelled', 'expired') DEFAULT 'pending',
+    captured_amount DECIMAL(10,2) NULL,
+    order_data JSON NULL,
+    processor_response JSON NULL,
+    error_message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_provider_order (provider, provider_order_id),
+    INDEX idx_user_provider (user_id, provider),
+    INDEX idx_status (status),
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Payment method configurations table for storing provider settings
+CREATE TABLE IF NOT EXISTS payment_method_configurations (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    provider VARCHAR(50) NOT NULL,
+    method_id VARCHAR(100) NOT NULL,
+    display_name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    min_amount DECIMAL(10,2) DEFAULT 0.01,
+    max_amount DECIMAL(10,2) DEFAULT 999999.99,
+    supported_currencies JSON NULL,
+    supported_countries JSON NULL,
+    is_active BOOLEAN DEFAULT true,
+    sort_order INT DEFAULT 0,
+    configuration JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_provider_method (provider, method_id),
+    INDEX idx_active_methods (is_active, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Advanced cart features tables
+CREATE TABLE IF NOT EXISTS shared_carts (
+    share_id VARCHAR(100) PRIMARY KEY,
+    cart_id INT NOT NULL,
+    shared_by INT NOT NULL,
+    share_token VARCHAR(100) NOT NULL UNIQUE,
+    share_type ENUM('view', 'edit') NOT NULL DEFAULT 'view',
+    expires_at TIMESTAMP NULL,
+    access_count INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_cart_shares (cart_id),
+    INDEX idx_share_token (share_token),
+    INDEX idx_expires_at (expires_at),
+    
+    CONSTRAINT fk_shared_carts_cart 
+        FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_shared_carts_user 
+        FOREIGN KEY (shared_by) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Multiple cart management (projects/saved carts)
+CREATE TABLE IF NOT EXISTS saved_carts (
+    saved_cart_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    cart_name VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    project_type ENUM('residential', 'commercial', 'renovation', 'new_construction', 'other') DEFAULT 'residential',
+    is_template BOOLEAN DEFAULT FALSE,
+    is_favorite BOOLEAN DEFAULT FALSE,
+    total_items INT DEFAULT 0,
+    estimated_total DECIMAL(12,2) DEFAULT 0.00,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_saved_carts (user_id),
+    INDEX idx_project_type (project_type),
+    INDEX idx_is_template (is_template),
+    
+    CONSTRAINT fk_saved_carts_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Saved cart items
+CREATE TABLE IF NOT EXISTS saved_cart_items (
+    saved_item_id INT AUTO_INCREMENT PRIMARY KEY,
+    saved_cart_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    configuration JSON NULL,
+    notes TEXT NULL,
+    priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+    room_assignment VARCHAR(100) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_saved_cart_items (saved_cart_id),
+    INDEX idx_product_saved (product_id),
+    
+    CONSTRAINT fk_saved_cart_items_cart 
+        FOREIGN KEY (saved_cart_id) REFERENCES saved_carts(saved_cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_saved_cart_items_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Abandoned cart tracking
+CREATE TABLE IF NOT EXISTS abandoned_carts (
+    abandoned_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
+    user_id INT NULL,
+    session_id VARCHAR(255) NULL,
+    email VARCHAR(255) NULL,
+    cart_value DECIMAL(10,2) NOT NULL,
+    item_count INT NOT NULL,
+    abandoned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    recovery_email_sent BOOLEAN DEFAULT FALSE,
+    recovery_emails_count INT DEFAULT 0,
+    last_recovery_email TIMESTAMP NULL,
+    recovered_at TIMESTAMP NULL,
+    recovery_order_id INT NULL,
+    
+    INDEX idx_abandoned_user (user_id),
+    INDEX idx_abandoned_session (session_id),
+    INDEX idx_abandoned_at (abandoned_at),
+    INDEX idx_recovery_status (recovery_email_sent, recovered_at),
+    
+    CONSTRAINT fk_abandoned_carts_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_abandoned_carts_cart 
+        FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Price change tracking and notifications
+CREATE TABLE IF NOT EXISTS price_alerts (
+    alert_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    target_price DECIMAL(10,2) NULL COMMENT 'Alert when price drops to this level',
+    alert_type ENUM('price_drop', 'back_in_stock', 'price_change') NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
+    last_checked_price DECIMAL(10,2) NULL,
+    last_notification_sent TIMESTAMP NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_price_alerts_user (user_id),
+    INDEX idx_price_alerts_product (product_id),
+    INDEX idx_active_alerts (is_active),
+    
+    CONSTRAINT fk_price_alerts_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_price_alerts_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Stock availability tracking
+CREATE TABLE IF NOT EXISTS stock_alerts (
+    stock_alert_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    product_id INT NOT NULL,
+    configuration JSON NULL COMMENT 'Specific variant configuration',
+    email_when_available BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    notified_at TIMESTAMP NULL,
+    
+    INDEX idx_stock_alerts_user (user_id),
+    INDEX idx_stock_alerts_product (product_id),
+    INDEX idx_stock_alerts_active (notified_at),
+    
+    UNIQUE KEY unique_user_product_config (user_id, product_id),
+    
+    CONSTRAINT fk_stock_alerts_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_stock_alerts_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Frequently bought together tracking
+CREATE TABLE IF NOT EXISTS product_associations (
+    association_id INT AUTO_INCREMENT PRIMARY KEY,
+    product_a_id INT NOT NULL,
+    product_b_id INT NOT NULL,
+    association_strength DECIMAL(5,4) DEFAULT 0.0000 COMMENT 'Confidence score 0-1',
+    times_bought_together INT DEFAULT 1,
+    association_type ENUM('frequently_together', 'substitute', 'complement', 'upgrade') DEFAULT 'frequently_together',
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_product_a (product_a_id),
+    INDEX idx_product_b (product_b_id),
+    INDEX idx_association_strength (association_strength DESC),
+    INDEX idx_association_type (association_type),
+    
+    UNIQUE KEY unique_product_pair (product_a_id, product_b_id),
+    
+    CONSTRAINT fk_product_associations_a 
+        FOREIGN KEY (product_a_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    CONSTRAINT fk_product_associations_b 
+        FOREIGN KEY (product_b_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cart item shipping assignments
+CREATE TABLE IF NOT EXISTS cart_item_shipping (
+    shipping_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_item_id INT NOT NULL,
+    address_id INT NOT NULL,
+    delivery_date DATE NULL,
+    shipping_method VARCHAR(100) DEFAULT 'standard',
+    special_instructions TEXT NULL,
+    
+    INDEX idx_cart_item_shipping (cart_item_id),
+    INDEX idx_shipping_address (address_id),
+    
+    CONSTRAINT fk_cart_shipping_item 
+        FOREIGN KEY (cart_item_id) REFERENCES cart_items(cart_item_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_shipping_address 
+        FOREIGN KEY (address_id) REFERENCES addresses(address_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Auto-save configurations (for incomplete customizations)
+CREATE TABLE IF NOT EXISTS draft_configurations (
+    draft_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    session_id VARCHAR(255) NULL,
+    product_id INT NOT NULL,
+    configuration JSON NOT NULL,
+    completion_percentage DECIMAL(3,2) DEFAULT 0.00 COMMENT 'How complete the configuration is',
+    page_context VARCHAR(255) NULL COMMENT 'Where user was configuring',
+    auto_saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP DEFAULT (DATE_ADD(NOW(), INTERVAL 7 DAY)),
+    
+    INDEX idx_draft_user (user_id),
+    INDEX idx_draft_session (session_id),
+    INDEX idx_draft_product (product_id),
+    INDEX idx_expires_at (expires_at),
+    
+    CONSTRAINT fk_draft_configurations_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_draft_configurations_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Bundle and promotion tracking
+CREATE TABLE IF NOT EXISTS cart_promotions (
+    promotion_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
+    promotion_code VARCHAR(100) NULL,
+    promotion_type ENUM('percentage', 'fixed_amount', 'free_shipping', 'bundle_discount', 'loyalty_discount') NOT NULL,
+    discount_amount DECIMAL(10,2) NOT NULL,
+    conditions JSON NULL COMMENT 'Conditions that triggered this promotion',
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_cart_promotions (cart_id),
+    INDEX idx_promotion_code (promotion_code),
+    INDEX idx_promotion_type (promotion_type),
+    
+    CONSTRAINT fk_cart_promotions_cart 
+        FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Cart analytics and behavior tracking
+CREATE TABLE IF NOT EXISTS cart_analytics (
+    analytics_id INT AUTO_INCREMENT PRIMARY KEY,
+    cart_id INT NOT NULL,
+    user_id INT NULL,
+    session_id VARCHAR(255) NULL,
+    action_type ENUM('item_added', 'item_removed', 'quantity_changed', 'saved_for_later', 'moved_to_cart', 'shared', 'abandoned', 'converted') NOT NULL,
+    product_id INT NULL,
+    previous_value JSON NULL COMMENT 'Previous state before action',
+    new_value JSON NULL COMMENT 'New state after action',
+    page_url VARCHAR(500) NULL,
+    user_agent TEXT NULL,
+    ip_address VARCHAR(45) NULL,
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_cart_analytics_cart (cart_id),
+    INDEX idx_cart_analytics_user (user_id),
+    INDEX idx_cart_analytics_action (action_type),
+    INDEX idx_cart_analytics_timestamp (timestamp),
+    
+    CONSTRAINT fk_cart_analytics_cart 
+        FOREIGN KEY (cart_id) REFERENCES carts(cart_id) ON DELETE CASCADE,
+    CONSTRAINT fk_cart_analytics_user 
+        FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL,
+    CONSTRAINT fk_cart_analytics_product 
+        FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- CART AND PAYMENT PERFORMANCE INDEXES
+-- =============================================================================
+
+-- Cart performance indexes
+CREATE INDEX idx_carts_user_status ON carts(user_id, status);
+CREATE INDEX idx_carts_session_active ON carts(session_id, status);
+CREATE INDEX idx_cart_items_cart_product ON cart_items(cart_id, product_id);
+CREATE INDEX idx_cart_items_saved_for_later ON cart_items(saved_for_later, updated_at);
+CREATE INDEX idx_cart_items_expiry ON cart_items(expiry_date);
+CREATE INDEX idx_cart_items_price_change ON cart_items(price_at_add, updated_at);
+
+-- Payment indexes
+CREATE INDEX idx_payments_user_status ON payments(user_id, payment_status);
+CREATE INDEX idx_saved_payments_user_active ON saved_payment_methods(user_id, is_active);
+CREATE INDEX idx_saved_payment_provider ON saved_payment_methods(user_id, provider);
+
+-- Address indexes
+CREATE INDEX idx_addresses_user_type ON addresses(user_id, address_type);
+
+-- =============================================================================
+-- CART TRIGGERS FOR DATA CONSISTENCY
+-- =============================================================================
+
+-- Update cart totals when cart items change
+DELIMITER $$
+CREATE TRIGGER IF NOT EXISTS update_cart_totals
+    AFTER INSERT ON cart_items
+    FOR EACH ROW
+BEGIN
+    UPDATE carts 
+    SET total_amount = (
+        SELECT COALESCE(SUM(total_price), 0) 
+        FROM cart_items 
+        WHERE cart_id = NEW.cart_id AND saved_for_later = FALSE
+    ),
+    updated_at = CURRENT_TIMESTAMP
+    WHERE cart_id = NEW.cart_id;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS update_cart_totals_on_update
+    AFTER UPDATE ON cart_items
+    FOR EACH ROW
+BEGIN
+    UPDATE carts 
+    SET total_amount = (
+        SELECT COALESCE(SUM(total_price), 0) 
+        FROM cart_items 
+        WHERE cart_id = NEW.cart_id AND saved_for_later = FALSE
+    ),
+    updated_at = CURRENT_TIMESTAMP
+    WHERE cart_id = NEW.cart_id;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS update_cart_totals_on_delete
+    AFTER DELETE ON cart_items
+    FOR EACH ROW
+BEGIN
+    UPDATE carts 
+    SET total_amount = (
+        SELECT COALESCE(SUM(total_price), 0) 
+        FROM cart_items 
+        WHERE cart_id = OLD.cart_id AND saved_for_later = FALSE
+    ),
+    updated_at = CURRENT_TIMESTAMP
+    WHERE cart_id = OLD.cart_id;
+END$$
+DELIMITER ;
+
+-- =============================================================================
+-- CART AND PAYMENT VIEWS
+-- =============================================================================
+
+-- Active cart summary view
+CREATE OR REPLACE VIEW active_cart_summary AS
+SELECT 
+    c.cart_id,
+    c.user_id,
+    c.session_id,
+    COUNT(ci.cart_item_id) as total_items,
+    SUM(ci.quantity) as total_quantity,
+    SUM(CASE WHEN ci.saved_for_later = FALSE THEN ci.quantity ELSE 0 END) as active_quantity,
+    SUM(CASE WHEN ci.saved_for_later = TRUE THEN ci.quantity ELSE 0 END) as saved_quantity,
+    MAX(ci.updated_at) as last_activity,
+    CASE 
+        WHEN MAX(ci.updated_at) < DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN TRUE 
+        ELSE FALSE 
+    END as is_abandoned
+FROM carts c
+LEFT JOIN cart_items ci ON c.cart_id = ci.cart_id
+WHERE c.status = 'active'
+GROUP BY c.cart_id, c.user_id, c.session_id;
+
+-- =============================================================================
+-- DEFAULT PAYMENT CONFIGURATION DATA
+-- =============================================================================
+
+-- Insert default payment method configurations
+INSERT IGNORE INTO payment_method_configurations (
+    provider, method_id, display_name, description, 
+    min_amount, max_amount, supported_currencies, supported_countries,
+    is_active, sort_order, configuration
+) VALUES 
+-- Stripe methods
+('stripe', 'card', 'Credit/Debit Card', 'Visa, Mastercard, American Express, Discover', 
+ 0.50, 999999.99, '["USD", "EUR", "GBP", "CAD", "AUD"]', '["US", "CA", "GB", "AU", "EU"]',
+ true, 1, '{"fee_percentage": 2.9, "fee_fixed": 0.30, "processing_time": "instant"}'),
+
+('stripe', 'apple_pay', 'Apple Pay', 'Pay securely with Touch ID or Face ID', 
+ 0.50, 999999.99, '["USD", "EUR", "GBP", "CAD"]', '["US", "CA", "GB", "AU"]',
+ true, 2, '{"fee_percentage": 2.9, "fee_fixed": 0.30, "processing_time": "instant", "device_requirements": ["iOS", "macOS", "Safari"]}'),
+
+-- PayPal methods
+('paypal', 'paypal', 'PayPal', 'Pay with your PayPal account or PayPal Credit', 
+ 0.01, 10000.00, '["USD", "EUR", "GBP", "CAD", "AUD"]', '["US", "CA", "GB", "AU", "EU"]',
+ true, 5, '{"fee_percentage": 3.49, "fee_fixed": 0.49, "processing_time": "instant"}'),
+
+-- BNPL methods
+('klarna', 'klarna', 'Klarna', 'Pay in 4 interest-free installments', 
+ 1.00, 10000.00, '["USD", "EUR", "GBP", "SEK"]', '["US", "CA", "GB", "SE", "DE", "AT"]',
+ true, 6, '{"installments": 4, "installment_frequency": "bi_weekly", "interest_rate": 0, "credit_check": "soft"}'),
+
+('afterpay', 'afterpay', 'Afterpay', 'Pay in 4 installments, always interest-free', 
+ 1.00, 4000.00, '["USD", "AUD", "CAD", "GBP"]', '["US", "CA", "AU", "GB"]',
+ true, 7, '{"installments": 4, "installment_frequency": "bi_weekly", "interest_rate": 0, "credit_check": "soft"}'),
+
+('affirm', 'affirm', 'Affirm', 'Monthly payments as low as 0% APR', 
+ 50.00, 17500.00, '["USD", "CAD"]', '["US", "CA"]',
+ true, 8, '{"installments": [3, 6, 12, 18, 24, 36], "installment_frequency": "monthly", "interest_rate_range": [0, 36], "credit_check": "soft", "prequalification": true}')
+
+ON DUPLICATE KEY UPDATE
+    display_name = VALUES(display_name),
+    description = VALUES(description),
+    min_amount = VALUES(min_amount),
+    max_amount = VALUES(max_amount),
+    supported_currencies = VALUES(supported_currencies),
+    supported_countries = VALUES(supported_countries),
+    configuration = VALUES(configuration),
+    updated_at = CURRENT_TIMESTAMP;
+
+-- Create payment_analytics table for tracking payment method performance
+CREATE TABLE IF NOT EXISTS payment_analytics (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    date DATE NOT NULL,
+    payment_method VARCHAR(50) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    total_transactions INT DEFAULT 0,
+    total_amount DECIMAL(12,2) DEFAULT 0.00,
+    successful_transactions INT DEFAULT 0,
+    failed_transactions INT DEFAULT 0,
+    average_amount DECIMAL(10,2) DEFAULT 0.00,
+    conversion_rate DECIMAL(5,4) DEFAULT 0.0000,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_date_method (date, payment_method, provider),
+    INDEX idx_date_provider (date, provider),
+    INDEX idx_method_performance (payment_method, successful_transactions)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create payment_disputes table for handling chargebacks and disputes
+CREATE TABLE IF NOT EXISTS payment_disputes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    payment_id INT NOT NULL,
+    dispute_id VARCHAR(255) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    dispute_type ENUM('chargeback', 'inquiry', 'retrieval_request', 'pre_arbitration') NOT NULL,
+    status ENUM('open', 'under_review', 'accepted', 'disputed', 'won', 'lost') DEFAULT 'open',
+    amount DECIMAL(10,2) NOT NULL,
+    currency CHAR(3) DEFAULT 'USD',
+    reason_code VARCHAR(50) NULL,
+    reason_description TEXT NULL,
+    evidence_due_date DATE NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(payment_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_dispute (provider, dispute_id),
+    INDEX idx_status_due_date (status, evidence_due_date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Create payment_refunds table for tracking refunds across all providers
+CREATE TABLE IF NOT EXISTS payment_refunds (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    payment_id INT NOT NULL,
+    refund_id VARCHAR(255) NOT NULL,
+    provider VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    currency CHAR(3) DEFAULT 'USD',
+    reason ENUM('requested_by_customer', 'duplicate', 'fraudulent', 'other') DEFAULT 'requested_by_customer',
+    reason_description TEXT NULL,
+    status ENUM('pending', 'succeeded', 'failed', 'cancelled') DEFAULT 'pending',
+    processor_response JSON NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (payment_id) REFERENCES payments(payment_id) ON DELETE CASCADE,
+    UNIQUE KEY unique_refund (provider, refund_id),
+    INDEX idx_payment_refunds (payment_id),
+    INDEX idx_status_date (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- ADDITIONAL CART VIEWS AND OPTIMIZATIONS
+-- =============================================================================
+
+-- Create view for cart recommendations
+CREATE OR REPLACE VIEW cart_recommendations AS
+SELECT 
+    ci.cart_id,
+    ci.product_id as cart_product_id,
+    pa.product_b_id as recommended_product_id,
+    pa.association_strength,
+    pa.association_type,
+    p.name as recommended_product_name,
+    p.price as recommended_product_price
+FROM cart_items ci
+JOIN product_associations pa ON ci.product_id = pa.product_a_id
+JOIN products p ON pa.product_b_id = p.product_id
+WHERE ci.saved_for_later = FALSE 
+  AND pa.association_strength > 0.3
+ORDER BY ci.cart_id, pa.association_strength DESC;
+
+-- Insert some default categories if they don't exist
+INSERT IGNORE INTO categories (name, slug, description) VALUES
+('Blinds', 'blinds', 'Window blinds for all room types'),
+('Curtains', 'curtains', 'Fabric window treatments'),
+('Shades', 'shades', 'Various types of window shades'),
+('Shutters', 'shutters', 'Decorative and functional window shutters'),
+('Accessories', 'accessories', 'Window treatment accessories and hardware');
+
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;
