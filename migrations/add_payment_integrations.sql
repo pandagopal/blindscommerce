@@ -1,6 +1,7 @@
 -- Add payment integrations support
 -- This migration adds tables and updates for PayPal, Klarna, Afterpay, and Affirm integrations
-
+-- Use the blindscommerce database
+USE blindscommerce;
 -- Create payment_intents table for tracking payment provider sessions
 CREATE TABLE IF NOT EXISTS payment_intents (
   id INT PRIMARY KEY AUTO_INCREMENT,
