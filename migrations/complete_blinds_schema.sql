@@ -1216,6 +1216,400 @@ WHERE ci.saved_for_later = FALSE
   AND pa.association_strength > 0.3
 ORDER BY ci.cart_id, pa.association_strength DESC;
 
+-- =============================================================================
+-- VENDOR-MANAGED PRODUCT CONFIGURATION SYSTEM
+-- =============================================================================
+
+-- Product categories junction table (many-to-many relationship)
+CREATE TABLE IF NOT EXISTS product_categories (
+    product_id INT NOT NULL,
+    category_id INT NOT NULL,
+    is_primary TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, category_id),
+    KEY product_id (product_id),
+    KEY category_id (category_id),
+    CONSTRAINT product_categories_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_categories_ibfk_2 FOREIGN KEY (category_id) REFERENCES categories (category_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Brands table (for product branding)
+CREATE TABLE IF NOT EXISTS brands (
+    brand_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    description TEXT,
+    logo_url VARCHAR(500) DEFAULT NULL,
+    website_url VARCHAR(500) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (brand_id),
+    UNIQUE KEY slug (slug),
+    KEY is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Features table (for product features)
+CREATE TABLE IF NOT EXISTS features (
+    feature_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    icon VARCHAR(255) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (feature_id),
+    KEY is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product images table
+CREATE TABLE IF NOT EXISTS product_images (
+    image_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    alt_text VARCHAR(255) DEFAULT NULL,
+    is_primary TINYINT(1) DEFAULT '0',
+    display_order INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (image_id),
+    KEY product_id (product_id),
+    KEY is_primary (is_primary),
+    KEY display_order (display_order),
+    CONSTRAINT product_images_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product options table (for configurator options like Mount Type, Control Type, etc.)
+CREATE TABLE IF NOT EXISTS product_options (
+    option_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    option_name VARCHAR(100) NOT NULL,
+    option_type ENUM('dropdown', 'radio', 'checkbox', 'text', 'number', 'color', 'dimension') NOT NULL,
+    is_required TINYINT(1) DEFAULT '0',
+    display_order INT DEFAULT '0',
+    help_text TEXT DEFAULT NULL,
+    validation_rules JSON DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (option_id),
+    KEY product_id (product_id),
+    KEY display_order (display_order),
+    CONSTRAINT product_options_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product option values table (for option choices like "Inside Mount", "Outside Mount", etc.)
+CREATE TABLE IF NOT EXISTS product_option_values (
+    value_id INT NOT NULL AUTO_INCREMENT,
+    option_id INT NOT NULL,
+    value_name VARCHAR(255) NOT NULL,
+    value_data VARCHAR(255) DEFAULT NULL,
+    price_modifier DECIMAL(10,2) DEFAULT '0.00',
+    display_order INT DEFAULT '0',
+    is_default TINYINT(1) DEFAULT '0',
+    is_available TINYINT(1) DEFAULT '1',
+    image_url VARCHAR(500) DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (value_id),
+    KEY option_id (option_id),
+    KEY display_order (display_order),
+    KEY is_available (is_available),
+    CONSTRAINT product_option_values_ibfk_1 FOREIGN KEY (option_id) REFERENCES product_options (option_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Vendor products table (links products to vendors)
+CREATE TABLE IF NOT EXISTS vendor_products (
+    vendor_product_id INT NOT NULL AUTO_INCREMENT,
+    vendor_id INT NOT NULL,
+    product_id INT NOT NULL,
+    vendor_sku VARCHAR(100) DEFAULT NULL,
+    vendor_price DECIMAL(10,2) DEFAULT NULL,
+    quantity_available INT DEFAULT '0',
+    minimum_order_qty INT DEFAULT '1',
+    lead_time_days INT DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    is_featured TINYINT(1) DEFAULT '0',
+    vendor_description TEXT DEFAULT NULL,
+    vendor_notes TEXT DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (vendor_product_id),
+    UNIQUE KEY vendor_product (vendor_id, product_id),
+    KEY vendor_id (vendor_id),
+    KEY product_id (product_id),
+    KEY vendor_sku (vendor_sku),
+    KEY is_active (is_active),
+    CONSTRAINT vendor_products_ibfk_1 FOREIGN KEY (vendor_id) REFERENCES vendor_info (vendor_info_id) ON DELETE CASCADE,
+    CONSTRAINT vendor_products_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product variants table (for different combinations of options)
+CREATE TABLE IF NOT EXISTS product_variants (
+    variant_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    sku VARCHAR(100) NOT NULL,
+    variant_options JSON NOT NULL COMMENT 'Stores option_id:value_id pairs',
+    price_adjustment DECIMAL(10,2) DEFAULT '0.00',
+    stock_quantity INT DEFAULT '0',
+    weight DECIMAL(8,2) DEFAULT NULL,
+    dimensions JSON DEFAULT NULL COMMENT 'Stores width, height, depth',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (variant_id),
+    UNIQUE KEY sku (sku),
+    KEY product_id (product_id),
+    KEY is_active (is_active),
+    CONSTRAINT product_variants_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product features junction table
+CREATE TABLE IF NOT EXISTS product_features (
+    product_id INT NOT NULL,
+    feature_id INT NOT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (product_id, feature_id),
+    KEY product_id (product_id),
+    KEY feature_id (feature_id),
+    CONSTRAINT product_features_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_features_ibfk_2 FOREIGN KEY (feature_id) REFERENCES features (feature_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product colors table (vendor-configurable colors)
+CREATE TABLE IF NOT EXISTS product_colors (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    color_name VARCHAR(100) NOT NULL,
+    color_code VARCHAR(7) DEFAULT NULL,
+    color_family VARCHAR(50) DEFAULT NULL,
+    price_adjustment DECIMAL(10,2) DEFAULT '0.00',
+    is_available TINYINT(1) DEFAULT '1',
+    swatch_image VARCHAR(500) DEFAULT NULL,
+    display_order INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY product_id (product_id),
+    KEY color_name (color_name),
+    KEY color_family (color_family),
+    KEY is_available (is_available),
+    CONSTRAINT product_colors_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product materials table (vendor-configurable materials)
+CREATE TABLE IF NOT EXISTS product_materials (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    material_name VARCHAR(100) NOT NULL,
+    material_type VARCHAR(50) DEFAULT NULL,
+    description TEXT DEFAULT NULL,
+    price_adjustment DECIMAL(10,2) DEFAULT '0.00',
+    durability_rating TINYINT DEFAULT NULL,
+    maintenance_level ENUM('low', 'medium', 'high') DEFAULT 'medium',
+    is_eco_friendly TINYINT(1) DEFAULT '0',
+    is_available TINYINT(1) DEFAULT '1',
+    sample_available TINYINT(1) DEFAULT '1',
+    texture_image VARCHAR(500) DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY product_id (product_id),
+    KEY material_type (material_type),
+    KEY material_name (material_name),
+    KEY is_available (is_available),
+    CONSTRAINT product_materials_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product rooms table (room recommendations)
+CREATE TABLE IF NOT EXISTS product_rooms (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    room_type VARCHAR(100) NOT NULL,
+    suitability_score TINYINT DEFAULT '5',
+    special_considerations TEXT DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY product_id (product_id),
+    KEY room_type (room_type),
+    CONSTRAINT product_rooms_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product specifications table
+CREATE TABLE IF NOT EXISTS product_specifications (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    spec_name VARCHAR(100) NOT NULL,
+    spec_value VARCHAR(255) NOT NULL,
+    spec_unit VARCHAR(50) DEFAULT NULL,
+    spec_category VARCHAR(50) DEFAULT NULL,
+    display_order INT DEFAULT '0',
+    is_key_spec TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY product_id (product_id),
+    KEY spec_category (spec_category),
+    KEY is_key_spec (is_key_spec),
+    CONSTRAINT product_specifications_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product pricing matrix table (for size-based pricing)
+CREATE TABLE IF NOT EXISTS product_pricing_matrix (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    width_min DECIMAL(8,2) NOT NULL,
+    width_max DECIMAL(8,2) NOT NULL,
+    height_min DECIMAL(8,2) NOT NULL,
+    height_max DECIMAL(8,2) NOT NULL,
+    base_price DECIMAL(10,2) NOT NULL,
+    price_per_sqft DECIMAL(10,2) DEFAULT '0.00',
+    effective_date DATE DEFAULT NULL,
+    expires_date DATE DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY product_id (product_id),
+    KEY dimensions (width_min, width_max, height_min, height_max),
+    KEY is_active (is_active),
+    CONSTRAINT product_pricing_matrix_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product bundles table
+CREATE TABLE IF NOT EXISTS product_bundles (
+    bundle_id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    description TEXT DEFAULT NULL,
+    bundle_price DECIMAL(10,2) DEFAULT NULL,
+    discount_percentage DECIMAL(5,2) DEFAULT NULL,
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (bundle_id),
+    KEY is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product bundle items table
+CREATE TABLE IF NOT EXISTS product_bundle_items (
+    id INT NOT NULL AUTO_INCREMENT,
+    bundle_id INT NOT NULL,
+    product_id INT NOT NULL,
+    quantity INT DEFAULT '1',
+    discount_percentage DECIMAL(5,2) DEFAULT '0.00',
+    is_required TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY bundle_id (bundle_id),
+    KEY product_id (product_id),
+    CONSTRAINT product_bundle_items_ibfk_1 FOREIGN KEY (bundle_id) REFERENCES product_bundles (bundle_id) ON DELETE CASCADE,
+    CONSTRAINT product_bundle_items_ibfk_2 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product relations table (related products)
+CREATE TABLE IF NOT EXISTS product_relations (
+    id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    related_product_id INT NOT NULL,
+    relation_type ENUM('accessory', 'complement', 'upgrade', 'alternative') NOT NULL,
+    strength_score TINYINT DEFAULT '5',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY product_relation (product_id, related_product_id, relation_type),
+    KEY product_id (product_id),
+    KEY related_product_id (related_product_id),
+    KEY relation_type (relation_type),
+    CONSTRAINT product_relations_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_relations_ibfk_2 FOREIGN KEY (related_product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Product reviews table
+CREATE TABLE IF NOT EXISTS product_reviews (
+    review_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    user_id INT DEFAULT NULL,
+    rating TINYINT NOT NULL,
+    review_title VARCHAR(255) DEFAULT NULL,
+    review_text TEXT DEFAULT NULL,
+    is_verified_purchase TINYINT(1) DEFAULT '0',
+    is_approved TINYINT(1) DEFAULT '0',
+    helpful_count INT DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (review_id),
+    KEY product_id (product_id),
+    KEY user_id (user_id),
+    KEY rating (rating),
+    KEY is_approved (is_approved),
+    CONSTRAINT product_reviews_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE,
+    CONSTRAINT product_reviews_ibfk_2 FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- CONFIGURATION RULE SYSTEM (for complex dependencies)
+-- =============================================================================
+
+-- Configuration rules table (for option dependencies and validation)
+CREATE TABLE IF NOT EXISTS product_configuration_rules (
+    rule_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    rule_name VARCHAR(255) NOT NULL,
+    rule_type ENUM('dependency', 'exclusion', 'requirement', 'price_modifier', 'availability') NOT NULL,
+    condition_data JSON NOT NULL COMMENT 'Conditions that trigger this rule',
+    action_data JSON NOT NULL COMMENT 'Actions to take when rule is triggered',
+    priority INT DEFAULT '0',
+    is_active TINYINT(1) DEFAULT '1',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (rule_id),
+    KEY product_id (product_id),
+    KEY rule_type (rule_type),
+    KEY priority (priority),
+    KEY is_active (is_active),
+    CONSTRAINT product_configuration_rules_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Configuration steps table (for multi-step wizard)
+CREATE TABLE IF NOT EXISTS product_configuration_steps (
+    step_id INT NOT NULL AUTO_INCREMENT,
+    product_id INT NOT NULL,
+    step_name VARCHAR(255) NOT NULL,
+    step_title VARCHAR(255) NOT NULL,
+    step_description TEXT DEFAULT NULL,
+    step_order INT NOT NULL,
+    is_required TINYINT(1) DEFAULT '1',
+    validation_rules JSON DEFAULT NULL,
+    help_content TEXT DEFAULT NULL,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (step_id),
+    KEY product_id (product_id),
+    KEY step_order (step_order),
+    CONSTRAINT product_configuration_steps_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (product_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Step options mapping (which options appear in which steps)
+CREATE TABLE IF NOT EXISTS product_step_options (
+    id INT NOT NULL AUTO_INCREMENT,
+    step_id INT NOT NULL,
+    option_id INT NOT NULL,
+    display_order INT DEFAULT '0',
+    is_primary TINYINT(1) DEFAULT '0',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY step_option (step_id, option_id),
+    KEY step_id (step_id),
+    KEY option_id (option_id),
+    KEY display_order (display_order),
+    CONSTRAINT product_step_options_ibfk_1 FOREIGN KEY (step_id) REFERENCES product_configuration_steps (step_id) ON DELETE CASCADE,
+    CONSTRAINT product_step_options_ibfk_2 FOREIGN KEY (option_id) REFERENCES product_options (option_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- PERFORMANCE INDEXES FOR PRODUCT SYSTEM
+-- =============================================================================
+
+-- Product configuration indexes
+CREATE INDEX idx_product_options_type ON product_options(product_id, option_type);
+CREATE INDEX idx_product_option_values_default ON product_option_values(option_id, is_default, is_available);
+CREATE INDEX idx_product_variants_options ON product_variants(product_id, is_active);
+CREATE INDEX idx_configuration_rules_active ON product_configuration_rules(product_id, rule_type, is_active);
+CREATE INDEX idx_step_options_order ON product_step_options(step_id, display_order);
+
 -- Insert some default categories if they don't exist
 INSERT IGNORE INTO categories (name, slug, description) VALUES
 ('Blinds', 'blinds', 'Window blinds for all room types'),
@@ -1223,6 +1617,23 @@ INSERT IGNORE INTO categories (name, slug, description) VALUES
 ('Shades', 'shades', 'Various types of window shades'),
 ('Shutters', 'shutters', 'Decorative and functional window shutters'),
 ('Accessories', 'accessories', 'Window treatment accessories and hardware');
+
+-- Insert some default brands
+INSERT IGNORE INTO brands (name, slug, description, is_active) VALUES
+('SmartBlinds', 'smartblinds', 'Premium smart window treatment solutions', 1),
+('Classic Windows', 'classic-windows', 'Traditional window treatments', 1),
+('Modern Living', 'modern-living', 'Contemporary window solutions', 1);
+
+-- Insert some default features
+INSERT IGNORE INTO features (name, description, is_active) VALUES
+('Cordless Operation', 'Safe, cord-free operation perfect for homes with children', 1),
+('Motorized Control', 'Electric operation with remote or smart home integration', 1),
+('Light Filtering', 'Allows natural light while maintaining privacy', 1),
+('Room Darkening', 'Blocks most light for better sleep and privacy', 1),
+('Energy Efficient', 'Insulating properties help reduce energy costs', 1),
+('Easy Installation', 'Simple DIY installation with included hardware', 1),
+('Custom Sizing', 'Made to measure for perfect fit', 1),
+('Moisture Resistant', 'Suitable for high-humidity areas like bathrooms', 1);
 
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;
