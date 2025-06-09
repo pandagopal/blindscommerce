@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { defaultMetadata, dynamic, revalidate } from './config';
+import { Toaster } from "sonner";
 //import LiveChat from "./components/chat/LiveChat";
 //import LiveChat from "@/components/chat/LiveChat";
 
@@ -45,6 +46,7 @@ export default function RootLayout({
               <Footer />
              {/* <LiveChat /> */}
             </div>
+            <Toaster richColors />
           </RecentlyViewedProvider>
         </CartProvider>
       </body>

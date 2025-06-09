@@ -41,18 +41,18 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-16 text-center">
-        <div className="bg-white rounded-lg shadow-sm p-8 max-w-md mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+        <div className="bg-white rounded-xl shadow-lg border border-purple-100 p-8 max-w-md mx-auto">
           <div className="mb-6">
             <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto" />
           </div>
-          <h1 className="text-2xl font-bold mb-4">Your Cart is Empty</h1>
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Your Cart is Empty</h1>
           <p className="text-gray-600 mb-8">
             Looks like you haven't added any products to your cart yet.
           </p>
           <Link
             href="/products"
-            className="inline-block bg-primary-red hover:bg-primary-red-dark text-white font-medium py-3 px-6 rounded-lg transition-colors"
+            className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
           >
             Continue Shopping
           </Link>
@@ -62,13 +62,14 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-8">Shopping Cart</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shopping Cart</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Cart Items - Left Side */}
         <div className="lg:col-span-8">
-          <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="bg-white shadow-lg rounded-xl border border-purple-100 overflow-hidden">
             <div className="p-4 bg-gray-50 border-b border-gray-200">
               <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-6 font-medium">Product</div>
@@ -164,7 +165,7 @@ export default function CartPage() {
               </button>
               <Link
                 href="/products"
-                className="text-sm text-primary-red hover:text-primary-red-dark font-medium"
+                className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
               >
                 Continue Shopping
               </Link>
@@ -174,8 +175,8 @@ export default function CartPage() {
 
         {/* Order Summary - Right Side */}
         <div className="lg:col-span-4">
-          <div className="bg-white shadow-sm rounded-lg p-6">
-            <h2 className="text-lg font-bold mb-4">Order Summary</h2>
+          <div className="bg-white shadow-lg rounded-xl border border-purple-100 p-6">
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Order Summary</h2>
 
             <div className="space-y-4">
               <div className="flex justify-between border-b pb-4">
@@ -210,7 +211,7 @@ export default function CartPage() {
 
               <div className="border-b pb-4 space-y-2">
                 {discount > 0 && (
-                  <div className="flex justify-between text-primary-red">
+                  <div className="flex justify-between bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold">
                     <span>Discount</span>
                     <span>-${discount.toFixed(2)}</span>
                   </div>
@@ -232,7 +233,7 @@ export default function CartPage() {
 
               <button
                 onClick={handleCheckout}
-                className="w-full bg-primary-red hover:bg-primary-red-dark text-white font-medium py-3 px-4 rounded-lg transition-colors"
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl"
               >
                 Proceed to Checkout
               </button>
@@ -243,6 +244,7 @@ export default function CartPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

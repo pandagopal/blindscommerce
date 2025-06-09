@@ -26,17 +26,37 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '10'), 50);
     const sessionId = searchParams.get('sessionId') || req.headers.get('x-session-id');
     
-    // If no session ID or user, return empty results immediately
-    if (!sessionId) {
+    const user = await getCurrentUser();
+    const pool = await getPool();
+
+    // Check if there are any recently viewed records first
+    let countQuery = '';
+    let countParams: any[] = [];
+    
+    if (user) {
+      countQuery = 'SELECT COUNT(*) as count FROM recently_viewed WHERE user_id = ?';
+      countParams = [parseInt(user.userId)];
+    } else if (sessionId) {
+      countQuery = 'SELECT COUNT(*) as count FROM recently_viewed WHERE session_id = ? AND user_id IS NULL';
+      countParams = [sessionId];
+    } else {
       return NextResponse.json({
         success: true,
         products: [],
         total: 0
       });
     }
-
-    const user = await getCurrentUser();
-    const pool = await getPool();
+    
+    const [countResult] = await pool.execute(countQuery, countParams);
+    const count = (countResult as any[])[0]?.count || 0;
+    
+    if (count === 0) {
+      return NextResponse.json({
+        success: true,
+        products: [],
+        total: 0
+      });
+    }
 
     let query = `
       SELECT 
@@ -46,7 +66,7 @@ export async function GET(req: NextRequest) {
         p.slug,
         p.short_description,
         p.base_price,
-        p.sale_price,
+        NULL as sale_price,
         p.rating,
         p.review_count,
         p.is_active,
@@ -60,7 +80,8 @@ export async function GET(req: NextRequest) {
         ) as primary_image
       FROM recently_viewed rv
       JOIN products p ON rv.product_id = p.product_id
-      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_categories pc ON p.product_id = pc.product_id AND pc.is_primary = 1
+      LEFT JOIN categories c ON pc.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
       WHERE p.is_active = 1
     `;
@@ -69,16 +90,10 @@ export async function GET(req: NextRequest) {
 
     if (user) {
       query += ' AND rv.user_id = ?';
-      queryParams.push(user.userId);
+      queryParams.push(parseInt(user.userId));
     } else if (sessionId) {
       query += ' AND rv.session_id = ? AND rv.user_id IS NULL';
       queryParams.push(sessionId);
-    } else {
-      return NextResponse.json({
-        success: true,
-        products: [],
-        total: 0
-      });
     }
 
     query += ' ORDER BY rv.viewed_at DESC LIMIT ?';
@@ -172,7 +187,7 @@ export async function POST(req: NextRequest) {
         AND viewed_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
         LIMIT 1
       `;
-      existingViewParams = [user.userId, productId];
+      existingViewParams = [parseInt(user.userId), productId];
     } else {
       existingViewQuery = `
         SELECT id FROM recently_viewed 
@@ -206,7 +221,7 @@ export async function POST(req: NextRequest) {
           viewed_at
         ) VALUES (?, ?, ?, ?, ?, NOW())`,
         [
-          user?.userId || null,
+          user ? parseInt(user.userId) : null,
           user ? null : sessionId,
           productId,
           clientIp,
@@ -253,7 +268,7 @@ export async function DELETE(req: NextRequest) {
       // Delete specific product
       if (user) {
         deleteQuery = 'DELETE FROM recently_viewed WHERE user_id = ? AND product_id = ?';
-        deleteParams = [user.userId, productId];
+        deleteParams = [parseInt(user.userId), productId];
       } else {
         deleteQuery = 'DELETE FROM recently_viewed WHERE session_id = ? AND product_id = ? AND user_id IS NULL';
         deleteParams = [sessionId, productId];
@@ -262,7 +277,7 @@ export async function DELETE(req: NextRequest) {
       // Clear all for user/session
       if (user) {
         deleteQuery = 'DELETE FROM recently_viewed WHERE user_id = ?';
-        deleteParams = [user.userId];
+        deleteParams = [parseInt(user.userId)];
       } else {
         deleteQuery = 'DELETE FROM recently_viewed WHERE session_id = ? AND user_id IS NULL';
         deleteParams = [sessionId];

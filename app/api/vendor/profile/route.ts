@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { RowDataPacket } from 'mysql2';
+
+interface VendorProfileRow extends RowDataPacket {
+  vendor_info_id: number;
+  user_id: number;
+  business_name: string;
+  business_email: string;
+  business_phone: string | null;
+  business_description: string | null;
+  logo_url: string | null;
+  website_url: string | null;
+  year_established: number | null;
+  is_verified: number;
+  verification_date: string | null;
+  approval_status: string;
+  tax_id: string | null;
+  business_address_line1: string | null;
+  business_address_line2: string | null;
+  business_city: string | null;
+  business_state: string | null;
+  business_postal_code: string | null;
+  business_country: string;
+  total_sales: number;
+  rating: number;
+  is_active: number;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  phone: string | null;
+}
 
 // GET /api/vendor/profile - Get vendor profile
 export async function GET(req: NextRequest) {
@@ -14,58 +44,67 @@ export async function GET(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const result = await pool.query(
+    const [rows] = await pool.execute<VendorProfileRow[]>(
       `SELECT 
-        u.user_id as "userId",
+        vi.*,
+        u.first_name,
+        u.last_name,
         u.email,
-        u.first_name as "firstName",
-        u.last_name as "lastName",
         u.phone,
-        v.company_name as "companyName",
-        v.contact_email as "contactEmail",
-        v.contact_phone as "contactPhone",
-        v.business_description as "businessDescription",
-        v.tax_id as "taxId",
-        v.business_license as "businessLicense",
-        v.address_line1 as "addressLine1",
-        v.address_line2 as "addressLine2",
-        v.city,
-        v.state,
-        v.postal_code as "postalCode",
-        v.country
-      FROM blinds.users u
-      JOIN blinds.vendors v ON u.user_id = v.user_id
-      WHERE u.user_id = $1`,
+        (SELECT COUNT(*) FROM vendor_products WHERE vendor_id = vi.vendor_info_id AND is_active = 1) as product_count,
+        (SELECT COUNT(*) FROM orders o 
+         JOIN order_items oi ON o.order_id = oi.order_id 
+         JOIN vendor_products vp ON oi.product_id = vp.product_id 
+         WHERE vp.vendor_id = vi.vendor_info_id) as total_orders
+      FROM vendor_info vi
+      JOIN users u ON vi.user_id = u.user_id
+      WHERE vi.user_id = ?`,
       [user.userId]
     );
 
-    if (result.rows.length === 0) {
+    if (rows.length === 0) {
       return NextResponse.json(
         { error: 'Vendor profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = result.rows[0];
+    const profile = rows[0];
     return NextResponse.json({
-      userId: profile.userId,
-      email: profile.email,
-      firstName: profile.firstName,
-      lastName: profile.lastName,
-      phone: profile.phone,
-      companyName: profile.companyName,
-      contactEmail: profile.contactEmail,
-      contactPhone: profile.contactPhone,
-      businessDescription: profile.businessDescription,
-      taxId: profile.taxId,
-      businessLicense: profile.businessLicense,
-      address: {
-        addressLine1: profile.addressLine1,
-        addressLine2: profile.addressLine2,
-        city: profile.city,
-        state: profile.state,
-        postalCode: profile.postalCode,
-        country: profile.country
+      success: true,
+      profile: {
+        vendorInfoId: profile.vendor_info_id,
+        userId: profile.user_id,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        email: profile.email,
+        phone: profile.phone,
+        businessName: profile.business_name,
+        businessEmail: profile.business_email,
+        businessPhone: profile.business_phone,
+        businessDescription: profile.business_description,
+        logoUrl: profile.logo_url,
+        websiteUrl: profile.website_url,
+        yearEstablished: profile.year_established,
+        isVerified: Boolean(profile.is_verified),
+        verificationDate: profile.verification_date,
+        approvalStatus: profile.approval_status,
+        taxId: profile.tax_id,
+        totalSales: profile.total_sales,
+        rating: profile.rating,
+        isActive: Boolean(profile.is_active),
+        address: {
+          addressLine1: profile.business_address_line1,
+          addressLine2: profile.business_address_line2,
+          city: profile.business_city,
+          state: profile.business_state,
+          postalCode: profile.business_postal_code,
+          country: profile.business_country
+        },
+        stats: {
+          productCount: profile.product_count || 0,
+          totalOrders: profile.total_orders || 0
+        }
       }
     });
 
@@ -91,77 +130,69 @@ export async function PUT(req: NextRequest) {
 
     const data = await req.json();
     const pool = await getPool();
-    const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+    // Update user table
+    await pool.execute(
+      `UPDATE users
+      SET 
+        email = ?,
+        first_name = ?,
+        last_name = ?,
+        phone = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?`,
+      [
+        data.email,
+        data.firstName,
+        data.lastName,
+        data.phone,
+        user.userId
+      ]
+    );
 
-      // Update user table
-      await client.query(
-        `UPDATE blinds.users
-        SET 
-          email = $1,
-          first_name = $2,
-          last_name = $3,
-          phone = $4,
-          updated_at = NOW()
-        WHERE user_id = $5`,
-        [
-          data.email,
-          data.firstName,
-          data.lastName,
-          data.phone,
-          user.userId
-        ]
-      );
+    // Update vendor_info table
+    await pool.execute(
+      `UPDATE vendor_info
+      SET 
+        business_name = ?,
+        business_email = ?,
+        business_phone = ?,
+        business_description = ?,
+        logo_url = ?,
+        website_url = ?,
+        year_established = ?,
+        tax_id = ?,
+        business_address_line1 = ?,
+        business_address_line2 = ?,
+        business_city = ?,
+        business_state = ?,
+        business_postal_code = ?,
+        business_country = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?`,
+      [
+        data.businessName,
+        data.businessEmail,
+        data.businessPhone,
+        data.businessDescription,
+        data.logoUrl,
+        data.websiteUrl,
+        data.yearEstablished,
+        data.taxId,
+        data.address?.addressLine1,
+        data.address?.addressLine2,
+        data.address?.city,
+        data.address?.state,
+        data.address?.postalCode,
+        data.address?.country || 'United States',
+        user.userId
+      ]
+    );
 
-      // Update vendor table
-      await client.query(
-        `UPDATE blinds.vendors
-        SET 
-          company_name = $1,
-          contact_email = $2,
-          contact_phone = $3,
-          business_description = $4,
-          tax_id = $5,
-          business_license = $6,
-          address_line1 = $7,
-          address_line2 = $8,
-          city = $9,
-          state = $10,
-          postal_code = $11,
-          country = $12,
-          updated_at = NOW()
-        WHERE user_id = $13`,
-        [
-          data.companyName,
-          data.contactEmail,
-          data.contactPhone,
-          data.businessDescription,
-          data.taxId,
-          data.businessLicense,
-          data.address.addressLine1,
-          data.address.addressLine2,
-          data.address.city,
-          data.address.state,
-          data.address.postalCode,
-          data.address.country,
-          user.userId
-        ]
-      );
-
-      await client.query('COMMIT');
-
-      return NextResponse.json({
-        message: 'Profile updated successfully'
-      });
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Profile updated successfully'
+    });
 
   } catch (error) {
     console.error('Error updating vendor profile:', error);

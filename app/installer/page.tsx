@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, MapPin, Package, Tool, Truck } from 'lucide-react';
+import { Calendar, Clock, MapPin, Package, Wrench, Truck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,51 +97,79 @@ export default function InstallerDashboard() {
     try {
       // Fetch appointments
       const appointmentsRes = await fetch('/api/installer/appointments');
-      const appointmentsData = await appointmentsRes.json();
-      
-      const today = new Date().toISOString().split('T')[0];
-      const todayApps = appointmentsData.filter((app: Appointment) => 
-        app.date === today && app.status !== 'cancelled'
-      );
-      const upcomingApps = appointmentsData.filter((app: Appointment) => 
-        app.date > today && app.status !== 'cancelled'
-      );
+      if (appointmentsRes.ok) {
+        const appointmentsData = await appointmentsRes.json();
+        // Handle both array and object responses
+        const appointments = Array.isArray(appointmentsData) ? appointmentsData : (appointmentsData.appointments || []);
+        
+        const today = new Date().toISOString().split('T')[0];
+        const todayApps = appointments.filter((app: Appointment) => 
+          app.date === today && app.status !== 'cancelled'
+        );
+        const upcomingApps = appointments.filter((app: Appointment) => 
+          app.date > today && app.status !== 'cancelled'
+        );
 
-      setTodayAppointments(todayApps);
-      setUpcomingAppointments(upcomingApps);
+        setTodayAppointments(todayApps);
+        setUpcomingAppointments(upcomingApps);
+      }
 
       // Fetch jobs
       const jobsRes = await fetch('/api/installer/jobs');
-      const jobsData = await jobsRes.json();
-      setRecentJobs(jobsData);
+      if (jobsRes.ok) {
+        const jobsResponse = await jobsRes.json();
+        // Handle both array and object responses
+        const jobsData = Array.isArray(jobsResponse) ? jobsResponse : (jobsResponse.jobs || []);
+        setRecentJobs(jobsData);
 
-      // Calculate stats
-      const completedToday = jobsData.filter((job: Job) => 
-        job.status === 'completed' && 
-        new Date(job.completedAt!).toISOString().split('T')[0] === today
-      ).length;
+        // Calculate stats
+        const today = new Date().toISOString().split('T')[0];
+        const completedToday = jobsData.filter((job: Job) => 
+          job.status === 'completed' && 
+          job.completedAt && new Date(job.completedAt).toISOString().split('T')[0] === today
+        ).length;
 
-      const pendingJobs = jobsData.filter((job: Job) => 
-        job.status === 'pending'
-      ).length;
+        const pendingJobs = jobsData.filter((job: Job) => 
+          job.status === 'pending'
+        ).length;
 
-      const completedJobs = jobsData.filter((job: Job) => 
-        job.status === 'completed'
-      ).length;
+        const completedJobs = jobsData.filter((job: Job) => 
+          job.status === 'completed'
+        ).length;
 
-      setStats({
-        completedToday,
-        scheduledToday: todayApps.length,
-        pendingJobs,
-        completedJobs
-      });
+        const todayApps = (await fetch('/api/installer/appointments').then(res => res.json()).catch(() => [])) || [];
+        
+        setStats({
+          completedToday,
+          scheduledToday: Array.isArray(todayApps) ? todayApps.filter((app: any) => 
+            app.date === today && app.status !== 'cancelled'
+          ).length : 0,
+          pendingJobs,
+          completedJobs
+        });
+      }
 
       // Fetch materials
       const materialsRes = await fetch('/api/installer/materials');
-      const materialsData = await materialsRes.json();
-      setMaterials(materialsData);
+      if (materialsRes.ok) {
+        const materialsData = await materialsRes.json();
+        // Handle both array and object responses
+        const materials = Array.isArray(materialsData) ? materialsData : (materialsData.materials || []);
+        setMaterials(materials);
+      }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      // Set empty defaults on error
+      setTodayAppointments([]);
+      setUpcomingAppointments([]);
+      setRecentJobs([]);
+      setMaterials([]);
+      setStats({
+        completedToday: 0,
+        scheduledToday: 0,
+        pendingJobs: 0,
+        completedJobs: 0
+      });
     }
   };
 
@@ -225,11 +253,19 @@ export default function InstallerDashboard() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading installer dashboard...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto p-6">
       <div className="grid gap-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -239,16 +275,16 @@ export default function InstallerDashboard() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.scheduledToday}</div>
+              <div className="text-2xl font-bold">{stats?.scheduledToday || 0}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Completed Today</CardTitle>
-              <Tool className="h-4 w-4 text-muted-foreground" />
+              <Wrench className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.completedToday}</div>
+              <div className="text-2xl font-bold">{stats?.completedToday || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -257,7 +293,7 @@ export default function InstallerDashboard() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.pendingJobs}</div>
+              <div className="text-2xl font-bold">{stats?.pendingJobs || 0}</div>
             </CardContent>
           </Card>
           <Card>
@@ -266,7 +302,7 @@ export default function InstallerDashboard() {
               <Truck className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.completedJobs}</div>
+              <div className="text-2xl font-bold">{stats?.completedJobs || 0}</div>
             </CardContent>
           </Card>
         </div>
@@ -288,7 +324,7 @@ export default function InstallerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {todayAppointments.map(appointment => (
+                  {(todayAppointments || []).map(appointment => (
                     <div
                       key={appointment.id}
                       className="flex items-center justify-between p-4 border rounded-lg"
@@ -350,7 +386,7 @@ export default function InstallerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {upcomingAppointments.map(appointment => (
+                  {(upcomingAppointments || []).map(appointment => (
                     <div
                       key={appointment.id}
                       className="flex items-center justify-between p-4 border rounded-lg"
@@ -384,7 +420,7 @@ export default function InstallerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {recentJobs.map(job => (
+                  {(recentJobs || []).map(job => (
                     <div
                       key={job.id}
                       className="flex items-center justify-between p-4 border rounded-lg"
@@ -477,7 +513,7 @@ export default function InstallerDashboard() {
                 </form>
 
                 <div className="space-y-4">
-                  {materials.map(material => (
+                  {(materials || []).map(material => (
                     <div
                       key={material.id}
                       className="flex items-center justify-between p-4 border rounded-lg"
@@ -518,6 +554,7 @@ export default function InstallerDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </div>
   );

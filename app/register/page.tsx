@@ -120,10 +120,10 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-purple-100 p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Create Account</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Create Account</h1>
           <p className="text-gray-600 mt-2">
             Join Smart Blinds Hub to enjoy a personalized shopping experience.
           </p>
@@ -286,14 +286,14 @@ export default function RegisterPage() {
               I agree to the{" "}
               <Link
                 href="/terms"
-                className="text-primary-red hover:text-primary-red-light"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
                 href="/privacy"
-                className="text-primary-red hover:text-primary-red-light"
+                className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
               >
                 Privacy Policy
               </Link>
@@ -307,7 +307,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-red hover:bg-primary-red-dark text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70 flex justify-center items-center"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-70 flex justify-center items-center"
             >
               {loading ? (
                 <>
@@ -324,7 +324,7 @@ export default function RegisterPage() {
             <span>Already have an account?</span>
             <Link
               href="/login"
-              className="ml-1 text-primary-red hover:text-primary-red-light font-medium"
+              className="ml-1 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
             >
               Sign in
             </Link>

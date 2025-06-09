@@ -55,6 +55,29 @@ CREATE TABLE IF NOT EXISTS categories (
     UNIQUE KEY slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Recently viewed products tracking
+CREATE TABLE IF NOT EXISTS recently_viewed (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL,
+    session_id VARCHAR(255) NULL,
+    product_id INT NOT NULL,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    
+    INDEX idx_user_id (user_id),
+    INDEX idx_session_id (session_id),
+    INDEX idx_product_id (product_id),
+    INDEX idx_viewed_at (viewed_at),
+    INDEX idx_user_viewed (user_id, viewed_at DESC),
+    INDEX idx_session_viewed (session_id, viewed_at DESC),
+    INDEX idx_cleanup (viewed_at),
+    
+    CONSTRAINT fk_recently_viewed_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_recently_viewed_product FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE,
+    CONSTRAINT chk_user_or_session CHECK (user_id IS NOT NULL OR session_id IS NOT NULL)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Essential orders table for eligibility checking
 CREATE TABLE IF NOT EXISTS orders (
     order_id INT NOT NULL AUTO_INCREMENT,
@@ -1634,6 +1657,57 @@ INSERT IGNORE INTO features (name, description, is_active) VALUES
 ('Easy Installation', 'Simple DIY installation with included hardware', 1),
 ('Custom Sizing', 'Made to measure for perfect fit', 1),
 ('Moisture Resistant', 'Suitable for high-humidity areas like bathrooms', 1);
+
+-- =============================================================================
+-- RECENTLY VIEWED CLEANUP TRIGGERS
+-- =============================================================================
+
+-- Add cleanup trigger for recently viewed records
+DELIMITER $$
+
+CREATE TRIGGER IF NOT EXISTS cleanup_recently_viewed 
+AFTER INSERT ON recently_viewed
+FOR EACH ROW
+BEGIN
+    -- Clean up old records for authenticated users (keep last 50)
+    IF NEW.user_id IS NOT NULL THEN
+        DELETE rv FROM recently_viewed rv
+        WHERE rv.user_id = NEW.user_id
+        AND rv.id NOT IN (
+            SELECT id FROM (
+                SELECT id FROM recently_viewed 
+                WHERE user_id = NEW.user_id 
+                ORDER BY viewed_at DESC 
+                LIMIT 50
+            ) AS keep_recent
+        );
+    END IF;
+    
+    -- Clean up old records for guest sessions (keep last 20)
+    IF NEW.session_id IS NOT NULL THEN
+        DELETE rv FROM recently_viewed rv
+        WHERE rv.session_id = NEW.session_id
+        AND rv.id NOT IN (
+            SELECT id FROM (
+                SELECT id FROM recently_viewed 
+                WHERE session_id = NEW.session_id 
+                ORDER BY viewed_at DESC 
+                LIMIT 20
+            ) AS keep_recent
+        );
+    END IF;
+END$$
+
+CREATE TRIGGER IF NOT EXISTS cleanup_old_recently_viewed
+BEFORE INSERT ON recently_viewed
+FOR EACH ROW
+BEGIN
+    -- Delete records older than 90 days
+    DELETE FROM recently_viewed 
+    WHERE viewed_at < DATE_SUB(NOW(), INTERVAL 90 DAY);
+END$$
+
+DELIMITER ;
 
 -- Re-enable foreign key checks
 SET FOREIGN_KEY_CHECKS = 1;

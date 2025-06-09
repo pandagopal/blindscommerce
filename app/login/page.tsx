@@ -89,7 +89,7 @@ export default function LoginPage() {
   const loginExamples = [
     { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
-    { role: 'Vendor', email: 'vendor@Bsmartblindshub.com', password: 'Admin@1234' },
+    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Sales', email: 'sales@smartblindshub.com', password: 'Admin@1234' },
     { role: 'Installer', email: 'installer@smartblindshub.com', password: 'Admin@1234' }
   ];
@@ -100,10 +100,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-purple-100 p-8">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Sign In</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Sign In</h1>
           <p className="text-gray-600 mt-2">
             Sign in to your account to access your orders, favorites, and more.
           </p>
@@ -145,7 +145,7 @@ export default function LoginPage() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm text-primary-red hover:text-primary-red-light"
+                className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
               >
                 Forgot password?
               </Link>
@@ -183,7 +183,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-red hover:bg-primary-red-dark text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-70 flex justify-center items-center"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-70 flex justify-center items-center"
             >
               {loading ? (
                 <>
@@ -200,7 +200,7 @@ export default function LoginPage() {
             <span>Don't have an account?</span>
             <Link
               href="/register"
-              className="ml-1 text-primary-red hover:text-primary-red-light font-medium"
+              className="ml-1 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
             >
               Sign up
             </Link>
@@ -214,7 +214,7 @@ export default function LoginPage() {
 
           <div className="grid grid-cols-1 gap-3">
             <button
-              className="flex justify-center items-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="flex justify-center items-center py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all hover:shadow-md"
             >
               <svg
                 className="h-5 w-5 mr-2"

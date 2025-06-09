@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +38,8 @@ export default function AIFeaturesPage() {
       description: 'Upload a photo of your room and find matching blinds instantly',
       icon: Camera,
       gradient: 'from-purple-500 to-pink-500',
-      benefits: ['22-40% fewer returns', 'Instant style matching', 'Smart color analysis']
+      benefits: ['22-40% fewer returns', 'Instant style matching', 'Smart color analysis'],
+      demoTab: 'visual-search'
     },
     {
       id: 'smart-recommendations',
@@ -45,7 +47,8 @@ export default function AIFeaturesPage() {
       description: 'Personalized product suggestions powered by machine learning',
       icon: Brain,
       gradient: 'from-blue-500 to-cyan-500',
-      benefits: ['35% increase in satisfaction', 'Personalized for you', 'Trending insights']
+      benefits: ['35% increase in satisfaction', 'Personalized for you', 'Trending insights'],
+      demoTab: 'recommendations'
     },
     {
       id: 'room-visualizer',
@@ -53,7 +56,8 @@ export default function AIFeaturesPage() {
       description: 'See how blinds look in your actual room with AR technology',
       icon: Eye,
       gradient: 'from-green-500 to-emerald-500',
-      benefits: ['Try before you buy', 'Multiple lighting conditions', 'Accurate measurements']
+      benefits: ['Try before you buy', 'Multiple lighting conditions', 'Accurate measurements'],
+      demoTab: 'visualizer'
     },
     {
       id: 'smart-measurement',
@@ -61,7 +65,8 @@ export default function AIFeaturesPage() {
       description: 'AI-powered window detection and measurement tools',
       icon: Ruler,
       gradient: 'from-orange-500 to-red-500',
-      benefits: ['Auto window detection', 'Precise measurements', 'Professional accuracy']
+      benefits: ['Auto window detection', 'Precise measurements', 'Professional accuracy'],
+      demoTab: 'search'
     }
   ];
 
@@ -167,8 +172,23 @@ export default function AIFeaturesPage() {
                   </div>
                   <Button 
                     variant="outline" 
-                    className="w-full group-hover:bg-gray-900 group-hover:text-white transition-colors"
-                    onClick={() => setActiveDemo(feature.id)}
+                    className="w-full group-hover:bg-gray-900 group-hover:text-white transition-colors cursor-pointer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveDemo(feature.demoTab);
+                      toast.success(`Loading ${feature.title} demo...`);
+                      // Scroll to demo section
+                      setTimeout(() => {
+                        const demoSection = document.getElementById('demo-section');
+                        if (demoSection) {
+                          demoSection.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                          });
+                        }
+                      }, 100);
+                    }}
                   >
                     Try Demo
                     <ChevronRight className="h-4 w-4 ml-2" />
@@ -181,7 +201,7 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* Interactive Demo Section */}
-      <section className="py-20 bg-gray-50">
+      <section id="demo-section" className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">

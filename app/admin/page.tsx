@@ -59,9 +59,9 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading dashboard...</p>
         </div>
       </div>
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         <div className="text-center">
           <p className="text-red-600">{error}</p>
         </div>
@@ -83,42 +83,46 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Admin Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {user.firstName || user.email}</p>
+        </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Quick Stats */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Total Orders</h3>
-          <p className="text-3xl font-bold">0</p>
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-purple-100 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">Total Orders</h3>
+          <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">0</p>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Active Users</h3>
-          <p className="text-3xl font-bold">1</p>
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-blue-100 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">Active Users</h3>
+          <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">1</p>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Products</h3>
-          <p className="text-3xl font-bold">0</p>
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-green-100 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">Products</h3>
+          <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">0</p>
         </div>
         
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Revenue</h3>
-          <p className="text-3xl font-bold">$0</p>
+        <div className="bg-white p-6 rounded-xl shadow-lg border border-orange-100 hover:shadow-xl transition-shadow">
+          <h3 className="text-lg font-semibold mb-2 text-gray-700">Revenue</h3>
+          <p className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">$0</p>
         </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Orders */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
+        <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Orders</h2>
           <p className="text-gray-500">No orders yet</p>
         </div>
 
         {/* Recent Users */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Recent Users</h2>
+        <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Recent Users</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
@@ -130,6 +134,7 @@ export default function AdminDashboard() {
               </span>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>

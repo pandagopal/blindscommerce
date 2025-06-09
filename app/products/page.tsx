@@ -245,8 +245,12 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Shop Custom Window Treatments</h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shop Custom Window Treatments</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">Discover our premium collection of blinds, shades, and window treatments crafted for your home</p>
+        </div>
 
       {/* Filters and products section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -265,6 +269,7 @@ export default async function ProductsPage({
         {/* Products grid section */}
         <div className="md:col-span-3">
           <ProductGrid products={products} />
+        </div>
         </div>
       </div>
     </div>

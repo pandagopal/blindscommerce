@@ -461,14 +461,14 @@ export default function CheckoutPage() {
   // Order confirmation display
   if (orderCompleted) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-purple-100 p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Order Confirmed!</h1>
           <p className="text-gray-600 mb-6">Thank you for your purchase. Your order has been received.</p>
 
           <div className="bg-gray-50 p-4 rounded-lg mb-6 inline-block">
@@ -480,7 +480,7 @@ export default function CheckoutPage() {
             We've sent a confirmation email to <span className="font-medium">{formData.email}</span> with all the details of your order.
           </p>
 
-          <Link href="/" className="bg-primary-red hover:bg-primary-red-dark text-white font-medium py-3 px-6 rounded-lg transition-colors inline-block">
+          <Link href="/" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
             Continue Shopping
           </Link>
         </div>
@@ -489,9 +489,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link href="/cart" className="text-primary-red hover:underline flex items-center">
+        <Link href="/cart" className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold flex items-center">
           <ChevronLeft size={16} className="mr-1" />
           Back to Cart
         </Link>
@@ -500,8 +501,8 @@ export default function CheckoutPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
         <div className="lg:col-span-2">
-          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-            <h1 className="text-2xl font-bold mb-6">Checkout</h1>
+          <div className="bg-white border border-purple-100 rounded-xl shadow-lg p-6 mb-6">
+            <h1 className="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Checkout</h1>
             
             {/* Guest Checkout Options */}
             {isGuest && showGuestOptions && (
@@ -956,8 +957,8 @@ export default function CheckoutPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
-            <h2 className="text-lg font-bold mb-4">Order Summary</h2>
+          <div className="bg-white rounded-xl shadow-lg border border-purple-100 p-6 sticky top-6">
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Order Summary</h2>
 
             <div className="max-h-80 overflow-y-auto mb-4">
               {items.map((item) => (
@@ -1035,6 +1036,7 @@ export default function CheckoutPage() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

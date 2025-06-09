@@ -1,125 +1,284 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { Loader2, ArrowLeft } from "lucide-react";
+import BasicInfo from '../components/BasicInfo';
+import PricingMatrix from '../components/PricingMatrix';
+import Options from '../components/Options';
+import Images from '../components/Images';
+import Features from '../components/Features';
+import RoomRecommendations from '../components/RoomRecommendations';
 
-export default function VendorProductCreatePage() {
+const SHADE_CATEGORIES = [
+  'Cellular Shades',
+  'Roller Shades',
+  'Roman Shades',
+  'Woven Wood Shades',
+  'Zebra Shades',
+  'Solar Shades',
+  'Sheer Shades',
+  'Outdoor Blinds',
+  'Vertical Blinds',
+  'Horizontal Blinds',
+  'Plantation Shutters',
+  'Panel Track Blinds'
+];
+
+export default function VendorAddProductPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
-    name: '',
-    slug: '',
-    type_id: 1,
-    base_price: '',
-    is_active: true,
-    is_listing_enabled: true,
-    series_name: '',
-    material_type: '',
-    short_description: '',
-    full_description: '',
-    features: '',
-    benefits: '',
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('basic-info');
+  const [isSaving, setIsSaving] = useState(false);
+  const [productData, setProductData] = useState({
+    basicInfo: {
+      name: '',
+      category: '',
+      shortDescription: '',
+      fullDescription: '',
+      sku: '',
+      isActive: true,
+      isFeatured: false
+    },
+    dimensions: {
+      minWidth: 12,
+      maxWidth: 96,
+      minHeight: 12,
+      maxHeight: 120,
+      widthIncrement: 0.125,
+      heightIncrement: 0.125
+    },
+    options: {
+      mountTypes: [],
+      controlTypes: [],
+      fabricTypes: [],
+      headrailOptions: [],
+      bottomRailOptions: [],
+      specialtyOptions: []
+    },
+    images: [],
+    features: [],
+    roomRecommendations: []
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    try {
-      const res = await fetch('/api/vendor/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          type_id: Number(form.type_id),
-          base_price: Number(form.base_price),
-          features: form.features ? form.features.split(',').map(f => f.trim()) : [],
-          benefits: form.benefits ? form.benefits.split(',').map(b => b.trim()) : [],
-        }),
-      });
-      if (!res.ok) {
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
+          router.push('/login?redirect=/vendor/products/new');
+          return;
+        }
         const data = await res.json();
-        throw new Error(data.error || 'Failed to create product');
+        if (data.user.role !== 'vendor' && data.user.role !== 'admin') {
+          router.push('/');
+          return;
+        }
+        setUser(data.user);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/login?redirect=/vendor/products/new');
+      } finally {
+        setLoading(false);
       }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      
+      // Validate required fields
+      const { basicInfo } = productData;
+      if (!basicInfo.name || !basicInfo.category || !basicInfo.shortDescription || !basicInfo.sku) {
+        toast.error("Please fill in all required fields in Basic Info");
+        setActiveTab('basic-info');
+        return;
+      }
+
+      // API endpoint will be different for vendors
+      const response = await fetch('/api/vendor/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to save product');
+      }
+
+      toast.success("Product saved successfully");
       router.push('/vendor/products');
-    } catch (err: any) {
-      setError(err.message || 'Failed to create product');
+    } catch (error) {
+      console.error('Error saving product:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to save product. Please try again.");
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
+  const updateProductData = (section: string, data: any) => {
+    setProductData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        ...data
+      }
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded shadow">
-      <h1 className="text-2xl font-bold mb-4">Add New Product</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block font-medium mb-1">Name</label>
-          <input name="name" value={form.name} onChange={handleChange} required className="w-full border p-2 rounded" />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              onClick={() => router.push('/vendor/products')}
+              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Products
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                Add New Product
+              </h1>
+              <p className="text-gray-600">Create a new product for your vendor catalog</p>
+            </div>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+            {isSaving ? 'Saving...' : 'Save Product'}
+          </Button>
         </div>
-        <div>
-          <label className="block font-medium mb-1">Slug</label>
-          <input name="slug" value={form.slug} onChange={handleChange} required className="w-full border p-2 rounded" />
+
+        <Card className="border-purple-100 shadow-lg">
+          <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-6 bg-gray-50">
+              <TabsTrigger value="basic-info" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Basic Info
+              </TabsTrigger>
+              <TabsTrigger value="options" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Options
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Pricing Matrix
+              </TabsTrigger>
+              <TabsTrigger value="images" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Images
+              </TabsTrigger>
+              <TabsTrigger value="features" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Features
+              </TabsTrigger>
+              <TabsTrigger value="recommendations" className="data-[state=active]:bg-purple-500 data-[state=active]:text-white">
+                Room Recommendations
+              </TabsTrigger>
+            </TabsList>
+
+            <div className="p-6">
+              <TabsContent value="basic-info">
+                <BasicInfo
+                  data={productData.basicInfo}
+                  categories={SHADE_CATEGORIES}
+                  onChange={(data) => updateProductData('basicInfo', data)}
+                />
+              </TabsContent>
+
+              <TabsContent value="options">
+                <Options
+                  data={productData.options}
+                  onChange={(data) => updateProductData('options', data)}
+                />
+              </TabsContent>
+
+              <TabsContent value="pricing">
+                <PricingMatrix
+                  dimensions={productData.dimensions}
+                  onChange={(data) => updateProductData('dimensions', data)}
+                />
+              </TabsContent>
+
+              <TabsContent value="images">
+                <Images
+                  images={productData.images}
+                  onChange={(data) => updateProductData('images', data)}
+                />
+              </TabsContent>
+
+              <TabsContent value="features">
+                <Features
+                  features={productData.features}
+                  onChange={(data) => updateProductData('features', data)}
+                />
+              </TabsContent>
+
+              <TabsContent value="recommendations">
+                <RoomRecommendations
+                  recommendations={productData.roomRecommendations}
+                  onChange={(data) => updateProductData('roomRecommendations', data)}
+                />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </Card>
+
+        {/* Progress indicator */}
+        <div className="mt-6 bg-white rounded-lg border border-purple-100 p-4">
+          <h3 className="font-medium text-gray-900 mb-3">Product Creation Progress</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+            <div className={`flex items-center gap-2 ${productData.basicInfo.name ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.basicInfo.name ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              Basic Information
+            </div>
+            <div className={`flex items-center gap-2 ${productData.options.mountTypes.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.options.mountTypes.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              Product Options
+            </div>
+            <div className={`flex items-center gap-2 ${productData.images.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.images.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              Product Images
+            </div>
+            <div className={`flex items-center gap-2 ${productData.features.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.features.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              Features
+            </div>
+            <div className={`flex items-center gap-2 ${productData.roomRecommendations.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.roomRecommendations.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+              Room Recommendations
+            </div>
+            <div className="flex items-center gap-2 text-gray-400">
+              <div className="w-2 h-2 rounded-full bg-gray-300"></div>
+              Ready to Publish
+            </div>
+          </div>
         </div>
-        <div>
-          <label className="block font-medium mb-1">Type</label>
-          <select name="type_id" value={form.type_id} onChange={handleChange} className="w-full border p-2 rounded">
-            <option value={1}>Blinds</option>
-            <option value={2}>Shades</option>
-            <option value={3}>Drapes</option>
-            <option value={4}>Shutters</option>
-          </select>
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Base Price</label>
-          <input name="base_price" type="number" value={form.base_price} onChange={handleChange} required className="w-full border p-2 rounded" />
-        </div>
-        <div className="flex gap-4">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="is_active" checked={form.is_active} onChange={handleChange} /> Active
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="is_listing_enabled" checked={form.is_listing_enabled} onChange={handleChange} /> Listed
-          </label>
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Series Name</label>
-          <input name="series_name" value={form.series_name} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Material Type</label>
-          <input name="material_type" value={form.material_type} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Short Description</label>
-          <textarea name="short_description" value={form.short_description} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Full Description</label>
-          <textarea name="full_description" value={form.full_description} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Features (comma separated)</label>
-          <input name="features" value={form.features} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        <div>
-          <label className="block font-medium mb-1">Benefits (comma separated)</label>
-          <input name="benefits" value={form.benefits} onChange={handleChange} className="w-full border p-2 rounded" />
-        </div>
-        {error && <div className="text-red-600">{error}</div>}
-        <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark" disabled={loading}>
-          {loading ? 'Saving...' : 'Create Product'}
-        </button>
-      </form>
+      </div>
     </div>
   );
-} 
+}
