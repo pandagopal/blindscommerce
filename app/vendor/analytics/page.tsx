@@ -74,45 +74,12 @@ export default function VendorAnalyticsPage() {
         const data = await res.json();
         setAnalyticsData(data);
       } else {
-        // Mock data for demonstration
-        setAnalyticsData({
-          overview: {
-            total_revenue: 12680.45,
-            revenue_change: 15.2,
-            total_orders: 89,
-            orders_change: 8.7,
-            product_views: 2345,
-            views_change: 22.1,
-            conversion_rate: 3.8,
-            conversion_change: 0.5,
-            avg_rating: 4.6,
-            commission_earned: 1902.07
-          },
-          sales_data: [],
-          product_performance: [],
-          customer_insights: []
-        });
+        console.error('Failed to fetch analytics data');
+        setAnalyticsData(null);
       }
     } catch (error) {
       console.error('Error fetching analytics:', error);
-      // Fallback to mock data
-      setAnalyticsData({
-        overview: {
-          total_revenue: 12680.45,
-          revenue_change: 15.2,
-          total_orders: 89,
-          orders_change: 8.7,
-          product_views: 2345,
-          views_change: 22.1,
-          conversion_rate: 3.8,
-          conversion_change: 0.5,
-          avg_rating: 4.6,
-          commission_earned: 1902.07
-        },
-        sales_data: [],
-        product_performance: [],
-        customer_insights: []
-      });
+      setAnalyticsData(null);
     } finally {
       setLoading(false);
     }
@@ -486,11 +453,16 @@ export default function VendorAnalyticsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">156</div>
+                      <div className="text-2xl font-bold text-purple-600">
+                        {analyticsData?.customer_insights?.total_customers || 0}
+                      </div>
                       <div className="text-sm text-gray-600">Total Customers</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">78%</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {analyticsData?.customer_insights?.repeat_purchase_rate ? 
+                          `${(analyticsData.customer_insights.repeat_purchase_rate * 100).toFixed(1)}%` : '0%'}
+                      </div>
                       <div className="text-sm text-gray-600">Repeat Purchase Rate</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -500,7 +472,9 @@ export default function VendorAnalyticsPage() {
                       <div className="text-sm text-gray-600">Avg. Order Value</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-orange-600">2.1</div>
+                      <div className="text-2xl font-bold text-orange-600">
+                        {analyticsData?.customer_insights?.avg_orders_per_customer?.toFixed(1) || '0.0'}
+                      </div>
                       <div className="text-sm text-gray-600">Avg. Orders per Customer</div>
                     </div>
                   </div>

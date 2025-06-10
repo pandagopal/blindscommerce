@@ -108,66 +108,15 @@ export default function SalesLeadsPage() {
         setLeads(data.leads);
         setStats(data.stats);
       } else {
-        // Mock data for demonstration
-        const mockLeads: Lead[] = [
-          {
-            id: 'LEAD-001',
-            name: 'Sarah Johnson',
-            email: 'sarah.johnson@email.com',
-            phone: '+1-555-0123',
-            source: 'website',
-            status: 'qualified',
-            priority: 'high',
-            estimated_value: 2500,
-            product_interest: 'Plantation Shutters',
-            notes: 'Interested in whole house solution. Budget confirmed.',
-            created_at: '2023-10-15',
-            last_contact: '2023-10-20',
-            next_follow_up: '2023-10-25',
-            assigned_to: 'Mike Wilson'
-          },
-          {
-            id: 'LEAD-002',
-            name: 'David Thompson',
-            email: 'david.t@company.com',
-            phone: '+1-555-0456',
-            source: 'referral',
-            status: 'proposal',
-            priority: 'medium',
-            estimated_value: 1800,
-            product_interest: 'Cellular Shades',
-            notes: 'Commercial project. Needs detailed quote.',
-            created_at: '2023-10-12',
-            last_contact: '2023-10-18',
-            next_follow_up: '2023-10-22',
-            assigned_to: 'Lisa Chen'
-          },
-          {
-            id: 'LEAD-003',
-            name: 'Jennifer Martinez',
-            email: 'jmartinez@email.com',
-            phone: '+1-555-0789',
-            source: 'advertising',
-            status: 'new',
-            priority: 'medium',
-            estimated_value: 950,
-            product_interest: 'Roller Shades',
-            notes: 'First time buyer. Needs education on products.',
-            created_at: '2023-10-22',
-            last_contact: '',
-            next_follow_up: '2023-10-24',
-            assigned_to: ''
-          }
-        ];
-
-        setLeads(mockLeads);
+        console.error('Failed to fetch sales leads');
+        setLeads([]);
         setStats({
-          total_leads: 156,
-          new_leads: 23,
-          qualified_leads: 45,
-          conversion_rate: 18.5,
-          avg_deal_value: 1650,
-          pipeline_value: 75000
+          total_leads: 0,
+          new_leads: 0,
+          qualified_leads: 0,
+          conversion_rate: 0,
+          avg_deal_value: 0,
+          pipeline_value: 0
         });
       }
     } catch (error) {

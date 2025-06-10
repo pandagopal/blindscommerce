@@ -10,6 +10,7 @@ import { CartProvider } from "@/context/CartContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { defaultMetadata, dynamic, revalidate } from './config';
 import { Toaster } from "sonner";
+import ErrorBoundary from "@/components/ErrorBoundary";
 //import LiveChat from "./components/chat/LiveChat";
 //import LiveChat from "@/components/chat/LiveChat";
 
@@ -38,17 +39,19 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className={inter.className}>
-        <CartProvider>
-          <RecentlyViewedProvider>
-            <div className="flex flex-col min-h-screen">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-             {/* <LiveChat /> */}
-            </div>
-            <Toaster richColors />
-          </RecentlyViewedProvider>
-        </CartProvider>
+        <ErrorBoundary>
+          <CartProvider>
+            <RecentlyViewedProvider>
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+                <Footer />
+               {/* <LiveChat /> */}
+              </div>
+              <Toaster richColors />
+            </RecentlyViewedProvider>
+          </CartProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

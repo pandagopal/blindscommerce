@@ -271,15 +271,15 @@ export function ConfigProvider({
     setStepValidation(prev => ({ ...prev, [config.step]: isValid }));
 
     // Calculate total price
-    const basePrice = product.base_price;
-    const mountModifier = mountTypes.find(m => m.id === config.mountType)?.priceModifier ?? 0;
-    const colorModifier = product.colors.find(c => c.color_id === config.colorId)?.price_modifier ?? 0;
-    const materialModifier = product.materials.find(m => m.material_id === config.materialId)?.price_modifier ?? 0;
-    const controlModifier = controlTypes.find(c => c.name === config.controlType)?.priceModifier ?? 0;
+    const basePrice = product?.base_price ?? 0;
+    const mountModifier = (mountTypes ?? []).find(m => m.id === config.mountType)?.priceModifier ?? 0;
+    const colorModifier = (product?.colors ?? []).find(c => c.color_id === config.colorId)?.price_modifier ?? 0;
+    const materialModifier = (product?.materials ?? []).find(m => m.material_id === config.materialId)?.price_modifier ?? 0;
+    const controlModifier = (controlTypes ?? []).find(c => c.name === config.controlType)?.priceModifier ?? 0;
     const headrailModifier = config.headrailId ? 
-      headrailOptions.find(h => h.id === config.headrailId)?.priceModifier ?? 0 : 0;
+      (headrailOptions ?? []).find(h => h.id === config.headrailId)?.priceModifier ?? 0 : 0;
     const bottomRailModifier = config.bottomRailId ? 
-      bottomRailOptions.find(b => b.id === config.bottomRailId)?.priceModifier ?? 0 : 0;
+      (bottomRailOptions ?? []).find(b => b.id === config.bottomRailId)?.priceModifier ?? 0 : 0;
 
     const itemPrice = basePrice + mountModifier + colorModifier + materialModifier + 
                      controlModifier + headrailModifier + bottomRailModifier;

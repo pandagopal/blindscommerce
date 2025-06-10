@@ -1,53 +1,77 @@
 import HomeClient from './components/home/HomeClient';
+import { getPool } from '@/lib/db';
 
-// Mock data - replace with actual data fetching
-const categories = [
-  {
-    id: 1,
-    name: 'Cellular Shades',
-    slug: 'cellular-shades',
-    image: '/images/categories/cellular-shades.jpg',
-    description: 'Energy-efficient window coverings with a distinctive honeycomb design'
-  },
-  {
-    id: 2,
-    name: 'Roller Shades',
-    slug: 'roller-shades',
-    image: '/images/categories/roller-shades.jpg',
-    description: 'Clean, modern window treatments with smooth operation'
-  },
-  {
-    id: 3,
-    name: 'Wood Blinds',
-    slug: 'wood-blinds',
-    image: '/images/categories/wood-blinds.jpg',
-    description: 'Classic window coverings made from genuine hardwood'
+async function getHomePageData() {
+  try {
+    const pool = await getPool();
+    
+    // Fetch featured categories
+    const [categoryRows] = await pool.query(
+      `SELECT 
+        category_id as id, 
+        name, 
+        slug, 
+        image_url as image, 
+        description 
+      FROM categories 
+      WHERE featured = 1 
+      ORDER BY display_order ASC 
+      LIMIT 6`
+    );
+    
+    // Fetch featured products
+    const [productRows] = await pool.query(
+      `SELECT 
+        p.product_id, 
+        p.name, 
+        p.slug, 
+        c.name as category_name, 
+        p.base_price, 
+        COALESCE(AVG(pr.rating), 0) as rating,
+        p.primary_image_url as primary_image
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+      WHERE p.featured = 1 AND p.status = 'active'
+      GROUP BY p.product_id
+      ORDER BY p.display_order ASC, p.created_at DESC
+      LIMIT 8`
+    );
+
+    // Fetch featured reviews for homepage
+    const [reviewRows] = await pool.query(
+      `SELECT 
+        pr.review_id as id,
+        CONCAT(u.first_name, ' ', SUBSTRING(u.last_name, 1, 1), '.') as author,
+        pr.rating,
+        pr.title,
+        pr.review_text as text,
+        DATE_FORMAT(pr.created_at, '%Y-%m-%d') as date
+      FROM product_reviews pr
+      JOIN users u ON pr.user_id = u.user_id
+      WHERE pr.featured = 1 AND pr.status = 'approved'
+      ORDER BY pr.created_at DESC
+      LIMIT 6`
+    );
+    
+    return {
+      categories: categoryRows as any[],
+      products: productRows as any[],
+      reviews: reviewRows as any[]
+    };
+  } catch (error) {
+    console.error('Error fetching home page data:', error);
+    return {
+      categories: [],
+      products: [],
+      reviews: []
+    };
   }
-];
+}
 
-const products = [
-  {
-    product_id: 1,
-    name: 'Premium Cellular Shade',
-    slug: 'premium-cellular-shade',
-    category_name: 'Cellular Shades',
-    base_price: 129.99,
-    rating: 4.8,
-    primary_image: '/images/products/cellular-shade-1.jpg'
-  },
-  {
-    product_id: 2,
-    name: 'Deluxe Roller Shade',
-    slug: 'deluxe-roller-shade',
-    category_name: 'Roller Shades',
-    base_price: 89.99,
-    rating: 4.7,
-    primary_image: '/images/products/roller-shade-1.jpg'
-  }
-];
-
-export default function Home() {
+export default async function Home() {
+  const { categories, products, reviews } = await getHomePageData();
   return (
-    <HomeClient categories={categories} products={products} />
+    <HomeClient categories={categories} products={products} reviews={reviews} />
   );
 }

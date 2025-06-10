@@ -26,13 +26,20 @@ export default function ReviewCard({ review, onHelpfulUpdate }: ReviewCardProps)
   const [votingLoading, setVotingLoading] = useState(false);
 
   // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  const formatDate = (dateString: string | null | undefined) => {
+    try {
+      if (!dateString) return 'N/A';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      console.warn('Error formatting date:', error, { dateString });
+      return 'N/A';
+    }
   };
 
   // Render star rating

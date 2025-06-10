@@ -27,42 +27,38 @@ interface Product {
   primary_image: string;
 }
 
+interface Room {
+  id: number;
+  name: string;
+  image: string;
+  link: string;
+}
+
+interface Review {
+  id: number;
+  author: string;
+  rating: number;
+  text: string;
+  date: string;
+}
+
 interface HomeClientProps {
   categories: Category[];
   products: Product[];
+  rooms?: Room[];
+  reviews?: Review[];
 }
 
-export default function HomeClient({ categories, products }: HomeClientProps) {
-  const rooms = [
-    { name: 'Living Room', image: '/images/rooms/living-room.jpg', link: '/shop/living-room' },
-    { name: 'Bedroom', image: '/images/rooms/bedroom.jpg', link: '/shop/bedroom' },
-    { name: 'Kitchen', image: '/images/rooms/kitchen.jpg', link: '/shop/kitchen' },
-    { name: 'Bathroom', image: '/images/rooms/bathroom.jpg', link: '/shop/bathroom' }
+export default function HomeClient({ categories, products, rooms = [], reviews = [] }: HomeClientProps) {
+  // Fallback rooms if none provided (only for graceful degradation)
+  const defaultRooms = [
+    { id: 1, name: 'Living Room', image: '/images/rooms/living-room.jpg', link: '/rooms?type=living-room' },
+    { id: 2, name: 'Bedroom', image: '/images/rooms/bedroom.jpg', link: '/rooms?type=bedroom' },
+    { id: 3, name: 'Kitchen', image: '/images/rooms/kitchen.jpg', link: '/rooms?type=kitchen' },
+    { id: 4, name: 'Bathroom', image: '/images/rooms/bathroom.jpg', link: '/rooms?type=bathroom' }
   ];
 
-  const reviews = [
-    {
-      id: 1,
-      author: 'Sarah M.',
-      rating: 5,
-      text: 'The cellular shades are perfect! Great quality and the installation was a breeze.',
-      date: '2024-01-15'
-    },
-    {
-      id: 2,
-      author: 'John D.',
-      rating: 5,
-      text: 'Excellent customer service and the blinds are exactly what we needed.',
-      date: '2024-01-10'
-    },
-    {
-      id: 3,
-      author: 'Emily R.',
-      rating: 4,
-      text: 'Beautiful roller shades that transformed our living room. Very happy!',
-      date: '2024-01-05'
-    }
-  ];
+  const displayRooms = rooms.length > 0 ? rooms : defaultRooms;
 
   return (      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Hero Section with Multiple Slides */}

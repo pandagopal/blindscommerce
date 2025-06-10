@@ -63,8 +63,44 @@ export async function POST(request: NextRequest) {
 }
 
 async function getPersonalizedRecommendations(userId: string): Promise<ProductRecommendation[]> {
-  // Simplified version - return general recommendations for now
-  return await getGeneralRecommendations();
+  const pool = await getPool();
+  
+  // Get user's purchase history and preferences
+  const [userProducts] = await pool.execute(`
+    SELECT DISTINCT p.category_id, p.product_id
+    FROM orders o
+    JOIN order_items oi ON o.order_id = oi.order_id
+    JOIN products p ON oi.product_id = p.product_id
+    WHERE o.user_id = ? AND o.status = 'completed'
+    ORDER BY o.created_at DESC
+    LIMIT 10
+  `, [userId]);
+
+  // Get products from similar categories with high ratings
+  const categoryIds = (userProducts as any[]).map(p => p.category_id).join(',') || '0';
+  
+  const [recommendations] = await pool.execute(`
+    SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.base_price,
+      COALESCE(AVG(pr.rating), 0) as avg_rating,
+      p.primary_image_url,
+      c.name as category
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    WHERE p.category_id IN (${categoryIds}) 
+      AND p.status = 'active'
+      AND p.product_id NOT IN (${(userProducts as any[]).map(p => p.product_id).join(',') || '0'})
+    GROUP BY p.product_id
+    HAVING avg_rating >= 4.0
+    ORDER BY avg_rating DESC, p.created_at DESC
+    LIMIT 6
+  `);
+
+  return recommendations as ProductRecommendation[];
 }
 
 async function getRoomBasedRecommendations(
@@ -72,26 +108,106 @@ async function getRoomBasedRecommendations(
   style: string, 
   budget: number
 ): Promise<ProductRecommendation[]> {
-  // Simplified version - return general recommendations for now
-  return await getGeneralRecommendations();
+  const pool = await getPool();
+  
+  const [recommendations] = await pool.execute(`
+    SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.base_price,
+      COALESCE(AVG(pr.rating), 0) as avg_rating,
+      p.primary_image_url,
+      c.name as category
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    LEFT JOIN product_room_types prt ON p.product_id = prt.product_id
+    WHERE p.status = 'active'
+      AND p.base_price <= ?
+      AND (prt.room_type = ? OR prt.room_type IS NULL)
+    GROUP BY p.product_id
+    ORDER BY avg_rating DESC, p.featured DESC
+    LIMIT 6
+  `, [budget, roomType]);
+
+  return recommendations as ProductRecommendation[];
 }
 
 async function getSimilarProducts(productId: number): Promise<ProductRecommendation[]> {
-  // Simplified version - return general recommendations for now
-  return await getGeneralRecommendations();
+  const pool = await getPool();
+  
+  // Get the product's category
+  const [productInfo] = await pool.execute(`
+    SELECT category_id, base_price FROM products WHERE product_id = ?
+  `, [productId]);
+
+  if ((productInfo as any[]).length === 0) {
+    return [];
+  }
+
+  const { category_id, base_price } = (productInfo as any[])[0];
+  const priceRange = base_price * 0.3; // 30% price range
+
+  const [recommendations] = await pool.execute(`
+    SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.base_price,
+      COALESCE(AVG(pr.rating), 0) as avg_rating,
+      p.primary_image_url,
+      c.name as category
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    WHERE p.category_id = ?
+      AND p.product_id != ?
+      AND p.status = 'active'
+      AND p.base_price BETWEEN ? AND ?
+    GROUP BY p.product_id
+    ORDER BY avg_rating DESC
+    LIMIT 6
+  `, [category_id, productId, base_price - priceRange, base_price + priceRange]);
+
+  return recommendations as ProductRecommendation[];
 }
 
 async function getTrendingProducts(): Promise<ProductRecommendation[]> {
-  // Simplified version - return general recommendations for now
-  return await getGeneralRecommendations();
+  const pool = await getPool();
+  
+  const [recommendations] = await pool.execute(`
+    SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.base_price,
+      COALESCE(AVG(pr.rating), 0) as avg_rating,
+      p.primary_image_url,
+      c.name as category,
+      COUNT(oi.product_id) as order_count
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    LEFT JOIN order_items oi ON p.product_id = oi.product_id
+    LEFT JOIN orders o ON oi.order_id = o.order_id
+    WHERE p.status = 'active'
+      AND o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+    GROUP BY p.product_id
+    ORDER BY order_count DESC, avg_rating DESC
+    LIMIT 6
+  `);
+
+  return recommendations as ProductRecommendation[];
 }
 
 async function getAIVisualRecommendations(
   roomImage: string, 
   roomType: string
 ): Promise<ProductRecommendation[]> {
-  // Simplified version - return general recommendations for now
-  return await getGeneralRecommendations();
+  // This would integrate with AI/ML services for visual analysis
+  // For now, return room-based recommendations
+  return await getRoomBasedRecommendations(roomType, 'modern', 1000);
 }
 
 async function getGeneralRecommendations(): Promise<ProductRecommendation[]> {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
+import { getTaxRate, getFreeShippingThreshold, getMinimumOrderAmount } from '@/lib/settings';
 
 interface PricingCalculationRequest {
   items: Array<{
@@ -362,7 +363,68 @@ export async function POST(req: NextRequest) {
     }
 
     const totalDiscountAmount = volumeDiscountAmount + couponDiscountAmount + campaignDiscountAmount;
-    const total = Math.max(0, subtotal - totalDiscountAmount);
+    const discountedSubtotal = Math.max(0, subtotal - totalDiscountAmount);
+
+    // Get admin settings for tax and shipping
+    const taxRate = await getTaxRate();
+    const freeShippingThreshold = await getFreeShippingThreshold();
+    const minimumOrderAmount = await getMinimumOrderAmount();
+
+    // Check minimum order amount
+    if (discountedSubtotal < minimumOrderAmount) {
+      return NextResponse.json({
+        success: false,
+        error: `Minimum order amount of $${minimumOrderAmount.toFixed(2)} is required. Current total: $${discountedSubtotal.toFixed(2)}`,
+        pricing: {
+          items: calculatedItems,
+          subtotal,
+          discounts: {
+            volume_discount: volumeDiscountAmount,
+            coupon_discount: couponDiscountAmount,
+            campaign_discount: campaignDiscountAmount,
+            total_discount: totalDiscountAmount
+          },
+          discounted_subtotal: discountedSubtotal,
+          minimum_order_required: minimumOrderAmount,
+          tax_rate: taxRate,
+          shipping: 0,
+          tax: 0,
+          total: 0
+        }
+      }, { status: 400 });
+    }
+
+    // Calculate shipping (free if above threshold)
+    let shippingCost = 0;
+    const isFreeShipping = discountedSubtotal >= freeShippingThreshold;
+    
+    if (!isFreeShipping) {
+      // Basic shipping calculation - could be enhanced with shipping rates API
+      shippingCost = 9.99;
+      
+      // Check for free shipping coupon
+      if (body.coupon_code) {
+        const [shippingCoupons] = await pool.execute<CouponRow[]>(
+          `SELECT * FROM coupon_codes 
+           WHERE coupon_code = ? 
+           AND discount_type = 'free_shipping'
+           AND is_active = TRUE
+           AND (valid_from IS NULL OR valid_from <= NOW())
+           AND (valid_until IS NULL OR valid_until >= NOW())`,
+          [body.coupon_code]
+        );
+        
+        if (shippingCoupons.length > 0) {
+          shippingCost = 0;
+        }
+      }
+    }
+
+    // Calculate tax on discounted subtotal + shipping
+    const taxableAmount = discountedSubtotal + shippingCost;
+    const taxAmount = taxableAmount * (taxRate / 100);
+    
+    const finalTotal = discountedSubtotal + shippingCost + taxAmount;
 
     return NextResponse.json({
       success: true,
@@ -375,7 +437,13 @@ export async function POST(req: NextRequest) {
           campaign_discount: campaignDiscountAmount,
           total_discount: totalDiscountAmount
         },
-        total,
+        discounted_subtotal: discountedSubtotal,
+        shipping: shippingCost,
+        is_free_shipping: isFreeShipping,
+        free_shipping_threshold: freeShippingThreshold,
+        tax_rate: taxRate,
+        tax: taxAmount,
+        total: finalTotal,
         applied_promotions: {
           ...(body.coupon_code && !couponError && { coupon_code: body.coupon_code }),
           ...(body.campaign_code && campaignDiscountAmount > 0 && { campaign_code: body.campaign_code })

@@ -33,47 +33,54 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     
-    // Mock data for now - in a real app, this would come from the database
-    const mockAppointments: Appointment[] = [
-      {
-        id: '1',
-        customerName: 'John Smith',
-        address: '123 Main St, Austin, TX 78701',
-        date: new Date().toISOString().split('T')[0], // Today
-        time: '10:00 AM',
-        status: 'scheduled',
-        type: 'installation'
-      },
-      {
-        id: '2',
-        customerName: 'Sarah Johnson',
-        address: '456 Oak Ave, Austin, TX 78702',
-        date: new Date().toISOString().split('T')[0], // Today
-        time: '2:00 PM',
-        status: 'in-progress',
-        type: 'measurement'
-      },
-      {
-        id: '3',
-        customerName: 'Mike Davis',
-        address: '789 Pine St, Austin, TX 78703',
-        date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Tomorrow
-        time: '9:00 AM',
-        status: 'scheduled',
-        type: 'installation'
-      },
-      {
-        id: '4',
-        customerName: 'Emma Wilson',
-        address: '321 Elm St, Austin, TX 78704',
-        date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Day after tomorrow
-        time: '11:00 AM',
-        status: 'scheduled',
-        type: 'repair'
-      }
-    ];
+    // Get search parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const date = searchParams.get('date');
+    const type = searchParams.get('type');
+    const installerId = searchParams.get('installer_id') || user.user_id;
 
-    return NextResponse.json(mockAppointments);
+    // Build dynamic query with optional filters
+    let query = `
+      SELECT 
+        ia.appointment_id as id,
+        CONCAT(u.first_name, ' ', u.last_name) as customerName,
+        CONCAT(sa.address_line_1, ', ', sa.city, ', ', sa.state, ' ', sa.postal_code) as address,
+        DATE(ia.scheduled_datetime) as date,
+        TIME_FORMAT(ia.scheduled_datetime, '%h:%i %p') as time,
+        ia.status,
+        ia.appointment_type as type,
+        ia.notes,
+        ia.estimated_duration
+      FROM installer_appointments ia
+      JOIN users u ON ia.customer_id = u.user_id
+      LEFT JOIN shipping_addresses sa ON ia.address_id = sa.address_id
+      WHERE ia.installer_id = ?
+    `;
+    
+    const queryParams = [installerId];
+
+    if (status) {
+      query += ' AND ia.status = ?';
+      queryParams.push(status);
+    }
+
+    if (date) {
+      query += ' AND DATE(ia.scheduled_datetime) = ?';
+      queryParams.push(date);
+    }
+
+    if (type) {
+      query += ' AND ia.appointment_type = ?';
+      queryParams.push(type);
+    }
+
+    query += ' ORDER BY ia.scheduled_datetime ASC';
+
+    const [rows] = await pool.query(query, queryParams);
+    const appointments = rows as Appointment[];
+
+    return NextResponse.json(appointments);
   } catch (error) {
     console.error('Error fetching appointments:', error);
     return NextResponse.json(
@@ -103,30 +110,64 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { customerName, address, date, time, type } = body;
+    const { customerId, addressId, date, time, type, notes, estimatedDuration } = body;
 
     // Validate required fields
-    if (!customerName || !address || !date || !time || !type) {
+    if (!customerId || !addressId || !date || !time || !type) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Missing required fields: customerId, addressId, date, time, type' },
         { status: 400 }
       );
     }
 
-    // Create new appointment
-    const newAppointment: Appointment = {
-      id: `APT-${Date.now()}`,
-      customerName,
-      address,
-      date,
-      time,
-      status: 'scheduled',
-      type
-    };
+    const pool = await getPool();
 
-    // In a real implementation, you would save to database
-    // const pool = await getPool();
-    // await pool.query(...);
+    // Verify customer exists
+    const [customerRows] = await pool.query(
+      'SELECT user_id FROM users WHERE user_id = ?',
+      [customerId]
+    );
+
+    if ((customerRows as any[]).length === 0) {
+      return NextResponse.json(
+        { error: 'Customer not found' },
+        { status: 404 }
+      );
+    }
+
+    // Create scheduled datetime from date and time
+    const scheduledDatetime = `${date} ${time}`;
+
+    // Insert new appointment
+    const [result] = await pool.query(
+      `INSERT INTO installer_appointments 
+       (installer_id, customer_id, address_id, scheduled_datetime, appointment_type, status, notes, estimated_duration, created_at)
+       VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, NOW())`,
+      [user.user_id, customerId, addressId, scheduledDatetime, type, notes || null, estimatedDuration || 60]
+    );
+
+    const appointmentId = (result as any).insertId;
+
+    // Fetch the created appointment with customer details
+    const [appointmentRows] = await pool.query(
+      `SELECT 
+        ia.appointment_id as id,
+        CONCAT(u.first_name, ' ', u.last_name) as customerName,
+        CONCAT(sa.address_line_1, ', ', sa.city, ', ', sa.state, ' ', sa.postal_code) as address,
+        DATE(ia.scheduled_datetime) as date,
+        TIME_FORMAT(ia.scheduled_datetime, '%h:%i %p') as time,
+        ia.status,
+        ia.appointment_type as type,
+        ia.notes,
+        ia.estimated_duration
+      FROM installer_appointments ia
+      JOIN users u ON ia.customer_id = u.user_id
+      LEFT JOIN shipping_addresses sa ON ia.address_id = sa.address_id
+      WHERE ia.appointment_id = ?`,
+      [appointmentId]
+    );
+
+    const newAppointment = (appointmentRows as any[])[0];
 
     return NextResponse.json(
       { 

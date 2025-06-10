@@ -190,7 +190,7 @@ export function CartProvider({ children }: CartProviderProps) {
       setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
       
       // Fallback to basic calculation
-      const subtotal = cartItems.reduce((total, item) => total + (item.unit_price * item.quantity), 0);
+      const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
       const shipping = subtotal > 100 ? 0 : 15.99;
       const tax = subtotal * 0.0825;
       

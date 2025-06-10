@@ -123,7 +123,7 @@ export default function ProductReviews({
   const renderRatingDistribution = () => {
     return (
       <div className="space-y-2">
-        {ratingDistribution.map(({ rating, count }) => {
+        {(ratingDistribution ?? []).map(({ rating, count }) => {
           const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
           
           return (
@@ -159,8 +159,8 @@ export default function ProductReviews({
         <div className="flex flex-col md:flex-row md:items-start md:space-x-8">
           {/* Overall Rating */}
           <div className="text-center md:text-left mb-6 md:mb-0">
-            <div className="text-4xl font-bold mb-2">{averageRating.toFixed(1)}</div>
-            {renderStars(Math.round(averageRating), 'lg')}
+            <div className="text-4xl font-bold mb-2">{(averageRating ?? 0).toFixed(1)}</div>
+            {renderStars(Math.round(averageRating ?? 0), 'lg')}
             <div className="text-sm text-gray-600 mt-1">
               Based on {totalReviews} review{totalReviews !== 1 ? 's' : ''}
             </div>
@@ -229,7 +229,7 @@ export default function ProductReviews({
 
       {/* Reviews List */}
       <div className="space-y-4">
-        {reviews.map((review) => (
+        {(reviews ?? []).map((review) => (
           <ReviewCard 
             key={review.id} 
             review={review}

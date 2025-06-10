@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
+import { isPaymentMethodEnabled } from '@/lib/settings';
 
 // GET - Get available payment methods for checkout
 export async function GET(request: NextRequest) {
@@ -11,7 +12,22 @@ export async function GET(request: NextRequest) {
 
     const user = await getCurrentUser();
 
-    // Base payment methods always available
+    // Check admin settings for payment method availability
+    const [
+      stripeEnabled,
+      paypalEnabled, 
+      klarnaEnabled,
+      afterpayEnabled,
+      affirmEnabled
+    ] = await Promise.all([
+      isPaymentMethodEnabled('stripe'),
+      isPaymentMethodEnabled('paypal'),
+      isPaymentMethodEnabled('klarna'),
+      isPaymentMethodEnabled('afterpay'),
+      isPaymentMethodEnabled('affirm')
+    ]);
+
+    // Base payment methods with admin settings check
     const paymentMethods = [
       {
         id: 'stripe_card',
@@ -30,7 +46,7 @@ export async function GET(request: NextRequest) {
           percentage: 2.9,
           fixed: 0.30
         },
-        available: true,
+        available: stripeEnabled,
         recommended: true
       },
       {
@@ -46,7 +62,7 @@ export async function GET(request: NextRequest) {
         countries: ['US', 'CA', 'GB', 'AU'],
         processing_time: 'instant',
         device_requirements: ['iOS', 'macOS', 'Safari'],
-        available: true
+        available: stripeEnabled
       },
       {
         id: 'stripe_google_pay',
@@ -61,7 +77,7 @@ export async function GET(request: NextRequest) {
         countries: ['US', 'CA', 'GB', 'AU'],
         processing_time: 'instant',
         device_requirements: ['Android', 'Chrome'],
-        available: true
+        available: stripeEnabled
       },
       {
         id: 'paypal',
@@ -80,7 +96,7 @@ export async function GET(request: NextRequest) {
           percentage: 3.49,
           fixed: 0.49
         },
-        available: process.env.BRAINTREE_MERCHANT_ID ? true : false
+        available: paypalEnabled && process.env.BRAINTREE_MERCHANT_ID ? true : false
       }
     ];
 
@@ -103,7 +119,7 @@ export async function GET(request: NextRequest) {
         interest_rate: 0,
         late_fees: true,
         credit_check: 'soft',
-        available: amount >= 1 && amount <= 10000 && process.env.KLARNA_USERNAME ? true : false,
+        available: klarnaEnabled && amount >= 1 && amount <= 10000 && process.env.KLARNA_USERNAME ? true : false,
         popular: true
       },
       {
@@ -123,7 +139,7 @@ export async function GET(request: NextRequest) {
         interest_rate: 0,
         late_fees: true,
         credit_check: 'soft',
-        available: amount >= 1 && amount <= 4000 && process.env.AFTERPAY_MERCHANT_ID ? true : false
+        available: afterpayEnabled && amount >= 1 && amount <= 4000 && process.env.AFTERPAY_MERCHANT_ID ? true : false
       },
       {
         id: 'affirm',
@@ -142,7 +158,7 @@ export async function GET(request: NextRequest) {
         interest_rate_range: [0, 36],
         credit_check: 'soft',
         prequalification: true,
-        available: amount >= 50 && amount <= 17500 && process.env.AFFIRM_PUBLIC_API_KEY ? true : false
+        available: affirmEnabled && amount >= 50 && amount <= 17500 && process.env.AFFIRM_PUBLIC_API_KEY ? true : false
       }
     ];
 

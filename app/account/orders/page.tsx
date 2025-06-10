@@ -157,7 +157,7 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-gray-600">{order.item_count}</td>
-                  <td className="px-4 py-4 font-medium">${order.total_amount.toFixed(2)}</td>
+                  <td className="px-4 py-4 font-medium">${(order?.total_amount || 0).toFixed(2)}</td>
                   <td className="px-4 py-4 text-right">
                     <Link
                       href={`/account/orders/${order.order_id}`}

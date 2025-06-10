@@ -151,7 +151,7 @@ export default function AdminDashboard() {
             <DollarSign className="h-8 w-8 text-green-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold">${stats.totalRevenue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">${(stats?.totalRevenue || 0).toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
             <ShoppingBag className="h-8 w-8 text-blue-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold">{stats.totalOrders}</p>
+              <p className="text-2xl font-bold">{stats?.totalOrders || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
             <Users className="h-8 w-8 text-purple-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Total Customers</p>
-              <p className="text-2xl font-bold">{stats.totalCustomers}</p>
+              <p className="text-2xl font-bold">{stats?.totalCustomers || 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
             <TrendingUp className="h-8 w-8 text-yellow-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Avg. Order Value</p>
-              <p className="text-2xl font-bold">${stats.averageOrderValue.toFixed(2)}</p>
+              <p className="text-2xl font-bold">${(stats?.averageOrderValue || 0).toFixed(2)}</p>
             </div>
           </CardContent>
         </Card>
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingOrders}</div>
+            <div className="text-2xl font-bold">{stats?.pendingOrders || 0}</div>
             <p className="text-xs text-gray-600">Requires attention</p>
           </CardContent>
         </Card>
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
             <UserCheck className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeCustomers}</div>
+            <div className="text-2xl font-bold">{stats?.activeCustomers || 0}</div>
             <p className="text-xs text-gray-600">In the last 30 days</p>
           </CardContent>
         </Card>
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
             <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.stockAlerts}</div>
+            <div className="text-2xl font-bold">{stats?.stockAlerts || 0}</div>
             <p className="text-xs text-gray-600">Items need restock</p>
           </CardContent>
         </Card>
@@ -238,8 +238,9 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={stats.recentSales}>
+              {stats?.recentSales && stats.recentSales.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.recentSales}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -257,8 +258,16 @@ export default function AdminDashboard() {
                     fillOpacity={1}
                     fill="url(#colorRevenue)"
                   />
-                </AreaChart>
-              </ResponsiveContainer>
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No revenue data available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -270,8 +279,9 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.customerGrowth}>
+              {stats?.customerGrowth && stats.customerGrowth.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={stats.customerGrowth}>
                   <XAxis dataKey="date" />
                   <YAxis />
                   <CartesianGrid strokeDasharray="3 3" />
@@ -282,8 +292,16 @@ export default function AdminDashboard() {
                     stroke="#8b5cf6"
                     strokeWidth={2}
                   />
-                </LineChart>
-              </ResponsiveContainer>
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="text-center">
+                    <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>No customer growth data available</p>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

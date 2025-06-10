@@ -64,12 +64,12 @@ export default function ProductGrid({ products }: ProductGridProps) {
               )}
               <div className="flex justify-between items-center">
                 <span className="text-primary-red font-bold">
-                  ${product.base_price.toFixed(2)}
+                  ${(product?.base_price ?? 0).toFixed(2)}
                 </span>
                 <div className="flex items-center">
                   <span className="text-yellow-400">★</span>
                   <span className="text-sm text-gray-600 ml-1">
-                    {product.rating ? product.rating : "N/A"}
+                    {product?.rating ? product.rating : "N/A"}
                   </span>
                 </div>
               </div>

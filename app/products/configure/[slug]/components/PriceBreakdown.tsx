@@ -65,14 +65,14 @@ const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">Base Price:</span>
-            <span>${product.base_price.toFixed(2)}</span>
+            <span>${(product?.base_price ?? 0).toFixed(2)}</span>
           </div>
 
           <div className="flex justify-between">
             <span className="text-gray-600">Size Adjustment:</span>
             <span>
               {sizeMultiplier > 1
-                ? `${sizeMultiplier.toFixed(2)}x (${adjustedBasePrice.toFixed(2)})`
+                ? `${(sizeMultiplier ?? 1).toFixed(2)}x (${(adjustedBasePrice ?? 0).toFixed(2)})`
                 : 'No adjustment'
               }
             </span>
@@ -81,49 +81,49 @@ const PriceBreakdown: React.FC<PriceBreakdownProps> = ({
           {selectedMount && selectedMount.priceModifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedMount.name}:</span>
-              <span>+${selectedMount.priceModifier.toFixed(2)}</span>
+              <span>+${(selectedMount?.priceModifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           {selectedColor && selectedColor.price_modifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedColor.name} Color:</span>
-              <span>+${selectedColor.price_modifier.toFixed(2)}</span>
+              <span>+${(selectedColor?.price_modifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           {selectedMaterial && selectedMaterial.price_modifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedMaterial.name} Material:</span>
-              <span>+${selectedMaterial.price_modifier.toFixed(2)}</span>
+              <span>+${(selectedMaterial?.price_modifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           {selectedControl && selectedControl.priceModifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedControl.name} Control:</span>
-              <span>+${selectedControl.priceModifier.toFixed(2)}</span>
+              <span>+${(selectedControl?.priceModifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           {selectedHeadrail && selectedHeadrail.priceModifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedHeadrail.name} Headrail:</span>
-              <span>+${selectedHeadrail.priceModifier.toFixed(2)}</span>
+              <span>+${(selectedHeadrail?.priceModifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           {selectedBottomRail && selectedBottomRail.priceModifier > 0 && (
             <div className="flex justify-between">
               <span className="text-gray-600">{selectedBottomRail.name} Bottom Rail:</span>
-              <span>+${selectedBottomRail.priceModifier.toFixed(2)}</span>
+              <span>+${(selectedBottomRail?.priceModifier ?? 0).toFixed(2)}</span>
             </div>
           )}
 
           <div className="border-t pt-2 mt-2 font-medium">
             <div className="flex justify-between">
               <span>Unit Price:</span>
-              <span>${config.currentPrice.toFixed(2)}</span>
+              <span>${(config?.currentPrice ?? 0).toFixed(2)}</span>
             </div>
           </div>
 

@@ -64,111 +64,125 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     
-    // Mock data for now - in a real app, this would come from the database
-    const mockJobs: InstallerJob[] = [
-      {
-        id: 'JOB-001',
-        customer_name: 'Sarah Johnson',
-        customer_phone: '+1-555-0123',
-        address: '123 Maple St, Austin, TX 78701',
-        job_type: 'installation',
-        status: 'scheduled',
-        priority: 'high',
-        scheduled_date: new Date().toISOString().split('T')[0],
-        scheduled_time: '09:00',
-        estimated_duration: 240,
-        products: [
-          {
-            id: 'PROD-001',
-            name: 'Premium Wood Blinds',
-            quantity: 4,
-            room: 'Living Room',
-            specifications: '72" x 48", Mahogany finish'
-          },
-          {
-            id: 'PROD-002',
-            name: 'Plantation Shutters',
-            quantity: 2,
-            room: 'Master Bedroom',
-            specifications: '60" x 36", White painted'
-          }
-        ],
-        materials_needed: ['Mounting brackets', 'Wood screws', 'Wall anchors', 'Level'],
-        special_instructions: 'Customer prefers morning installation. Use dust sheets.',
-        notes: 'High-end installation. Take extra care with finishing.',
-        created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        assigned_installer: user.firstName + ' ' + user.lastName
-      },
-      {
-        id: 'JOB-002',
-        customer_name: 'David Thompson',
-        customer_phone: '+1-555-0456',
-        address: '456 Oak Ave, Dallas, TX 75201',
-        job_type: 'repair',
-        status: 'in_progress',
-        priority: 'medium',
-        scheduled_date: new Date().toISOString().split('T')[0],
-        scheduled_time: '14:00',
-        estimated_duration: 120,
-        products: [
-          {
-            id: 'PROD-003',
-            name: 'Cellular Shades',
-            quantity: 3,
-            room: 'Office',
-            specifications: 'Cord repair and cleaning'
-          }
-        ],
-        materials_needed: ['Replacement cord', 'Cord locks', 'Cleaning supplies'],
-        special_instructions: 'Commercial building. Check in with security.',
-        notes: 'Customer reported cord mechanism failure.',
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        assigned_installer: user.firstName + ' ' + user.lastName
-      },
-      {
-        id: 'JOB-003',
-        customer_name: 'Jennifer Martinez',
-        customer_phone: '+1-555-0789',
-        address: '789 Pine Rd, Houston, TX 77001',
-        job_type: 'measurement',
-        status: 'completed',
-        priority: 'low',
-        scheduled_date: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        scheduled_time: '10:30',
-        estimated_duration: 90,
-        products: [
-          {
-            id: 'PROD-004',
-            name: 'Roller Shades',
-            quantity: 5,
-            room: 'Multiple Rooms',
-            specifications: 'Measure for quote'
-          }
-        ],
-        materials_needed: ['Measuring tape', 'Notebook', 'Camera'],
-        special_instructions: 'Potential large order. Provide detailed measurements.',
-        notes: 'Customer interested in motorized options.',
-        completion_notes: 'All measurements taken. Quote to follow.',
-        customer_satisfaction: 5,
-        created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        completed_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-        assigned_installer: user.firstName + ' ' + user.lastName
-      }
-    ];
+    // Get search parameters for filtering
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const jobType = searchParams.get('job_type');
+    const priority = searchParams.get('priority');
+    const date = searchParams.get('date');
+    const installerId = searchParams.get('installer_id') || user.user_id;
 
-    // Calculate stats
-    const today = new Date().toISOString().split('T')[0];
+    // Build dynamic query for jobs
+    let jobQuery = `
+      SELECT 
+        ij.job_id as id,
+        CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+        u.phone as customer_phone,
+        CONCAT(sa.address_line_1, ', ', sa.city, ', ', sa.state, ' ', sa.postal_code) as address,
+        ij.job_type,
+        ij.status,
+        ij.priority,
+        DATE(ij.scheduled_datetime) as scheduled_date,
+        TIME_FORMAT(ij.scheduled_datetime, '%H:%i') as scheduled_time,
+        ij.estimated_duration,
+        ij.special_instructions,
+        ij.notes,
+        ij.completion_notes,
+        ij.customer_satisfaction,
+        ij.created_at,
+        ij.completed_at,
+        CONCAT(installer.first_name, ' ', installer.last_name) as assigned_installer
+      FROM installer_jobs ij
+      JOIN users u ON ij.customer_id = u.user_id
+      LEFT JOIN shipping_addresses sa ON ij.address_id = sa.address_id
+      LEFT JOIN users installer ON ij.installer_id = installer.user_id
+      WHERE ij.installer_id = ?
+    `;
+    
+    const queryParams = [installerId];
+
+    if (status) {
+      jobQuery += ' AND ij.status = ?';
+      queryParams.push(status);
+    }
+
+    if (jobType) {
+      jobQuery += ' AND ij.job_type = ?';
+      queryParams.push(jobType);
+    }
+
+    if (priority) {
+      jobQuery += ' AND ij.priority = ?';
+      queryParams.push(priority);
+    }
+
+    if (date) {
+      jobQuery += ' AND DATE(ij.scheduled_datetime) = ?';
+      queryParams.push(date);
+    }
+
+    jobQuery += ' ORDER BY ij.scheduled_datetime ASC';
+
+    const [jobRows] = await pool.query(jobQuery, queryParams);
+    const jobs = jobRows as any[];
+
+    // Get products and materials for each job
+    const jobsWithDetails = await Promise.all(jobs.map(async (job) => {
+      // Get job products
+      const [productRows] = await pool.query(
+        `SELECT 
+          jp.job_product_id as id,
+          p.name,
+          jp.quantity,
+          jp.room_location as room,
+          jp.specifications
+        FROM job_products jp
+        JOIN products p ON jp.product_id = p.product_id
+        WHERE jp.job_id = ?`,
+        [job.id]
+      );
+
+      // Get job materials
+      const [materialRows] = await pool.query(
+        `SELECT material_name
+        FROM job_materials 
+        WHERE job_id = ?`,
+        [job.id]
+      );
+
+      return {
+        ...job,
+        products: productRows as JobProduct[],
+        materials_needed: (materialRows as any[]).map(m => m.material_name)
+      };
+    }));
+
+    // Calculate stats from real data
+    const [statsRows] = await pool.query(
+      `SELECT 
+        COUNT(*) as total_jobs,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_jobs,
+        SUM(CASE WHEN status IN ('scheduled', 'assigned') THEN 1 ELSE 0 END) as pending_jobs,
+        SUM(CASE WHEN DATE(scheduled_datetime) = CURDATE() THEN 1 ELSE 0 END) as today_jobs,
+        AVG(CASE WHEN status = 'completed' AND estimated_duration > 0 THEN estimated_duration ELSE NULL END) as avg_completion_time,
+        AVG(CASE WHEN customer_satisfaction > 0 THEN customer_satisfaction ELSE NULL END) as customer_rating
+      FROM installer_jobs 
+      WHERE installer_id = ?`,
+      [installerId]
+    );
+
+    const rawStats = (statsRows as any[])[0];
     const stats: JobStats = {
-      total_jobs: mockJobs.length,
-      completed_jobs: mockJobs.filter(job => job.status === 'completed').length,
-      pending_jobs: mockJobs.filter(job => job.status === 'scheduled' || job.status === 'assigned').length,
-      today_jobs: mockJobs.filter(job => job.scheduled_date === today).length,
-      avg_completion_time: 185, // minutes
-      customer_rating: 4.8
+      total_jobs: parseInt(rawStats.total_jobs) || 0,
+      completed_jobs: parseInt(rawStats.completed_jobs) || 0,
+      pending_jobs: parseInt(rawStats.pending_jobs) || 0,
+      today_jobs: parseInt(rawStats.today_jobs) || 0,
+      avg_completion_time: parseFloat(rawStats.avg_completion_time) || 0,
+      customer_rating: parseFloat(rawStats.customer_rating) || 0
     };
 
     return NextResponse.json({
-      jobs: mockJobs,
+      jobs: jobsWithDetails,
       stats
     });
   } catch (error) {

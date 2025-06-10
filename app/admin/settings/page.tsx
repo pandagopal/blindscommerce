@@ -20,6 +20,8 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const [errors, setErrors] = useState<{[key: string]: string[]}>({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   const [settings, setSettings] = useState({
     general: {
@@ -88,6 +90,9 @@ export default function AdminSettingsPage() {
           return;
         }
         setUser(data.user);
+        
+        // Load settings from API
+        await loadSettings();
       } catch (error) {
         console.error('Auth check failed:', error);
         router.push('/login?redirect=/admin/settings');
@@ -98,6 +103,20 @@ export default function AdminSettingsPage() {
 
     checkAuth();
   }, [router]);
+
+  const loadSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/settings');
+      if (!res.ok) {
+        throw new Error('Failed to load settings');
+      }
+      const data = await res.json();
+      setSettings(data.settings);
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      alert('Failed to load settings. Using defaults.');
+    }
+  };
 
   const handleSettingChange = (category: string, key: string, value: any) => {
     setSettings(prev => ({
@@ -111,19 +130,69 @@ export default function AdminSettingsPage() {
 
   const saveSettings = async (category?: string) => {
     setSaving(true);
+    setErrors({});
+    setSuccessMessage('');
+    
     try {
-      const dataToSave = category ? { [category]: settings[category as keyof typeof settings] } : settings;
+      let response;
       
-      // In a real implementation, this would save to the database
-      console.log('Saving settings:', dataToSave);
+      if (category) {
+        // Save specific category
+        response = await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category,
+            settings: settings[category as keyof typeof settings]
+          }),
+        });
+      } else {
+        // Save all settings
+        response = await fetch('/api/admin/settings', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            settings
+          }),
+        });
+      }
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        if (result.validation_errors) {
+          // Handle validation errors
+          const errorsByCategory: {[key: string]: string[]} = {};
+          result.validation_errors.forEach((error: string) => {
+            const currentCategory = category || 'general';
+            if (!errorsByCategory[currentCategory]) {
+              errorsByCategory[currentCategory] = [];
+            }
+            errorsByCategory[currentCategory].push(error);
+          });
+          setErrors(errorsByCategory);
+        } else {
+          setErrors({ general: [result.error || 'Failed to save settings'] });
+        }
+        return;
+      }
+
+      setSuccessMessage(result.message || 'Settings saved successfully!');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
       
-      alert('Settings saved successfully!');
+      // Reload settings to ensure we have the latest data
+      await loadSettings();
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings. Please try again.');
+      setErrors({ 
+        general: [`Failed to save settings: ${error instanceof Error ? error.message : 'Please try again.'}`] 
+      });
     } finally {
       setSaving(false);
     }
@@ -160,6 +229,38 @@ export default function AdminSettingsPage() {
             {saving ? 'Saving...' : 'Save All'}
           </Button>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <div className="h-5 w-5 text-green-600 mr-2">✓</div>
+              <p className="text-green-800 font-medium">{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Messages */}
+        {Object.keys(errors).length > 0 && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 mr-2" />
+              <div>
+                <h4 className="font-medium text-red-800 mb-2">Please fix the following errors:</h4>
+                {Object.entries(errors).map(([category, categoryErrors]) => (
+                  <div key={category} className="mb-2">
+                    <p className="font-medium text-red-700 capitalize">{category} Settings:</p>
+                    <ul className="list-disc list-inside ml-4 text-red-600">
+                      {categoryErrors.map((error, index) => (
+                        <li key={index} className="text-sm">{error}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border border-purple-100">

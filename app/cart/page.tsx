@@ -105,7 +105,7 @@ export default function CartPage() {
 
                   {/* Price */}
                   <div className="col-span-2 text-center">
-                    ${item.price.toFixed(2)}
+                    ${(item.price ?? 0).toFixed(2)}
                   </div>
 
                   {/* Quantity */}
@@ -139,7 +139,7 @@ export default function CartPage() {
 
                   {/* Total */}
                   <div className="col-span-2 text-right font-medium">
-                    ${item.totalPrice.toFixed(2)}
+                    ${(item.totalPrice ?? 0).toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export default function CartPage() {
             <div className="space-y-4">
               <div className="flex justify-between border-b pb-4">
                 <span>Subtotal</span>
-                <span>${pricing.subtotal.toFixed(2)}</span>
+                <span>${(pricing?.subtotal || 0).toFixed(2)}</span>
               </div>
 
               {/* Promo Code */}
@@ -206,37 +206,37 @@ export default function CartPage() {
               </div>
 
               <div className="border-b pb-4 space-y-2">
-                {pricing.volume_discount > 0 && (
+                {(pricing?.volume_discount || 0) > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Volume Discount</span>
-                    <span>-${pricing.volume_discount.toFixed(2)}</span>
+                    <span>-${(pricing?.volume_discount || 0).toFixed(2)}</span>
                   </div>
                 )}
-                {pricing.coupon_discount > 0 && (
+                {(pricing?.coupon_discount || 0) > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Coupon Discount</span>
-                    <span>-${pricing.coupon_discount.toFixed(2)}</span>
+                    <span>-${(pricing?.coupon_discount || 0).toFixed(2)}</span>
                   </div>
                 )}
-                {pricing.campaign_discount > 0 && (
+                {(pricing?.campaign_discount || 0) > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Promotional Discount</span>
-                    <span>-${pricing.campaign_discount.toFixed(2)}</span>
+                    <span>-${(pricing?.campaign_discount || 0).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{pricing.shipping === 0 ? 'Free' : `$${pricing.shipping.toFixed(2)}`}</span>
+                  <span>{(pricing?.shipping || 0) === 0 ? 'Free' : `$${(pricing?.shipping || 0).toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${pricing.tax.toFixed(2)}</span>
+                  <span>${(pricing?.tax || 0).toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${pricing.total.toFixed(2)}</span>
+                <span>${(pricing?.total || 0).toFixed(2)}</span>
               </div>
 
               <button
