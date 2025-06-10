@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     try {
       let query = `
-        SELECT 
+        SELECT DISTINCT
           u.user_id,
           u.email,
           u.first_name,
@@ -73,23 +73,8 @@ export async function GET(request: NextRequest) {
           u.is_active,
           u.is_verified,
           u.created_at,
-          u.last_login,
-          v.business_name,
-          v.business_email,
-          v.business_phone,
-          v.approval_status as vendor_status,
-          v.is_verified as vendor_verified,
-          v.is_active as vendor_active,
-          s.territory as sales_territory,
-          s.commission_rate,
-          s.is_active as sales_active,
-          i.certification_number,
-          i.service_area,
-          i.is_active as installer_active
+          u.last_login
         FROM users u
-        LEFT JOIN vendor_info v ON u.user_id = v.user_id
-        LEFT JOIN sales_staff s ON u.user_id = s.user_id
-        LEFT JOIN installers i ON u.user_id = i.user_id
         WHERE 1=1
       `;
 
@@ -107,17 +92,8 @@ export async function GET(request: NextRequest) {
       }
 
       if (role && role !== 'all') {
-        if (role === 'admin') {
-          query += ` AND u.role = 'admin'`;
-        } else if (role === 'vendor') {
-          query += ` AND v.business_name IS NOT NULL`;
-        } else if (role === 'sales') {
-          query += ` AND s.territory IS NOT NULL`;
-        } else if (role === 'installer') {
-          query += ` AND i.certification_number IS NOT NULL`;
-        } else if (role === 'customer') {
-          query += ` AND u.role NOT IN ('admin', 'vendor', 'sales', 'installer')`;
-        }
+        query += ` AND u.role = ?`;
+        values.push(role);
       }
 
       // Add sorting
@@ -138,23 +114,32 @@ export async function GET(request: NextRequest) {
 
       const [result] = await client.query(query, values);
 
-      // Get total count
-      const countQuery = `
-        SELECT COUNT(*) as count
+      // Get total count using the same conditions
+      let countQuery = `
+        SELECT COUNT(DISTINCT u.user_id) as count
         FROM users u
         WHERE 1=1
-        ${search ? `AND (
+      `;
+
+      const countValues: any[] = [];
+
+      if (search) {
+        countQuery += ` AND (
           u.email LIKE ? OR
           u.first_name LIKE ? OR
           u.last_name LIKE ? OR
           u.phone LIKE ?
-        )` : ''}
-      `;
+        )`;
+        const searchPattern = `%${search}%`;
+        countValues.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      }
 
-      const [countResult] = await client.query(
-        countQuery,
-        search ? [`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`] : []
-      );
+      if (role && role !== 'all') {
+        countQuery += ` AND u.role = ?`;
+        countValues.push(role);
+      }
+
+      const [countResult] = await client.query(countQuery, countValues);
 
       return NextResponse.json({
         users: result,

@@ -7,37 +7,26 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, clearCart, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
   const [promoCode, setPromoCode] = useState("");
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [discount, setDiscount] = useState(0);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const router = useRouter();
 
-  // Example promo code - in a real app, this would be validated against a database
-  const applyPromoCode = () => {
-    if (promoCode.toUpperCase() === "SAVE10") {
-      setDiscount(subtotal * 0.1);
-      setPromoApplied(true);
+  const applyPromoCode = async () => {
+    setApplyingCoupon(true);
+    const result = await applyCoupon(promoCode);
+    
+    if (result.success) {
+      setPromoCode("");
     } else {
-      setDiscount(0);
-      setPromoApplied(false);
-      alert("Invalid promo code");
+      alert(result.message || "Invalid promo code");
     }
+    setApplyingCoupon(false);
   };
 
   const handleCheckout = () => {
-    // In a real app, we'd persist the cart and discount information
     router.push('/checkout');
   };
-
-  // Shipping calculation - simplified for demo
-  const shipping = subtotal > 100 ? 0 : 15;
-
-  // Tax calculation - simplified for demo (8.25% sales tax)
-  const tax = (subtotal - discount) * 0.0825;
-
-  // Total calculation
-  const total = subtotal - discount + shipping + tax;
 
   if (items.length === 0) {
     return (
@@ -181,7 +170,7 @@ export default function CartPage() {
             <div className="space-y-4">
               <div className="flex justify-between border-b pb-4">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>${pricing.subtotal.toFixed(2)}</span>
               </div>
 
               {/* Promo Code */}
@@ -197,38 +186,57 @@ export default function CartPage() {
                   />
                   <button
                     onClick={applyPromoCode}
-                    className="px-4 bg-gray-100 border border-l-0 border-gray-300 rounded-r"
+                    disabled={applyingCoupon || isLoading}
+                    className="px-4 bg-gray-100 border border-l-0 border-gray-300 rounded-r disabled:opacity-50"
                   >
-                    Apply
+                    {applyingCoupon ? 'Applying...' : 'Apply'}
                   </button>
                 </div>
-                {promoApplied && (
-                  <div className="mt-2 text-sm text-green-600">
-                    Promo code SAVE10 applied!
+                {pricing.applied_promotions?.coupon_code && (
+                  <div className="mt-2 text-sm text-green-600 flex items-center justify-between">
+                    <span>Promo code {pricing.applied_promotions.coupon_code} applied!</span>
+                    <button
+                      onClick={removeCoupon}
+                      className="text-red-600 hover:text-red-800 text-xs"
+                    >
+                      Remove
+                    </button>
                   </div>
                 )}
               </div>
 
               <div className="border-b pb-4 space-y-2">
-                {discount > 0 && (
-                  <div className="flex justify-between bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent font-semibold">
-                    <span>Discount</span>
-                    <span>-${discount.toFixed(2)}</span>
+                {pricing.volume_discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Volume Discount</span>
+                    <span>-${pricing.volume_discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {pricing.coupon_discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Coupon Discount</span>
+                    <span>-${pricing.coupon_discount.toFixed(2)}</span>
+                  </div>
+                )}
+                {pricing.campaign_discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Promotional Discount</span>
+                    <span>-${pricing.campaign_discount.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+                  <span>{pricing.shipping === 0 ? 'Free' : `$${pricing.shipping.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>${pricing.tax.toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${pricing.total.toFixed(2)}</span>
               </div>
 
               <button

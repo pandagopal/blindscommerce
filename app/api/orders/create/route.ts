@@ -75,11 +75,20 @@ export async function POST(req: NextRequest) {
       // Generate unique order number
       const orderNumber = `ORD-${Date.now().toString().slice(-8)}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create order
+      // Create order with discount and commission tracking fields
       const orderQuery = `
         INSERT INTO orders (
           user_id,
+          vendor_id,
+          sales_staff_id,
+          subtotal,
+          discount_amount,
+          volume_discount_amount,
+          shipping_cost,
+          tax_amount,
           total_amount,
+          coupon_code,
+          campaign_id,
           shipping_address,
           billing_address,
           payment_method,
@@ -89,12 +98,41 @@ export async function POST(req: NextRequest) {
           tracking_number,
           notes,
           created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
       `;
+
+      // Get vendor_id from first product (simplified - in production, handle multi-vendor)
+      let vendorId = null;
+      if (validatedData.items.length > 0) {
+        const [vendorRows] = await connection.execute(
+          'SELECT vendor_id FROM products WHERE product_id = ? LIMIT 1',
+          [validatedData.items[0].productId]
+        );
+        vendorId = (vendorRows as any)[0]?.vendor_id || null;
+      }
+
+      // Get campaign_id if campaign code provided
+      let campaignId = null;
+      if (body.campaign_code) {
+        const [campaignRows] = await connection.execute(
+          'SELECT campaign_id FROM promotional_campaigns WHERE campaign_code = ? AND is_active = TRUE LIMIT 1',
+          [body.campaign_code]
+        );
+        campaignId = (campaignRows as any)[0]?.campaign_id || null;
+      }
 
       const [orderResult] = await connection.execute(orderQuery, [
         user.userId,
+        vendorId,
+        body.sales_staff_id || null,
+        body.subtotal || validatedData.totalAmount,
+        body.discount_amount || 0,
+        body.volume_discount_amount || 0,
+        body.shipping_cost || 0,
+        body.tax || 0,
         validatedData.totalAmount,
+        body.coupon_code || null,
+        campaignId,
         validatedData.shippingAddress,
         validatedData.billingAddress,
         validatedData.paymentMethod,
@@ -152,18 +190,36 @@ export async function POST(req: NextRequest) {
         ]);
       }
 
+      // Update coupon usage if coupon was used
+      if (body.coupon_code) {
+        await connection.execute(
+          'UPDATE coupon_codes SET usage_count = usage_count + 1 WHERE coupon_code = ?',
+          [body.coupon_code]
+        );
+      }
+
+      // If payment is successful, update order status to completed to trigger commission calculation
+      if (body.payment && body.payment.transactionId) {
+        await connection.execute(
+          'UPDATE orders SET order_status = "completed", payment_status = "paid" WHERE order_id = ?',
+          [orderId]
+        );
+      }
+
       // Commit the transaction
       await connection.commit();
 
       // Return the created order
       return NextResponse.json({
         success: true,
+        orderNumber: orderNumber,
         order: {
           order_id: orderId,
           order_number: orderNumber,
           created_at: new Date().toISOString(),
-          status: 'Pending',
-          total_amount: validatedData.totalAmount
+          status: 'Confirmed',
+          total_amount: validatedData.totalAmount,
+          discount_applied: (body.discount_amount || 0) > 0
         }
       });
     } catch (error) {

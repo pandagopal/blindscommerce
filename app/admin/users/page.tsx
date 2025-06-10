@@ -43,6 +43,7 @@ export default function AdminUsersPage() {
   const usersPerPage = 10;
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -60,9 +61,18 @@ export default function AdminUsersPage() {
     fetchCurrentUser();
   }, []);
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, roleFilter, sortBy, sortOrder]);
+  }, [currentPage, roleFilter, sortBy, sortOrder, debouncedSearchQuery]);
 
   const fetchUsers = async () => {
     try {
@@ -74,7 +84,7 @@ export default function AdminUsersPage() {
         offset: offset.toString(),
         sortBy,
         sortOrder,
-        ...(searchQuery && { search: searchQuery }),
+        ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
         ...(roleFilter !== 'all' && { role: roleFilter })
       });
 
@@ -108,6 +118,11 @@ export default function AdminUsersPage() {
     setSearchQuery(e.target.value);
     setCurrentPage(1);
   };
+
+  // Reset page when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery]);
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRoleFilter(e.target.value);

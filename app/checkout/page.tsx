@@ -49,6 +49,13 @@ const PaymentForm = ({
             customer_email: formData.email,
             metadata: {
               order_type: 'blindscommerce_purchase',
+              applied_discounts: JSON.stringify({
+                volume: pricing.volume_discount,
+                coupon: pricing.coupon_discount,
+                campaign: pricing.campaign_discount,
+                total: pricing.total_discount
+              }),
+              applied_promotions: JSON.stringify(pricing.applied_promotions || {})
             },
             shipping: {
               name: `${formData.firstName} ${formData.lastName}`,
@@ -250,7 +257,7 @@ const PaymentForm = ({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, clearCart, pricing } = useCart();
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
@@ -297,10 +304,8 @@ export default function CheckoutPage() {
     guestConfirmPassword: "",
   });
 
-  // Shipping and tax calculations
-  const shipping = subtotal > 100 ? 0 : 15.99;
-  const tax = subtotal * 0.08; // 8% tax rate
-  const total = subtotal + shipping + tax;
+  // Use pricing from cart context which includes all discounts
+  const { shipping, tax, total } = pricing;
 
   useEffect(() => {
     // Redirect to cart if cart is empty
@@ -407,10 +412,14 @@ export default function CheckoutPage() {
         payment: {
           id: paymentData?.id || 'test_payment_id' // In a real app, this would be the Stripe payment intent ID
         },
-        subtotal: subtotal,
-        shipping_cost: shipping,
-        tax: tax,
-        total: total,
+        subtotal: pricing.subtotal,
+        shipping_cost: pricing.shipping,
+        tax: pricing.tax,
+        total: pricing.total,
+        discount_amount: pricing.total_discount,
+        volume_discount_amount: pricing.volume_discount,
+        coupon_code: pricing.applied_promotions?.coupon_code,
+        campaign_code: pricing.applied_promotions?.campaign_code,
         special_instructions: formData.specialInstructions
       };
 
@@ -1000,23 +1009,29 @@ export default function CheckoutPage() {
             <div className="space-y-2 pt-4 border-t border-gray-200">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>${pricing.subtotal.toFixed(2)}</span>
               </div>
+              {pricing.total_discount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span className="text-gray-600">Discounts</span>
+                  <span>-${pricing.total_discount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
-                {shipping === 0 ? (
+                {pricing.shipping === 0 ? (
                   <span className="text-green-600">Free</span>
                 ) : (
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>${pricing.shipping.toFixed(2)}</span>
                 )}
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax (8%)</span>
-                <span>${tax.toFixed(2)}</span>
+                <span className="text-gray-600">Tax</span>
+                <span>${pricing.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 mt-2">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${pricing.total.toFixed(2)}</span>
               </div>
             </div>
 

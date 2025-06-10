@@ -28,6 +28,21 @@ export interface CartItem {
   totalPrice?: number;
 }
 
+interface PricingDetails {
+  subtotal: number;
+  volume_discount: number;
+  coupon_discount: number;
+  campaign_discount: number;
+  total_discount: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  applied_promotions?: {
+    coupon_code?: string;
+    campaign_code?: string;
+  };
+}
+
 interface CartContextType {
   items: CartItem[];
   addItem: (item: CartItem) => Promise<void>;
@@ -36,7 +51,23 @@ interface CartContextType {
   clearCart: () => Promise<void>;
   itemCount: number;
   subtotal: number;
+  pricing: PricingDetails;
+  applyCoupon: (code: string) => Promise<{ success: boolean; message?: string }>;
+  removeCoupon: () => void;
+  isLoading: boolean;
+  pricingError: string | null;
 }
+
+const defaultPricing: PricingDetails = {
+  subtotal: 0,
+  volume_discount: 0,
+  coupon_discount: 0,
+  campaign_discount: 0,
+  total_discount: 0,
+  shipping: 0,
+  tax: 0,
+  total: 0
+};
 
 const CartContext = createContext<CartContextType>({
   items: [],
@@ -46,6 +77,11 @@ const CartContext = createContext<CartContextType>({
   clearCart: async () => {},
   itemCount: 0,
   subtotal: 0,
+  pricing: defaultPricing,
+  applyCoupon: async () => ({ success: false }),
+  removeCoupon: () => {},
+  isLoading: false,
+  pricingError: null,
 });
 
 export const useCart = () => useContext(CartContext);
@@ -56,6 +92,11 @@ interface CartProviderProps {
 
 export function CartProvider({ children }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [pricing, setPricing] = useState<PricingDetails>(defaultPricing);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
+  const [customerData, setCustomerData] = useState<{ id?: number; type?: string } | null>(null);
 
   // Helper function to save cart to localStorage
   const saveGuestCart = (cartItems: CartItem[]) => {
@@ -70,9 +111,98 @@ export function CartProvider({ children }: CartProviderProps) {
   const isAuthenticated = async (): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/me');
-      return response.ok;
+      if (response.ok) {
+        const data = await response.json();
+        setCustomerData({ 
+          id: data.user?.user_id, 
+          type: data.user?.role === 'customer' ? 'retail' : data.user?.role 
+        });
+        return true;
+      }
+      return false;
     } catch {
       return false;
+    }
+  };
+
+  // Calculate pricing using the pricing API
+  const calculatePricing = async (cartItems: CartItem[], couponCode?: string | null) => {
+    if (cartItems.length === 0) {
+      setPricing(defaultPricing);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setPricingError(null);
+
+      const pricingRequest = {
+        items: cartItems.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          base_price: item.unit_price
+        })),
+        customer_id: customerData?.id,
+        customer_type: customerData?.type,
+        coupon_code: couponCode || appliedCoupon,
+        shipping_state: 'TX' // TODO: Get from user address
+      };
+
+      const response = await fetch('/api/pricing/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pricingRequest)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to calculate pricing');
+      }
+
+      const data = await response.json();
+      
+      // Calculate shipping based on subtotal after discounts
+      const discountedSubtotal = data.pricing.subtotal - data.pricing.discounts.total_discount;
+      const shipping = discountedSubtotal > 100 ? 0 : 15.99;
+      
+      // Calculate tax on discounted subtotal
+      const tax = discountedSubtotal * 0.0825; // 8.25% tax rate
+
+      setPricing({
+        subtotal: data.pricing.subtotal,
+        volume_discount: data.pricing.discounts.volume_discount,
+        coupon_discount: data.pricing.discounts.coupon_discount,
+        campaign_discount: data.pricing.discounts.campaign_discount,
+        total_discount: data.pricing.discounts.total_discount,
+        shipping,
+        tax,
+        total: discountedSubtotal + shipping + tax,
+        applied_promotions: data.pricing.applied_promotions
+      });
+
+      if (data.coupon_error) {
+        setPricingError(data.coupon_error);
+        setAppliedCoupon(null);
+      }
+
+    } catch (error) {
+      console.error('Error calculating pricing:', error);
+      setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
+      
+      // Fallback to basic calculation
+      const subtotal = cartItems.reduce((total, item) => total + (item.unit_price * item.quantity), 0);
+      const shipping = subtotal > 100 ? 0 : 15.99;
+      const tax = subtotal * 0.0825;
+      
+      setPricing({
+        ...defaultPricing,
+        subtotal,
+        shipping,
+        tax,
+        total: subtotal + shipping + tax
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -80,13 +210,15 @@ export function CartProvider({ children }: CartProviderProps) {
     // Load cart from API or localStorage on mount
     const loadCart = async () => {
       try {
-        // Try to load from API first (for authenticated users)
-        const response = await fetch('/api/account/cart');
-        if (response.ok) {
-          const data = await response.json();
-          setItems(data.items || []);
+        const authenticated = await isAuthenticated();
+        
+        if (authenticated) {
+          const response = await fetch('/api/account/cart');
+          if (response.ok) {
+            const data = await response.json();
+            setItems(data.items || []);
+          }
         } else {
-          // Fallback to localStorage for guest users
           const savedCart = localStorage.getItem('guest_cart');
           if (savedCart) {
             const parsedCart = JSON.parse(savedCart);
@@ -95,20 +227,15 @@ export function CartProvider({ children }: CartProviderProps) {
         }
       } catch (error) {
         console.error('Error loading cart:', error);
-        // Try localStorage as final fallback
-        try {
-          const savedCart = localStorage.getItem('guest_cart');
-          if (savedCart) {
-            const parsedCart = JSON.parse(savedCart);
-            setItems(parsedCart);
-          }
-        } catch (localError) {
-          console.error('Error loading cart from localStorage:', localError);
-        }
       }
     };
     loadCart();
   }, []);
+
+  // Recalculate pricing when items change
+  useEffect(() => {
+    calculatePricing(items);
+  }, [items, customerData]);
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
@@ -229,15 +356,39 @@ export function CartProvider({ children }: CartProviderProps) {
         });
         if (response.ok) {
           setItems([]);
+          setAppliedCoupon(null);
         }
       } else {
         // Handle guest cart
         setItems([]);
+        setAppliedCoupon(null);
         localStorage.removeItem('guest_cart');
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
     }
+  };
+
+  // Apply coupon code
+  const applyCoupon = async (code: string): Promise<{ success: boolean; message?: string }> => {
+    if (!code) {
+      return { success: false, message: 'Please enter a coupon code' };
+    }
+
+    setAppliedCoupon(code);
+    await calculatePricing(items, code);
+
+    if (pricingError) {
+      return { success: false, message: pricingError };
+    }
+
+    return { success: true, message: 'Coupon applied successfully' };
+  };
+
+  // Remove coupon
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    calculatePricing(items, null);
   };
 
   // Calculate total number of items
@@ -255,7 +406,12 @@ export function CartProvider({ children }: CartProviderProps) {
         updateQuantity,
         clearCart,
         itemCount,
-        subtotal
+        subtotal,
+        pricing,
+        applyCoupon,
+        removeCoupon,
+        isLoading,
+        pricingError
       }}
     >
       {children}
