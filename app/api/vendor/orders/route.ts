@@ -6,7 +6,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 interface VendorOrderRow extends RowDataPacket {
   order_id: number;
   user_id: number;
-  order_status: string;
+  status: string;
   total_amount: number;
   created_at: string;
   updated_at: string;
@@ -52,21 +52,12 @@ export async function GET(req: NextRequest) {
 
     const vendorId = vendorInfo[0].vendor_info_id;
 
-    // Build where clause for status filter
-    let statusFilter = '';
-    const queryParams: any[] = [vendorId];
-    
-    if (status && status !== 'all') {
-      statusFilter = ' AND o.order_status = ?';
-      queryParams.push(status);
-    }
-
-    // Get orders that contain vendor's products
-    const [orders] = await pool.execute<VendorOrderRow[]>(
-      `SELECT DISTINCT
+    // Build query with parameters
+    let query = `
+      SELECT DISTINCT
         o.order_id,
         o.user_id,
-        o.order_status,
+        o.status,
         o.total_amount,
         o.created_at,
         o.updated_at,
@@ -80,13 +71,25 @@ export async function GET(req: NextRequest) {
       JOIN order_items oi ON o.order_id = oi.order_id
       JOIN vendor_products vp ON oi.product_id = vp.product_id
       JOIN users u ON o.user_id = u.user_id
-      WHERE vp.vendor_id = ?${statusFilter}
-      GROUP BY o.order_id, o.user_id, o.order_status, o.total_amount, o.created_at, o.updated_at,
+      WHERE vp.vendor_id = ?
+    `;
+    
+    const queryParams: any[] = [vendorId];
+    
+    if (status && status !== 'all') {
+      query += ' AND o.status = ?';
+      queryParams.push(status);
+    }
+
+    query += `
+      GROUP BY o.order_id, o.user_id, o.status, o.total_amount, o.created_at, o.updated_at,
                u.first_name, u.last_name, u.email, u.phone
       ORDER BY o.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [...queryParams, limit, offset]
-    );
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+
+    // Get orders that contain vendor's products
+    const [orders] = await pool.execute<VendorOrderRow[]>(query, queryParams);
 
     // Get order items for each order (vendor's products only)
     const orderIds = orders.map(order => order.order_id);

@@ -42,14 +42,14 @@ async function getHomePageData() {
     const [reviewRows] = await pool.query(
       `SELECT 
         pr.review_id as id,
-        CONCAT(u.first_name, ' ', SUBSTRING(u.last_name, 1, 1), '.') as author,
+        COALESCE(CONCAT(u.first_name, ' ', SUBSTRING(u.last_name, 1, 1), '.'), pr.guest_name, 'Anonymous') as author,
         pr.rating,
         pr.title,
         pr.review_text as text,
         DATE_FORMAT(pr.created_at, '%Y-%m-%d') as date
       FROM product_reviews pr
-      JOIN users u ON pr.user_id = u.user_id
-      WHERE pr.featured = 1 AND pr.status = 'approved'
+      LEFT JOIN users u ON pr.user_id = u.user_id
+      WHERE pr.is_approved = 1 AND pr.rating >= 4
       ORDER BY pr.created_at DESC
       LIMIT 6`
     );

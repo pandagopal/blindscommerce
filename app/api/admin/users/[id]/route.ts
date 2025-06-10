@@ -1,7 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
+import { RowDataPacket } from 'mysql2';
 import bcrypt from 'bcrypt';
+
+interface UserRow extends RowDataPacket {
+  user_id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string | null;
+  role: string;
+  is_active: number;
+  is_verified: number;
+  last_login: Date | null;
+  created_at: Date;
+  updated_at: Date;
+  business_name: string | null;
+  business_email: string | null;
+  business_phone: string | null;
+  vendor_status: string | null;
+  vendor_verified: number | null;
+  vendor_active: number | null;
+  sales_territory: string | null;
+  commission_rate: number | null;
+  sales_active: number | null;
+  certification_number: string | null;
+  service_area: string | null;
+  installer_active: number | null;
+}
 
 export async function GET(
   request: NextRequest,

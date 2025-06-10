@@ -45,17 +45,17 @@ export async function GET(request: NextRequest) {
       SELECT 
         ia.appointment_id as id,
         CONCAT(u.first_name, ' ', u.last_name) as customerName,
-        CONCAT(sa.address_line_1, ', ', sa.city, ', ', sa.state, ' ', sa.postal_code) as address,
-        DATE(ia.scheduled_datetime) as date,
-        TIME_FORMAT(ia.scheduled_datetime, '%h:%i %p') as time,
+        JSON_UNQUOTE(JSON_EXTRACT(ia.installation_address, '$.address_line_1')) as address,
+        ia.appointment_date as date,
+        CONCAT(ts.start_time, ' - ', ts.end_time) as time,
         ia.status,
-        ia.appointment_type as type,
-        ia.notes,
-        ia.estimated_duration
-      FROM installer_appointments ia
+        ia.installation_type as type,
+        ia.completion_notes as notes,
+        ia.estimated_duration_hours as estimated_duration
+      FROM installation_appointments ia
       JOIN users u ON ia.customer_id = u.user_id
-      LEFT JOIN shipping_addresses sa ON ia.address_id = sa.address_id
-      WHERE ia.installer_id = ?
+      LEFT JOIN installation_time_slots ts ON ia.time_slot_id = ts.slot_id
+      WHERE ia.assigned_technician_id = ?
     `;
     
     const queryParams = [installerId];
@@ -66,16 +66,16 @@ export async function GET(request: NextRequest) {
     }
 
     if (date) {
-      query += ' AND DATE(ia.scheduled_datetime) = ?';
+      query += ' AND ia.appointment_date = ?';
       queryParams.push(date);
     }
 
     if (type) {
-      query += ' AND ia.appointment_type = ?';
+      query += ' AND ia.installation_type = ?';
       queryParams.push(type);
     }
 
-    query += ' ORDER BY ia.scheduled_datetime ASC';
+    query += ' ORDER BY ia.appointment_date ASC, ts.start_time ASC';
 
     const [rows] = await pool.query(query, queryParams);
     const appointments = rows as Appointment[];
@@ -138,12 +138,33 @@ export async function POST(request: NextRequest) {
     // Create scheduled datetime from date and time
     const scheduledDatetime = `${date} ${time}`;
 
+    // Get or create a default time slot
+    const [timeSlots] = await pool.query(
+      'SELECT slot_id FROM installation_time_slots LIMIT 1'
+    );
+    
+    const defaultTimeSlotId = (timeSlots as any[])[0]?.slot_id || 1;
+
     // Insert new appointment
     const [result] = await pool.query(
-      `INSERT INTO installer_appointments 
-       (installer_id, customer_id, address_id, scheduled_datetime, appointment_type, status, notes, estimated_duration, created_at)
-       VALUES (?, ?, ?, ?, ?, 'scheduled', ?, ?, NOW())`,
-      [user.user_id, customerId, addressId, scheduledDatetime, type, notes || null, estimatedDuration || 60]
+      `INSERT INTO installation_appointments 
+       (assigned_technician_id, customer_id, appointment_date, time_slot_id, installation_type, 
+        estimated_duration_hours, special_requirements, installation_address, contact_phone, 
+        base_cost, total_cost, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled', NOW())`,
+      [
+        user.userId, 
+        customerId, 
+        date, 
+        defaultTimeSlotId, 
+        type, 
+        (estimatedDuration || 60) / 60, // Convert minutes to hours
+        notes || null,
+        JSON.stringify({address_line_1: 'TBD', city: 'TBD', state: 'TBD'}), // Placeholder address
+        'TBD', // Placeholder phone
+        0, // Base cost placeholder
+        0  // Total cost placeholder
+      ]
     );
 
     const appointmentId = (result as any).insertId;

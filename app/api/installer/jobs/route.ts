@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
         CONCAT(installer.first_name, ' ', installer.last_name) as assigned_installer
       FROM installer_jobs ij
       JOIN users u ON ij.customer_id = u.user_id
-      LEFT JOIN shipping_addresses sa ON ij.address_id = sa.address_id
+      LEFT JOIN user_shipping_addresses sa ON ij.address_id = sa.address_id
       LEFT JOIN users installer ON ij.installer_id = installer.user_id
       WHERE ij.installer_id = ?
     `;

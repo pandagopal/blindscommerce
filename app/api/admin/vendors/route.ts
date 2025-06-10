@@ -124,13 +124,11 @@ export async function GET(request: NextRequest) {
     // Determine which table alias to use for sorting
     const vendorFields = ['business_name', 'total_sales', 'rating'];
     const tableAlias = vendorFields.includes(finalSortBy) ? 'v' : 'u';
-    query += ` ORDER BY ${tableAlias}.${finalSortBy} ${finalSortOrder}`;
+    
+    // Complete the query with dynamic ORDER BY and static LIMIT/OFFSET
+    const finalQuery = `${query} ORDER BY ${tableAlias}.${finalSortBy} ${finalSortOrder} LIMIT ${limit} OFFSET ${offset}`;
 
-    // Add pagination
-    query += ` LIMIT ? OFFSET ?`;
-    values.push(limit, offset);
-
-    const [result] = await pool.execute<VendorRow[]>(query, values);
+    const [result] = await pool.execute<VendorRow[]>(finalQuery, values);
 
     // Get total count
     const countQuery = `

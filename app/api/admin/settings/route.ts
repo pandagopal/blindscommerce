@@ -1,62 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-import jwt from 'jsonwebtoken';
+import { getCurrentUser } from '@/lib/auth';
+import { getPool } from '@/lib/db';
 import { clearSettingsCache } from '@/lib/settings';
-
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  ssl: false,
-  timezone: 'Z'
-};
-
-// Verify admin authentication
-async function verifyAdmin(request: NextRequest) {
-  try {
-    const token = request.cookies.get('token')?.value;
-    if (!token) {
-      return null;
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    
-    const connection = await mysql.createConnection(dbConfig);
-    const [users] = await connection.execute(
-      'SELECT user_id, role FROM users WHERE user_id = ? AND role = "admin"',
-      [decoded.userId]
-    );
-    await connection.end();
-
-    if (!Array.isArray(users) || users.length === 0) {
-      return null;
-    }
-
-    return decoded.userId;
-  } catch (error) {
-    console.error('Auth verification error:', error);
-    return null;
-  }
-}
 
 // GET /api/admin/settings - Retrieve all admin settings
 export async function GET(request: NextRequest) {
   try {
-    const adminId = await verifyAdmin(request);
-    if (!adminId) {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
     
     // Get all settings from the upload_security_config table (which serves as our settings table)
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = TRUE'
     );
-    
-    await connection.end();
 
     // Convert flat settings to nested structure that matches the frontend
     const settings = {
@@ -271,8 +231,8 @@ function validateSetting(category: string, key: string, value: any): { valid: bo
 // PUT /api/admin/settings - Update admin settings
 export async function PUT(request: NextRequest) {
   try {
-    const adminId = await verifyAdmin(request);
-    if (!adminId) {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -299,7 +259,8 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
+    const connection = await pool.getConnection();
 
     // Begin transaction
     await connection.beginTransaction();
@@ -339,13 +300,13 @@ export async function PUT(request: NextRequest) {
           dbKey, 
           dbValue, 
           dbType, 
-          adminId,
+          user.userId,
           `${category.charAt(0).toUpperCase() + category.slice(1)} setting: ${key.replace(/_/g, ' ')}`
         ]);
       }
 
       await connection.commit();
-      await connection.end();
+      connection.release();
 
       // Clear settings cache to force reload
       clearSettingsCache();
@@ -356,7 +317,7 @@ export async function PUT(request: NextRequest) {
       });
     } catch (error) {
       await connection.rollback();
-      await connection.end();
+      connection.release();
       throw error;
     }
   } catch (error) {
@@ -368,8 +329,8 @@ export async function PUT(request: NextRequest) {
 // PUT /api/admin/settings/all - Update all settings at once
 export async function PATCH(request: NextRequest) {
   try {
-    const adminId = await verifyAdmin(request);
-    if (!adminId) {
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -380,7 +341,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Settings are required' }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
+    const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
@@ -418,7 +380,7 @@ export async function PATCH(request: NextRequest) {
               dbKey, 
               dbValue, 
               dbType, 
-              adminId,
+              user.userId,
               `${category.charAt(0).toUpperCase() + category.slice(1)} setting: ${key.replace(/_/g, ' ')}`
             ]);
           }
@@ -426,7 +388,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       await connection.commit();
-      await connection.end();
+      connection.release();
 
       // Clear settings cache to force reload
       clearSettingsCache();
@@ -437,7 +399,7 @@ export async function PATCH(request: NextRequest) {
       });
     } catch (error) {
       await connection.rollback();
-      await connection.end();
+      connection.release();
       throw error;
     }
   } catch (error) {

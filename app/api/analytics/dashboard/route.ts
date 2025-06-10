@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
         p.name as product_name,
         p.slug as product_slug,
         p.base_price,
-        COUNT(ae.id) as views,
+        COUNT(ae.event_id) as views,
         COUNT(DISTINCT ae.session_id) as unique_views,
         COUNT(DISTINCT CASE WHEN ae.event_action = 'add_to_cart' THEN ae.session_id END) as cart_adds
       FROM analytics_events ae
@@ -223,7 +223,7 @@ export async function GET(req: NextRequest) {
         AVG(total_amount) as avg_order_value
       FROM orders
       WHERE DATE(created_at) BETWEEN ? AND ?
-        AND order_status IN ('completed', 'shipped', 'delivered')
+        AND status IN ('shipped', 'delivered')
       GROUP BY DATE(created_at)
       ORDER BY order_date ASC`,
       [startDate, endDate]

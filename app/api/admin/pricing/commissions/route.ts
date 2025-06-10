@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
                   ELSE 'Global Rule'
                 END as target_name
          FROM commission_rules cr
-         LEFT JOIN vendor_info v ON cr.applies_to = 'vendor' AND cr.target_id = v.vendor_id
-         LEFT JOIN sales_staff ss ON cr.applies_to = 'sales_staff' AND cr.target_id = ss.staff_id
+         LEFT JOIN vendor_info v ON cr.applies_to = 'vendor' AND cr.target_id = v.vendor_info_id
+         LEFT JOIN sales_staff ss ON cr.applies_to = 'sales_staff' AND cr.target_id = ss.sales_staff_id
          LEFT JOIN users u ON ss.user_id = u.user_id
          LEFT JOIN categories c ON cr.applies_to = 'category' AND cr.target_id = c.category_id
          LEFT JOIN products p ON cr.applies_to = 'product' AND cr.target_id = p.product_id
@@ -97,35 +97,35 @@ export async function GET(request: NextRequest) {
     if (type === 'summary') {
       // Get commission summary by vendor/sales staff
       const [vendorSummary] = await pool.execute<RowDataPacket[]>(
-        `SELECT v.vendor_id, v.business_name,
+        `SELECT v.vendor_info_id as vendor_id, v.business_name,
                 SUM(o.total_amount * IFNULL(cr.commission_value, 0) / 100) as total_commission_earned,
                 COUNT(o.order_id) as total_orders,
                 SUM(CASE WHEN cp.payment_id IS NOT NULL THEN o.total_amount * IFNULL(cr.commission_value, 0) / 100 ELSE 0 END) as commission_paid,
                 SUM(CASE WHEN cp.payment_id IS NULL THEN o.total_amount * IFNULL(cr.commission_value, 0) / 100 ELSE 0 END) as commission_pending
          FROM vendor_info v
-         LEFT JOIN orders o ON v.vendor_id = o.vendor_id AND o.status = 'completed'
-         LEFT JOIN commission_rules cr ON (cr.applies_to = 'vendor' AND cr.target_id = v.vendor_id) OR cr.is_default = TRUE
-         LEFT JOIN commission_payments cp ON cp.vendor_id = v.vendor_id 
+         LEFT JOIN orders o ON v.vendor_info_id = o.vendor_id AND o.status = 'completed'
+         LEFT JOIN commission_rules cr ON (cr.applies_to = 'vendor' AND cr.target_id = v.vendor_info_id) OR cr.is_default = TRUE
+         LEFT JOIN commission_payments cp ON cp.vendor_id = v.vendor_info_id 
            AND DATE(o.created_at) BETWEEN cp.period_start AND cp.period_end
          WHERE v.is_active = TRUE
-         GROUP BY v.vendor_id, v.business_name
+         GROUP BY v.vendor_info_id, v.business_name
          ORDER BY total_commission_earned DESC`
       );
 
       const [salesSummary] = await pool.execute<RowDataPacket[]>(
-        `SELECT ss.staff_id, CONCAT(u.first_name, ' ', u.last_name) as staff_name,
+        `SELECT ss.sales_staff_id as staff_id, CONCAT(u.first_name, ' ', u.last_name) as staff_name,
                 SUM(o.total_amount * IFNULL(cr.commission_value, 0) / 100) as total_commission_earned,
                 COUNT(o.order_id) as total_orders,
                 SUM(CASE WHEN cp.payment_id IS NOT NULL THEN o.total_amount * IFNULL(cr.commission_value, 0) / 100 ELSE 0 END) as commission_paid,
                 SUM(CASE WHEN cp.payment_id IS NULL THEN o.total_amount * IFNULL(cr.commission_value, 0) / 100 ELSE 0 END) as commission_pending
          FROM sales_staff ss
          JOIN users u ON ss.user_id = u.user_id
-         LEFT JOIN orders o ON ss.staff_id = o.sales_staff_id AND o.status = 'completed'
-         LEFT JOIN commission_rules cr ON (cr.applies_to = 'sales_staff' AND cr.target_id = ss.staff_id) OR cr.is_default = TRUE
-         LEFT JOIN commission_payments cp ON cp.sales_staff_id = ss.staff_id 
+         LEFT JOIN orders o ON ss.sales_staff_id = o.sales_staff_id AND o.status = 'completed'
+         LEFT JOIN commission_rules cr ON (cr.applies_to = 'sales_staff' AND cr.target_id = ss.sales_staff_id) OR cr.is_default = TRUE
+         LEFT JOIN commission_payments cp ON cp.sales_staff_id = ss.sales_staff_id 
            AND DATE(o.created_at) BETWEEN cp.period_start AND cp.period_end
          WHERE ss.is_active = TRUE
-         GROUP BY ss.staff_id, u.first_name, u.last_name
+         GROUP BY ss.sales_staff_id, u.first_name, u.last_name
          ORDER BY total_commission_earned DESC`
       );
 

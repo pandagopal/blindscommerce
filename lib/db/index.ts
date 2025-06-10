@@ -262,3 +262,36 @@ export const updateRoomVisualization = async (
 
   return getRoomVisualization(id);
 };
+
+// User management functions
+export const getUserById = async (userId: string | number): Promise<any | null> => {
+  const pool = await getPool();
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    'SELECT user_id, email, first_name, last_name, phone, role, is_active, is_verified, created_at FROM users WHERE user_id = ?',
+    [userId]
+  );
+
+  if (rows.length === 0) return null;
+  return rows[0];
+};
+
+export const getUserOrders = async (userId: string | number, limit: number = 10, offset: number = 0): Promise<any[]> => {
+  const pool = await getPool();
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT 
+      order_id,
+      order_number,
+      status,
+      total_amount,
+      currency,
+      created_at,
+      updated_at
+    FROM orders 
+    WHERE user_id = ? 
+    ORDER BY created_at DESC 
+    LIMIT ? OFFSET ?`,
+    [userId, limit, offset]
+  );
+
+  return rows;
+};
