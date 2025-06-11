@@ -193,6 +193,54 @@ LOCK TABLES `addresses` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `admin_pricing_controls`
+--
+
+DROP TABLE IF EXISTS `admin_pricing_controls`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `admin_pricing_controls` (
+  `control_id` int NOT NULL AUTO_INCREMENT,
+  `control_type` enum('global_markup','vendor_margin_limit','category_pricing_rule','emergency_override') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `control_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `applies_to` enum('all_products','vendor','category','specific_products') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `target_id` int DEFAULT NULL,
+  `target_ids` json DEFAULT NULL COMMENT 'Array of IDs for specific products',
+  `rule_type` enum('markup_percent','markup_amount','max_price','min_price','fixed_price') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rule_value` decimal(10,2) NOT NULL,
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `customer_types` json DEFAULT NULL COMMENT 'Array of customer types this applies to',
+  `is_active` tinyint(1) DEFAULT '1',
+  `valid_from` datetime NOT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `is_emergency_override` tinyint(1) DEFAULT '0',
+  `override_reason` text COLLATE utf8mb4_unicode_ci,
+  `created_by` int NOT NULL,
+  `approved_by` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`control_id`),
+  KEY `fk_pricing_control_creator` (`created_by`),
+  KEY `fk_pricing_control_approver` (`approved_by`),
+  KEY `idx_control_type` (`control_type`,`applies_to`),
+  KEY `idx_active_controls` (`is_active`,`valid_from`,`valid_until`),
+  KEY `idx_emergency_overrides` (`is_emergency_override`,`is_active`),
+  CONSTRAINT `fk_pricing_control_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pricing_control_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `admin_pricing_controls`
+--
+
+LOCK TABLES `admin_pricing_controls` WRITE;
+/*!40000 ALTER TABLE `admin_pricing_controls` DISABLE KEYS */;
+INSERT INTO `admin_pricing_controls` VALUES (1,'global_markup','Global Minimum Markup','all_products',NULL,NULL,'markup_percent',20.00,0.00,NULL,1,'2025-06-10 15:04:09',NULL,0,NULL,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(2,'category_pricing_rule','Premium Category Markup','category',NULL,NULL,'markup_percent',35.00,0.00,NULL,1,'2025-06-10 15:04:09',NULL,0,NULL,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(3,'vendor_margin_limit','Vendor Margin Limit','vendor',NULL,NULL,'markup_percent',45.00,0.00,NULL,1,'2025-06-10 15:04:09',NULL,0,NULL,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(4,'global_markup','Global Minimum Markup','all_products',NULL,NULL,'markup_percent',20.00,0.00,NULL,1,'2025-06-10 15:06:25',NULL,0,NULL,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25'),(5,'category_pricing_rule','Premium Category Markup','category',NULL,NULL,'markup_percent',35.00,0.00,NULL,1,'2025-06-10 15:06:25',NULL,0,NULL,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25'),(6,'vendor_margin_limit','Vendor Margin Limit','vendor',NULL,NULL,'markup_percent',45.00,0.00,NULL,1,'2025-06-10 15:06:25',NULL,0,NULL,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25');
+/*!40000 ALTER TABLE `admin_pricing_controls` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `analytics_daily_summary`
 --
 
@@ -785,6 +833,8 @@ CREATE TABLE `categories` (
   `image_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `featured` tinyint(1) DEFAULT '0',
+  `display_order` int DEFAULT '0',
   PRIMARY KEY (`category_id`),
   UNIQUE KEY `slug` (`slug`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -796,7 +846,7 @@ CREATE TABLE `categories` (
 
 LOCK TABLES `categories` WRITE;
 /*!40000 ALTER TABLE `categories` DISABLE KEYS */;
-INSERT INTO `categories` VALUES (1,'Blinds','blinds','Premium window blinds for every room',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54'),(2,'Shades','shades','Elegant window shades and treatments',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54'),(3,'Shutters','shutters','Classic wooden and composite shutters',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54'),(4,'Curtains','curtains','Beautiful curtains and drapes',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54');
+INSERT INTO `categories` VALUES (1,'Blinds','blinds','Premium window blinds for every room',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,1),(2,'Shades','shades','Elegant window shades and treatments',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,2),(3,'Shutters','shutters','Classic wooden and composite shutters',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,3),(4,'Curtains','curtains','Beautiful curtains and drapes',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,4);
 /*!40000 ALTER TABLE `categories` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -899,6 +949,50 @@ LOCK TABLES `colors` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `commission_calculations`
+--
+
+DROP TABLE IF EXISTS `commission_calculations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `commission_calculations` (
+  `calculation_id` int NOT NULL AUTO_INCREMENT,
+  `order_id` int NOT NULL,
+  `vendor_id` int DEFAULT NULL,
+  `sales_staff_id` int DEFAULT NULL,
+  `order_amount` decimal(10,2) NOT NULL,
+  `commission_rate` decimal(5,2) NOT NULL,
+  `commission_amount` decimal(10,2) NOT NULL,
+  `rule_id` int NOT NULL,
+  `rule_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payment_status` enum('pending','paid','disputed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `payment_date` date DEFAULT NULL,
+  `payment_reference` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `calculated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`calculation_id`),
+  UNIQUE KEY `unique_order_commission` (`order_id`,`vendor_id`,`sales_staff_id`),
+  KEY `fk_commission_calc_rule` (`rule_id`),
+  KEY `idx_vendor_commissions` (`vendor_id`,`payment_status`),
+  KEY `idx_sales_commissions` (`sales_staff_id`,`payment_status`),
+  KEY `idx_payment_status` (`payment_status`,`payment_date`),
+  CONSTRAINT `fk_commission_calc_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_commission_calc_rule` FOREIGN KEY (`rule_id`) REFERENCES `commission_rules` (`rule_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_commission_calc_sales` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_commission_calc_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `commission_calculations`
+--
+
+LOCK TABLES `commission_calculations` WRITE;
+/*!40000 ALTER TABLE `commission_calculations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `commission_calculations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `commission_disputes`
 --
 
@@ -937,6 +1031,96 @@ CREATE TABLE `commission_disputes` (
 LOCK TABLES `commission_disputes` WRITE;
 /*!40000 ALTER TABLE `commission_disputes` DISABLE KEYS */;
 /*!40000 ALTER TABLE `commission_disputes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `commission_payments`
+--
+
+DROP TABLE IF EXISTS `commission_payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `commission_payments` (
+  `payment_id` int NOT NULL AUTO_INCREMENT,
+  `vendor_id` int DEFAULT NULL,
+  `sales_staff_id` int DEFAULT NULL,
+  `period_start` date NOT NULL,
+  `period_end` date NOT NULL,
+  `commission_amount` decimal(12,2) NOT NULL,
+  `order_count` int NOT NULL,
+  `payment_method` enum('bank_transfer','check','paypal','stripe','manual') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `payment_reference` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status` enum('pending','processing','completed','failed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `processed_by` int NOT NULL,
+  `processed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `failure_reason` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`payment_id`),
+  KEY `fk_commission_payment_processor` (`processed_by`),
+  KEY `idx_vendor_payments` (`vendor_id`,`period_start`,`period_end`),
+  KEY `idx_sales_payments` (`sales_staff_id`,`period_start`,`period_end`),
+  KEY `idx_payment_status` (`status`,`processed_at`),
+  CONSTRAINT `fk_commission_payment_processor` FOREIGN KEY (`processed_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_commission_payment_sales` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_commission_payment_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `commission_payments`
+--
+
+LOCK TABLES `commission_payments` WRITE;
+/*!40000 ALTER TABLE `commission_payments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `commission_payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `commission_rules`
+--
+
+DROP TABLE IF EXISTS `commission_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `commission_rules` (
+  `rule_id` int NOT NULL AUTO_INCREMENT,
+  `rule_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `applies_to` enum('vendor','sales_staff','category','product','global') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `target_id` int DEFAULT NULL COMMENT 'ID of vendor, sales staff, category, or product',
+  `commission_type` enum('percentage','fixed_amount','tiered') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `commission_value` decimal(8,2) NOT NULL COMMENT 'Percentage or fixed amount',
+  `minimum_sale_amount` decimal(10,2) DEFAULT '0.00',
+  `maximum_commission_amount` decimal(10,2) DEFAULT NULL,
+  `tiers` json DEFAULT NULL COMMENT 'Array of {min_amount, max_amount, commission_percent, commission_amount}',
+  `is_default` tinyint(1) DEFAULT '0' COMMENT 'Default rule when no specific rule applies',
+  `priority` int DEFAULT '100',
+  `valid_from` date NOT NULL,
+  `valid_until` date DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_by` int NOT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rule_id`),
+  KEY `fk_commission_rule_creator` (`created_by`),
+  KEY `idx_applies_to` (`applies_to`,`target_id`),
+  KEY `idx_default_rules` (`is_default`,`priority`),
+  KEY `idx_active_rules` (`is_active`,`valid_from`,`valid_until`),
+  CONSTRAINT `fk_commission_rule_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `commission_rules`
+--
+
+LOCK TABLES `commission_rules` WRITE;
+/*!40000 ALTER TABLE `commission_rules` DISABLE KEYS */;
+INSERT INTO `commission_rules` VALUES (1,'Default Vendor Commission','vendor',NULL,'percentage',15.00,0.00,NULL,NULL,1,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(2,'Default Sales Commission','sales_staff',NULL,'percentage',5.00,0.00,NULL,NULL,1,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(3,'High-Volume Vendor Tier','vendor',NULL,'tiered',0.00,0.00,NULL,'[{\"max_amount\": 5000, \"min_amount\": 0, \"commission_percent\": 10.0}, {\"max_amount\": 15000, \"min_amount\": 5001, \"commission_percent\": 15.0}, {\"max_amount\": 50000, \"min_amount\": 15001, \"commission_percent\": 20.0}, {\"max_amount\": null, \"min_amount\": 50001, \"commission_percent\": 25.0}]',0,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(4,'Premium Sales Tier','sales_staff',NULL,'tiered',0.00,0.00,NULL,'[{\"max_amount\": 2000, \"min_amount\": 0, \"commission_percent\": 3.0}, {\"max_amount\": 10000, \"min_amount\": 2001, \"commission_percent\": 5.0}, {\"max_amount\": 25000, \"min_amount\": 10001, \"commission_percent\": 7.0}, {\"max_amount\": null, \"min_amount\": 25001, \"commission_percent\": 10.0}]',0,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:04:09','2025-06-10 22:04:09'),(5,'Default Vendor Commission','vendor',NULL,'percentage',15.00,0.00,NULL,NULL,1,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25'),(6,'Default Sales Commission','sales_staff',NULL,'percentage',5.00,0.00,NULL,NULL,1,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25'),(7,'High-Volume Vendor Tier','vendor',NULL,'tiered',0.00,0.00,NULL,'[{\"max_amount\": 5000, \"min_amount\": 0, \"commission_percent\": 10.0}, {\"max_amount\": 15000, \"min_amount\": 5001, \"commission_percent\": 15.0}, {\"max_amount\": 50000, \"min_amount\": 15001, \"commission_percent\": 20.0}, {\"max_amount\": null, \"min_amount\": 50001, \"commission_percent\": 25.0}]',0,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25'),(8,'Premium Sales Tier','sales_staff',NULL,'tiered',0.00,0.00,NULL,'[{\"max_amount\": 2000, \"min_amount\": 0, \"commission_percent\": 3.0}, {\"max_amount\": 10000, \"min_amount\": 2001, \"commission_percent\": 5.0}, {\"max_amount\": 25000, \"min_amount\": 10001, \"commission_percent\": 7.0}, {\"max_amount\": null, \"min_amount\": 25001, \"commission_percent\": 10.0}]',0,100,'2025-06-10',NULL,1,1,NULL,'2025-06-10 22:06:25','2025-06-10 22:06:25');
+/*!40000 ALTER TABLE `commission_rules` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1423,6 +1607,102 @@ LOCK TABLES `control_types` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `coupon_codes`
+--
+
+DROP TABLE IF EXISTS `coupon_codes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `coupon_codes` (
+  `coupon_id` int NOT NULL AUTO_INCREMENT,
+  `coupon_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `coupon_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_type` enum('percentage','fixed_amount','free_shipping') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_value` decimal(8,2) NOT NULL,
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `maximum_discount_amount` decimal(10,2) DEFAULT NULL,
+  `applies_to` enum('all_products','specific_products','categories','exclude_products') COLLATE utf8mb4_unicode_ci DEFAULT 'all_products',
+  `target_product_ids` json DEFAULT NULL,
+  `target_category_ids` json DEFAULT NULL,
+  `excluded_product_ids` json DEFAULT NULL,
+  `customer_id` int DEFAULT NULL COMMENT 'Specific customer only (null = any customer)',
+  `customer_types` json DEFAULT NULL,
+  `first_time_customers_only` tinyint(1) DEFAULT '0',
+  `usage_limit_total` int DEFAULT NULL,
+  `usage_limit_per_customer` int DEFAULT '1',
+  `usage_count` int DEFAULT '0',
+  `is_active` tinyint(1) DEFAULT '1',
+  `valid_from` datetime DEFAULT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `is_auto_generated` tinyint(1) DEFAULT '0',
+  `generation_pattern` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `batch_id` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`coupon_id`),
+  UNIQUE KEY `coupon_code` (`coupon_code`),
+  KEY `idx_coupon_code` (`coupon_code`),
+  KEY `idx_customer_coupons` (`customer_id`),
+  KEY `idx_active_coupons` (`is_active`,`valid_from`,`valid_until`),
+  KEY `idx_batch_coupons` (`batch_id`),
+  CONSTRAINT `fk_coupon_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `coupon_codes`
+--
+
+LOCK TABLES `coupon_codes` WRITE;
+/*!40000 ALTER TABLE `coupon_codes` DISABLE KEYS */;
+INSERT INTO `coupon_codes` VALUES (1,'SAVE10','10% Off Orders Over $100','percentage',10.00,100.00,NULL,'all_products',NULL,NULL,NULL,NULL,NULL,0,NULL,1,0,1,NULL,NULL,0,NULL,NULL,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(2,'FREESHIP','Free Shipping','free_shipping',0.00,75.00,NULL,'all_products',NULL,NULL,NULL,NULL,NULL,0,NULL,1,0,1,NULL,NULL,0,NULL,NULL,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(3,'WELCOME25','Welcome $25 Off','fixed_amount',25.00,100.00,NULL,'all_products',NULL,NULL,NULL,NULL,NULL,0,NULL,1,0,1,NULL,NULL,0,NULL,NULL,'2025-06-10 22:06:39','2025-06-10 22:06:39');
+/*!40000 ALTER TABLE `coupon_codes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customer_addresses`
+--
+
+DROP TABLE IF EXISTS `customer_addresses`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_addresses` (
+  `address_id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `address_type` enum('shipping','billing','both') COLLATE utf8mb4_unicode_ci DEFAULT 'shipping',
+  `is_default` tinyint(1) DEFAULT '0',
+  `label` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User-friendly label like "Home", "Office", etc.',
+  `recipient_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `company_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `address_line1` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `address_line2` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `city` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `state` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `postal_code` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `country` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT 'United States',
+  `phone` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `delivery_instructions` text COLLATE utf8mb4_unicode_ci,
+  `is_residential` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`address_id`),
+  KEY `idx_customer_addresses` (`user_id`),
+  KEY `idx_address_type` (`address_type`),
+  KEY `idx_is_default` (`is_default`),
+  CONSTRAINT `fk_customer_addresses_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_addresses`
+--
+
+LOCK TABLES `customer_addresses` WRITE;
+/*!40000 ALTER TABLE `customer_addresses` DISABLE KEYS */;
+/*!40000 ALTER TABLE `customer_addresses` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `customer_bulk_uploads`
 --
 
@@ -1496,6 +1776,51 @@ CREATE TABLE `customer_questions` (
 LOCK TABLES `customer_questions` WRITE;
 /*!40000 ALTER TABLE `customer_questions` DISABLE KEYS */;
 /*!40000 ALTER TABLE `customer_questions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `customer_specific_pricing`
+--
+
+DROP TABLE IF EXISTS `customer_specific_pricing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `customer_specific_pricing` (
+  `pricing_id` int NOT NULL AUTO_INCREMENT,
+  `customer_id` int NOT NULL,
+  `product_id` int DEFAULT NULL COMMENT 'Specific product (null = applies to categories/brands)',
+  `category_id` int DEFAULT NULL,
+  `brand_id` int DEFAULT NULL,
+  `pricing_type` enum('fixed_price','discount_percent','discount_amount','markup_percent') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `pricing_value` decimal(10,2) NOT NULL,
+  `minimum_quantity` int DEFAULT '1',
+  `contract_reference` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `valid_from` date NOT NULL,
+  `valid_until` date DEFAULT NULL,
+  `approval_status` enum('pending','approved','rejected') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `approved_by` int DEFAULT NULL,
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`pricing_id`),
+  UNIQUE KEY `unique_customer_product_pricing` (`customer_id`,`product_id`,`category_id`,`brand_id`),
+  KEY `fk_customer_pricing_product` (`product_id`),
+  KEY `fk_customer_pricing_approver` (`approved_by`),
+  KEY `idx_customer_pricing` (`customer_id`),
+  KEY `idx_approval_status` (`approval_status`),
+  CONSTRAINT `fk_customer_pricing_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_customer_pricing_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_customer_pricing_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `customer_specific_pricing`
+--
+
+LOCK TABLES `customer_specific_pricing` WRITE;
+/*!40000 ALTER TABLE `customer_specific_pricing` DISABLE KEYS */;
+/*!40000 ALTER TABLE `customer_specific_pricing` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -1722,6 +2047,51 @@ CREATE TABLE `draft_configurations` (
 LOCK TABLES `draft_configurations` WRITE;
 /*!40000 ALTER TABLE `draft_configurations` DISABLE KEYS */;
 /*!40000 ALTER TABLE `draft_configurations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `dynamic_pricing_rules`
+--
+
+DROP TABLE IF EXISTS `dynamic_pricing_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `dynamic_pricing_rules` (
+  `rule_id` int NOT NULL AUTO_INCREMENT,
+  `rule_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `rule_type` enum('time_based','demand_based','inventory_based','competition_based','seasonal') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `product_id` int DEFAULT NULL,
+  `category_ids` json DEFAULT NULL,
+  `brand_ids` json DEFAULT NULL,
+  `conditions` json NOT NULL COMMENT 'Rule-specific conditions (time ranges, inventory levels, etc.)',
+  `adjustment_type` enum('percentage','fixed_amount','multiply_by') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `adjustment_value` decimal(8,4) NOT NULL,
+  `min_price` decimal(10,2) DEFAULT NULL COMMENT 'Minimum price floor',
+  `max_price` decimal(10,2) DEFAULT NULL COMMENT 'Maximum price ceiling',
+  `priority` int DEFAULT '100',
+  `conflicts_with` json DEFAULT NULL COMMENT 'Array of rule IDs that conflict with this rule',
+  `is_active` tinyint(1) DEFAULT '1',
+  `valid_from` datetime DEFAULT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `applications_count` int DEFAULT '0',
+  `total_revenue_impact` decimal(12,2) DEFAULT '0.00',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`rule_id`),
+  KEY `idx_rule_type` (`rule_type`),
+  KEY `idx_product_dynamic_pricing` (`product_id`),
+  KEY `idx_active_dynamic_rules` (`is_active`,`priority`),
+  CONSTRAINT `fk_dynamic_pricing_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `dynamic_pricing_rules`
+--
+
+LOCK TABLES `dynamic_pricing_rules` WRITE;
+/*!40000 ALTER TABLE `dynamic_pricing_rules` DISABLE KEYS */;
+/*!40000 ALTER TABLE `dynamic_pricing_rules` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -2161,7 +2531,7 @@ CREATE TABLE `installation_service_areas` (
   UNIQUE KEY `area_code` (`area_code`),
   KEY `idx_area_code` (`area_code`),
   KEY `idx_active_areas` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2287,7 +2657,7 @@ CREATE TABLE `installation_time_slots` (
   UNIQUE KEY `unique_slot_code` (`slot_code`),
   KEY `idx_time_window` (`start_time`,`end_time`),
   KEY `idx_active_slots` (`is_active`,`display_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2298,6 +2668,54 @@ LOCK TABLES `installation_time_slots` WRITE;
 /*!40000 ALTER TABLE `installation_time_slots` DISABLE KEYS */;
 INSERT INTO `installation_time_slots` (`slot_id`, `slot_name`, `slot_code`, `start_time`, `end_time`, `available_days`, `is_premium`, `premium_fee`, `max_concurrent_jobs`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES (1,'Early Morning','early_morning','07:00:00','10:00:00','[\"1\", \"2\", \"3\", \"4\", \"5\"]',0,0.00,5,1,1,'2025-06-10 04:32:10','2025-06-10 04:32:10'),(2,'Morning','morning','08:00:00','12:00:00','[\"1\", \"2\", \"3\", \"4\", \"5\", \"6\"]',0,0.00,5,1,2,'2025-06-10 04:32:10','2025-06-10 04:32:10'),(3,'Afternoon','afternoon','12:00:00','17:00:00','[\"1\", \"2\", \"3\", \"4\", \"5\", \"6\"]',0,0.00,5,1,3,'2025-06-10 04:32:10','2025-06-10 04:32:10'),(4,'Evening','evening','17:00:00','20:00:00','[\"1\", \"2\", \"3\", \"4\", \"5\"]',0,0.00,5,1,4,'2025-06-10 04:32:10','2025-06-10 04:32:10'),(5,'Weekend Morning','weekend_morning','09:00:00','13:00:00','[\"0\", \"6\"]',0,0.00,5,1,5,'2025-06-10 04:32:10','2025-06-10 04:32:10'),(6,'Weekend Afternoon','weekend_afternoon','13:00:00','17:00:00','[\"0\", \"6\"]',0,0.00,5,1,6,'2025-06-10 04:32:10','2025-06-10 04:32:10');
 /*!40000 ALTER TABLE `installation_time_slots` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `installer_jobs`
+--
+
+DROP TABLE IF EXISTS `installer_jobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `installer_jobs` (
+  `job_id` int NOT NULL AUTO_INCREMENT,
+  `customer_id` int NOT NULL,
+  `installer_id` int DEFAULT NULL,
+  `address_id` int DEFAULT NULL,
+  `order_id` int DEFAULT NULL,
+  `job_type` enum('installation','repair','measurement','consultation') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'installation',
+  `status` enum('assigned','scheduled','in_progress','completed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'scheduled',
+  `priority` enum('low','medium','high','urgent') COLLATE utf8mb4_unicode_ci DEFAULT 'medium',
+  `scheduled_datetime` datetime NOT NULL,
+  `estimated_duration` int NOT NULL DEFAULT '120' COMMENT 'Duration in minutes',
+  `special_instructions` text COLLATE utf8mb4_unicode_ci,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `completion_notes` text COLLATE utf8mb4_unicode_ci,
+  `customer_satisfaction` tinyint DEFAULT NULL COMMENT '1-5 rating',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`job_id`),
+  KEY `address_id` (`address_id`),
+  KEY `order_id` (`order_id`),
+  KEY `idx_installer_schedule` (`installer_id`,`scheduled_datetime`),
+  KEY `idx_customer_jobs` (`customer_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_job_type` (`job_type`),
+  CONSTRAINT `installer_jobs_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `installer_jobs_ibfk_2` FOREIGN KEY (`installer_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `installer_jobs_ibfk_3` FOREIGN KEY (`address_id`) REFERENCES `user_shipping_addresses` (`address_id`) ON DELETE SET NULL,
+  CONSTRAINT `installer_jobs_ibfk_4` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `installer_jobs`
+--
+
+LOCK TABLES `installer_jobs` WRITE;
+/*!40000 ALTER TABLE `installer_jobs` DISABLE KEYS */;
+/*!40000 ALTER TABLE `installer_jobs` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -2370,6 +2788,67 @@ CREATE TABLE `inventory_alerts` (
 LOCK TABLES `inventory_alerts` WRITE;
 /*!40000 ALTER TABLE `inventory_alerts` DISABLE KEYS */;
 /*!40000 ALTER TABLE `inventory_alerts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `job_materials`
+--
+
+DROP TABLE IF EXISTS `job_materials`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_materials` (
+  `job_material_id` int NOT NULL AUTO_INCREMENT,
+  `job_id` int NOT NULL,
+  `material_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `quantity` int DEFAULT '1',
+  `material_type` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`job_material_id`),
+  KEY `idx_job_materials` (`job_id`),
+  CONSTRAINT `job_materials_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `installer_jobs` (`job_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_materials`
+--
+
+LOCK TABLES `job_materials` WRITE;
+/*!40000 ALTER TABLE `job_materials` DISABLE KEYS */;
+/*!40000 ALTER TABLE `job_materials` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `job_products`
+--
+
+DROP TABLE IF EXISTS `job_products`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `job_products` (
+  `job_product_id` int NOT NULL AUTO_INCREMENT,
+  `job_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `quantity` int NOT NULL DEFAULT '1',
+  `room_location` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `specifications` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`job_product_id`),
+  KEY `idx_job_products` (`job_id`),
+  KEY `idx_product_jobs` (`product_id`),
+  CONSTRAINT `job_products_ibfk_1` FOREIGN KEY (`job_id`) REFERENCES `installer_jobs` (`job_id`) ON DELETE CASCADE,
+  CONSTRAINT `job_products_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `job_products`
+--
+
+LOCK TABLES `job_products` WRITE;
+/*!40000 ALTER TABLE `job_products` DISABLE KEYS */;
+/*!40000 ALTER TABLE `job_products` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3024,6 +3503,13 @@ CREATE TABLE `orders` (
   `preferred_delivery_date` date DEFAULT NULL COMMENT 'Customer preferred delivery date',
   `preferred_time_slot_id` int DEFAULT NULL COMMENT 'Reference to delivery_time_slots',
   `installation_appointment_id` int DEFAULT NULL COMMENT 'Reference to installation_appointments table',
+  `vendor_id` int DEFAULT NULL COMMENT 'Reference to vendor_info table',
+  `vendor_discount_id` int DEFAULT NULL COMMENT 'Reference to vendor_discounts table',
+  `vendor_discount_amount` decimal(10,2) DEFAULT '0.00' COMMENT 'Vendor discount applied to order',
+  `sales_staff_id` int DEFAULT NULL COMMENT 'Sales staff who handled this order',
+  `campaign_id` int DEFAULT NULL COMMENT 'Reference to promotional_campaigns table',
+  `coupon_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'Applied coupon code',
+  `volume_discount_amount` decimal(10,2) DEFAULT '0.00' COMMENT 'Volume discount applied',
   PRIMARY KEY (`order_id`),
   UNIQUE KEY `order_number` (`order_number`),
   KEY `user_id` (`user_id`),
@@ -3033,10 +3519,18 @@ CREATE TABLE `orders` (
   KEY `fk_orders_billing_address` (`billing_address_id`),
   KEY `fk_orders_delivery_slot` (`preferred_time_slot_id`),
   KEY `fk_orders_installation_appointment` (`installation_appointment_id`),
+  KEY `fk_orders_vendor_discount` (`vendor_discount_id`),
+  KEY `fk_orders_sales_staff` (`sales_staff_id`),
+  KEY `fk_orders_vendor` (`vendor_id`),
+  KEY `fk_orders_campaign` (`campaign_id`),
   CONSTRAINT `fk_orders_billing_address` FOREIGN KEY (`billing_address_id`) REFERENCES `user_shipping_addresses` (`address_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `promotional_campaigns` (`campaign_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_orders_delivery_slot` FOREIGN KEY (`preferred_time_slot_id`) REFERENCES `delivery_time_slots` (`slot_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_orders_installation_appointment` FOREIGN KEY (`installation_appointment_id`) REFERENCES `installation_appointments` (`appointment_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_sales_staff` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE SET NULL,
   CONSTRAINT `fk_orders_shipping_address` FOREIGN KEY (`shipping_address_id`) REFERENCES `user_shipping_addresses` (`address_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_orders_vendor_discount` FOREIGN KEY (`vendor_discount_id`) REFERENCES `vendor_discounts` (`discount_id`) ON DELETE SET NULL,
   CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -3049,6 +3543,37 @@ LOCK TABLES `orders` WRITE;
 /*!40000 ALTER TABLE `orders` DISABLE KEYS */;
 /*!40000 ALTER TABLE `orders` ENABLE KEYS */;
 UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `tr_update_campaign_stats` AFTER INSERT ON `orders` FOR EACH ROW BEGIN
+    -- Update promotional campaign stats if campaign was used
+    IF NEW.campaign_id IS NOT NULL THEN
+        UPDATE promotional_campaigns 
+        SET total_orders = total_orders + 1,
+            total_revenue = total_revenue + NEW.total_amount,
+            total_discount_given = total_discount_given + IFNULL(NEW.discount_amount, 0)
+        WHERE campaign_id = NEW.campaign_id;
+    END IF;
+    
+    -- Update coupon usage if coupon was used
+    IF NEW.coupon_code IS NOT NULL THEN
+        UPDATE coupon_codes 
+        SET usage_count = usage_count + 1
+        WHERE coupon_code = NEW.coupon_code;
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -3107,6 +3632,44 @@ CREATE TABLE `payment_analytics` (
 LOCK TABLES `payment_analytics` WRITE;
 /*!40000 ALTER TABLE `payment_analytics` DISABLE KEYS */;
 /*!40000 ALTER TABLE `payment_analytics` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `payment_disputes`
+--
+
+DROP TABLE IF EXISTS `payment_disputes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payment_disputes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `payment_id` bigint NOT NULL,
+  `dispute_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `provider` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `dispute_type` enum('chargeback','inquiry','retrieval_request','pre_arbitration') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `status` enum('open','under_review','accepted','disputed','won','lost') COLLATE utf8mb4_unicode_ci DEFAULT 'open',
+  `amount` decimal(10,2) NOT NULL,
+  `currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT 'USD',
+  `reason_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `reason_description` text COLLATE utf8mb4_unicode_ci,
+  `evidence_due_date` date DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_dispute` (`provider`,`dispute_id`),
+  KEY `payment_id` (`payment_id`),
+  KEY `idx_status_due_date` (`status`,`evidence_due_date`),
+  CONSTRAINT `payment_disputes_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`payment_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payment_disputes`
+--
+
+LOCK TABLES `payment_disputes` WRITE;
+/*!40000 ALTER TABLE `payment_disputes` DISABLE KEYS */;
+/*!40000 ALTER TABLE `payment_disputes` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3172,7 +3735,7 @@ CREATE TABLE `payment_method_configurations` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_provider_method` (`provider`,`method_id`),
   KEY `idx_active_methods` (`is_active`,`sort_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3181,8 +3744,45 @@ CREATE TABLE `payment_method_configurations` (
 
 LOCK TABLES `payment_method_configurations` WRITE;
 /*!40000 ALTER TABLE `payment_method_configurations` DISABLE KEYS */;
-INSERT INTO `payment_method_configurations` VALUES (1,'stripe','card','Credit/Debit Card','Visa, Mastercard, American Express, Discover',0.50,999999.99,'[\"USD\", \"EUR\", \"GBP\", \"CAD\", \"AUD\"]','[\"US\", \"CA\", \"GB\", \"AU\", \"EU\"]',1,1,'{\"fee_fixed\": 0.3, \"fee_percentage\": 2.9, \"processing_time\": \"instant\"}','2025-06-08 23:39:43','2025-06-08 23:39:43'),(2,'paypal','paypal','PayPal','Pay with your PayPal account or PayPal Credit',0.01,10000.00,'[\"USD\", \"EUR\", \"GBP\", \"CAD\", \"AUD\"]','[\"US\", \"CA\", \"GB\", \"AU\", \"EU\"]',1,5,'{\"fee_fixed\": 0.49, \"fee_percentage\": 3.49, \"processing_time\": \"instant\"}','2025-06-08 23:39:43','2025-06-08 23:39:43'),(3,'klarna','klarna','Klarna','Pay in 4 interest-free installments',1.00,10000.00,'[\"USD\", \"EUR\", \"GBP\", \"SEK\"]','[\"US\", \"CA\", \"GB\", \"SE\", \"DE\", \"AT\"]',1,6,'{\"credit_check\": \"soft\", \"installments\": 4, \"interest_rate\": 0, \"installment_frequency\": \"bi_weekly\"}','2025-06-08 23:39:43','2025-06-08 23:39:43'),(4,'afterpay','afterpay','Afterpay','Pay in 4 installments, always interest-free',1.00,4000.00,'[\"USD\", \"AUD\", \"CAD\", \"GBP\"]','[\"US\", \"CA\", \"AU\", \"GB\"]',1,7,'{\"credit_check\": \"soft\", \"installments\": 4, \"interest_rate\": 0, \"installment_frequency\": \"bi_weekly\"}','2025-06-08 23:39:43','2025-06-08 23:39:43'),(5,'affirm','affirm','Affirm','Monthly payments as low as 0% APR',50.00,17500.00,'[\"USD\", \"CAD\"]','[\"US\", \"CA\"]',1,8,'{\"credit_check\": \"soft\", \"installments\": [3, 6, 12, 18, 24, 36], \"prequalification\": true, \"interest_rate_range\": [0, 36], \"installment_frequency\": \"monthly\"}','2025-06-08 23:39:43','2025-06-08 23:39:43');
+INSERT INTO `payment_method_configurations` VALUES (1,'stripe','card','Credit/Debit Card','Visa, Mastercard, American Express, Discover',0.50,999999.99,'[\"USD\", \"EUR\", \"GBP\", \"CAD\", \"AUD\"]','[\"US\", \"CA\", \"GB\", \"AU\", \"EU\"]',1,1,'{\"fee_fixed\": 0.3, \"fee_percentage\": 2.9, \"processing_time\": \"instant\"}','2025-06-08 23:39:43','2025-06-10 22:16:47'),(2,'paypal','paypal','PayPal','Pay with your PayPal account or PayPal Credit',0.01,10000.00,'[\"USD\", \"EUR\", \"GBP\", \"CAD\", \"AUD\"]','[\"US\", \"CA\", \"GB\", \"AU\", \"EU\"]',1,5,'{\"fee_fixed\": 0.49, \"fee_percentage\": 3.49, \"processing_time\": \"instant\"}','2025-06-08 23:39:43','2025-06-10 22:16:47'),(3,'klarna','klarna','Klarna','Pay in 4 interest-free installments',1.00,10000.00,'[\"USD\", \"EUR\", \"GBP\", \"SEK\"]','[\"US\", \"CA\", \"GB\", \"SE\", \"DE\", \"AT\"]',1,6,'{\"credit_check\": \"soft\", \"installments\": 4, \"interest_rate\": 0, \"installment_frequency\": \"bi_weekly\"}','2025-06-08 23:39:43','2025-06-10 22:16:47'),(4,'afterpay','afterpay','Afterpay','Pay in 4 installments, always interest-free',1.00,4000.00,'[\"USD\", \"AUD\", \"CAD\", \"GBP\"]','[\"US\", \"CA\", \"AU\", \"GB\"]',1,7,'{\"credit_check\": \"soft\", \"installments\": 4, \"interest_rate\": 0, \"installment_frequency\": \"bi_weekly\"}','2025-06-08 23:39:43','2025-06-10 22:16:47'),(5,'affirm','affirm','Affirm','Monthly payments as low as 0% APR',50.00,17500.00,'[\"USD\", \"CAD\"]','[\"US\", \"CA\"]',1,8,'{\"credit_check\": \"soft\", \"installments\": [3, 6, 12, 18, 24, 36], \"prequalification\": true, \"interest_rate_range\": [0, 36], \"installment_frequency\": \"monthly\"}','2025-06-08 23:39:43','2025-06-10 22:16:47'),(6,'stripe','apple_pay','Apple Pay','Pay securely with Touch ID or Face ID',0.50,999999.99,'[\"USD\", \"EUR\", \"GBP\", \"CAD\"]','[\"US\", \"CA\", \"GB\", \"AU\"]',1,2,'{\"fee_fixed\": 0.3, \"fee_percentage\": 2.9, \"processing_time\": \"instant\", \"device_requirements\": [\"iOS\", \"macOS\", \"Safari\"]}','2025-06-10 22:14:12','2025-06-10 22:16:47'),(7,'stripe','google_pay','Google Pay','Pay quickly with your Google account',0.50,999999.99,'[\"USD\", \"EUR\", \"GBP\", \"CAD\"]','[\"US\", \"CA\", \"GB\", \"AU\"]',1,3,'{\"fee_fixed\": 0.3, \"fee_percentage\": 2.9, \"processing_time\": \"instant\", \"device_requirements\": [\"Android\", \"Chrome\"]}','2025-06-10 22:14:12','2025-06-10 22:16:47'),(8,'stripe','ach','Bank Transfer (ACH)','Direct debit from your US bank account',0.50,500000.00,'[\"USD\"]','[\"US\"]',1,4,'{\"fee_fixed\": 0.8, \"processing_time\": \"3-5 business days\"}','2025-06-10 22:14:12','2025-06-10 22:16:47');
 /*!40000 ALTER TABLE `payment_method_configurations` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `payment_refunds`
+--
+
+DROP TABLE IF EXISTS `payment_refunds`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payment_refunds` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `payment_id` bigint NOT NULL,
+  `refund_id` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `provider` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `currency` char(3) COLLATE utf8mb4_unicode_ci DEFAULT 'USD',
+  `reason` enum('requested_by_customer','duplicate','fraudulent','other') COLLATE utf8mb4_unicode_ci DEFAULT 'requested_by_customer',
+  `reason_description` text COLLATE utf8mb4_unicode_ci,
+  `status` enum('pending','succeeded','failed','cancelled') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `processor_response` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_refund` (`provider`,`refund_id`),
+  KEY `idx_payment_refunds` (`payment_id`),
+  KEY `idx_status_date` (`status`,`created_at`),
+  CONSTRAINT `payment_refunds_ibfk_1` FOREIGN KEY (`payment_id`) REFERENCES `payments` (`payment_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payment_refunds`
+--
+
+LOCK TABLES `payment_refunds` WRITE;
+/*!40000 ALTER TABLE `payment_refunds` DISABLE KEYS */;
+/*!40000 ALTER TABLE `payment_refunds` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3286,6 +3886,50 @@ CREATE TABLE `price_matrix` (
 LOCK TABLES `price_matrix` WRITE;
 /*!40000 ALTER TABLE `price_matrix` DISABLE KEYS */;
 /*!40000 ALTER TABLE `price_matrix` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `pricing_tiers`
+--
+
+DROP TABLE IF EXISTS `pricing_tiers`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `pricing_tiers` (
+  `tier_id` int NOT NULL AUTO_INCREMENT,
+  `tier_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `tier_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `minimum_quantity` int DEFAULT '1',
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `customer_type` enum('all','retail','commercial','trade') COLLATE utf8mb4_unicode_ci DEFAULT 'all',
+  `discount_type` enum('percentage','fixed_amount','price_override') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_value` decimal(8,2) NOT NULL,
+  `max_discount_amount` decimal(10,2) DEFAULT NULL COMMENT 'Maximum discount cap for percentage discounts',
+  `applies_to` enum('product','category','brand','order_total') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `target_ids` json DEFAULT NULL COMMENT 'Array of product/category/brand IDs this tier applies to',
+  `is_active` tinyint(1) DEFAULT '1',
+  `valid_from` date DEFAULT NULL,
+  `valid_until` date DEFAULT NULL,
+  `priority` int DEFAULT '100',
+  `can_stack_with_others` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`tier_id`),
+  UNIQUE KEY `tier_code` (`tier_code`),
+  KEY `idx_tier_code` (`tier_code`),
+  KEY `idx_active_tiers` (`is_active`,`priority`),
+  KEY `idx_validity_dates` (`valid_from`,`valid_until`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `pricing_tiers`
+--
+
+LOCK TABLES `pricing_tiers` WRITE;
+/*!40000 ALTER TABLE `pricing_tiers` DISABLE KEYS */;
+INSERT INTO `pricing_tiers` VALUES (1,'Retail Customer','RETAIL',1,0.00,'all','percentage',0.00,NULL,'order_total',NULL,1,NULL,NULL,100,0,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(2,'Trade Customer - Level 1','TRADE_L1',1,0.00,'all','percentage',10.00,NULL,'order_total',NULL,1,NULL,NULL,100,0,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(3,'Trade Customer - Level 2','TRADE_L2',1,0.00,'all','percentage',15.00,NULL,'order_total',NULL,1,NULL,NULL,100,0,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(4,'Commercial - Small','COMMERCIAL_SM',10,0.00,'all','percentage',12.00,NULL,'order_total',NULL,1,NULL,NULL,100,0,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(5,'Commercial - Large','COMMERCIAL_LG',50,0.00,'all','percentage',20.00,NULL,'order_total',NULL,1,NULL,NULL,100,0,'2025-06-10 22:06:39','2025-06-10 22:06:39');
+/*!40000 ALTER TABLE `pricing_tiers` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3651,6 +4295,50 @@ LOCK TABLES `product_options` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `product_pricing_history`
+--
+
+DROP TABLE IF EXISTS `product_pricing_history`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_pricing_history` (
+  `history_id` int NOT NULL AUTO_INCREMENT,
+  `product_id` int NOT NULL,
+  `previous_price` decimal(10,2) DEFAULT NULL,
+  `new_price` decimal(10,2) NOT NULL,
+  `price_change_amount` decimal(10,2) GENERATED ALWAYS AS ((`new_price` - ifnull(`previous_price`,0))) STORED,
+  `price_change_percent` decimal(5,2) DEFAULT NULL,
+  `change_reason` enum('manual_update','dynamic_pricing','promotional_campaign','volume_discount','system_adjustment') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `change_source` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'User ID, system process, rule ID, etc.',
+  `effective_from` datetime NOT NULL,
+  `effective_until` datetime DEFAULT NULL,
+  `campaign_id` int DEFAULT NULL,
+  `rule_id` int DEFAULT NULL,
+  `changed_by` int DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`history_id`),
+  KEY `fk_pricing_history_user` (`changed_by`),
+  KEY `fk_pricing_history_campaign` (`campaign_id`),
+  KEY `idx_product_pricing_history` (`product_id`,`effective_from`),
+  KEY `idx_change_reason` (`change_reason`),
+  KEY `idx_effective_dates` (`effective_from`,`effective_until`),
+  CONSTRAINT `fk_pricing_history_campaign` FOREIGN KEY (`campaign_id`) REFERENCES `promotional_campaigns` (`campaign_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_pricing_history_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_pricing_history_user` FOREIGN KEY (`changed_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_pricing_history`
+--
+
+LOCK TABLES `product_pricing_history` WRITE;
+/*!40000 ALTER TABLE `product_pricing_history` DISABLE KEYS */;
+/*!40000 ALTER TABLE `product_pricing_history` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `product_pricing_matrix`
 --
 
@@ -3748,7 +4436,7 @@ CREATE TABLE `product_reviews` (
   KEY `idx_approved` (`is_approved`),
   KEY `idx_created_at` (`created_at`),
   CONSTRAINT `chk_rating` CHECK (((`rating` >= 1) and (`rating` <= 5)))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3757,6 +4445,7 @@ CREATE TABLE `product_reviews` (
 
 LOCK TABLES `product_reviews` WRITE;
 /*!40000 ALTER TABLE `product_reviews` DISABLE KEYS */;
+INSERT INTO `product_reviews` VALUES (1,1,1,NULL,NULL,5,'Excellent Quality','These cellular shades are perfect for our bedroom. Great light control and energy savings.',1,1,0,'2025-06-10 22:26:20','2025-06-10 22:26:20'),(2,2,2,NULL,NULL,4,'Beautiful Wood Blinds','Love the natural wood finish. Installation was easy and they look amazing.',1,1,0,'2025-06-10 22:26:20','2025-06-10 22:26:20'),(3,3,1,NULL,NULL,5,'Perfect for Modern Decor','Exactly what we needed for our contemporary living room. Highly recommended!',1,1,0,'2025-06-10 22:26:20','2025-06-10 22:26:20'),(4,4,2,NULL,NULL,5,'Worth Every Penny','Premium quality shutters that transformed our home. Professional installation included.',1,1,0,'2025-06-10 22:26:20','2025-06-10 22:26:20');
 /*!40000 ALTER TABLE `product_reviews` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3969,14 +4658,21 @@ CREATE TABLE `products` (
   `sku` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `category_id` int DEFAULT NULL,
+  `display_order` int DEFAULT '0',
+  `primary_image_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `featured` tinyint(1) DEFAULT '0',
+  `status` enum('active','inactive','draft') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   PRIMARY KEY (`product_id`),
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `sku` (`sku`),
   KEY `brand_id` (`brand_id`),
   KEY `is_active` (`is_active`),
   KEY `stock_status` (`stock_status`),
+  KEY `fk_products_category` (`category_id`),
+  CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL,
   CONSTRAINT `products_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3985,7 +4681,99 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
+INSERT INTO `products` VALUES (1,1,'Premium Cellular Shades','premium-cellular-shades','Energy-efficient cellular shades for any room','Our premium cellular shades offer excellent insulation and light control for your home.',150.00,NULL,0,0,1,'in_stock','CELL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',2,1,'/images/products/cellular-shades.jpg',1,'active'),(2,2,'Classic Wood Blinds','classic-wood-blinds','Beautiful wooden blinds for traditional homes','Handcrafted wooden blinds that add warmth and elegance to any space.',200.00,NULL,0,0,1,'in_stock','WOOD-001','2025-06-10 22:25:51','2025-06-10 22:25:51',1,2,'/images/products/wood-blinds.jpg',1,'active'),(3,3,'Modern Roller Shades','modern-roller-shades','Sleek roller shades for contemporary spaces','Minimalist roller shades perfect for modern home decor.',120.00,NULL,0,0,1,'in_stock','ROLL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',2,3,'/images/products/roller-shades.jpg',1,'active'),(4,4,'Luxury Plantation Shutters','luxury-plantation-shutters','Premium plantation shutters','High-end plantation shutters that increase home value.',400.00,NULL,0,0,1,'in_stock','SHUT-001','2025-06-10 22:25:51','2025-06-10 22:25:51',3,4,'/images/products/plantation-shutters.jpg',1,'active');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_unicode_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+/*!50003 CREATE*/ /*!50017 DEFINER=`root`@`localhost`*/ /*!50003 TRIGGER `tr_track_pricing_changes` AFTER UPDATE ON `products` FOR EACH ROW BEGIN
+    IF NEW.base_price != OLD.base_price THEN
+        INSERT INTO product_pricing_history (
+            product_id, previous_price, new_price, change_reason, 
+            change_source, effective_from
+        ) VALUES (
+            NEW.product_id, OLD.base_price, NEW.base_price, 'manual_update', 
+            'system', NOW()
+        );
+    END IF;
+END */;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+
+--
+-- Table structure for table `promotional_campaigns`
+--
+
+DROP TABLE IF EXISTS `promotional_campaigns`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `promotional_campaigns` (
+  `campaign_id` int NOT NULL AUTO_INCREMENT,
+  `campaign_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `campaign_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `campaign_type` enum('percentage_off','fixed_amount_off','buy_x_get_y','free_shipping','bundle_deal') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `terms_and_conditions` text COLLATE utf8mb4_unicode_ci,
+  `discount_percent` decimal(5,2) DEFAULT NULL,
+  `discount_amount` decimal(10,2) DEFAULT NULL,
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `maximum_discount_amount` decimal(10,2) DEFAULT NULL,
+  `buy_quantity` int DEFAULT NULL,
+  `get_quantity` int DEFAULT NULL,
+  `get_discount_percent` decimal(5,2) DEFAULT NULL,
+  `applies_to` enum('all_products','specific_products','categories','brands') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all_products',
+  `target_product_ids` json DEFAULT NULL,
+  `target_category_ids` json DEFAULT NULL,
+  `target_brand_ids` json DEFAULT NULL,
+  `excluded_product_ids` json DEFAULT NULL,
+  `customer_segments` json DEFAULT NULL COMMENT 'Array of customer segments: new, returning, vip, etc.',
+  `customer_types` json DEFAULT NULL COMMENT 'Array of customer types: retail, commercial, trade',
+  `min_previous_orders` int DEFAULT NULL,
+  `min_customer_lifetime_value` decimal(10,2) DEFAULT NULL,
+  `target_regions` json DEFAULT NULL COMMENT 'Array of state/region codes',
+  `excluded_regions` json DEFAULT NULL COMMENT 'Array of excluded regions',
+  `is_active` tinyint(1) DEFAULT '1',
+  `starts_at` datetime NOT NULL,
+  `ends_at` datetime NOT NULL,
+  `timezone` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT 'UTC',
+  `usage_limit_total` int DEFAULT NULL,
+  `usage_limit_per_customer` int DEFAULT NULL,
+  `usage_count` int DEFAULT '0',
+  `can_stack_with_volume_discounts` tinyint(1) DEFAULT '1',
+  `can_stack_with_coupons` tinyint(1) DEFAULT '0',
+  `priority` int DEFAULT '100',
+  `total_orders` int DEFAULT '0',
+  `total_revenue` decimal(12,2) DEFAULT '0.00',
+  `total_discount_given` decimal(12,2) DEFAULT '0.00',
+  `conversion_rate` decimal(5,2) DEFAULT '0.00',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`campaign_id`),
+  UNIQUE KEY `campaign_code` (`campaign_code`),
+  KEY `idx_campaign_code` (`campaign_code`),
+  KEY `idx_active_campaigns` (`is_active`,`starts_at`,`ends_at`),
+  KEY `idx_campaign_type` (`campaign_type`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `promotional_campaigns`
+--
+
+LOCK TABLES `promotional_campaigns` WRITE;
+/*!40000 ALTER TABLE `promotional_campaigns` DISABLE KEYS */;
+INSERT INTO `promotional_campaigns` VALUES (1,'Spring Sale 2024','SPRING2024','percentage_off',NULL,NULL,15.00,NULL,100.00,NULL,NULL,NULL,NULL,'all_products',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2024-03-01 00:00:00','2024-05-31 23:59:59','UTC',NULL,NULL,0,1,0,100,0,0.00,0.00,0.00,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(2,'New Customer Welcome','WELCOME20','percentage_off',NULL,NULL,20.00,NULL,50.00,NULL,NULL,NULL,NULL,'all_products',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,1,'2024-01-01 00:00:00','2024-12-31 23:59:59','UTC',NULL,NULL,0,1,0,100,0,0.00,0.00,0.00,'2025-06-10 22:06:39','2025-06-10 22:06:39');
+/*!40000 ALTER TABLE `promotional_campaigns` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -4880,6 +5668,8 @@ CREATE TABLE `saved_payment_methods` (
   KEY `idx_stripe_pm` (`stripe_payment_method_id`),
   KEY `idx_user_default` (`user_id`,`is_default`),
   KEY `idx_user_active` (`user_id`,`is_active`),
+  KEY `idx_saved_payment_provider` (`user_id`,`provider`),
+  KEY `idx_saved_payment_external` (`provider`,`external_id`),
   CONSTRAINT `fk_saved_payment_methods_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -5379,6 +6169,42 @@ LOCK TABLES `trade_projects` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `upload_security_config`
+--
+
+DROP TABLE IF EXISTS `upload_security_config`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `upload_security_config` (
+  `config_id` int NOT NULL AUTO_INCREMENT,
+  `config_key` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `config_value` text COLLATE utf8mb4_unicode_ci NOT NULL,
+  `config_type` enum('string','integer','boolean','json') COLLATE utf8mb4_unicode_ci DEFAULT 'string',
+  `description` text COLLATE utf8mb4_unicode_ci,
+  `is_active` tinyint(1) DEFAULT '1',
+  `updated_by` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`config_id`),
+  UNIQUE KEY `config_key` (`config_key`),
+  KEY `idx_config_key` (`config_key`),
+  KEY `idx_active` (`is_active`),
+  KEY `updated_by` (`updated_by`),
+  CONSTRAINT `upload_security_config_ibfk_1` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `upload_security_config`
+--
+
+LOCK TABLES `upload_security_config` WRITE;
+/*!40000 ALTER TABLE `upload_security_config` DISABLE KEYS */;
+INSERT INTO `upload_security_config` VALUES (1,'general_site_name','Smart Blinds Hub','string','Website name',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(2,'general_site_description','Premium window treatments and smart home solutions','string','Website description',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(3,'general_contact_email','sales@smartblindshub.com','string','Contact email',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(4,'general_phone','+1 (425) 222-1188','string','Contact phone',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(5,'general_currency','USD','string','Default currency',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(6,'general_tax_rate','10.25','string','Default tax rate',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(7,'payments_stripe_enabled','true','boolean','Enable Stripe payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(8,'payments_paypal_enabled','true','boolean','Enable PayPal payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(9,'payments_klarna_enabled','true','boolean','Enable Klarna payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(10,'payments_minimum_order_amount','25.00','string','Minimum order amount',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(11,'security_session_timeout_minutes','30','string','Session timeout in minutes',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(12,'security_login_attempts_limit','5','string','Max login attempts',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(17,'general_address','123 Business Ave, Austin, TX 78701','string','General setting: address',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34'),(18,'general_timezone','America/Los_Angeles','string','General setting: timezone',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34'),(21,'general_maintenance_mode','false','boolean','General setting: maintenance mode',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34');
+/*!40000 ALTER TABLE `upload_security_config` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `user_loyalty_accounts`
 --
 
@@ -5614,7 +6440,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-09 19:13:31','2025-06-08 21:13:09','2025-06-09 19:13:31',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-09 19:11:38','2025-06-08 21:13:09','2025-06-09 19:11:38',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-09 18:57:51','2025-06-08 21:13:09','2025-06-09 18:57:51',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-09 19:10:57','2025-06-08 21:13:09','2025-06-09 19:10:57',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-09 19:09:44','2025-06-08 21:13:09','2025-06-09 19:09:44',1);
+INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-11 05:49:12','2025-06-08 21:13:09','2025-06-11 05:49:12',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-11 05:16:27','2025-06-08 21:13:09','2025-06-11 05:16:27',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-10 23:44:34','2025-06-08 21:13:09','2025-06-10 23:44:34',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-09 19:10:57','2025-06-08 21:13:09','2025-06-09 19:10:57',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-10 22:50:26','2025-06-08 21:13:09','2025-06-10 22:50:26',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -5724,6 +6550,63 @@ LOCK TABLES `vendor_commissions` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `vendor_discounts`
+--
+
+DROP TABLE IF EXISTS `vendor_discounts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_discounts` (
+  `discount_id` int NOT NULL AUTO_INCREMENT,
+  `vendor_id` int NOT NULL,
+  `discount_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_type` enum('percentage','fixed_amount','tiered','bulk_pricing') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_value` decimal(8,2) NOT NULL,
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `maximum_discount_amount` decimal(10,2) DEFAULT NULL,
+  `minimum_quantity` int DEFAULT '1',
+  `applies_to` enum('all_vendor_products','specific_products','specific_categories') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all_vendor_products',
+  `target_ids` json DEFAULT NULL COMMENT 'Array of product/category IDs',
+  `customer_types` json DEFAULT NULL COMMENT 'Array of customer types: retail, trade, commercial',
+  `customer_groups` json DEFAULT NULL COMMENT 'Array of specific customer group IDs',
+  `allowed_regions` json DEFAULT NULL COMMENT 'Array of state/region codes where discount applies',
+  `excluded_regions` json DEFAULT NULL COMMENT 'Array of excluded regions',
+  `valid_from` datetime NOT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `usage_count` int DEFAULT '0',
+  `usage_limit_total` int DEFAULT NULL,
+  `usage_limit_per_customer` int DEFAULT NULL,
+  `admin_approved` tinyint(1) DEFAULT '0',
+  `approved_by` int DEFAULT NULL COMMENT 'Admin user who approved',
+  `approved_at` timestamp NULL DEFAULT NULL,
+  `admin_notes` text COLLATE utf8mb4_unicode_ci,
+  `requested_by` int NOT NULL COMMENT 'Vendor user who requested',
+  `request_reason` text COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`discount_id`),
+  KEY `fk_vendor_discount_approver` (`approved_by`),
+  KEY `fk_vendor_discount_requester` (`requested_by`),
+  KEY `idx_vendor_discounts` (`vendor_id`,`is_active`),
+  KEY `idx_admin_approval` (`admin_approved`,`approved_at`),
+  KEY `idx_validity_dates` (`valid_from`,`valid_until`),
+  CONSTRAINT `fk_vendor_discount_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_vendor_discount_requester` FOREIGN KEY (`requested_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vendor_discount_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `vendor_discounts`
+--
+
+LOCK TABLES `vendor_discounts` WRITE;
+/*!40000 ALTER TABLE `vendor_discounts` DISABLE KEYS */;
+/*!40000 ALTER TABLE `vendor_discounts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `vendor_files`
 --
 
@@ -5818,7 +6701,7 @@ CREATE TABLE `vendor_info` (
 
 LOCK TABLES `vendor_info` WRITE;
 /*!40000 ALTER TABLE `vendor_info` DISABLE KEYS */;
-INSERT INTO `vendor_info` VALUES (1,2,'Test Vendor Business','vendor@smartblindshub.com','555-0123','Test vendor for development',NULL,NULL,NULL,1,NULL,'approved',NULL,NULL,NULL,NULL,NULL,NULL,'United States',0.00,0.00,1,'2025-06-08 21:13:09','2025-06-08 21:13:09',15.00,'monthly',50.00,'bank_transfer',NULL,NULL,0,0),(2,2,'Test Vendor Business','vendor@smartblindshub.com','555-0123','Test vendor for development',NULL,NULL,NULL,1,NULL,'approved',NULL,NULL,NULL,NULL,NULL,NULL,'United States',0.00,0.00,1,'2025-06-08 21:14:54','2025-06-08 21:14:54',15.00,'monthly',50.00,'bank_transfer',NULL,NULL,0,0);
+INSERT INTO `vendor_info` VALUES (2,2,'Test Vendor Business','vendor@smartblindshub.com','555-0123','Test vendor for development',NULL,NULL,NULL,1,NULL,'approved',NULL,NULL,NULL,NULL,NULL,NULL,'United States',0.00,0.00,1,'2025-06-08 21:14:54','2025-06-08 21:14:54',15.00,'monthly',50.00,'bank_transfer',NULL,NULL,0,0);
 /*!40000 ALTER TABLE `vendor_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -6105,6 +6988,56 @@ CREATE TABLE `video_chat_sessions` (
 LOCK TABLES `video_chat_sessions` WRITE;
 /*!40000 ALTER TABLE `video_chat_sessions` DISABLE KEYS */;
 /*!40000 ALTER TABLE `video_chat_sessions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `volume_discounts`
+--
+
+DROP TABLE IF EXISTS `volume_discounts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `volume_discounts` (
+  `discount_id` int NOT NULL AUTO_INCREMENT,
+  `discount_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `product_id` int DEFAULT NULL COMMENT 'Specific product (null = applies to multiple products)',
+  `category_ids` json DEFAULT NULL COMMENT 'Array of category IDs',
+  `brand_ids` json DEFAULT NULL COMMENT 'Array of brand IDs',
+  `product_tags` json DEFAULT NULL COMMENT 'Array of product tags for flexible matching',
+  `volume_tiers` json NOT NULL COMMENT 'Array of {min_qty, max_qty, discount_percent, discount_amount}',
+  `customer_types` json DEFAULT NULL COMMENT 'Array of customer types: [retail, commercial, trade]',
+  `customer_groups` json DEFAULT NULL COMMENT 'Array of specific customer group IDs',
+  `allowed_regions` json DEFAULT NULL COMMENT 'Array of state/region codes',
+  `excluded_regions` json DEFAULT NULL COMMENT 'Array of excluded state/region codes',
+  `can_combine_with_promos` tinyint(1) DEFAULT '1',
+  `can_combine_with_coupons` tinyint(1) DEFAULT '1',
+  `max_total_discount_percent` decimal(5,2) DEFAULT '50.00',
+  `is_active` tinyint(1) DEFAULT '1',
+  `valid_from` datetime DEFAULT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `usage_count` int DEFAULT '0',
+  `max_usage_total` int DEFAULT NULL,
+  `max_usage_per_customer` int DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`discount_id`),
+  UNIQUE KEY `discount_code` (`discount_code`),
+  KEY `idx_discount_code` (`discount_code`),
+  KEY `idx_product_discounts` (`product_id`),
+  KEY `idx_active_volume_discounts` (`is_active`,`valid_from`,`valid_until`),
+  CONSTRAINT `fk_volume_discount_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `volume_discounts`
+--
+
+LOCK TABLES `volume_discounts` WRITE;
+/*!40000 ALTER TABLE `volume_discounts` DISABLE KEYS */;
+INSERT INTO `volume_discounts` VALUES (1,'Bulk Blinds Discount','BULK_BLINDS',NULL,NULL,NULL,NULL,'[{\"max_qty\": 9, \"min_qty\": 5, \"discount_percent\": 5.0}, {\"max_qty\": 19, \"min_qty\": 10, \"discount_percent\": 10.0}, {\"max_qty\": 49, \"min_qty\": 20, \"discount_percent\": 15.0}, {\"max_qty\": null, \"min_qty\": 50, \"discount_percent\": 20.0}]',NULL,NULL,NULL,NULL,1,1,50.00,1,NULL,NULL,0,NULL,NULL,'2025-06-10 22:06:39','2025-06-10 22:06:39'),(2,'Window Treatment Volume','WINDOW_VOLUME',NULL,NULL,NULL,NULL,'[{\"max_qty\": 5, \"min_qty\": 3, \"discount_percent\": 3.0}, {\"max_qty\": 10, \"min_qty\": 6, \"discount_percent\": 7.0}, {\"max_qty\": null, \"min_qty\": 11, \"discount_percent\": 12.0}]',NULL,NULL,NULL,NULL,1,1,50.00,1,NULL,NULL,0,NULL,NULL,'2025-06-10 22:06:39','2025-06-10 22:06:39');
+/*!40000 ALTER TABLE `volume_discounts` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -6398,4 +7331,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-10 11:36:56
+-- Dump completed on 2025-06-10 23:04:56
