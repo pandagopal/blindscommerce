@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
     });
 
     // Clear the token cookie
-    cookies().delete('token');
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
 
     return response;
   } catch (error) {
@@ -54,7 +55,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Clear the token cookie
-    cookies().delete('token');
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
 
     return response;
   } catch (error) {
@@ -71,7 +73,8 @@ export async function GET(request: NextRequest) {
       maxAge: 0
     });
     // Clear the token cookie
-    cookies().delete('token');
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
     return response;
   }
 }
