@@ -37,7 +37,20 @@ async function verifyToken(token: string): Promise<boolean> {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, hostname } = request.nextUrl;
+  
+  // Handle vendor subdomain routing
+  if (hostname.includes('.blindscommerce.com') && !hostname.startsWith('www.') && !hostname.startsWith('admin.')) {
+    const subdomain = hostname.split('.')[0];
+    
+    // Skip API and static routes
+    if (!pathname.startsWith('/api') && !pathname.startsWith('/_next') && !pathname.startsWith('/favicon')) {
+      // Rewrite to vendor storefront
+      const url = request.nextUrl.clone();
+      url.pathname = `/storefront/${subdomain}${pathname}`;
+      return NextResponse.rewrite(url);
+    }
+  }
   
   // Check for maintenance mode (skip for admin routes and API)
   if (!pathname.startsWith('/admin') && !pathname.startsWith('/api') && !pathname.startsWith('/_next')) {

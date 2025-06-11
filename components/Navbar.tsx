@@ -111,7 +111,15 @@ const Navbar = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <>
+      {/* Top promotional banner */}
+      <div className="bg-primary-red text-white py-2 text-center text-sm">
+        <div className="container mx-auto px-4">
+          <span className="font-medium">🚚 Free Shipping on Orders $100+ | 📞 1-800-BLINDS-1 | 📞 Expert Help Available</span>
+        </div>
+      </div>
+      
+      <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button */}
@@ -142,12 +150,6 @@ const Navbar = () => {
           {/* Navigation - Desktop */}
           <nav className="hidden md:flex space-x-8">
             <Link
-              href="/products"
-              className="text-gray-600 hover:text-primary-red font-medium"
-            >
-              Shop
-            </Link>
-            <Link
               href="/ai-features"
               className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
             >
@@ -156,18 +158,85 @@ const Navbar = () => {
                 New
               </span>
             </Link>
+
+            <div className="relative group">
+              <Link
+                href="/products"
+                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+              >
+                Blinds
+                <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
+              </Link>
+              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                <div className="py-2">
+                  <Link href="/products/venetian-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Venetian Blinds</Link>
+                  <Link href="/products/vertical-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vertical Blinds</Link>
+                  <Link href="/products/roller-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Blinds</Link>
+                  <Link href="/products/roman-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roman Blinds</Link>
+                  <Link href="/products/wooden-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wooden Blinds</Link>
+                  <Link href="/products/faux-wood-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Faux Wood Blinds</Link>
+                </div>
+              </div>
+            </div>
+            
+            <div className="relative group">
+              <Link
+                href="/shades"
+                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+              >
+                Shades
+                <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
+              </Link>
+              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                <div className="py-2">
+                  <Link href="/products/cellular-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cellular Shades</Link>
+                  <Link href="/products/roller-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Shades</Link>
+                  <Link href="/products/solar-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Solar Shades</Link>
+                  <Link href="/products/woven-wood-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Woven Wood Shades</Link>
+                  <Link href="/products/pleated-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pleated Shades</Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="relative group">
+              <Link
+                href="/shutters"
+                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+              >
+                Shutters
+                <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
+              </Link>
+              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                <div className="py-2">
+                  <Link href="/products/plantation-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Plantation Shutters</Link>
+                  <Link href="/products/vinyl-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vinyl Shutters</Link>
+                  <Link href="/products/wood-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wood Shutters</Link>
+                  <Link href="/products/composite-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Composite Shutters</Link>
+                </div>
+              </div>
+            </div>
+
             <Link
-              href="/measure-install"
+              href="/motorized"
               className="text-gray-600 hover:text-primary-red font-medium"
             >
-              Measure & Install
+              Motorized
             </Link>
-            <Link
-              href="/help"
-              className="text-gray-600 hover:text-primary-red font-medium"
-            >
-              Help
-            </Link>
+
+            <div className="relative group">
+              <span className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">
+                Services
+                <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
+              </span>
+              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+                <div className="py-2">
+                  <Link href="/measure-install" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Measure & Install</Link>
+                  <Link href="/consultation" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Consultation</Link>
+                  <Link href="/samples" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Samples</Link>
+                  <Link href="/warranty" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warranty Service</Link>
+                </div>
+              </div>
+            </div>
           </nav>
 
           {/* Right side icons */}
@@ -287,11 +356,42 @@ const Navbar = () => {
         <div className="md:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link
+              href="/ai-features"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50 flex items-center gap-2"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              AI Features
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                New
+              </span>
+            </Link>
+            <Link
               href="/products"
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Shop
+              Blinds
+            </Link>
+            <Link
+              href="/shades"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Shades
+            </Link>
+            <Link
+              href="/shutters"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Shutters
+            </Link>
+            <Link
+              href="/motorized"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Motorized
             </Link>
             <Link
               href="/measure-install"
@@ -299,13 +399,6 @@ const Navbar = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Measure & Install
-            </Link>
-            <Link
-              href="/help"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Help
             </Link>
 
             {user ? (
@@ -349,6 +442,33 @@ const Navbar = () => {
         </div>
       )}
     </header>
+    
+    {/* Secondary navigation bar */}
+    <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-center space-x-8 py-3 text-sm">
+          <Link href="/brands" className="text-gray-600 hover:text-primary-red font-medium">
+            Shop by Brand
+          </Link>
+          <Link href="/rooms" className="text-gray-600 hover:text-primary-red font-medium">
+            Shop by Room
+          </Link>
+          <Link href="/sale" className="text-red-600 hover:text-red-700 font-bold">
+            Sale - Up to 50% Off
+          </Link>
+          <Link href="/samples" className="text-gray-600 hover:text-primary-red font-medium">
+            Free Samples
+          </Link>
+          <Link href="/inspiration" className="text-gray-600 hover:text-primary-red font-medium">
+            Design Ideas
+          </Link>
+          <Link href="/commercial" className="text-gray-600 hover:text-primary-red font-medium">
+            Commercial
+          </Link>
+        </div>
+      </div>
+    </div>
+    </>
   );
 };
 

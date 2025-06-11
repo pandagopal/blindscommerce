@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useEffect, useState } from "react";
 import {
   Form,
   FormControl,
@@ -12,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Building2, User } from "lucide-react";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -32,21 +35,56 @@ const formSchema = z.object({
     .min(1, "SKU is required")
     .max(50, "SKU cannot exceed 50 characters")
     .regex(/^[A-Za-z0-9-_]+$/, "SKU can only contain letters, numbers, hyphens, and underscores"),
+  vendorId: z.string().optional(),
+  basePrice: z.number().min(0, "Base price must be positive").optional(),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
 });
+
+interface Vendor {
+  id: number;
+  companyName: string;
+  email: string;
+  approvalStatus: string;
+  isActive: boolean;
+}
 
 interface BasicInfoProps {
   data: z.infer<typeof formSchema>;
   categories: string[];
   onChange: (data: Partial<z.infer<typeof formSchema>>) => void;
+  showVendorSelection?: boolean; // New prop to control vendor dropdown visibility
 }
 
-export default function BasicInfo({ data, categories, onChange }: BasicInfoProps) {
+export default function BasicInfo({ data, categories, onChange, showVendorSelection = true }: BasicInfoProps) {
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: data,
   });
+
+  useEffect(() => {
+    if (showVendorSelection) {
+      fetchVendors();
+    }
+  }, [showVendorSelection]);
+
+  const fetchVendors = async () => {
+    try {
+      setLoadingVendors(true);
+      const response = await fetch('/api/admin/vendors');
+      if (response.ok) {
+        const data = await response.json();
+        setVendors(data.vendors || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch vendors:', error);
+    } finally {
+      setLoadingVendors(false);
+    }
+  };
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     onChange(values);
@@ -78,6 +116,59 @@ export default function BasicInfo({ data, categories, onChange }: BasicInfoProps
             </FormItem>
           )}
         />
+
+        {showVendorSelection && (
+          <FormField
+            control={form.control}
+            name="vendorId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assign to Vendor (Optional)</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a vendor or leave blank for marketplace product" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="marketplace">
+                      <div className="flex items-center space-x-2">
+                        <Building2 className="h-4 w-4" />
+                        <span>Marketplace Product (No specific vendor)</span>
+                      </div>
+                    </SelectItem>
+                    {loadingVendors ? (
+                      <SelectItem value="loading" disabled>
+                        Loading vendors...
+                      </SelectItem>
+                    ) : (
+                      vendors.map((vendor) => (
+                        <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4" />
+                              <span>{vendor.companyName}</span>
+                            </div>
+                            <Badge 
+                              variant={vendor.isActive && vendor.approvalStatus === 'approved' ? 'default' : 'secondary'} 
+                              className="ml-2"
+                            >
+                              {vendor.isActive && vendor.approvalStatus === 'approved' ? 'active' : vendor.approvalStatus}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Assign this product to a specific vendor or leave blank to make it available for all vendors to clone
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
@@ -118,6 +209,30 @@ export default function BasicInfo({ data, categories, onChange }: BasicInfoProps
               </FormControl>
               <FormDescription>
                 Unique identifier for your product
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="basePrice"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Base Price ($)</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  placeholder="0.00"
+                  {...field}
+                  onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                />
+              </FormControl>
+              <FormDescription>
+                Base price for the product (vendors can set their own pricing)
               </FormDescription>
               <FormMessage />
             </FormItem>

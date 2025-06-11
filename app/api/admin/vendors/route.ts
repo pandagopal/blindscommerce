@@ -16,6 +16,7 @@ interface VendorData {
 
 interface VendorRow extends RowDataPacket {
   user_id: number;
+  vendor_info_id: number;
   email: string;
   phone?: string;
   first_name: string;
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
         u.is_verified,
         u.created_at,
         u.last_login,
+        v.vendor_info_id,
         v.business_name,
         v.business_email,
         v.business_phone,
@@ -161,21 +163,24 @@ export async function GET(request: NextRequest) {
     );
 
     // Format the response
-    const vendors = result.map(row => ({
-      id: row.user_id,
-      email: row.email,
-      firstName: row.first_name,
-      lastName: row.last_name,
-      companyName: row.business_name || `${row.first_name} ${row.last_name}'s Business`,
-      contactEmail: row.business_email || row.email,
-      contactPhone: row.business_phone || row.phone || '',
-      isActive: Boolean(row.vendor_active ?? row.is_active),
-      isVerified: Boolean(row.vendor_verified ?? row.is_verified),
-      approvalStatus: row.vendor_status || 'pending',
-      totalSales: row.total_sales || 0,
-      rating: row.rating || 0,
-      createdAt: row.created_at
-    }));
+    const vendors = result
+      .filter(row => row.vendor_info_id) // Only include rows with vendor_info
+      .map(row => ({
+        id: row.vendor_info_id, // Use vendor_info_id instead of user_id
+        userId: row.user_id,
+        email: row.email,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        companyName: row.business_name || `${row.first_name} ${row.last_name}'s Business`,
+        contactEmail: row.business_email || row.email,
+        contactPhone: row.business_phone || row.phone || '',
+        isActive: Boolean(row.vendor_active ?? row.is_active),
+        isVerified: Boolean(row.vendor_verified ?? row.is_verified),
+        approvalStatus: row.vendor_status || 'pending',
+        totalSales: row.total_sales || 0,
+        rating: row.rating || 0,
+        createdAt: row.created_at
+      }));
 
     return NextResponse.json({
       vendors,

@@ -138,17 +138,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    const { basicInfo, options, images = [], features = [] } = body;
+    
     const {
       name,
-      description,
+      shortDescription,
+      fullDescription,
       sku,
-      price,
-      stock_status = 'in_stock',
-      categories = [], // Changed to support multiple categories
-      is_active = true,
-      images = [],
-      variants = []
-    } = body;
+      basePrice,
+      vendorId,
+      isActive = true,
+      isFeatured = false,
+      category
+    } = basicInfo;
 
     const pool = await getPool();
     connection = await pool.getConnection();
@@ -156,42 +158,77 @@ export async function POST(request: NextRequest) {
     try {
       await connection.query('BEGIN');
 
-      // Insert the product (without category_id)
+      // Insert the product
       const [productResult] = await connection.query(
         `INSERT INTO products (
           name,
           short_description,
+          full_description,
           sku,
           base_price,
           stock_status,
+          status,
           is_active,
+          is_featured,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-        [name, description, sku, price, stock_status, is_active]
+        ) VALUES (?, ?, ?, ?, ?, 'in_stock', 'active', ?, ?, NOW(), NOW())`,
+        [name, shortDescription, fullDescription || '', sku, basePrice, isActive, isFeatured]
       );
 
       const productId = productResult.insertId;
 
-      // Insert product categories (many-to-many relationship)
-      if (categories.length > 0) {
-        const categoryQuery = `
-          INSERT INTO product_categories (
+      // Find category ID by name
+      let categoryId = null;
+      if (category) {
+        const [categoryRows] = await connection.query(
+          'SELECT category_id FROM categories WHERE name = ?',
+          [category]
+        );
+        if (categoryRows.length > 0) {
+          categoryId = categoryRows[0].category_id;
+        }
+      }
+
+      // Insert product category relationship
+      if (categoryId) {
+        await connection.query(
+          `INSERT INTO product_categories (
             product_id,
             category_id,
             is_primary,
             created_at
-          ) VALUES (?, ?, ?, NOW())
-        `;
+          ) VALUES (?, ?, 1, NOW())`,
+          [productId, categoryId]
+        );
+      }
 
-        for (let i = 0; i < categories.length; i++) {
-          const category = categories[i];
-          await connection.query(categoryQuery, [
+      // If vendor is assigned, create vendor-product relationship
+      if (vendorId && vendorId !== '' && vendorId !== 'marketplace') {
+        await connection.query(
+          `INSERT INTO vendor_products (
+            vendor_id,
+            product_id,
+            vendor_sku,
+            vendor_price,
+            quantity_available,
+            minimum_order_qty,
+            lead_time_days,
+            is_active,
+            status,
+            vendor_description,
+            vendor_notes,
+            created_at,
+            updated_at
+          ) VALUES (?, ?, ?, ?, 100, 1, 7, 1, 'active', ?, 'Product created by admin', NOW(), NOW())`,
+          [
+            vendorId,
             productId,
-            category.category_id || category.id,
-            i === 0 // First category is primary
-          ]);
-        }
+            `V${vendorId}-${sku}`,
+            basePrice,
+            `${name} - Available from vendor`
+          ]
+        );
       }
 
       // Insert product images if provided
@@ -214,24 +251,24 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Insert product variants if provided
-      if (variants.length > 0) {
-        const variantQuery = `
-          INSERT INTO product_variants (
+      // Insert product features if provided
+      if (features.length > 0) {
+        const featureQuery = `
+          INSERT INTO product_features (
             product_id,
-            name,
-            price_adjustment,
-            stock,
+            feature_name,
+            feature_value,
+            description,
             created_at
           ) VALUES (?, ?, ?, ?, NOW())
         `;
 
-        for (const variant of variants) {
-          await connection.query(variantQuery, [
+        for (const feature of features) {
+          await connection.query(featureQuery, [
             productId,
-            variant.name,
-            variant.priceAdjustment || 0,
-            variant.stock || 0
+            feature.name,
+            feature.value || '',
+            feature.description || ''
           ]);
         }
       }
@@ -239,8 +276,9 @@ export async function POST(request: NextRequest) {
       await connection.query('COMMIT');
 
       return NextResponse.json({
-        message: 'Product created successfully',
-        product_id: productId
+        message: (vendorId && vendorId !== 'marketplace') ? 'Product created and assigned to vendor successfully' : 'Product created successfully',
+        product_id: productId,
+        vendor_assigned: !!(vendorId && vendorId !== 'marketplace')
       });
     } catch (error) {
       await connection.query('ROLLBACK');
