@@ -127,17 +127,33 @@
   /* Swiper customization */
   .swiper-button-next,
   .swiper-button-prev {
-    @apply w-12 h-12 bg-black/30 rounded-full backdrop-blur-sm transition-all duration-300;
+    @apply w-14 h-14 bg-black/50 rounded-full backdrop-blur-sm transition-all duration-300 flex items-center justify-center;
+    color: white !important;
   }
 
   .swiper-button-next:hover,
   .swiper-button-prev:hover {
-    @apply bg-black/50;
+    @apply bg-black/70 scale-110;
   }
 
   .swiper-button-next::after,
   .swiper-button-prev::after {
-    @apply text-2xl;
+    @apply text-3xl font-bold;
+    content: '→' !important;
+  }
+  
+  .swiper-button-prev::after {
+    content: '←' !important;
+  }
+  
+  /* Hide any text content in navigation buttons */
+  .swiper-button-next,
+  .swiper-button-prev {
+    font-size: 0 !important;
+  }
+  
+  .swiper-button-disabled {
+    @apply opacity-30 !cursor-not-allowed;
   }
 
   .swiper-pagination-bullet {

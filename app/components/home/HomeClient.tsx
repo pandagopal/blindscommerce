@@ -69,7 +69,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
             pagination={{ clickable: true }}
             autoplay={{ delay: 5000 }}
             loop={true}
-            className="h-full [&_.swiper-pagination-bullet-active]:bg-primary-red [&_.swiper-button-next]:text-white [&_.swiper-button-prev]:text-white"
+            className="h-full [&_.swiper-pagination-bullet-active]:bg-primary-red [&_.swiper-button-next]:!text-white [&_.swiper-button-prev]:!text-white [&_.swiper-button-next]:!bg-black/50 [&_.swiper-button-prev]:!bg-black/50 [&_.swiper-button-next:hover]:!bg-black/70 [&_.swiper-button-prev:hover]:!bg-black/70"
           >
             <SwiperSlide>
               <div className="relative h-full">

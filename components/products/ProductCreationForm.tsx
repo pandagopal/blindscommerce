@@ -179,10 +179,11 @@ export default function ProductCreationForm({
         <Button
           onClick={handleSave}
           disabled={isSaving}
+          variant={userRole === 'admin' ? 'default' : 'default'}
           className={
             userRole === 'vendor'
               ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              : "bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              : ""
           }
         >
           {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
