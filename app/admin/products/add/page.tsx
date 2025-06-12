@@ -49,7 +49,16 @@ export default function AddProductPage() {
       fabricTypes: [],
       headrailOptions: [],
       bottomRailOptions: [],
-      specialtyOptions: []
+      specialtyOptions: [],
+      // Blinds specific options
+      liftSystems: [],
+      slatOptions: [],
+      lightControl: [],
+      // Shades specific options
+      operatingSystems: [],
+      opacityLevels: [],
+      cellularStructure: [],
+      energyEfficiency: []
     },
     images: [],
     features: [],

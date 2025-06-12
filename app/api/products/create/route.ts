@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       vendorId, // Only used when admin creates product
       isActive = true,
       isFeatured = false,
-      category
+      categories = [],
+      primaryCategory
     } = basicInfo;
 
     const pool = await getPool();
@@ -51,29 +52,37 @@ export async function POST(request: NextRequest) {
 
       const productId = productResult.insertId;
 
-      // Find category ID by name
-      let categoryId = null;
-      if (category) {
+      // Handle multiple categories
+      if (categories && categories.length > 0) {
+        // Fetch category IDs for all selected categories
+        const placeholders = categories.map(() => '?').join(',');
         const [categoryRows] = await connection.query(
-          'SELECT category_id FROM categories WHERE name = ?',
-          [category]
+          `SELECT category_id, name FROM categories WHERE name IN (${placeholders})`,
+          categories
         );
-        if (categoryRows.length > 0) {
-          categoryId = categoryRows[0].category_id;
-        }
-      }
 
-      // Insert product category relationship
-      if (categoryId) {
-        await connection.query(
-          `INSERT INTO product_categories (
-            product_id,
-            category_id,
-            is_primary,
-            created_at
-          ) VALUES (?, ?, 1, NOW())`,
-          [productId, categoryId]
-        );
+        // Create a map of category names to IDs
+        const categoryMap = new Map();
+        categoryRows.forEach(row => {
+          categoryMap.set(row.name, row.category_id);
+        });
+
+        // Insert product-category relationships
+        for (const categoryName of categories) {
+          const categoryId = categoryMap.get(categoryName);
+          if (categoryId) {
+            const isPrimary = categoryName === primaryCategory ? 1 : 0;
+            await connection.query(
+              `INSERT INTO product_categories (
+                product_id,
+                category_id,
+                is_primary,
+                created_at
+              ) VALUES (?, ?, ?, NOW())`,
+              [productId, categoryId, isPrimary]
+            );
+          }
+        }
       }
 
       // Handle vendor assignment based on user role

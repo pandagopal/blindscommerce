@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Form,
   FormControl,
@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Building2, User } from "lucide-react";
+import { MultiSelect } from "@/components/ui/multi-select";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -22,8 +23,10 @@ const formSchema = z.object({
   name: z.string()
     .min(1, "Product name is required")
     .max(255, "Product name cannot exceed 255 characters"),
-  category: z.string()
-    .min(1, "Category is required"),
+  categories: z.array(z.string())
+    .min(1, "At least one category is required"),
+  primaryCategory: z.string()
+    .min(1, "Primary category is required"),
   shortDescription: z.string()
     .min(1, "Short description is required")
     .max(500, "Short description cannot exceed 500 characters"),
@@ -49,27 +52,63 @@ interface Vendor {
   isActive: boolean;
 }
 
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
 interface BasicInfoProps {
-  data: z.infer<typeof formSchema>;
+  data: any; // Temporarily use any to handle migration
   categories: string[];
-  onChange: (data: Partial<z.infer<typeof formSchema>>) => void;
+  onChange: (data: any) => void;
   showVendorSelection?: boolean; // New prop to control vendor dropdown visibility
 }
 
-export default function BasicInfo({ data, categories, onChange, showVendorSelection = true }: BasicInfoProps) {
+export default function BasicInfo({ data, categories: propCategories, onChange, showVendorSelection = true }: BasicInfoProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  
+  // Convert old data format to new format if needed
+  const formData = React.useMemo(() => {
+    if (data.category && !data.categories) {
+      return {
+        ...data,
+        categories: [data.category],
+        primaryCategory: data.category
+      };
+    }
+    return data;
+  }, [data]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: data,
+    defaultValues: formData,
   });
 
   useEffect(() => {
     if (showVendorSelection) {
       fetchVendors();
     }
+    fetchCategories();
   }, [showVendorSelection]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoadingCategories(true);
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
 
   const fetchVendors = async () => {
     try {
@@ -172,18 +211,58 @@ export default function BasicInfo({ data, categories, onChange, showVendorSelect
 
         <FormField
           control={form.control}
-          name="category"
+          name="categories"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormLabel>Categories</FormLabel>
+              <FormControl>
+                <MultiSelect
+                  options={
+                    loadingCategories
+                      ? [{ label: "Loading categories...", value: "loading" }]
+                      : categories.map((cat) => ({
+                          label: cat.name,
+                          value: cat.name, // Using name for now to maintain compatibility
+                        }))
+                  }
+                  selected={field.value || []}
+                  onChange={(selected) => {
+                    field.onChange(selected);
+                    // Auto-select first category as primary if none selected
+                    if (selected.length > 0 && !form.getValues("primaryCategory")) {
+                      form.setValue("primaryCategory", selected[0]);
+                    }
+                  }}
+                  placeholder="Select categories..."
+                  className="w-full"
+                />
+              </FormControl>
+              <FormDescription>
+                Select all categories that apply to this product
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="primaryCategory"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Primary Category</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                disabled={!form.watch("categories") || form.watch("categories").length === 0}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
+                    <SelectValue placeholder="Select primary category" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {(form.watch("categories") || []).map((category) => (
                     <SelectItem key={category} value={category}>
                       {category}
                     </SelectItem>
@@ -191,7 +270,7 @@ export default function BasicInfo({ data, categories, onChange, showVendorSelect
                 </SelectContent>
               </Select>
               <FormDescription>
-                Choose the category that best fits your product
+                Choose the main category for this product (must be one of the selected categories)
               </FormDescription>
               <FormMessage />
             </FormItem>

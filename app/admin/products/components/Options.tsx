@@ -26,6 +26,15 @@ interface ProductOptions {
   headrailOptions: OptionGroup[];
   bottomRailOptions: OptionGroup[];
   specialtyOptions: OptionGroup[];
+  // Blinds specific options
+  liftSystems: OptionGroup[];
+  slatOptions: OptionGroup[];
+  lightControl: OptionGroup[];
+  // Shades specific options
+  operatingSystems: OptionGroup[];
+  opacityLevels: OptionGroup[];
+  cellularStructure: OptionGroup[];
+  energyEfficiency: OptionGroup[];
 }
 
 interface OptionsProps {
@@ -41,15 +50,34 @@ export default function Options({ data, onChange }: OptionsProps) {
     headrailOptions: { name: '', price_adjustment: 0 },
     bottomRailOptions: { name: '', price_adjustment: 0 },
     specialtyOptions: { name: '', price_adjustment: 0 },
+    // Blinds specific options
+    liftSystems: { name: '', price_adjustment: 0 },
+    slatOptions: { name: '', price_adjustment: 0 },
+    lightControl: { name: '', price_adjustment: 0 },
+    // Shades specific options
+    operatingSystems: { name: '', price_adjustment: 0 },
+    opacityLevels: { name: '', price_adjustment: 0 },
+    cellularStructure: { name: '', price_adjustment: 0 },
+    energyEfficiency: { name: '', price_adjustment: 0 },
   });
 
   const optionCategories = [
+    // Basic options
     { key: 'mountTypes', label: 'Mount Types' },
     { key: 'controlTypes', label: 'Control Types' },
     { key: 'fabricTypes', label: 'Fabric Types' },
     { key: 'headrailOptions', label: 'Headrail Options' },
     { key: 'bottomRailOptions', label: 'Bottom Rail Options' },
     { key: 'specialtyOptions', label: 'Specialty Options' },
+    // Blinds specific options
+    { key: 'liftSystems', label: '🪟 Lift Systems (Blinds)' },
+    { key: 'slatOptions', label: '🪟 Slat Options (Blinds)' },
+    { key: 'lightControl', label: '🪟 Light Control (Blinds)' },
+    // Shades specific options
+    { key: 'operatingSystems', label: '🏠 Operating Systems (Shades)' },
+    { key: 'opacityLevels', label: '🏠 Opacity Levels (Shades)' },
+    { key: 'cellularStructure', label: '🏠 Cellular Structure (Shades)' },
+    { key: 'energyEfficiency', label: '🏠 Energy Efficiency (Shades)' },
   ];
 
   const handleAddOption = (category: keyof ProductOptions) => {

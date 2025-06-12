@@ -46,7 +46,8 @@ export default function ProductCreationForm({
   const [productData, setProductData] = useState({
     basicInfo: {
       name: '',
-      category: '',
+      categories: [],
+      primaryCategory: '',
       shortDescription: '',
       fullDescription: '',
       sku: '',
@@ -69,7 +70,16 @@ export default function ProductCreationForm({
       fabricTypes: [],
       headrailOptions: [],
       bottomRailOptions: [],
-      specialtyOptions: []
+      specialtyOptions: [],
+      // Blinds specific options
+      liftSystems: [],
+      slatOptions: [],
+      lightControl: [],
+      // Shades specific options
+      operatingSystems: [],
+      opacityLevels: [],
+      cellularStructure: [],
+      energyEfficiency: []
     },
     images: [],
     features: [],
@@ -82,7 +92,7 @@ export default function ProductCreationForm({
       
       // Validate required fields
       const { basicInfo } = productData;
-      if (!basicInfo.name || !basicInfo.category || !basicInfo.shortDescription || !basicInfo.sku) {
+      if (!basicInfo.name || !basicInfo.categories?.length || !basicInfo.primaryCategory || !basicInfo.shortDescription || !basicInfo.sku) {
         toast.error("Please fill in all required fields in Basic Info");
         setActiveTab('basic-info');
         return;
