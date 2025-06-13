@@ -368,14 +368,14 @@ export default function VendorProductsPage() {
                   <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
                       <Link
-                        href={`/products/configure/${product.slug}`}
+                        href={`/vendor/products/view/${product.product_id}`}
                         className="text-gray-600 hover:text-gray-900"
                         title="View Product"
                       >
                         <EyeIcon className="h-5 w-5" />
                       </Link>
                       <Link
-                        href={`/vendor/products/${product.product_id}/edit`}
+                        href={`/vendor/products/new?edit=${product.product_id}`}
                         className="text-blue-600 hover:text-blue-900"
                         title="Edit Product"
                       >

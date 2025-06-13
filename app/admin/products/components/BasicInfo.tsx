@@ -35,9 +35,10 @@ const formSchema = z.object({
     .optional()
     .or(z.literal('')),
   sku: z.string()
-    .min(1, "SKU is required")
     .max(50, "SKU cannot exceed 50 characters")
-    .regex(/^[A-Za-z0-9-_]+$/, "SKU can only contain letters, numbers, hyphens, and underscores"),
+    .regex(/^[A-Za-z0-9-_]*$/, "SKU can only contain letters, numbers, hyphens, and underscores")
+    .optional()
+    .or(z.literal('')),
   vendorId: z.string().optional(),
   basePrice: z.number().min(0, "Base price must be positive").optional(),
   isActive: z.boolean(),
@@ -63,9 +64,10 @@ interface BasicInfoProps {
   categories: string[];
   onChange: (data: any) => void;
   showVendorSelection?: boolean; // New prop to control vendor dropdown visibility
+  isReadOnly?: boolean; // New prop for read-only mode
 }
 
-export default function BasicInfo({ data, categories: propCategories, onChange, showVendorSelection = true }: BasicInfoProps) {
+export default function BasicInfo({ data, categories: propCategories, onChange, showVendorSelection = true, isReadOnly = false }: BasicInfoProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -87,6 +89,15 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
     resolver: zodResolver(formSchema),
     defaultValues: formData,
   });
+
+  // Update form when data changes
+  useEffect(() => {
+    console.log('BasicInfo useEffect - formData changed:', formData);
+    if (formData && Object.keys(formData).length > 0) {
+      console.log('Resetting form with data:', formData);
+      form.reset(formData);
+    }
+  }, [formData, form]);
 
   useEffect(() => {
     if (showVendorSelection) {
@@ -146,7 +157,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             <FormItem>
               <FormLabel>Product Name</FormLabel>
               <FormControl>
-                <Input placeholder="Enter product name" {...field} />
+                <Input placeholder="Enter product name" {...field} disabled={isReadOnly} />
               </FormControl>
               <FormDescription>
                 The name of your product as it will appear to customers
@@ -163,7 +174,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Assign to Vendor (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a vendor or leave blank for marketplace product" />
@@ -235,6 +246,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   }}
                   placeholder="Select categories..."
                   className="w-full"
+                  disabled={isReadOnly}
                 />
               </FormControl>
               <FormDescription>
@@ -254,7 +266,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
               <Select 
                 onValueChange={field.onChange} 
                 value={field.value}
-                disabled={!form.watch("categories") || form.watch("categories").length === 0}
+                disabled={isReadOnly || !form.watch("categories") || form.watch("categories").length === 0}
               >
                 <FormControl>
                   <SelectTrigger>
@@ -284,7 +296,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             <FormItem>
               <FormLabel>SKU</FormLabel>
               <FormControl>
-                <Input placeholder="Enter product SKU" {...field} />
+                <Input placeholder="Enter product SKU" {...field} disabled={isReadOnly} />
               </FormControl>
               <FormDescription>
                 Unique identifier for your product
@@ -308,6 +320,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   placeholder="0.00"
                   {...field}
                   onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                  disabled={isReadOnly}
                 />
               </FormControl>
               <FormDescription>
@@ -329,6 +342,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   placeholder="Enter a brief description"
                   rows={3}
                   {...field}
+                  disabled={isReadOnly}
                 />
               </FormControl>
               <FormDescription>
@@ -350,6 +364,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   placeholder="Enter detailed product description"
                   rows={6}
                   {...field}
+                  disabled={isReadOnly}
                 />
               </FormControl>
               <FormDescription>
@@ -371,6 +386,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    disabled={isReadOnly}
                   />
                 </FormControl>
                 <FormDescription>
@@ -391,6 +407,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
+                    disabled={isReadOnly}
                   />
                 </FormControl>
                 <FormDescription>

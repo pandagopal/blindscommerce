@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
@@ -34,12 +34,20 @@ interface ProductCreationFormProps {
   userRole: 'admin' | 'vendor';
   onBack?: () => void;
   className?: string;
+  isEditMode?: boolean;
+  isViewMode?: boolean;
+  initialData?: any;
+  productId?: string | null;
 }
 
 export default function ProductCreationForm({ 
   userRole, 
   onBack,
-  className = '' 
+  className = '',
+  isEditMode = false,
+  isViewMode = false,
+  initialData = null,
+  productId = null 
 }: ProductCreationFormProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('basic-info');
@@ -94,14 +102,102 @@ export default function ProductCreationForm({
     roomRecommendations: []
   });
 
+  // Populate form with initial data when editing or viewing
+  useEffect(() => {
+    console.log('ProductCreationForm useEffect - isEditMode:', isEditMode, 'isViewMode:', isViewMode, 'initialData:', initialData);
+    if ((isEditMode || isViewMode) && initialData) {
+      console.log('Populating form with data:', initialData);
+      
+      // Convert pricing_matrix from database format to component format
+      const priceMatrix = {};
+      if (initialData.pricing_matrix && Array.isArray(initialData.pricing_matrix)) {
+        initialData.pricing_matrix.forEach(entry => {
+          const widthRange = `${entry.width_min}-${entry.width_max}`;
+          const heightRange = `${entry.height_min}-${entry.height_max}`;
+          const key = `${widthRange}-${heightRange}`;
+          priceMatrix[key] = entry.base_price.toString();
+        });
+      }
+
+      setProductData({
+        basicInfo: {
+          name: initialData.name || '',
+          categories: [],
+          primaryCategory: initialData.category_id?.toString() || '',
+          shortDescription: initialData.short_description || '',
+          fullDescription: initialData.full_description || '',
+          sku: '',
+          vendorId: userRole === 'admin' ? 'marketplace' : undefined,
+          basePrice: initialData.base_price || 0,
+          isActive: initialData.vendor_active !== false,
+          isFeatured: false
+        },
+        dimensions: {
+          minWidth: 12,
+          maxWidth: 96,
+          minHeight: 12,
+          maxHeight: 120,
+          widthIncrement: 0.125,
+          heightIncrement: 0.125
+        },
+        options: initialData.options || {
+          dimensions: {
+            minWidth: 12,
+            maxWidth: 96,
+            minHeight: 12,
+            maxHeight: 120,
+            widthIncrement: 0.125,
+            heightIncrement: 0.125
+          },
+          mountTypes: [],
+          controlTypes: {
+            liftSystems: [],
+            wandSystem: [],
+            stringSystem: [],
+            remoteControl: []
+          },
+          valanceOptions: [],
+          bottomRailOptions: []
+        },
+        pricing: { 
+          priceMatrix, 
+          matrixEntries: initialData.pricing_matrix || [] 
+        },
+        fabric: {
+          coloredFabric: [],
+          sheerFabric: [],
+          blackoutFabric: []
+        },
+        images: initialData.images || [],
+        features: [],
+        roomRecommendations: []
+      });
+      
+      console.log('Form data updated with initial data:', {
+        basicInfo: {
+          name: initialData.name || '',
+          primaryCategory: initialData.category_id?.toString() || '',
+          basePrice: initialData.base_price || 0
+        }
+      });
+    }
+  }, [isEditMode, isViewMode, initialData, userRole]);
+
   const handleSave = async () => {
     try {
       setIsSaving(true);
       
       // Validate required fields
       const { basicInfo } = productData;
-      if (!basicInfo.name || !basicInfo.categories?.length || !basicInfo.primaryCategory || !basicInfo.shortDescription || !basicInfo.sku) {
+      if (!basicInfo.name || !basicInfo.primaryCategory || !basicInfo.shortDescription) {
         toast.error("Please fill in all required fields in Basic Info");
+        setActiveTab('basic-info');
+        return;
+      }
+      
+      // SKU is required for new products but optional for edits
+      if (!isEditMode && !basicInfo.sku) {
+        toast.error("Please enter a SKU for the new product");
         setActiveTab('basic-info');
         return;
       }
@@ -112,15 +208,31 @@ export default function ProductCreationForm({
         return;
       }
 
-      // Use unified API endpoint
-      const apiEndpoint = '/api/products/create';
+      // Prepare data for API
+      const apiData = {
+        ...productData.basicInfo,
+        name: productData.basicInfo.name,
+        description: productData.basicInfo.fullDescription,
+        base_price: productData.basicInfo.basePrice,
+        category_id: parseInt(productData.basicInfo.primaryCategory),
+        images: productData.images,
+        options: productData.options,
+        pricing_matrix: productData.pricing?.matrixEntries || [],
+        fabric: productData.fabric
+      };
+
+      // Use appropriate API endpoint based on mode
+      const apiEndpoint = isEditMode 
+        ? `/api/vendor/products/${productId}`
+        : '/api/products/create';
+      const method = isEditMode ? 'PUT' : 'POST';
       
       const response = await fetch(apiEndpoint, {
-        method: 'POST',
+        method,
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(productData),
+        body: JSON.stringify(isEditMode ? apiData : productData),
       });
 
       if (!response.ok) {
@@ -153,9 +265,11 @@ export default function ProductCreationForm({
       }
       
       toast.success(
-        userRole === 'admin' 
-          ? (result.vendor_assigned ? 'Product created and assigned to vendor successfully' : 'Product created successfully')
-          : "Product created successfully"
+        isEditMode 
+          ? "Product updated successfully"
+          : userRole === 'admin' 
+            ? (result.vendor_assigned ? 'Product created and assigned to vendor successfully' : 'Product created successfully')
+            : "Product created successfully"
       );
       
       // Navigate based on user role
@@ -188,10 +302,18 @@ export default function ProductCreationForm({
     }
   };
 
-  const pageTitle = userRole === 'admin' ? 'Add New Product' : 'Add New Product';
-  const pageDescription = userRole === 'admin' 
-    ? 'Create a new product for the marketplace or assign to a vendor'
-    : 'Create a new product for your vendor catalog';
+  const pageTitle = isViewMode 
+    ? 'View Product Details'
+    : isEditMode 
+      ? 'Edit Product' 
+      : userRole === 'admin' ? 'Add New Product' : 'Add New Product';
+  const pageDescription = isViewMode
+    ? 'View product information and configuration details'
+    : isEditMode
+      ? 'Update your product information and settings'
+      : userRole === 'admin' 
+        ? 'Create a new product for the marketplace or assign to a vendor'
+        : 'Create a new product for your vendor catalog';
 
   return (
     <div className={`container mx-auto px-4 py-8 ${className}`}>
@@ -216,20 +338,30 @@ export default function ProductCreationForm({
             <p className="text-gray-600">{pageDescription}</p>
           </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          variant={userRole === 'admin' ? 'default' : 'default'}
-          className={
-            userRole === 'vendor'
-              ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-              : ""
-          }
-        >
-          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-          {isSaving ? 'Saving...' : 'Save Product'}
-        </Button>
+        {!isViewMode && (
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            variant={userRole === 'admin' ? 'default' : 'default'}
+            className={
+              userRole === 'vendor'
+                ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                : ""
+            }
+          >
+            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSaving ? 'Saving...' : isEditMode ? 'Update Product' : 'Save Product'}
+          </Button>
+        )}
       </div>
+
+      {isViewMode && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-800 font-medium">
+            📖 View Mode: This form is in read-only mode. All fields are disabled for viewing only.
+          </p>
+        </div>
+      )}
 
       <Card className={userRole === 'vendor' ? "border-purple-100 shadow-lg" : ""}>
         <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -287,6 +419,7 @@ export default function ProductCreationForm({
                 categories={SHADE_CATEGORIES}
                 onChange={(data) => updateProductData('basicInfo', data)}
                 showVendorSelection={userRole === 'admin'} // Only show vendor dropdown for admin
+                isReadOnly={isViewMode}
               />
             </TabsContent>
 
@@ -307,7 +440,9 @@ export default function ProductCreationForm({
             <TabsContent value="pricing">
               <PricingMatrix
                 dimensions={productData.dimensions}
-                onChange={(data) => updateProductData('dimensions', data)}
+                initialData={productData.pricing}
+                onChange={(data) => updateProductData('pricing', data)}
+                isReadOnly={isViewMode}
               />
             </TabsContent>
 

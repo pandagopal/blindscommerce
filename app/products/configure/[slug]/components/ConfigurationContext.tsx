@@ -262,6 +262,104 @@ export function ConfigProvider({
     }
   }, [product, controlTypes, headrailOptions, bottomRailOptions]);
 
+  // Calculate comprehensive price
+  const calculatePrice = useCallback(async () => {
+    if (!product) return { currentPrice: 0, totalPrice: 0 };
+
+    try {
+      let basePrice = 0;
+      
+      // 1. Get base price from pricing matrix based on width/height
+      try {
+        const response = await fetch(`/api/products/${product.slug}/pricing?width=${config.width}&height=${config.height}`);
+        if (response.ok) {
+          const pricingData = await response.json();
+          basePrice = pricingData.price || product.base_price || 0;
+        } else {
+          basePrice = product.base_price || 0;
+        }
+      } catch (error) {
+        console.error('Error fetching pricing matrix:', error);
+        basePrice = product.base_price || 0;
+      }
+
+      // 2. Calculate fabric price (price per square foot × area)
+      let fabricPrice = 0;
+      if (config.materialId) {
+        try {
+          const response = await fetch(`/api/products/${product.slug}/fabric-pricing?materialId=${config.materialId}&width=${config.width}&height=${config.height}`);
+          if (response.ok) {
+            const fabricData = await response.json();
+            const area = (config.width * config.height) / 144; // Convert to square feet
+            fabricPrice = (fabricData.pricePerSqft || 0) * area;
+          }
+        } catch (error) {
+          console.error('Error fetching fabric pricing:', error);
+        }
+      }
+
+      // 3. Calculate vendor options price
+      let optionsPrice = 0;
+      try {
+        const response = await fetch(`/api/products/${product.slug}/vendor-options`);
+        if (response.ok) {
+          const optionsData = await response.json();
+          
+          // Mount type price
+          const mountOption = optionsData.mountTypes?.find((m: any) => m.name === mountTypes.find(mt => mt.id === config.mountType)?.name);
+          if (mountOption?.enabled) {
+            optionsPrice += mountOption.price_adjustment || 0;
+          }
+
+          // Control type price
+          const controlOption = optionsData.controlTypes?.liftSystems?.find((c: any) => c.name === config.controlType) ||
+                               optionsData.controlTypes?.wandSystem?.find((c: any) => c.name === config.controlType) ||
+                               optionsData.controlTypes?.stringSystem?.find((c: any) => c.name === config.controlType) ||
+                               optionsData.controlTypes?.remoteControl?.find((c: any) => c.name === config.controlType);
+          if (controlOption?.enabled) {
+            optionsPrice += controlOption.price_adjustment || 0;
+          }
+
+          // Valance (headrail) price
+          const headrailOption = optionsData.valanceOptions?.find((h: any) => h.name === headrailOptions.find(ho => ho.id === config.headrailId)?.name);
+          if (headrailOption?.enabled) {
+            optionsPrice += headrailOption.price_adjustment || 0;
+          }
+
+          // Bottom rail price
+          const bottomRailOption = optionsData.bottomRailOptions?.find((b: any) => b.name === bottomRailOptions.find(bro => bro.id === config.bottomRailId)?.name);
+          if (bottomRailOption?.enabled) {
+            optionsPrice += bottomRailOption.price_adjustment || 0;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching vendor options:', error);
+        // Fallback to hardcoded modifiers
+        const mountModifier = mountTypes.find(m => m.id === config.mountType)?.priceModifier ?? 0;
+        const controlModifier = controlTypes.find(c => c.name === config.controlType)?.priceModifier ?? 0;
+        const headrailModifier = config.headrailId ? 
+          headrailOptions.find(h => h.id === config.headrailId)?.priceModifier ?? 0 : 0;
+        const bottomRailModifier = config.bottomRailId ? 
+          bottomRailOptions.find(b => b.id === config.bottomRailId)?.priceModifier ?? 0 : 0;
+        
+        optionsPrice = mountModifier + controlModifier + headrailModifier + bottomRailModifier;
+      }
+
+      // Add color and material modifiers from product data
+      const colorModifier = product.colors?.find(c => c.color_id === config.colorId)?.price_modifier ?? 0;
+      const materialModifier = product.materials?.find(m => m.material_id === config.materialId)?.price_modifier ?? 0;
+
+      // Total calculation: Base Price + Fabric Price + Options Price + Color/Material modifiers
+      const itemPrice = basePrice + fabricPrice + optionsPrice + colorModifier + materialModifier;
+      const totalPrice = itemPrice * config.quantity;
+
+      return { currentPrice: itemPrice, totalPrice };
+    } catch (error) {
+      console.error('Error calculating price:', error);
+      return { currentPrice: product.base_price || 0, totalPrice: (product.base_price || 0) * config.quantity };
+    }
+  }, [config, product, mountTypes, controlTypes, headrailOptions, bottomRailOptions]);
+
   // Update step validation and prices
   useEffect(() => {
     if (!product) return;
@@ -270,34 +368,32 @@ export function ConfigProvider({
     setCanProceedToNextStep(isValid);
     setStepValidation(prev => ({ ...prev, [config.step]: isValid }));
 
-    // Calculate total price
-    const basePrice = product?.base_price ?? 0;
-    const mountModifier = (mountTypes ?? []).find(m => m.id === config.mountType)?.priceModifier ?? 0;
-    const colorModifier = (product?.colors ?? []).find(c => c.color_id === config.colorId)?.price_modifier ?? 0;
-    const materialModifier = (product?.materials ?? []).find(m => m.material_id === config.materialId)?.price_modifier ?? 0;
-    const controlModifier = (controlTypes ?? []).find(c => c.name === config.controlType)?.priceModifier ?? 0;
-    const headrailModifier = config.headrailId ? 
-      (headrailOptions ?? []).find(h => h.id === config.headrailId)?.priceModifier ?? 0 : 0;
-    const bottomRailModifier = config.bottomRailId ? 
-      (bottomRailOptions ?? []).find(b => b.id === config.bottomRailId)?.priceModifier ?? 0 : 0;
-
-    const itemPrice = basePrice + mountModifier + colorModifier + materialModifier + 
-                     controlModifier + headrailModifier + bottomRailModifier;
-    const totalPrice = itemPrice * config.quantity;
-
-    setConfig(prev => ({
-      ...prev,
-      currentPrice: itemPrice,
-      totalPrice
-    }));
+    // Calculate comprehensive price
+    calculatePrice().then(({ currentPrice, totalPrice }) => {
+      setConfig(prev => ({
+        ...prev,
+        currentPrice,
+        totalPrice
+      }));
+    });
   }, [
-    config,
+    config.width,
+    config.height,
+    config.colorId,
+    config.materialId,
+    config.mountType,
+    config.controlType,
+    config.headrailId,
+    config.bottomRailId,
+    config.quantity,
+    config.step,
     product,
     mountTypes,
     controlTypes,
     headrailOptions,
     bottomRailOptions,
-    validateStep
+    validateStep,
+    calculatePrice
   ]);
 
   // Step navigation with validation

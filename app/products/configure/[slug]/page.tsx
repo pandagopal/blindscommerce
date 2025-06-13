@@ -11,7 +11,6 @@ import StepContent from "./components/StepContent";
 export default function ProductConfiguratorPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const router = useRouter();
   const { addItem } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);

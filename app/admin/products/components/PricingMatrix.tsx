@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -68,13 +68,25 @@ interface PricingMatrixProps {
     widthIncrement: number;
     heightIncrement: number;
   };
+  initialData?: {
+    priceMatrix?: Record<string, string>;
+    matrixEntries?: any[];
+  };
   onChange: (data: any) => void;
+  isReadOnly?: boolean;
 }
 
-export default function PricingMatrix({ onChange }: PricingMatrixProps) {
-  const [priceMatrix, setPriceMatrix] = useState<Record<string, string>>({});
+export default function PricingMatrix({ initialData, onChange, isReadOnly = false }: PricingMatrixProps) {
+  const [priceMatrix, setPriceMatrix] = useState<Record<string, string>>(initialData?.priceMatrix || {});
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
+
+  // Update state when initialData changes
+  useEffect(() => {
+    if (initialData?.priceMatrix) {
+      setPriceMatrix(initialData.priceMatrix);
+    }
+  }, [initialData]);
 
   const handlePriceChange = (widthRange: string, heightRange: string, value: string) => {
     const key = `${widthRange}-${heightRange}`;
@@ -84,11 +96,37 @@ export default function PricingMatrix({ onChange }: PricingMatrixProps) {
       [key]: value
     }));
 
-    onChange({
-      priceMatrix: {
-        ...priceMatrix,
-        [key]: value
+    // Parse the width and height ranges to get min/max values
+    const [widthLabel, heightLabel] = key.split('-');
+    const widthRangeData = WIDTH_RANGES.find(r => r.label === widthRange);
+    const heightRangeData = HEIGHT_RANGES.find(r => r.label === heightRange);
+
+    // Create array of pricing matrix entries matching database structure
+    const matrixEntries = Object.entries({
+      ...priceMatrix,
+      [key]: value
+    }).map(([rangeKey, price]) => {
+      const [wRange, hRange] = rangeKey.split('-');
+      const wData = WIDTH_RANGES.find(r => r.label === wRange);
+      const hData = HEIGHT_RANGES.find(r => r.label === hRange);
+      
+      if (wData && hData) {
+        return {
+          width_min: wData.min,
+          width_max: wData.max,
+          height_min: hData.min,
+          height_max: hData.max,
+          base_price: parseFloat(price) || 0,
+          price_per_sqft: 0,
+          is_active: 1
+        };
       }
+      return null;
+    }).filter(Boolean);
+
+    onChange({
+      priceMatrix,
+      matrixEntries
     });
   };
 
@@ -135,6 +173,7 @@ export default function PricingMatrix({ onChange }: PricingMatrixProps) {
                         className="text-center border-0 h-12"
                         step="0.01"
                         min="0"
+                        disabled={isReadOnly}
                       />
                     </TableCell>
                   ))}

@@ -14,7 +14,8 @@ import {
   Settings,
   User,
   ChevronRight,
-  LogOut
+  LogOut,
+  Store
 } from 'lucide-react';
 
 interface UserData {
@@ -87,6 +88,7 @@ export default function VendorLayout({
   const menuItems = [
     { href: '/vendor', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/vendor/products', label: 'Products', icon: <ShoppingBag size={18} /> },
+    { href: '/vendor/storefront', label: 'Storefront', icon: <Store size={18} /> },
     { href: '/vendor/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/vendor/payments', label: 'Payments', icon: <CreditCard size={18} /> },
     { href: '/vendor/shipments', label: 'Shipments', icon: <Truck size={18} /> },
@@ -96,46 +98,37 @@ export default function VendorLayout({
   ];
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/vendor" className="text-xl font-bold text-primary-red">
-                Vendor Portal
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="text-sm text-secondary hover:text-primary">
-                Back to Store
-              </Link>
-              <div className="relative">
-                <button className="flex items-center space-x-2 text-sm focus:outline-none">
-                  <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
-                    {user?.firstName && user?.lastName ? (
-                      <span className="text-primary-red font-medium">
-                        {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                      </span>
-                    ) : (
-                      <User size={16} className="text-primary-red" />
-                    )}
-                  </div>
-                  <span className="hidden md:block text-primary">
-                    {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
+    <div className="bg-white min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
           <aside className="w-full md:w-64 shrink-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {/* Portal Title */}
+              <div className="px-4 py-4 border-b border-gray-200">
+                <Link href="/vendor" className="text-xl font-bold text-primary-red">
+                  Vendor Portal
+                </Link>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                      {user?.firstName && user?.lastName ? (
+                        <span className="text-primary-red font-medium text-xs">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </span>
+                      ) : (
+                        <User size={16} className="text-primary-red" />
+                      )}
+                    </div>
+                    <span className="text-sm text-primary">
+                      {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  <Link href="/" className="text-xs text-secondary hover:text-primary">
+                    Store →
+                  </Link>
+                </div>
+              </div>
               <nav className="mt-2">
                 {menuItems.map((item) => (
                   <Link

@@ -51,9 +51,10 @@ interface ProductOptions {
 interface OptionsProps {
   data: ProductOptions;
   onChange: (data: ProductOptions) => void;
+  isReadOnly?: boolean;
 }
 
-export default function Options({ data, onChange }: OptionsProps) {
+export default function Options({ data, onChange, isReadOnly = false }: OptionsProps) {
   // Initialize default options if they don't exist
   const [currentData, setCurrentData] = useState<ProductOptions>(() => {
     return {
@@ -247,13 +248,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">$</span>
+                  <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                   <Input
                     type="number"
                     step="0.01"
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('mountTypes', null, index, parseFloat(e.target.value) || 0)}
-                    className="w-20 h-8 text-sm"
+                    className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!option.enabled}
                   />
                 </div>
               </div>
@@ -284,13 +286,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                       <Label htmlFor={`lift-${index}`}>{option.name}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-muted-foreground">$</span>
+                      <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                       <Input
                         type="number"
                         step="0.01"
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'liftSystems', index, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm"
+                        className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!option.enabled}
                       />
                     </div>
                   </div>
@@ -315,13 +318,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                       <Label htmlFor={`wand-${index}`}>{option.name}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-muted-foreground">$</span>
+                      <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                       <Input
                         type="number"
                         step="0.01"
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'wandSystem', index, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm"
+                        className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!option.enabled}
                       />
                     </div>
                   </div>
@@ -346,13 +350,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                       <Label htmlFor={`string-${index}`}>{option.name}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-muted-foreground">$</span>
+                      <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                       <Input
                         type="number"
                         step="0.01"
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'stringSystem', index, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm"
+                        className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!option.enabled}
                       />
                     </div>
                   </div>
@@ -377,13 +382,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                       <Label htmlFor={`remote-${index}`}>{option.name}</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <span className="text-sm text-muted-foreground">$</span>
+                      <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                       <Input
                         type="number"
                         step="0.01"
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'remoteControl', index, parseFloat(e.target.value) || 0)}
-                        className="w-20 h-8 text-sm"
+                        className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!option.enabled}
                       />
                     </div>
                   </div>
@@ -414,13 +420,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">$</span>
+                  <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                   <Input
                     type="number"
                     step="0.01"
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('valanceOptions', null, index, parseFloat(e.target.value) || 0)}
-                    className="w-20 h-8 text-sm"
+                    className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!option.enabled}
                   />
                 </div>
               </div>
@@ -449,13 +456,14 @@ export default function Options({ data, onChange }: OptionsProps) {
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">$</span>
+                  <span className={`text-sm ${option.enabled ? 'text-muted-foreground' : 'text-gray-300'}`}>$</span>
                   <Input
                     type="number"
                     step="0.01"
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('bottomRailOptions', null, index, parseFloat(e.target.value) || 0)}
-                    className="w-20 h-8 text-sm"
+                    className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    disabled={!option.enabled}
                   />
                 </div>
               </div>

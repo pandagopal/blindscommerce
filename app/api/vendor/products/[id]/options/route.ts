@@ -17,15 +17,17 @@ interface ProductOption extends RowDataPacket {
 // GET /api/vendor/products/[id]/options - Get product options
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const user = await getCurrentUser();
     if (!user || user.role !== 'vendor') {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 401 });
     }
 
-    const productId = parseInt(params.id);
+    const productId = parseInt(id);
     const pool = await getPool();
 
     // Get vendor info
@@ -227,15 +229,17 @@ export async function GET(
 // PUT /api/vendor/products/[id]/options - Update product options
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const user = await getCurrentUser();
     if (!user || user.role !== 'vendor') {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 401 });
     }
 
-    const productId = parseInt(params.id);
+    const productId = parseInt(id);
     const body = await request.json();
     const { options, fabric } = body;
 

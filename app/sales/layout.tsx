@@ -24,7 +24,7 @@ export default async function SalesLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-white">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 hidden md:block">
         <div className="h-full flex flex-col">
