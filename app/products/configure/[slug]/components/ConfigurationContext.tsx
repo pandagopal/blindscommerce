@@ -318,17 +318,19 @@ export function ConfigProvider({
     if (!product) return;
 
     const item: CartItem = {
-      id: Date.now(),
-      productId: product.product_id,
-      name: product.name,
-      slug: product.slug,
-      price: product.base_price,
+      cart_item_id: Date.now(), // Temporary ID for new items
+      cart_id: 0, // Will be assigned by backend
+      product_id: product.product_id,
       quantity: config.quantity,
       width: config.width,
       height: config.height,
-      colorId: config.colorId,
+      color_id: config.colorId,
+      material_id: config.materialId,
+      unit_price: config.currentPrice,
+      // UI fields
+      name: product.name,
+      slug: product.slug,
       colorName: product.colors.find(c => c.color_id === config.colorId)?.name,
-      materialId: config.materialId,
       materialName: product.materials.find(m => m.material_id === config.materialId)?.name,
       mountType: config.mountType,
       mountTypeName: mountTypes.find(m => m.id === config.mountType)?.name,
@@ -338,7 +340,7 @@ export function ConfigProvider({
       bottomRailId: config.bottomRailId,
       bottomRailName: bottomRailOptions.find(b => b.id === config.bottomRailId)?.name,
       image: product.images.find(img => img.is_primary)?.image_url,
-      totalPrice: config.totalPrice,
+      totalPrice: config.currentPrice * config.quantity,
     };
 
     addToCartFn(item);

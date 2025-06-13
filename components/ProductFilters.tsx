@@ -261,7 +261,7 @@ export default function ProductFilters({
         <div className="mb-6">
           <h3 className="text-sm font-medium mb-2">Categories</h3>
           <div className="space-y-2">
-            {categories && categories.length > 0 ? (
+            {Array.isArray(categories) && categories.length > 0 ? (
               categories.map((category) => (
                 <div key={category.id} className="flex items-center">
                   <input
@@ -333,7 +333,7 @@ export default function ProductFilters({
         <div>
           <h3 className="text-sm font-medium mb-2">Features</h3>
           <div className="space-y-2">
-            {features.map((feature) => (
+            {Array.isArray(features) && features.map((feature) => (
               <div key={feature.id} className="flex items-center">
                 <input
                   type="checkbox"

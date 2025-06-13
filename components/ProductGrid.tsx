@@ -16,7 +16,7 @@ interface ProductGridProps {
 }
 
 export default function ProductGrid({ products }: ProductGridProps) {
-  if (!products || products.length === 0) {
+  if (!Array.isArray(products) || products.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
         <h3 className="text-xl font-medium mb-2 text-gray-700">
@@ -36,7 +36,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
           key={product.product_id}
           className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
         >
-          <a href={`/products/${product.slug}`}>
+          <a href={`/products/configure/${product.slug}`}>
             <div className="aspect-[4/3] relative overflow-hidden">
               {product.primary_image ? (
                 <img
@@ -64,12 +64,12 @@ export default function ProductGrid({ products }: ProductGridProps) {
               )}
               <div className="flex justify-between items-center">
                 <span className="text-primary-red font-bold">
-                  ${(product?.base_price ?? 0).toFixed(2)}
+                  ${(parseFloat(product?.base_price) || 0).toFixed(2)}
                 </span>
                 <div className="flex items-center">
                   <span className="text-yellow-400">★</span>
                   <span className="text-sm text-gray-600 ml-1">
-                    {product?.rating ? product.rating : "N/A"}
+                    {product?.rating ? parseFloat(product.rating).toFixed(1) : "N/A"}
                   </span>
                 </div>
               </div>

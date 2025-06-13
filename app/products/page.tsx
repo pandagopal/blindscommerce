@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getCategories, getProducts, getProductFeatures } from "@/lib/db";
+import { getPool } from "@/lib/db";
 import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
 
@@ -38,22 +38,25 @@ const getPriceFromParam = (priceParam: string | undefined): number | null => {
 export default async function ProductsPage({
   searchParams
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Await searchParams as required in Next.js 15
+  const params = await searchParams;
+  
   // Extract query parameters - handle potential arrays by taking the first value
-  const categoryParam = typeof searchParams.category === 'string' ? searchParams.category : undefined;
-  const minPriceParam = typeof searchParams.minPrice === 'string' ? searchParams.minPrice : undefined;
-  const maxPriceParam = typeof searchParams.maxPrice === 'string' ? searchParams.maxPrice : undefined;
-  const sortParam = typeof searchParams.sort === 'string' ? searchParams.sort : "recommended";
-  const sortByParam = typeof searchParams.sortBy === 'string' ? searchParams.sortBy : "rating";
-  const sortOrderParam = typeof searchParams.sortOrder === 'string' ? searchParams.sortOrder : "desc";
-  const searchParam = typeof searchParams.search === 'string' ? searchParams.search : undefined;
+  const categoryParam = typeof params.category === 'string' ? params.category : undefined;
+  const minPriceParam = typeof params.minPrice === 'string' ? params.minPrice : undefined;
+  const maxPriceParam = typeof params.maxPrice === 'string' ? params.maxPrice : undefined;
+  const sortParam = typeof params.sort === 'string' ? params.sort : "recommended";
+  const sortByParam = typeof params.sortBy === 'string' ? params.sortBy : "rating";
+  const sortOrderParam = typeof params.sortOrder === 'string' ? params.sortOrder : "desc";
+  const searchParam = typeof params.search === 'string' ? params.search : undefined;
 
   // Parse the feature IDs if present
   const featureIds: number[] = [];
-  if (typeof searchParams.features === 'string' && searchParams.features) {
+  if (typeof params.features === 'string' && params.features) {
     try {
-      searchParams.features.split(',').forEach(id => {
+      params.features.split(',').forEach(id => {
         featureIds.push(parseInt(id, 10));
       });
     } catch (error) {
@@ -72,42 +75,117 @@ export default async function ProductsPage({
   let features = [];
 
   try {
+    const pool = await getPool();
+    
     // Fetch categories from database
-    categories = await getCategories();
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    categories = [];
-  }
+    try {
+      const [categoryRows] = await pool.query(
+        `SELECT 
+          category_id as id, 
+          name, 
+          slug, 
+          description,
+          image_url as image
+        FROM categories 
+        ORDER BY display_order ASC, name ASC`
+      );
+      categories = Array.isArray(categoryRows) ? categoryRows : [];
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+      categories = [];
+    }
 
-  try {
-    // Fetch products from database with filtering and sorting parameters
-    products = await getProducts({
-      limit: 24,
-      categoryId,
-      minPrice,
-      maxPrice,
-      search: searchParam,
-      sortBy: sortByParam,
-      sortOrder: sortOrderParam
-    });
+    // Build product query with filters
+    let productQuery = `
+      SELECT 
+        p.product_id,
+        p.name,
+        p.slug,
+        p.short_description as description,
+        p.base_price,
+        p.primary_image_url as image,
+        c.name as category_name,
+        COALESCE(AVG(pr.rating), 0) as rating,
+        COUNT(DISTINCT pr.review_id) as review_count
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+      WHERE p.status = 'active'
+    `;
+    
+    const queryParams: any[] = [];
+    
+    // Add category filter
+    if (categoryId) {
+      productQuery += ` AND p.category_id = ?`;
+      queryParams.push(categoryId);
+    }
+    
+    // Add price filters
+    if (minPrice !== null) {
+      productQuery += ` AND p.base_price >= ?`;
+      queryParams.push(minPrice);
+    }
+    
+    if (maxPrice !== null) {
+      productQuery += ` AND p.base_price <= ?`;
+      queryParams.push(maxPrice);
+    }
+    
+    // Add search filter
+    if (searchParam) {
+      productQuery += ` AND (p.name LIKE ? OR p.short_description LIKE ?)`;
+      queryParams.push(`%${searchParam}%`, `%${searchParam}%`);
+    }
+    
+    // Group by product
+    productQuery += ` GROUP BY p.product_id`;
+    
+    // Add sorting
+    if (sortByParam === 'price') {
+      productQuery += ` ORDER BY p.base_price ${sortOrderParam}`;
+    } else if (sortByParam === 'name') {
+      productQuery += ` ORDER BY p.name ${sortOrderParam}`;
+    } else if (sortByParam === 'newest') {
+      productQuery += ` ORDER BY p.created_at DESC`;
+    } else {
+      // Default to rating
+      productQuery += ` ORDER BY rating DESC, review_count DESC`;
+    }
+    
+    // Add limit
+    productQuery += ` LIMIT 24`;
+    
+    try {
+      const [productRows] = await pool.query(productQuery, queryParams);
+      products = Array.isArray(productRows) ? productRows : [];
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      products = [];
+    }
 
-    // If we have feature filters, apply them client-side
-    // In a real application, this would be better to implement in the database query
-    if (featureIds.length > 0) {
-      // This is a simplistic implementation since our database doesn't support feature filtering directly
-      // In production, you would add this to the SQL query
-      console.log("Filtering by features:", featureIds);
+    // Fetch product features
+    try {
+      const [featureRows] = await pool.query(
+        `SELECT 
+          feature_id as id,
+          name,
+          description,
+          icon,
+          category
+        FROM features
+        WHERE is_active = 1
+        ORDER BY display_order ASC, name ASC`
+      );
+      features = Array.isArray(featureRows) ? featureRows : [];
+    } catch (error) {
+      console.error("Error fetching product features:", error);
+      features = [];
     }
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error connecting to database:", error);
+    categories = [];
     products = [];
-  }
-
-  try {
-    // Fetch product features from database
-    features = await getProductFeatures();
-  } catch (error) {
-    console.error("Error fetching product features:", error);
     features = [];
   }
 

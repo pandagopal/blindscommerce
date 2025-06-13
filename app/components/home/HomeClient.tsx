@@ -156,7 +156,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
               <p className="text-gray-600 max-w-2xl mx-auto">Find the perfect window treatments for every room in your home</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {rooms.map((room, index) => (
+              {Array.isArray(displayRooms) && displayRooms.map((room, index) => (
                 <Link href={room.link} key={index} className="group">
                   <div className="relative h-72 rounded-xl overflow-hidden shadow-lg">
                     <Image
@@ -183,16 +183,22 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
       <section className="py-16 bg-gradient-to-br from-blue-50 to-purple-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Browse Categories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {categories.map((category) => (
-              <Link href={`/category/${category.slug}`} key={category.id}>
-                <div className="group relative h-80 rounded-lg overflow-hidden shadow-lg">
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+            {Array.isArray(categories) && categories.map((category) => (
+              <Link href={`/products?category=${category.id}`} key={category.id}>
+                <div className="group relative h-64 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                  {category.image && category.image.trim() !== '' ? (
+                    <Image
+                      src={category.image}
+                      alt={category.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                      <span className="text-4xl text-gray-400">🪟</span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-6">
                     <div>
                       <h3 className="text-white text-xl font-semibold mb-2">{category.name}</h3>
@@ -211,7 +217,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">What Our Customers Say</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {reviews.map((review) => (
+            {Array.isArray(reviews) && reviews.map((review) => (
               <div key={review.id} className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex items-center mb-4">
                   {[...Array(5)].map((_, i) => (
@@ -239,16 +245,22 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <Link href={`/product/${product.slug}`} key={product.product_id}>
+            {Array.isArray(products) && products.map((product) => (
+              <Link href={`/products/configure/${product.slug}`} key={product.product_id}>
                 <div className="group">
                   <div className="relative h-64 rounded-lg overflow-hidden shadow-lg mb-4">
-                    <Image
-                      src={product.primary_image}
-                      alt={product.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                    {product.primary_image && product.primary_image.trim() !== '' ? (
+                      <Image
+                        src={product.primary_image}
+                        alt={product.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <span className="text-4xl text-gray-400">📦</span>
+                      </div>
+                    )}
                   </div>
                   <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
                   <div className="flex items-center justify-between">

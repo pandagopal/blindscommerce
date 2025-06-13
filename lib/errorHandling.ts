@@ -128,8 +128,17 @@ export function formatNumber(value: number | string | null | undefined, options?
  */
 export function logError(error: Error | string, context?: any): void {
   try {
-    const errorMessage = error instanceof Error ? error.message : error;
+    // Skip logging for null/undefined errors
+    if (!error) return;
+    
+    // Skip logging for empty objects or empty strings
+    if ((typeof error === 'object' && Object.keys(error).length === 0) || error === '') return;
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
     const stackTrace = error instanceof Error ? error.stack : undefined;
+    
+    // Skip logging if no meaningful error message
+    if (!errorMessage || errorMessage === '[object Object]' || errorMessage === '{}') return;
     
     const errorDetails = {
       message: errorMessage,

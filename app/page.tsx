@@ -16,7 +16,7 @@ async function getHomePageData() {
       FROM categories 
       WHERE featured = 1 
       ORDER BY display_order ASC 
-      LIMIT 6`
+      LIMIT 10`
     );
     
     // Fetch featured products
@@ -55,9 +55,9 @@ async function getHomePageData() {
     );
     
     return {
-      categories: categoryRows as any[],
-      products: productRows as any[],
-      reviews: reviewRows as any[]
+      categories: Array.isArray(categoryRows) ? categoryRows : [],
+      products: Array.isArray(productRows) ? productRows : [],
+      reviews: Array.isArray(reviewRows) ? reviewRows : []
     };
   } catch (error) {
     console.error('Error fetching home page data:', error);
