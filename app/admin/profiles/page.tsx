@@ -89,7 +89,23 @@ export default function AdminProfilesPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.profile) {
-          setProfile(data.profile);
+          // Merge loaded data with default structure to ensure all nested objects exist
+          setProfile(prev => ({
+            ...prev,
+            ...data.profile,
+            address: {
+              ...prev.address,
+              ...(data.profile.address || {})
+            },
+            businessHours: {
+              ...prev.businessHours,
+              ...(data.profile.businessHours || {})
+            },
+            socialMedia: {
+              ...prev.socialMedia,
+              ...(data.profile.socialMedia || {})
+            }
+          }));
         }
       }
     } catch (error) {
@@ -133,6 +149,9 @@ export default function AdminProfilesPage() {
       let current: any = updated;
       
       for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]] || typeof current[keys[i]] !== 'object') {
+          current[keys[i]] = {};
+        }
         current[keys[i]] = { ...current[keys[i]] };
         current = current[keys[i]];
       }
@@ -337,7 +356,7 @@ export default function AdminProfilesPage() {
                 <Label htmlFor="street">Street Address</Label>
                 <Input
                   id="street"
-                  value={profile.address.street}
+                  value={profile.address?.street || ''}
                   onChange={(e) => updateProfile('address.street', e.target.value)}
                   placeholder="123 Business Avenue"
                 />
@@ -347,7 +366,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="city">City</Label>
                   <Input
                     id="city"
-                    value={profile.address.city}
+                    value={profile.address?.city || ''}
                     onChange={(e) => updateProfile('address.city', e.target.value)}
                     placeholder="New York"
                   />
@@ -356,7 +375,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="state">State</Label>
                   <Input
                     id="state"
-                    value={profile.address.state}
+                    value={profile.address?.state || ''}
                     onChange={(e) => updateProfile('address.state', e.target.value)}
                     placeholder="NY"
                   />
@@ -365,7 +384,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="zipCode">ZIP Code</Label>
                   <Input
                     id="zipCode"
-                    value={profile.address.zipCode}
+                    value={profile.address?.zipCode || ''}
                     onChange={(e) => updateProfile('address.zipCode', e.target.value)}
                     placeholder="10001"
                   />
@@ -388,7 +407,7 @@ export default function AdminProfilesPage() {
                 <Label htmlFor="weekdays">Weekdays (Mon-Fri)</Label>
                 <Input
                   id="weekdays"
-                  value={profile.businessHours.weekdays}
+                  value={profile.businessHours?.weekdays || ''}
                   onChange={(e) => updateProfile('businessHours.weekdays', e.target.value)}
                   placeholder="9:00 AM - 6:00 PM EST"
                 />
@@ -397,7 +416,7 @@ export default function AdminProfilesPage() {
                 <Label htmlFor="saturday">Saturday</Label>
                 <Input
                   id="saturday"
-                  value={profile.businessHours.saturday}
+                  value={profile.businessHours?.saturday || ''}
                   onChange={(e) => updateProfile('businessHours.saturday', e.target.value)}
                   placeholder="10:00 AM - 4:00 PM EST"
                 />
@@ -406,7 +425,7 @@ export default function AdminProfilesPage() {
                 <Label htmlFor="sunday">Sunday</Label>
                 <Input
                   id="sunday"
-                  value={profile.businessHours.sunday}
+                  value={profile.businessHours?.sunday || ''}
                   onChange={(e) => updateProfile('businessHours.sunday', e.target.value)}
                   placeholder="Closed"
                 />
@@ -432,7 +451,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="facebook">Facebook</Label>
                   <Input
                     id="facebook"
-                    value={profile.socialMedia.facebook}
+                    value={profile.socialMedia?.facebook || ''}
                     onChange={(e) => updateProfile('socialMedia.facebook', e.target.value)}
                     placeholder="https://facebook.com/yourcompany"
                   />
@@ -441,7 +460,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="twitter">Twitter</Label>
                   <Input
                     id="twitter"
-                    value={profile.socialMedia.twitter}
+                    value={profile.socialMedia?.twitter || ''}
                     onChange={(e) => updateProfile('socialMedia.twitter', e.target.value)}
                     placeholder="https://twitter.com/yourcompany"
                   />
@@ -450,7 +469,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="instagram">Instagram</Label>
                   <Input
                     id="instagram"
-                    value={profile.socialMedia.instagram}
+                    value={profile.socialMedia?.instagram || ''}
                     onChange={(e) => updateProfile('socialMedia.instagram', e.target.value)}
                     placeholder="https://instagram.com/yourcompany"
                   />
@@ -459,7 +478,7 @@ export default function AdminProfilesPage() {
                   <Label htmlFor="linkedin">LinkedIn</Label>
                   <Input
                     id="linkedin"
-                    value={profile.socialMedia.linkedin}
+                    value={profile.socialMedia?.linkedin || ''}
                     onChange={(e) => updateProfile('socialMedia.linkedin', e.target.value)}
                     placeholder="https://linkedin.com/company/yourcompany"
                   />

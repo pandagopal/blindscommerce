@@ -90,7 +90,7 @@ export default async function InstallerLayout({
                 </Link>
               </li>
               <li>
-                <Link href="/api/auth/logout" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                <Link href="/api/auth/logout?redirect=/" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                   <LogOut className="mr-3 h-5 w-5" />
                   <span>Log out</span>
                 </Link>

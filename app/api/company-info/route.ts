@@ -34,21 +34,64 @@ export async function GET(request: NextRequest) {
     const connection = await mysql.createConnection(dbConfig);
 
     try {
-      // Check if table exists and get company profile
+      // Get company info from existing settings table
       const [rows] = await connection.execute(`
-        SELECT profile_data 
-        FROM company_profile 
-        WHERE id = 1
+        SELECT config_key, config_value, config_type 
+        FROM upload_security_config 
+        WHERE config_key LIKE "general_%" AND is_active = TRUE
       `).catch(() => [[]]);
 
-      let companyInfo = DEFAULT_COMPANY_INFO;
+      let companyInfo = { ...DEFAULT_COMPANY_INFO };
 
       if (Array.isArray(rows) && rows.length > 0) {
-        const data = (rows[0] as any).profile_data;
-        const profileData = typeof data === 'string' ? JSON.parse(data) : data;
-        
-        // Merge with defaults to ensure all fields are present
-        companyInfo = { ...DEFAULT_COMPANY_INFO, ...profileData };
+        // Convert flat settings to company info structure
+        rows.forEach((row: any) => {
+          const { config_key, config_value, config_type } = row;
+          const key = config_key.replace('general_', '');
+          
+          let parsedValue;
+          switch (config_type) {
+            case 'boolean':
+              parsedValue = config_value === 'true';
+              break;
+            case 'integer':
+              parsedValue = parseInt(config_value);
+              break;
+            case 'json':
+              try {
+                parsedValue = JSON.parse(config_value);
+              } catch {
+                parsedValue = config_value;
+              }
+              break;
+            default:
+              parsedValue = config_value;
+          }
+          
+          // Only override defaults with non-null, non-empty values
+          if (parsedValue !== null && parsedValue !== undefined && parsedValue !== '') {
+            // Map database keys to company info structure
+            switch (key) {
+              case 'site_name':
+                companyInfo.companyName = parsedValue;
+                break;
+              case 'phone':
+                companyInfo.emergencyHotline = parsedValue;
+                break;
+              case 'contact_email':
+                companyInfo.mainEmail = parsedValue;
+                break;
+              case 'site_description':
+                companyInfo.tagline = parsedValue;
+                break;
+              default:
+                // Keep any other fields that might match
+                if (companyInfo.hasOwnProperty(key)) {
+                  companyInfo[key as keyof typeof companyInfo] = parsedValue;
+                }
+            }
+          }
+        });
       }
 
       return NextResponse.json({

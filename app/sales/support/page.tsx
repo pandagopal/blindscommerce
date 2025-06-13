@@ -24,9 +24,9 @@ export default function SalesSupportPage() {
           const data = await response.json();
           if (data.success && data.companyInfo) {
             setCompanyInfo({
-              emergencyHotline: data.companyInfo.emergencyHotline,
-              salesEmail: data.companyInfo.salesEmail,
-              supportEmail: data.companyInfo.supportEmail
+              emergencyHotline: data.companyInfo.emergencyHotline || '1-800-BLINDS',
+              salesEmail: data.companyInfo.salesEmail || 'sales@smartblindshub.com',
+              supportEmail: data.companyInfo.supportEmail || 'support@smartblindshub.com'
             });
           }
         }

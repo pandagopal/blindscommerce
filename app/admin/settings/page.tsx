@@ -19,22 +19,11 @@ export default function AdminSettingsPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [activeTab, setActiveTab] = useState('notifications');
   const [errors, setErrors] = useState<{[key: string]: string[]}>({});
   const [successMessage, setSuccessMessage] = useState('');
 
   const [settings, setSettings] = useState({
-    general: {
-      site_name: 'Smart Blinds Hub',
-      site_description: 'Premium window treatments and smart home solutions',
-      contact_email: 'support@smartblindshub.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Business Ave, Austin, TX 78701',
-      timezone: 'America/Chicago',
-      currency: 'USD',
-      tax_rate: '8.25',
-      maintenance_mode: false
-    },
     notifications: {
       email_notifications: true,
       sms_notifications: false,
@@ -168,7 +157,7 @@ export default function AdminSettingsPage() {
           // Handle validation errors
           const errorsByCategory: {[key: string]: string[]} = {};
           result.validation_errors.forEach((error: string) => {
-            const currentCategory = category || 'general';
+            const currentCategory = category || 'notifications';
             if (!errorsByCategory[currentCategory]) {
               errorsByCategory[currentCategory] = [];
             }
@@ -176,7 +165,7 @@ export default function AdminSettingsPage() {
           });
           setErrors(errorsByCategory);
         } else {
-          setErrors({ general: [result.error || 'Failed to save settings'] });
+          setErrors({ notifications: [result.error || 'Failed to save settings'] });
         }
         return;
       }
@@ -191,7 +180,7 @@ export default function AdminSettingsPage() {
     } catch (error) {
       console.error('Error saving settings:', error);
       setErrors({ 
-        general: [`Failed to save settings: ${error instanceof Error ? error.message : 'Please try again.'}`] 
+        notifications: [`Failed to save settings: ${error instanceof Error ? error.message : 'Please try again.'}`] 
       });
     } finally {
       setSaving(false);
@@ -264,10 +253,6 @@ export default function AdminSettingsPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border border-purple-100">
-            <TabsTrigger value="general">
-              <Settings className="h-4 w-4 mr-2" />
-              General
-            </TabsTrigger>
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notifications
@@ -286,131 +271,6 @@ export default function AdminSettingsPage() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="general">
-            <Card className="border-purple-100 shadow-lg">
-              <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                  General Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site Name
-                    </label>
-                    <Input
-                      value={settings.general.site_name}
-                      onChange={(e) => handleSettingChange('general', 'site_name', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Contact Email
-                    </label>
-                    <Input
-                      type="email"
-                      value={settings.general.contact_email}
-                      onChange={(e) => handleSettingChange('general', 'contact_email', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Site Description
-                  </label>
-                  <Textarea
-                    value={settings.general.site_description}
-                    onChange={(e) => handleSettingChange('general', 'site_description', e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <Input
-                      value={settings.general.phone}
-                      onChange={(e) => handleSettingChange('general', 'phone', e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Timezone
-                    </label>
-                    <Select
-                      value={settings.general.timezone}
-                      onValueChange={(value) => handleSettingChange('general', 'timezone', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                        <SelectItem value="America/Chicago">Central Time</SelectItem>
-                        <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                        <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Currency
-                    </label>
-                    <Select
-                      value={settings.general.currency}
-                      onValueChange={(value) => handleSettingChange('general', 'currency', value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USD">US Dollar</SelectItem>
-                        <SelectItem value="CAD">Canadian Dollar</SelectItem>
-                        <SelectItem value="EUR">Euro</SelectItem>
-                        <SelectItem value="GBP">British Pound</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tax Rate (%)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.general.tax_rate}
-                      onChange={(e) => handleSettingChange('general', 'tax_rate', e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-center space-x-3 mt-8">
-                    <Switch
-                      checked={settings.general.maintenance_mode}
-                      onCheckedChange={(checked) => handleSettingChange('general', 'maintenance_mode', checked)}
-                    />
-                    <label className="text-sm font-medium text-gray-700">
-                      Maintenance Mode
-                    </label>
-                  </div>
-                </div>
-
-                <Button
-                  onClick={() => saveSettings('general')}
-                  disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Save General Settings
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="notifications">
             <Card className="border-purple-100 shadow-lg">

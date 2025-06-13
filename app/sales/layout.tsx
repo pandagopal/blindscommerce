@@ -1,7 +1,10 @@
+'use client';
+
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { getCurrentUser, hasRole } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { redirect, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   Home, ShoppingCart, Package, Users, MessageSquare,
   Settings, LogOut, BarChart3, UserCheck
@@ -12,15 +15,48 @@ export const metadata: Metadata = {
   description: 'Manage customers, orders, and check sales performance',
 };
 
-export default async function SalesLayout({
+export default function SalesLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Check if user has sales role
-  const user = await getCurrentUser();
-  if (!user || !hasRole(user, ['admin', 'sales'])) {
-    redirect('/login?redirect=/sales');
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser || !hasRole(currentUser, ['admin', 'sales'])) {
+          router.push('/login?redirect=/sales');
+          return;
+        }
+        setUser(currentUser);
+      } catch (error) {
+        router.push('/login?redirect=/sales');
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">Loading...</div>
+      </div>
+    );
   }
 
   return (
@@ -90,10 +126,10 @@ export default async function SalesLayout({
                 </Link>
               </li>
               <li>
-                <Link href="/api/auth/logout" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                   <LogOut className="mr-3 h-5 w-5" />
                   <span>Log out</span>
-                </Link>
+                </button>
               </li>
             </ul>
           </nav>

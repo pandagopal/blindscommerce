@@ -45,8 +45,8 @@ const Navbar = () => {
           const data = await response.json();
           if (data.success && data.companyInfo) {
             setCompanyInfo({
-              companyName: data.companyInfo.companyName,
-              emergencyHotline: data.companyInfo.emergencyHotline,
+              companyName: data.companyInfo.companyName || 'Smart Blinds Hub',
+              emergencyHotline: data.companyInfo.emergencyHotline || '1-800-BLINDS',
               tagline: data.companyInfo.tagline || 'Expert Help Available'
             });
           }
