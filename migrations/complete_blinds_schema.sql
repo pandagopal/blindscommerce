@@ -837,7 +837,7 @@ CREATE TABLE `categories` (
   `display_order` int DEFAULT '0',
   PRIMARY KEY (`category_id`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -846,7 +846,7 @@ CREATE TABLE `categories` (
 
 LOCK TABLES `categories` WRITE;
 /*!40000 ALTER TABLE `categories` DISABLE KEYS */;
-INSERT INTO `categories` VALUES (1,'Blinds','blinds','Premium window blinds for every room',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,1),(2,'Shades','shades','Elegant window shades and treatments',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,2),(3,'Shutters','shutters','Classic wooden and composite shutters',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,3),(4,'Curtains','curtains','Beautiful curtains and drapes',NULL,'2025-06-08 21:14:54','2025-06-10 22:24:55',1,4);
+INSERT INTO `categories` VALUES (1,'Shades','shades','<p>Shades Blinds offer a sleek and stylish way to control light and privacy. Ideal for creating a soft, modern ambiance in any room.</p>','','2025-01-12 21:18:38','2025-04-26 22:57:18',1,1),(2,'Roller Shades','roller-shades','<p>Roller Shades provide a clean, minimalist look while offering excellent light control. Perfect for modern spaces with a touch of elegance.</p>','','2025-01-12 21:29:20','2025-04-19 22:17:31',1,2),(3,'Roman Shades','roman-shades','<p>Roman Shades combine the softness of drapery with the functionality of blinds. They add a classic, elegant touch to any room décor.</p>','','2025-01-14 23:10:32','2025-04-19 22:18:36',1,3),(4,'Motorized Blinds','motorized','<p>Motorized Blinds bring modern convenience to your space with remote-controlled operation. Perfect for hard-to-reach windows and smart home integration.</p>','','2025-01-14 23:13:08','2025-04-26 22:55:22',1,4),(5,'Remote Control','remote-control','<p>This is a&nbsp;Remote Control blinds take hassel of pulling strings.</p>','','2025-02-20 22:08:56','2025-04-26 22:57:47',1,5),(6,'Vinyl Blinds','vinyl-blinds','Vinyl Blinds are a durable and cost-effective window treatment, perfect for everyday use. They offer easy maintenance and excellent light control for any space.','','2025-02-24 22:33:50','2025-04-26 22:58:09',1,6),(7,'Fabric Blinds','fabric-blinds','<p>Fabric Blinds add a soft, elegant touch to your windows while providing privacy and light control. Available in various colors and textures to suit any décor.</p>','','2025-02-24 22:34:26','2025-04-26 22:55:03',1,7),(8,'Wand Control','wand-control','Wand Control','','2025-04-19 22:05:53','2025-04-19 22:06:09',1,8),(9,'Commercial Blinds','commercial-blinds','<p>Commercial Blinds offer durable and functional window solutions ideal for offices, retail, and industrial spaces. Designed for performance, privacy, and professional aesthetics.</p>','','2025-04-19 22:14:10','2025-04-26 22:54:44',1,9),(10,'Cellular Shades / Honeycomb','cellular-shades-honeycomb','<p>Cellular Shades, also known as Honeycomb Shades, are designed for energy efficiency and insulation. Their unique structure traps air, keeping your home comfortable year-round.</p>','','2025-04-19 22:20:03','2025-04-19 22:20:03',1,10),(11,'Bamboo / Woven Wood Shades','bamboo-woven-wood-shades','<p>Bamboo or Woven Wood Shades bring a natural, earthy texture to any space. Crafted from sustainable materials, they offer a warm, organic look while gently filtering light.</p>','','2025-04-19 22:20:45','2025-04-19 22:20:45',1,11),(12,'Sheer Shades','sheer-shades','<p>Sheer Shades combine the softness of fabric with the functionality of blinds. These shades allow natural light to filter through while providing privacy and a sleek, modern appearance.</p>','','2025-04-19 22:21:30','2025-04-19 22:21:30',1,12),(13,'Zebra Shades','zebra-shades','<p>Zebra Shades offer a stylish and versatile window treatment with alternating sheer and solid fabric stripes. These shades allow for precise light control while enhancing the aesthetic of any room.</p>','','2025-04-19 22:22:08','2025-04-19 22:22:08',1,13),(14,'Pleated Shades','pleated-shades','<p>Pleated Shades provide a sleek, modern look with crisp, pleated fabric that adds texture and style to your windows. They offer excellent light control and insulation, making them both functional and decorative.</p>','','2025-04-19 22:22:43','2025-04-19 22:22:43',1,14),(15,'Outdoor Shades','outdoor-shades','<p>Outdoor Shades are designed to block the sun while enhancing your outdoor living spaces. They provide privacy, reduce glare, and help regulate temperature, making them ideal for patios, decks, and pergolas.</p>','','2025-04-19 22:23:14','2025-04-19 22:23:14',1,15),(16,'Motorized Shades','motorized-shades','<p>Motorized Shades offer effortless control with a touch of a button, providing convenience and luxury to your windows. Perfect for hard-to-reach windows, they enhance comfort and privacy while offering a modern, sleek aesthetic.</p>','','2025-04-19 22:23:46','2025-04-26 22:56:01',1,16),(17,'Vertical Cellular Shades','vertical-cellular-shades','<p>Vertical Cellular Shades combine the elegance of vertical blinds with the energy efficiency of honeycomb design. These shades provide excellent insulation while allowing light control and privacy in large windows or sliding doors.</p>','','2025-04-19 22:27:43','2025-04-19 22:27:43',1,17),(18,'Sheer Vertical Shades','sheer-vertical-shades','<p>Sheer Vertical Shades offer a stylish combination of light control and privacy with their sheer fabric panels. Ideal for large windows or sliding doors, they allow natural light to filter through while providing a soft, elegant appearance.</p>','','2025-04-19 22:28:15','2025-04-19 22:28:15',1,18),(19,'Panel Track Blinds','panel-track-blinds','<p>Panel Track Blinds provide a sleek, modern solution for covering large windows or sliding doors. Their wide fabric panels glide smoothly along a track, offering excellent light control and a contemporary look for any room.</p>','','2025-04-19 22:28:46','2025-04-19 22:28:46',1,19);
 /*!40000 ALTER TABLE `categories` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -1646,7 +1646,7 @@ CREATE TABLE `coupon_codes` (
   KEY `idx_active_coupons` (`is_active`,`valid_from`,`valid_until`),
   KEY `idx_batch_coupons` (`batch_id`),
   CONSTRAINT `fk_coupon_customer` FOREIGN KEY (`customer_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2531,7 +2531,7 @@ CREATE TABLE `installation_service_areas` (
   UNIQUE KEY `area_code` (`area_code`),
   KEY `idx_area_code` (`area_code`),
   KEY `idx_active_areas` (`is_active`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -2657,7 +2657,7 @@ CREATE TABLE `installation_time_slots` (
   UNIQUE KEY `unique_slot_code` (`slot_code`),
   KEY `idx_time_window` (`start_time`,`end_time`),
   KEY `idx_active_slots` (`is_active`,`display_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3104,7 +3104,7 @@ CREATE TABLE `material_swatches` (
 
 LOCK TABLES `material_swatches` WRITE;
 /*!40000 ALTER TABLE `material_swatches` DISABLE KEYS */;
-INSERT INTO `material_swatches` VALUES ('SW-001-WHT-ALU','Pure White Aluminum','Classic white aluminum slats with smooth finish','#FFFFFF','Aluminum','Metal',NULL,1,NULL,0.00,0,1,1,'/images/samples/white-aluminum.jpg',NULL,NULL,NULL,'semi-opaque',75.00,NULL,'Wipe clean with damp cloth','100% Aluminum',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-002-BLK-ALU','Charcoal Black Aluminum','Modern black aluminum with matte finish','#2C2C2C','Aluminum','Metal',NULL,1,NULL,0.00,0,1,1,'/images/samples/black-aluminum.jpg',NULL,NULL,NULL,'semi-opaque',80.00,NULL,'Wipe clean with damp cloth','100% Aluminum',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-003-WD-FAU','Natural Oak Faux Wood','Realistic oak wood grain pattern','#D2B48C','Faux Wood','Composite',NULL,1,NULL,2.99,0,1,1,'/images/samples/oak-faux-wood.jpg',NULL,NULL,NULL,'semi-opaque',70.00,NULL,'Dust regularly, wipe with damp cloth','PVC with wood grain finish',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-101-LIN-NAT','Natural Linen Weave','Elegant natural linen with loose weave','#F5F5DC','Linen','Natural Fiber',NULL,2,NULL,3.99,1,1,1,'/images/samples/natural-linen.jpg',NULL,NULL,NULL,'semi-sheer',30.00,NULL,'Dry clean only','100% Linen',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-102-SLK-CRM','Cream Silk Dupioni','Luxurious silk with subtle sheen','#FFF8DC','Silk','Natural Fiber',NULL,2,NULL,5.99,1,1,1,'/images/samples/cream-silk.jpg',NULL,NULL,NULL,'semi-opaque',60.00,NULL,'Dry clean only','100% Silk',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-103-COT-NVY','Navy Cotton Canvas','Heavy-duty cotton in rich navy blue','#000080','Cotton','Natural Fiber',NULL,2,NULL,2.99,0,1,1,'/images/samples/navy-cotton.jpg',NULL,NULL,NULL,'opaque',90.00,NULL,'Machine wash cold, hang dry','100% Cotton',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-201-CEL-WHT','White Cellular Honeycomb','Energy-efficient cellular shade material','#FAFAFA','Cellular Fabric','Synthetic',NULL,3,NULL,1.99,0,1,1,'/images/samples/white-cellular.jpg',NULL,NULL,NULL,'semi-opaque',65.00,NULL,'Vacuum or dust regularly','Polyester honeycomb',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-202-ROM-BEI','Beige Roman Weave','Classic roman shade with woven texture','#F5DEB3','Roman Weave','Natural Blend',NULL,3,NULL,3.99,0,1,1,'/images/samples/beige-roman.jpg',NULL,NULL,NULL,'semi-opaque',55.00,NULL,'Spot clean only','70% Cotton, 30% Polyester',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30');
+INSERT INTO `material_swatches` VALUES ('SW-001-WHT-ALU','Pure White Aluminum','Classic white aluminum slats with smooth finish','#FFFFFF','Aluminum','Metal',NULL,NULL,NULL,0.00,0,1,1,'/images/samples/white-aluminum.jpg',NULL,NULL,NULL,'semi-opaque',75.00,NULL,'Wipe clean with damp cloth','100% Aluminum',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-002-BLK-ALU','Charcoal Black Aluminum','Modern black aluminum with matte finish','#2C2C2C','Aluminum','Metal',NULL,NULL,NULL,0.00,0,1,1,'/images/samples/black-aluminum.jpg',NULL,NULL,NULL,'semi-opaque',80.00,NULL,'Wipe clean with damp cloth','100% Aluminum',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-003-WD-FAU','Natural Oak Faux Wood','Realistic oak wood grain pattern','#D2B48C','Faux Wood','Composite',NULL,NULL,NULL,2.99,0,1,1,'/images/samples/oak-faux-wood.jpg',NULL,NULL,NULL,'semi-opaque',70.00,NULL,'Dust regularly, wipe with damp cloth','PVC with wood grain finish',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-101-LIN-NAT','Natural Linen Weave','Elegant natural linen with loose weave','#F5F5DC','Linen','Natural Fiber',NULL,NULL,NULL,3.99,1,1,1,'/images/samples/natural-linen.jpg',NULL,NULL,NULL,'semi-sheer',30.00,NULL,'Dry clean only','100% Linen',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-102-SLK-CRM','Cream Silk Dupioni','Luxurious silk with subtle sheen','#FFF8DC','Silk','Natural Fiber',NULL,NULL,NULL,5.99,1,1,1,'/images/samples/cream-silk.jpg',NULL,NULL,NULL,'semi-opaque',60.00,NULL,'Dry clean only','100% Silk',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-103-COT-NVY','Navy Cotton Canvas','Heavy-duty cotton in rich navy blue','#000080','Cotton','Natural Fiber',NULL,NULL,NULL,2.99,0,1,1,'/images/samples/navy-cotton.jpg',NULL,NULL,NULL,'opaque',90.00,NULL,'Machine wash cold, hang dry','100% Cotton',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-201-CEL-WHT','White Cellular Honeycomb','Energy-efficient cellular shade material','#FAFAFA','Cellular Fabric','Synthetic',NULL,NULL,NULL,1.99,0,1,1,'/images/samples/white-cellular.jpg',NULL,NULL,NULL,'semi-opaque',65.00,NULL,'Vacuum or dust regularly','Polyester honeycomb',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30'),('SW-202-ROM-BEI','Beige Roman Weave','Classic roman shade with woven texture','#F5DEB3','Roman Weave','Natural Blend',NULL,NULL,NULL,3.99,0,1,1,'/images/samples/beige-roman.jpg',NULL,NULL,NULL,'semi-opaque',55.00,NULL,'Spot clean only','70% Cotton, 30% Polyester',5,'medium',NULL,NULL,NULL,0,1.00,'2025-06-09 20:37:30','2025-06-09 20:37:30');
 /*!40000 ALTER TABLE `material_swatches` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3735,7 +3735,7 @@ CREATE TABLE `payment_method_configurations` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `unique_provider_method` (`provider`,`method_id`),
   KEY `idx_active_methods` (`is_active`,`sort_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3919,7 +3919,7 @@ CREATE TABLE `pricing_tiers` (
   KEY `idx_tier_code` (`tier_code`),
   KEY `idx_active_tiers` (`is_active`,`priority`),
   KEY `idx_validity_dates` (`valid_from`,`valid_until`)
-) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4125,6 +4125,121 @@ CREATE TABLE `product_dimensions` (
 LOCK TABLES `product_dimensions` WRITE;
 /*!40000 ALTER TABLE `product_dimensions` DISABLE KEYS */;
 /*!40000 ALTER TABLE `product_dimensions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `product_fabric_images`
+--
+
+DROP TABLE IF EXISTS `product_fabric_images`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_fabric_images` (
+  `fabric_image_id` int NOT NULL AUTO_INCREMENT,
+  `fabric_option_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `image_url` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `image_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_alt` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image_size` int DEFAULT NULL COMMENT 'File size in bytes',
+  `image_type` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'MIME type',
+  `display_order` int DEFAULT '0',
+  `is_primary` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`fabric_image_id`),
+  KEY `idx_fabric_images` (`fabric_option_id`,`display_order`),
+  KEY `idx_primary_image` (`fabric_option_id`,`is_primary`),
+  KEY `idx_product_fabric_images` (`product_id`,`fabric_option_id`),
+  CONSTRAINT `product_fabric_images_option_fk` FOREIGN KEY (`fabric_option_id`) REFERENCES `product_fabric_options` (`fabric_option_id`) ON DELETE CASCADE,
+  CONSTRAINT `product_fabric_images_product_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_fabric_images`
+--
+
+LOCK TABLES `product_fabric_images` WRITE;
+/*!40000 ALTER TABLE `product_fabric_images` DISABLE KEYS */;
+/*!40000 ALTER TABLE `product_fabric_images` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `product_fabric_options`
+--
+
+DROP TABLE IF EXISTS `product_fabric_options`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_fabric_options` (
+  `fabric_option_id` int NOT NULL AUTO_INCREMENT,
+  `product_id` int NOT NULL,
+  `vendor_id` int NOT NULL,
+  `fabric_type` enum('coloredFabric','sheerFabric','blackoutFabric') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `fabric_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_enabled` tinyint(1) DEFAULT '0',
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`fabric_option_id`),
+  KEY `idx_product_fabric` (`product_id`,`fabric_type`),
+  KEY `idx_vendor_fabric` (`vendor_id`,`fabric_type`),
+  KEY `idx_fabric_enabled` (`is_enabled`),
+  KEY `idx_product_fabric_enabled` (`product_id`,`fabric_type`,`is_enabled`),
+  CONSTRAINT `product_fabric_options_product_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  CONSTRAINT `product_fabric_options_vendor_fk` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_fabric_options`
+--
+
+LOCK TABLES `product_fabric_options` WRITE;
+/*!40000 ALTER TABLE `product_fabric_options` DISABLE KEYS */;
+/*!40000 ALTER TABLE `product_fabric_options` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `product_fabric_pricing`
+--
+
+DROP TABLE IF EXISTS `product_fabric_pricing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `product_fabric_pricing` (
+  `fabric_pricing_id` int NOT NULL AUTO_INCREMENT,
+  `fabric_option_id` int NOT NULL,
+  `product_id` int NOT NULL,
+  `min_width` decimal(8,3) NOT NULL COMMENT 'Minimum width in inches',
+  `max_width` decimal(8,3) NOT NULL COMMENT 'Maximum width in inches',
+  `min_height` decimal(8,3) DEFAULT NULL COMMENT 'Minimum height in inches (for future use)',
+  `max_height` decimal(8,3) DEFAULT NULL COMMENT 'Maximum height in inches (for future use)',
+  `price_per_sqft` decimal(10,4) NOT NULL DEFAULT '0.0000' COMMENT 'Price per square foot',
+  `is_active` tinyint(1) DEFAULT '1',
+  `display_order` int DEFAULT '0',
+  `effective_date` date DEFAULT NULL,
+  `expires_date` date DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`fabric_pricing_id`),
+  KEY `idx_fabric_pricing` (`fabric_option_id`,`is_active`),
+  KEY `idx_width_range` (`min_width`,`max_width`),
+  KEY `idx_price_dates` (`effective_date`,`expires_date`),
+  KEY `idx_product_fabric_pricing` (`product_id`,`fabric_option_id`),
+  CONSTRAINT `product_fabric_pricing_option_fk` FOREIGN KEY (`fabric_option_id`) REFERENCES `product_fabric_options` (`fabric_option_id`) ON DELETE CASCADE,
+  CONSTRAINT `product_fabric_pricing_product_fk` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `product_fabric_pricing`
+--
+
+LOCK TABLES `product_fabric_pricing` WRITE;
+/*!40000 ALTER TABLE `product_fabric_pricing` DISABLE KEYS */;
+/*!40000 ALTER TABLE `product_fabric_pricing` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -4681,7 +4796,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (1,1,'Premium Cellular Shades','premium-cellular-shades','Energy-efficient cellular shades for any room','Our premium cellular shades offer excellent insulation and light control for your home.',150.00,NULL,0,0,1,'in_stock','CELL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',2,1,'/images/products/cellular-shades.jpg',1,'active'),(2,2,'Classic Wood Blinds','classic-wood-blinds','Beautiful wooden blinds for traditional homes','Handcrafted wooden blinds that add warmth and elegance to any space.',200.00,NULL,0,0,1,'in_stock','WOOD-001','2025-06-10 22:25:51','2025-06-10 22:25:51',1,2,'/images/products/wood-blinds.jpg',1,'active'),(3,3,'Modern Roller Shades','modern-roller-shades','Sleek roller shades for contemporary spaces','Minimalist roller shades perfect for modern home decor.',120.00,NULL,0,0,1,'in_stock','ROLL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',2,3,'/images/products/roller-shades.jpg',1,'active'),(4,4,'Luxury Plantation Shutters','luxury-plantation-shutters','Premium plantation shutters','High-end plantation shutters that increase home value.',400.00,NULL,0,0,1,'in_stock','SHUT-001','2025-06-10 22:25:51','2025-06-10 22:25:51',3,4,'/images/products/plantation-shutters.jpg',1,'active');
+INSERT INTO `products` VALUES (1,1,'Premium Cellular Shades','premium-cellular-shades','Energy-efficient cellular shades for any room','Our premium cellular shades offer excellent insulation and light control for your home.',150.00,NULL,0,0,1,'in_stock','CELL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,1,'/images/products/cellular-shades.jpg',1,'active'),(2,2,'Classic Wood Blinds','classic-wood-blinds','Beautiful wooden blinds for traditional homes','Handcrafted wooden blinds that add warmth and elegance to any space.',200.00,NULL,0,0,1,'in_stock','WOOD-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,2,'/images/products/wood-blinds.jpg',1,'active'),(3,3,'Modern Roller Shades','modern-roller-shades','Sleek roller shades for contemporary spaces','Minimalist roller shades perfect for modern home decor.',120.00,NULL,0,0,1,'in_stock','ROLL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,3,'/images/products/roller-shades.jpg',1,'active'),(4,4,'Luxury Plantation Shutters','luxury-plantation-shutters','Premium plantation shutters','High-end plantation shutters that increase home value.',400.00,NULL,0,0,1,'in_stock','SHUT-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,4,'/images/products/plantation-shutters.jpg',1,'active');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -4763,7 +4878,7 @@ CREATE TABLE `promotional_campaigns` (
   KEY `idx_campaign_code` (`campaign_code`),
   KEY `idx_active_campaigns` (`is_active`,`starts_at`,`ends_at`),
   KEY `idx_campaign_type` (`campaign_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -5835,7 +5950,7 @@ CREATE TABLE `shipping_zones` (
   KEY `idx_zone_code` (`zone_code`),
   KEY `idx_active_zones` (`is_active`,`priority`),
   KEY `idx_zone_priority` (`priority` DESC)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6440,7 +6555,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-11 05:49:12','2025-06-08 21:13:09','2025-06-11 05:49:12',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-11 05:16:27','2025-06-08 21:13:09','2025-06-11 05:16:27',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-10 23:44:34','2025-06-08 21:13:09','2025-06-10 23:44:34',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-09 19:10:57','2025-06-08 21:13:09','2025-06-09 19:10:57',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-10 22:50:26','2025-06-08 21:13:09','2025-06-10 22:50:26',1);
+INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-11 05:49:12','2025-06-08 21:13:09','2025-06-11 05:49:12',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-12 22:56:19','2025-06-08 21:13:09','2025-06-12 22:56:19',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-10 23:44:34','2025-06-08 21:13:09','2025-06-10 23:44:34',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-09 19:10:57','2025-06-08 21:13:09','2025-06-09 19:10:57',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-10 22:50:26','2025-06-08 21:13:09','2025-06-10 22:50:26',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -7027,7 +7142,7 @@ CREATE TABLE `volume_discounts` (
   KEY `idx_product_discounts` (`product_id`),
   KEY `idx_active_volume_discounts` (`is_active`,`valid_from`,`valid_until`),
   CONSTRAINT `fk_volume_discount_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -7331,4 +7446,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-10 23:04:56
+-- Dump completed on 2025-06-12 18:30:27

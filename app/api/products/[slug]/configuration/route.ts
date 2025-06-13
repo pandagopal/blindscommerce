@@ -13,9 +13,10 @@ export async function GET(
 
     // Get product by slug
     const [products] = await db.execute(`
-      SELECT p.*, b.name as brand_name
+      SELECT p.*, b.name as brand_name, vi.vendor_info_id
       FROM products p
       LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
       WHERE p.slug = ? AND p.is_active = 1
     `, [params.slug]);
 
@@ -137,6 +138,82 @@ export async function GET(
       ORDER BY is_primary DESC, display_order ASC
     `, [productId]);
 
+    // Get vendor-defined options for configurator
+    let vendorOptions = null;
+    if (product.vendor_info_id) {
+      try {
+        // Get dimensions configuration
+        const [dimensionsConfig] = await db.execute(`
+          SELECT * FROM product_dimensions_config
+          WHERE product_id = ?
+          LIMIT 1
+        `, [productId]);
+
+        // Get vendor options
+        const [vendorOptionValues] = await db.execute(`
+          SELECT 
+            pov.value_id,
+            pov.value_name,
+            pov.price_modifier,
+            pov.is_available,
+            pov.is_default,
+            pov.display_order,
+            po.option_name,
+            po.option_type
+          FROM product_options po
+          JOIN product_option_values pov ON po.option_id = pov.option_id
+          WHERE po.product_id = ? AND pov.is_available = 1
+          ORDER BY po.option_type, pov.display_order
+        `, [productId]);
+
+        // Group options for configurator
+        const groupedVendorOptions = {
+          dimensions: dimensionsConfig[0] || {
+            min_width: 12,
+            max_width: 96,
+            min_height: 12,
+            max_height: 120,
+            width_increment: 0.125,
+            height_increment: 0.125
+          },
+          mountTypes: [],
+          controlTypes: [],
+          headrailOptions: [],
+          bottomRailOptions: []
+        };
+
+        // Process vendor options into configurator format
+        vendorOptionValues.forEach((option: any) => {
+          const optionData = {
+            id: option.value_id,
+            name: option.value_name,
+            description: getOptionDescription(option.value_name),
+            priceModifier: parseFloat(option.price_modifier),
+            isDefault: Boolean(option.is_default)
+          };
+
+          // Map to configurator categories
+          if (option.option_name.includes('mountTypes') || option.value_name.includes('Mount')) {
+            groupedVendorOptions.mountTypes.push(optionData);
+          } else if (option.option_name.includes('controlTypes') || 
+                     option.value_name.includes('Cordless') || 
+                     option.value_name.includes('Remote') ||
+                     option.value_name.includes('Wand') ||
+                     option.value_name.includes('String')) {
+            groupedVendorOptions.controlTypes.push(optionData);
+          } else if (option.option_name.includes('valanceOptions') || option.value_name.includes('Valance')) {
+            groupedVendorOptions.headrailOptions.push(optionData);
+          } else if (option.option_name.includes('bottomRailOptions') || option.value_name.includes('Rail')) {
+            groupedVendorOptions.bottomRailOptions.push(optionData);
+          }
+        });
+
+        vendorOptions = groupedVendorOptions;
+      } catch (error) {
+        console.warn('Failed to fetch vendor options:', error);
+      }
+    }
+
     return NextResponse.json({
       product: {
         ...product,
@@ -149,9 +226,31 @@ export async function GET(
         materials: materials || [],
         pricing: pricing,
         roomRecommendations: roomRecommendations || [],
-        specifications: specifications || []
+        specifications: specifications || [],
+        vendorOptions: vendorOptions // Add vendor options to response
       }
     });
+
+function getOptionDescription(name: string): string {
+  const descriptions: { [key: string]: string } = {
+    'Inside Mount': 'Fits inside the window frame for a clean look',
+    'Outside Mount': 'Mounts outside the window frame',
+    'Cordless': 'Safe for homes with children and pets',
+    'Continuous Loop': 'Chain-operated lifting system',
+    'Standard Wand': 'Standard tilting wand',
+    'Extended Wand': 'Longer wand for hard-to-reach windows',
+    'String Lift': 'Traditional string lifting',
+    'Chain System': 'Chain-operated system',
+    'Basic Remote': 'Simple remote control operation',
+    'Smart Home Compatible': 'Works with smart home systems',
+    'Circular (With Fabric Insert)': 'Rounded valance with fabric',
+    'Square (Without Fabric)': 'Simple square valance',
+    'Fabric Wrapped': 'Completely fabric-wrapped',
+    'Just a Rail': 'Standard rail without wrapping'
+  };
+  
+  return descriptions[name] || `${name} option`;
+}
 
   } catch (error) {
     console.error('Error fetching product configuration:', error);

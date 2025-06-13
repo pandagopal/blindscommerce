@@ -10,6 +10,7 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import BasicInfo from '@/app/admin/products/components/BasicInfo';
 import PricingMatrix from '@/app/admin/products/components/PricingMatrix';
 import Options from '@/app/admin/products/components/Options';
+import Fabric from '@/app/admin/products/components/Fabric';
 import Images from '@/app/admin/products/components/Images';
 import Features from '@/app/admin/products/components/Features';
 import RoomRecommendations from '@/app/admin/products/components/RoomRecommendations';
@@ -65,21 +66,28 @@ export default function ProductCreationForm({
       heightIncrement: 0.125
     },
     options: {
+      dimensions: {
+        minWidth: 12,
+        maxWidth: 96,
+        minHeight: 12,
+        maxHeight: 120,
+        widthIncrement: 0.125,
+        heightIncrement: 0.125
+      },
       mountTypes: [],
-      controlTypes: [],
-      fabricTypes: [],
-      headrailOptions: [],
-      bottomRailOptions: [],
-      specialtyOptions: [],
-      // Blinds specific options
-      liftSystems: [],
-      slatOptions: [],
-      lightControl: [],
-      // Shades specific options
-      operatingSystems: [],
-      opacityLevels: [],
-      cellularStructure: [],
-      energyEfficiency: []
+      controlTypes: {
+        liftSystems: [],
+        wandSystem: [],
+        stringSystem: [],
+        remoteControl: []
+      },
+      valanceOptions: [],
+      bottomRailOptions: []
+    },
+    fabric: {
+      coloredFabric: [],
+      sheerFabric: [],
+      blackoutFabric: []
     },
     images: [],
     features: [],
@@ -121,6 +129,28 @@ export default function ProductCreationForm({
       }
 
       const result = await response.json();
+      
+      // If product was created successfully and we have options, save them
+      if (result.success && result.product_id && userRole === 'vendor') {
+        try {
+          const optionsResponse = await fetch(`/api/vendor/products/${result.product_id}/options`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              options: productData.options,
+              fabric: productData.fabric 
+            }),
+          });
+
+          if (!optionsResponse.ok) {
+            console.warn('Failed to save product options, but product was created');
+          }
+        } catch (optionsError) {
+          console.warn('Error saving product options:', optionsError);
+        }
+      }
       
       toast.success(
         userRole === 'admin' 
@@ -203,7 +233,7 @@ export default function ProductCreationForm({
 
       <Card className={userRole === 'vendor' ? "border-purple-100 shadow-lg" : ""}>
         <Tabs defaultValue="basic-info" value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className={`w-full grid grid-cols-6 ${
+          <TabsList className={`w-full grid grid-cols-7 ${
             userRole === 'vendor' ? 'bg-gray-50' : ''
           }`}>
             <TabsTrigger 
@@ -217,6 +247,12 @@ export default function ProductCreationForm({
               className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
             >
               Options
+            </TabsTrigger>
+            <TabsTrigger 
+              value="fabric"
+              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+            >
+              Fabric
             </TabsTrigger>
             <TabsTrigger 
               value="pricing"
@@ -261,6 +297,13 @@ export default function ProductCreationForm({
               />
             </TabsContent>
 
+            <TabsContent value="fabric">
+              <Fabric
+                data={productData.fabric}
+                onChange={(data) => updateProductData('fabric', data)}
+              />
+            </TabsContent>
+
             <TabsContent value="pricing">
               <PricingMatrix
                 dimensions={productData.dimensions}
@@ -301,8 +344,8 @@ export default function ProductCreationForm({
               <div className={`w-2 h-2 rounded-full ${productData.basicInfo.name ? 'bg-green-500' : 'bg-gray-300'}`}></div>
               Basic Information
             </div>
-            <div className={`flex items-center gap-2 ${productData.options.mountTypes.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${productData.options.mountTypes.length > 0 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+            <div className={`flex items-center gap-2 ${productData.options.mountTypes.some(opt => opt.enabled) || Object.values(productData.options.controlTypes).some(group => group.some(opt => opt.enabled)) ? 'text-green-600' : 'text-gray-400'}`}>
+              <div className={`w-2 h-2 rounded-full ${productData.options.mountTypes.some(opt => opt.enabled) || Object.values(productData.options.controlTypes).some(group => group.some(opt => opt.enabled)) ? 'bg-green-500' : 'bg-gray-300'}`}></div>
               Product Options
             </div>
             <div className={`flex items-center gap-2 ${productData.images.length > 0 ? 'text-green-600' : 'text-gray-400'}`}>
