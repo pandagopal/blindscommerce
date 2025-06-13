@@ -18,6 +18,7 @@ export default function VendorStorefrontPage() {
   const [storefront, setStorefront] = useState<StorefrontData | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasStorefront, setHasStorefront] = useState(false);
+  const [vendorCompanyName, setVendorCompanyName] = useState<string>('');
 
   useEffect(() => {
     fetchStorefront();
@@ -25,6 +26,17 @@ export default function VendorStorefrontPage() {
 
   const fetchStorefront = async () => {
     try {
+      // Get vendor profile first to get company name
+      const profileRes = await fetch('/api/vendor/profile');
+      let companyName = 'Your Company';
+      
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        companyName = profileData.profile?.businessName || 'Your Company';
+        setVendorCompanyName(companyName);
+      }
+
+      // Get storefront data
       const res = await fetch('/api/vendor/storefront');
       const data = await res.json();
       
@@ -68,9 +80,9 @@ export default function VendorStorefrontPage() {
           <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
             <Store className="w-8 h-8 text-purple-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Create Your Storefront</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Create {vendorCompanyName} Storefront</h1>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
-            Set up your own branded storefront to showcase your products and reach more customers.
+            Set up your own branded storefront for {vendorCompanyName} to showcase your products and reach more customers.
           </p>
           <button
             onClick={() => {/* TODO: Open create storefront modal */}}
@@ -88,7 +100,7 @@ export default function VendorStorefrontPage() {
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Custom Domain</h3>
             <p className="text-gray-600 text-sm">
-              Get your own subdomain like yourstore.blindscommerce.com
+              Get your own subdomain like {vendorCompanyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.blindscommerce.com
             </p>
           </div>
 

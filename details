@@ -1,0 +1,181 @@
+# Authentication
+NEXTAUTH_SECRET=your_nextauth_secret_here
+NEXTAUTH_URL=http://localhost:3000
+NEXT_AUTH_SECRET=smartblindshub_next_auth_secret_key
+
+# API configuration
+NEXT_PUBLIC_API_URL=http://localhost:3000/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
+
+#Email configuration
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-username
+SMTP_PASSWORD=your-smtp-password
+SMTP_FROM_ADDRESS=noreply@smartblindshub.com
+
+npm install nodemailer node-cron
+import '../lib/email/emailCron';
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=blindscommerce
+DB_USER=root
+DB_PASSWORD=Test@1234
+
+# JWT Configuration
+JWT_SECRET=673b234de1bf490b7766401e463434df3adc99c5b297e08155ce048bf5dd6096f17b3f1622d238775985752979d8cfe7cbad4e8d58481dff01ac8db8e8192154
+SESSION_SECRET=smartblinds-session-secret-change-in-production
+
+# Node Environment
+NODE_ENV=development
+
+# Optional: Stripe Configuration (if using Stripe)
+STRIPE_SECRET_KEY=sk_test_your_test_key
+STRIPE_PUBLIC_KEY=pk_test_your_test_key
+STRIPE_WEBHOOK_SECRET=whsec_your_webhook_secret
+# Pusher Configuration
+PUSHER_APP_ID=your_app_id
+PUSHER_KEY=your_key
+PUSHER_SECRET=your_secret
+PUSHER_CLUSTER=your_cluster
+NEXT_PUBLIC_PUSHER_KEY=your_key
+NEXT_PUBLIC_PUSHER_CLUSTER=your_cluster
+
+# Payment Integration Environment Variables
+# Copy this file to .env.local and fill in your actual API credentials
+
+# ==============================================
+# STRIPE CONFIGURATION (Already configured)
+# ==============================================
+# STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here (already set above)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51O1hWNIm56FaHHhCYshJL2TiWFDylk4RsXWMwJOEzz7lj35O5zXJRk8JZ1QwRJidbE5xnYiiihoufv2eCXjKxqAK00hDxDIzg9
+
+# ==============================================
+# PAYPAL / BRAINTREE CONFIGURATION
+# ==============================================
+# Braintree (PayPal) Configuration
+BRAINTREE_ENVIRONMENT=sandbox  # 'sandbox' for testing, 'production' for live
+BRAINTREE_MERCHANT_ID=your_braintree_merchant_id_here
+BRAINTREE_PUBLIC_KEY=your_braintree_public_key_here
+BRAINTREE_PRIVATE_KEY=your_braintree_private_key_here
+
+# PayPal Direct Configuration (alternative to Braintree)
+NEXT_PUBLIC_PAYPAL_CLIENT_ID=your_paypal_client_id_here
+PAYPAL_CLIENT_SECRET=your_paypal_client_secret_here
+PAYPAL_ENVIRONMENT=sandbox  # 'sandbox' for testing, 'live' for production
+
+# ==============================================
+# KLARNA CONFIGURATION
+# ==============================================
+KLARNA_USERNAME=your_klarna_username_here
+KLARNA_PASSWORD=your_klarna_password_here
+KLARNA_API_URL=https://api.playground.klarna.com  # Use https://api.klarna.com for production
+KLARNA_WEBHOOK_SECRET=your_klarna_webhook_secret_here
+
+# ==============================================
+# AFTERPAY CONFIGURATION
+# ==============================================
+AFTERPAY_MERCHANT_ID=your_afterpay_merchant_id_here
+AFTERPAY_SECRET_KEY=your_afterpay_secret_key_here
+AFTERPAY_API_URL=https://api.sandbox.afterpay.com  # Use https://api.afterpay.com for production
+
+# ==============================================
+# AFFIRM CONFIGURATION
+# ==============================================
+AFFIRM_PUBLIC_API_KEY=your_affirm_public_api_key_here
+AFFIRM_PRIVATE_API_KEY=your_affirm_private_api_key_here
+AFFIRM_API_URL=https://sandbox.affirm.com  # Use https://api.affirm.com for production
+
+# ==============================================
+# APPLICATION CONFIGURATION
+# ==============================================
+NEXT_PUBLIC_APP_URL=http://localhost:3000  # Your application base URL
+SITE_URL=http://localhost:3000
+SUPPORT_EMAIL=sales@smartblindshub.com
+MOCK_AUTH=true
+
+# ==============================================
+# SETUP INSTRUCTIONS
+# ==============================================
+
+# 1. STRIPE SETUP (Already configured)
+#    - Sign up at https://stripe.com
+#    - Get your API keys from the Stripe Dashboard
+#    - Enable the payment methods you want to support
+
+# 2. PAYPAL/BRAINTREE SETUP
+#    Option A: Braintree (Recommended for advanced features)
+#    - Sign up at https://www.braintreepayments.com
+#    - Create a sandbox account for testing
+#    - Get your Merchant ID, Public Key, and Private Key
+#    
+#    Option B: PayPal Direct
+#    - Sign up at https://developer.paypal.com
+#    - Create a sandbox application
+#    - Get your Client ID and Client Secret
+
+# 3. KLARNA SETUP
+#    - Sign up at https://developers.klarna.com
+#    - Create a playground account for testing
+#    - Get your API credentials (username/password)
+#    - Configure webhook endpoint: /api/payments/klarna/webhook
+
+# 4. AFTERPAY SETUP
+#    - Sign up at https://developers.afterpay.com
+#    - Create a sandbox merchant account
+#    - Get your Merchant ID and Secret Key
+#    - Configure return URLs in your merchant dashboard
+
+# 5. AFFIRM SETUP
+#    - Sign up at https://docs.affirm.com
+#    - Create a sandbox merchant account
+#    - Get your Public and Private API keys
+#    - Configure merchant URLs in your dashboard
+
+# ==============================================
+# TESTING CREDENTIALS (SANDBOX)
+# ==============================================
+
+# You can use these test credentials for initial setup:
+
+# STRIPE TEST CARDS:
+# 4242424242424242 (Visa)
+# 4000000000003220 (3D Secure)
+# 4000000000000002 (Declined)
+
+# KLARNA TEST DETAILS:
+# Use any valid email and phone number
+# Test person: John Doe, born 1970-01-01
+
+# AFTERPAY TEST DETAILS:
+# Use amounts between $1-$4000
+# Any valid email and phone number
+
+# AFFIRM TEST DETAILS:
+# Use amounts between $50-$17500
+# Test email: test@example.com
+# Test phone: +1-555-555-5555
+
+# ==============================================
+# PRODUCTION CONSIDERATIONS
+# ==============================================
+
+# Before going live:
+# 1. Change all environments from 'sandbox'/'test' to 'production'/'live'
+# 2. Replace all test API keys with live API keys
+# 3. Set up proper webhook endpoints with SSL certificates
+# 4. Configure proper error monitoring and logging
+# 5. Set up payment reconciliation and reporting
+# 6. Implement proper PCI compliance measures
+# 7. Test all payment flows thoroughly
+# 8. Set up proper customer support for payment issues
+
+# Security Notes:
+# - Never commit actual API keys to version control
+# - Use environment variables for all sensitive data
+# - Rotate API keys regularly
+# - Monitor for suspicious payment activity
+# - Implement proper fraud detection

@@ -34,7 +34,7 @@ interface VendorProfile {
   businessLicense: string;
   address: {
     addressLine1: string;
-    addressLine2?: string;
+    addressLine2: string;
     city: string;
     state: string;
     postalCode: string;
@@ -100,7 +100,31 @@ export default function VendorProfilePage() {
           throw new Error('Authentication required');
         }
         const data = await response.json();
-        setProfile(data);
+        // Use the profile data from the API response
+        const profile = data.profile;
+        // Ensure all fields have default values to prevent controlled/uncontrolled input issues
+        const profileWithDefaults = {
+          userId: profile.userId || 0,
+          email: profile.email || '',
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          phone: profile.phone || '',
+          companyName: profile.businessName || '',
+          contactEmail: profile.businessEmail || '',
+          contactPhone: profile.businessPhone || '',
+          businessDescription: profile.businessDescription || '',
+          taxId: profile.taxId || '',
+          businessLicense: '', // Not in current API
+          address: {
+            addressLine1: profile.address?.addressLine1 || '',
+            addressLine2: profile.address?.addressLine2 || '',
+            city: profile.address?.city || '',
+            state: profile.address?.state || '',
+            postalCode: profile.address?.postalCode || '',
+            country: profile.address?.country || 'United States'
+          }
+        };
+        setProfile(profileWithDefaults);
       } catch (error) {
         console.error('Error fetching vendor profile:', error);
         router.push('/login?redirect=/vendor/profile');
@@ -138,7 +162,18 @@ export default function VendorProfilePage() {
       const response = await fetch('/api/vendor/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile)
+        body: JSON.stringify({
+          email: profile.email,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          phone: profile.phone,
+          businessName: profile.companyName,
+          businessEmail: profile.contactEmail,
+          businessPhone: profile.contactPhone,
+          businessDescription: profile.businessDescription,
+          taxId: profile.taxId,
+          address: profile.address
+        })
       });
 
       if (!response.ok) {
@@ -315,10 +350,11 @@ export default function VendorProfilePage() {
       )}
 
       <Tabs defaultValue="business" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+        <TabsList className="grid w-full grid-cols-4 lg:w-[500px]">
           <TabsTrigger value="business">Business Info</TabsTrigger>
           <TabsTrigger value="personal">Personal Info</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="settings">Business Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="business" className="space-y-6">
@@ -412,7 +448,7 @@ export default function VendorProfilePage() {
                     <Label htmlFor="addressLine2">Address Line 2 (Optional)</Label>
                     <Input
                       id="addressLine2"
-                      value={profile.address.addressLine2 || ''}
+                      value={profile.address.addressLine2}
                       onChange={(e) => setProfile({
                         ...profile,
                         address: { ...profile.address, addressLine2: e.target.value }
@@ -470,7 +506,11 @@ export default function VendorProfilePage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={updating}>
+              <Button 
+                type="submit" 
+                disabled={updating}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
                 {updating ? (
                   <>
                     <span className="animate-spin mr-2">⌛</span>
@@ -545,7 +585,11 @@ export default function VendorProfilePage() {
                 </div>
               </div>
 
-              <Button type="submit" disabled={updating}>
+              <Button 
+                type="submit" 
+                disabled={updating}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
                 {updating ? (
                   <>
                     <span className="animate-spin mr-2">⌛</span>
@@ -616,7 +660,11 @@ export default function VendorProfilePage() {
                 )}
               </div>
 
-              <Button type="submit" disabled={updating}>
+              <Button 
+                type="submit" 
+                disabled={updating}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
                 {updating ? (
                   <>
                     <span className="animate-spin mr-2">⌛</span>
@@ -632,10 +680,10 @@ export default function VendorProfilePage() {
             </form>
           </div>
         </TabsContent>
-      </Tabs>
 
-      {/* Business Hours */}
-      <section className="mt-8">
+        <TabsContent value="settings" className="space-y-6">
+          {/* Business Hours */}
+          <section className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-2">Business Hours</h2>
         <form onSubmit={handleHourSubmit} className="flex gap-2 mb-4 flex-wrap">
           <input name="day" value={hourForm.day || ''} onChange={handleHourChange} placeholder="Day" className="border p-2 rounded" required />
@@ -656,10 +704,10 @@ export default function VendorProfilePage() {
             ))}
           </ul>
         )}
-      </section>
+          </section>
 
-      {/* Legal Documents */}
-      <section className="mt-8">
+          {/* Legal Documents */}
+          <section className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-2">Legal Documents</h2>
         <form onSubmit={handleDocSubmit} className="flex gap-2 mb-4 flex-wrap">
           <input name="name" value={docForm.name || ''} onChange={handleDocChange} placeholder="Document Name" className="border p-2 rounded" required />
@@ -679,10 +727,10 @@ export default function VendorProfilePage() {
             ))}
           </ul>
         )}
-      </section>
+          </section>
 
-      {/* Shipping Addresses */}
-      <section className="mt-8">
+          {/* Shipping Addresses */}
+          <section className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-xl font-semibold mb-2">Shipping Addresses</h2>
         <form onSubmit={handleShipSubmit} className="flex gap-2 mb-4 flex-wrap">
           <input name="address" value={shipForm.address || ''} onChange={handleShipChange} placeholder="Address" className="border p-2 rounded w-96" required />
@@ -700,7 +748,9 @@ export default function VendorProfilePage() {
             ))}
           </ul>
         )}
-      </section>
+          </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 

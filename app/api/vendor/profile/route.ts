@@ -142,10 +142,10 @@ export async function PUT(req: NextRequest) {
         updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?`,
       [
-        data.email,
-        data.firstName,
-        data.lastName,
-        data.phone,
+        data.email || null,
+        data.firstName || null,
+        data.lastName || null,
+        data.phone || null,
         user.userId
       ]
     );
@@ -171,19 +171,19 @@ export async function PUT(req: NextRequest) {
         updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?`,
       [
-        data.businessName,
-        data.businessEmail,
-        data.businessPhone,
-        data.businessDescription,
-        data.logoUrl,
-        data.websiteUrl,
-        data.yearEstablished,
-        data.taxId,
-        data.address?.addressLine1,
-        data.address?.addressLine2,
-        data.address?.city,
-        data.address?.state,
-        data.address?.postalCode,
+        data.businessName || null,
+        data.businessEmail || null,
+        data.businessPhone || null,
+        data.businessDescription || null,
+        data.logoUrl || null,
+        data.websiteUrl || null,
+        data.yearEstablished || null,
+        data.taxId || null,
+        data.address?.addressLine1 || null,
+        data.address?.addressLine2 || null,
+        data.address?.city || null,
+        data.address?.state || null,
+        data.address?.postalCode || null,
         data.address?.country || 'United States',
         user.userId
       ]

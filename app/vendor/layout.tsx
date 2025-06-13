@@ -89,12 +89,13 @@ export default function VendorLayout({
     { href: '/vendor', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/vendor/products', label: 'Products', icon: <ShoppingBag size={18} /> },
     { href: '/vendor/storefront', label: 'Storefront', icon: <Store size={18} /> },
+    { href: '/vendor/sales-team', label: 'Sales Team', icon: <User size={18} /> },
     { href: '/vendor/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/vendor/payments', label: 'Payments', icon: <CreditCard size={18} /> },
     { href: '/vendor/shipments', label: 'Shipments', icon: <Truck size={18} /> },
     { href: '/vendor/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },
     { href: '/vendor/notifications', label: 'Notifications', icon: <Bell size={18} /> },
-    { href: '/vendor/settings', label: 'Settings', icon: <Settings size={18} /> },
+    { href: '/vendor/profile', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
   return (
