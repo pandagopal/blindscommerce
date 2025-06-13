@@ -16,14 +16,48 @@ interface UserData {
   role: string;
 }
 
+interface CompanyInfo {
+  companyName: string;
+  emergencyHotline: string;
+  tagline: string;
+}
+
 const Navbar = () => {
   const { itemCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    companyName: 'Smart Blinds Hub',
+    emergencyHotline: '1-800-BLINDS',
+    tagline: 'Expert Help Available'
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Fetch company info
+  useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const response = await fetch('/api/company-info');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.companyInfo) {
+            setCompanyInfo({
+              companyName: data.companyInfo.companyName,
+              emergencyHotline: data.companyInfo.emergencyHotline,
+              tagline: data.companyInfo.tagline || 'Expert Help Available'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch company info:', error);
+      }
+    };
+
+    fetchCompanyInfo();
+  }, []);
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -115,7 +149,7 @@ const Navbar = () => {
       {/* Top promotional banner */}
       <div className="bg-primary-red text-white py-2 text-center text-sm">
         <div className="container mx-auto px-4">
-          <span className="font-medium">🚚 Free Shipping on Orders $100+ | 📞 1-800-BLINDS-1 | 📞 Expert Help Available</span>
+          <span className="font-medium">🚚 Free Shipping on Orders $100+ | 📞 {companyInfo.emergencyHotline} | 📞 {companyInfo.tagline}</span>
         </div>
       </div>
       

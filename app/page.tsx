@@ -55,9 +55,30 @@ async function getHomePageData() {
     );
     
     return {
-      categories: Array.isArray(categoryRows) ? categoryRows : [],
-      products: Array.isArray(productRows) ? productRows : [],
-      reviews: Array.isArray(reviewRows) ? reviewRows : []
+      categories: Array.isArray(categoryRows) ? categoryRows.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        slug: cat.slug,
+        image: cat.image,
+        description: cat.description
+      })) : [],
+      products: Array.isArray(productRows) ? productRows.map(prod => ({
+        product_id: prod.product_id,
+        name: prod.name,
+        slug: prod.slug,
+        category_name: prod.category_name,
+        base_price: Number(prod.base_price),
+        rating: Number(prod.rating),
+        primary_image: prod.primary_image
+      })) : [],
+      reviews: Array.isArray(reviewRows) ? reviewRows.map(review => ({
+        id: review.id,
+        author: review.author,
+        rating: Number(review.rating),
+        title: review.title,
+        text: review.text,
+        date: review.date
+      })) : []
     };
   } catch (error) {
     console.error('Error fetching home page data:', error);

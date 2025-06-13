@@ -8,7 +8,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
-import { defaultMetadata, dynamic, revalidate } from './config';
+import { defaultMetadata } from './config';
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 //import LiveChat from "./components/chat/LiveChat";
@@ -16,9 +16,6 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 const inter = Inter({ subsets: ["latin"] });
-
-// Force dynamic rendering for all pages
-export { dynamic, revalidate };
 
 export const metadata: Metadata = {
   title: defaultMetadata.title,

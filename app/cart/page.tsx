@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Trash2, Plus, Minus, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import HelpButton from "@/components/customer/HelpButton";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, clearCart, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
@@ -53,7 +54,10 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shopping Cart</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shopping Cart</h1>
+          <HelpButton className="bg-purple-600 hover:bg-purple-700 text-white" />
+        </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Cart Items - Left Side */}

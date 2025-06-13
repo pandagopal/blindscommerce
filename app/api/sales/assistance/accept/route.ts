@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import mysql from 'mysql2/promise';
 import { pusher } from '@/lib/pusher';
 
@@ -15,8 +14,8 @@ const dbConfig = {
 // POST - Sales staff accepts assistance request using PIN
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
       // Verify user is sales staff
       const [salesStaffRows] = await connection.execute(
         'SELECT sales_staff_id, vendor_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
-        [session.user.id]
+        [user.userId]
       );
 
       if (!Array.isArray(salesStaffRows) || salesStaffRows.length === 0) {
@@ -157,7 +156,7 @@ export async function POST(request: NextRequest) {
       // Notify customer that their request has been accepted
       await pusher.trigger(`customer-${assistanceSession.customer_user_id}`, 'assistance-accepted', {
         sessionId: assistanceSession.session_id,
-        salesStaffName: `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim(),
+        salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         acceptedAt: new Date().toISOString()
       });
 

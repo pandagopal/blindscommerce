@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import mysql from 'mysql2/promise';
 import { pusher } from '@/lib/pusher';
 
@@ -20,8 +19,8 @@ function generatePIN(): string {
 // POST - Customer requests sales assistance
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,7 +57,7 @@ export async function POST(request: NextRequest) {
       // Get customer's active cart
       const [cartRows] = await connection.execute(
         'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
-        [session.user.id]
+        [user.userId]
       );
 
       const cartId = Array.isArray(cartRows) && cartRows.length > 0 
@@ -127,8 +126,8 @@ export async function POST(request: NextRequest) {
       if (Array.isArray(onlineStaff) && onlineStaff.length > 0) {
         const assistanceRequest = {
           sessionId: assistanceSessionId,
-          customerId: session.user.id,
-          customerName: `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim(),
+          customerId: user.userId,
+          customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
           sessionType,
           accessPin,
           cartId,

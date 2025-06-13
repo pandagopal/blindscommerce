@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import mysql from 'mysql2/promise';
 import { pusher } from '@/lib/pusher';
 
@@ -38,8 +37,8 @@ async function verifySessionPermissions(connection: any, sessionId: number, sale
 // GET - Get customer cart details (for sales staff)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -58,7 +57,7 @@ export async function GET(request: NextRequest) {
       // Verify user is sales staff
       const [salesStaffRows] = await connection.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
-        [session.user.id]
+        [user.userId]
       );
 
       if (!Array.isArray(salesStaffRows) || salesStaffRows.length === 0) {
@@ -164,8 +163,8 @@ export async function GET(request: NextRequest) {
 // POST - Modify customer cart (add/update items)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -194,7 +193,7 @@ export async function POST(request: NextRequest) {
       // Verify user is sales staff
       const [salesStaffRows] = await connection.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
-        [session.user.id]
+        [user.userId]
       );
 
       if (!Array.isArray(salesStaffRows) || salesStaffRows.length === 0) {
@@ -412,7 +411,7 @@ export async function POST(request: NextRequest) {
       await pusher.trigger(`customer-cart-${assistanceSession.customer_user_id}`, 'cart-updated', {
         action,
         sessionId,
-        salesStaffName: `${session.user.firstName || ''} ${session.user.lastName || ''}`.trim(),
+        salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
         timestamp: new Date().toISOString()
       });
 

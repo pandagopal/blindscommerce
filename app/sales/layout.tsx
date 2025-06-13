@@ -4,7 +4,7 @@ import { getCurrentUser, hasRole } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import {
   Home, ShoppingCart, Package, Users, MessageSquare,
-  Settings, LogOut, BarChart3
+  Settings, LogOut, BarChart3, UserCheck
 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -67,6 +67,12 @@ export default async function SalesLayout({
                 </Link>
               </li>
               <li>
+                <Link href="/sales/assistance" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
+                  <UserCheck className="mr-3 h-5 w-5" />
+                  <span>Customer Assistance</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/sales/support" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
                   <MessageSquare className="mr-3 h-5 w-5" />
                   <span>Support</span>
@@ -112,11 +118,6 @@ export default async function SalesLayout({
           <Link href="/sales" className="font-bold text-lg text-primary-red">
             Sales Portal
           </Link>
-          <button className="text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
         </div>
       </div>
 
