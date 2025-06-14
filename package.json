@@ -34,7 +34,7 @@
     "@radix-ui/react-toast": "^1.2.7",
     "@radix-ui/react-use-callback-ref": "^1.0.1",
     "@radix-ui/react-visually-hidden": "^1.2.2",
-    "@react-three/drei": "^10.1.2",
+    "@react-three/drei": "^9.92.0",
     "@react-three/fiber": "^9.1.2",
     "@react-three/xr": "^6.6.17",
     "@stripe/react-stripe-js": "^3.6.0",

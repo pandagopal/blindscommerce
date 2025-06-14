@@ -1,6 +1,5 @@
 'use client';
 
-import { Metadata } from 'next';
 import Link from 'next/link';
 import { getCurrentUser, hasRole } from '@/lib/auth';
 import { redirect, useRouter } from 'next/navigation';
@@ -9,11 +8,6 @@ import {
   Home, ShoppingCart, Package, Users, MessageSquare,
   Settings, LogOut, BarChart3, UserCheck
 } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Sales Dashboard | Smart Blinds Hub',
-  description: 'Manage customers, orders, and check sales performance',
-};
 
 export default function SalesLayout({
   children,
