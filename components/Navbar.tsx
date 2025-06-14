@@ -59,26 +59,53 @@ const Navbar = () => {
     fetchCompanyInfo();
   }, []);
 
+  // Fetch user data
+  const fetchUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Fetch user data on component mount
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        } else {
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+    fetchUser();
+  }, []);
+
+  // Listen for logout events from other parts of the app
+  useEffect(() => {
+    const handleAuthChange = () => {
+      fetchUser();
     };
 
-    fetchUser();
+    // Listen for custom logout events
+    window.addEventListener('userLoggedOut', handleAuthChange);
+    
+    // Listen for storage changes (in case auth token is cleared)
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'auth_logout') {
+        fetchUser();
+      }
+    });
+
+    // Also check auth status when the window gains focus
+    window.addEventListener('focus', fetchUser);
+
+    return () => {
+      window.removeEventListener('userLoggedOut', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+      window.removeEventListener('focus', fetchUser);
+    };
   }, []);
 
   // Handle click outside to close dropdown

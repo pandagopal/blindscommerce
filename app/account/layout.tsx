@@ -57,9 +57,21 @@ export default function AccountLayout({
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      // Clear user state immediately
+      setUser(null);
+      // Trigger event to notify navbar
+      window.dispatchEvent(new CustomEvent('userLoggedOut'));
+      // Set storage event to notify other tabs
+      localStorage.setItem('auth_logout', Date.now().toString());
+      localStorage.removeItem('auth_logout');
+      // Redirect to home page
       router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
+      // Even if logout fails, clear state and redirect
+      setUser(null);
+      window.dispatchEvent(new CustomEvent('userLoggedOut'));
+      router.push('/');
     }
   };
 
