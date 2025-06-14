@@ -1,6 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { AlertCircle, Plus, Minus } from 'lucide-react';
 
 interface OrderItem {
   id: number;
@@ -153,225 +162,230 @@ const OrderModificationModal: React.FC<OrderModificationModalProps> = ({
   const priceDifference = calculatePriceDifference();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold">Modify Order #{order.id}</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold">Modify Order #{order.id}</DialogTitle>
+          <DialogDescription>
+            Update your order details below. Changes are subject to approval.
+          </DialogDescription>
+        </DialogHeader>
 
+        <div className="space-y-6">
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-              {error}
-            </div>
+            <Card className="border-red-200 bg-red-50">
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                  <span className="text-red-700">{error}</span>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {order.modificationDeadline && (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg mb-6">
-              <p className="text-sm">
-                <strong>Modification Deadline:</strong> {new Date(order.modificationDeadline).toLocaleString()}
-              </p>
-            </div>
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardContent className="p-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Modification Deadline:</strong> {new Date(order.modificationDeadline).toLocaleString()}
+                </p>
+              </CardContent>
+            </Card>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Modification Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                What would you like to modify?
-              </label>
-              <select
-                value={modificationType}
-                onChange={(e) => setModificationType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select modification type</option>
-                <option value="item_quantity">Change item quantities</option>
-                <option value="shipping_address">Update shipping address</option>
-                <option value="shipping_method">Change shipping method</option>
-                <option value="special_instructions">Update special instructions</option>
-                <option value="cancel_order">Cancel entire order</option>
-              </select>
+            <div className="space-y-2">
+              <Label htmlFor="modification-type">What would you like to modify?</Label>
+              <Select value={modificationType} onValueChange={setModificationType} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select modification type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="item_quantity">Change item quantities</SelectItem>
+                  <SelectItem value="shipping_address">Update shipping address</SelectItem>
+                  <SelectItem value="shipping_method">Change shipping method</SelectItem>
+                  <SelectItem value="special_instructions">Update special instructions</SelectItem>
+                  <SelectItem value="cancel_order">Cancel entire order</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
-            {/* Item Quantity Changes */}
             {modificationType === 'item_quantity' && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Update Item Quantities</h3>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Update Item Quantities</h3>
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium">{item.productName}</h4>
-                        <p className="text-sm text-gray-600">${item.unitPrice.toFixed(2)} each</p>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <span className="text-sm text-gray-600">Original: {item.originalQuantity}</span>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => handleItemQuantityChange(item.id, item.newQuantity - 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
-                          >
-                            -
-                          </button>
-                          <span className="w-12 text-center font-medium">{item.newQuantity}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleItemQuantityChange(item.id, item.newQuantity + 1)}
-                            className="w-8 h-8 flex items-center justify-center bg-gray-100 rounded-full hover:bg-gray-200"
-                          >
-                            +
-                          </button>
+                    <Card key={item.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.productName}</h4>
+                            <p className="text-sm text-muted-foreground">${item.unitPrice.toFixed(2)} each</p>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            <Badge variant="outline">Original: {item.originalQuantity}</Badge>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleItemQuantityChange(item.id, item.newQuantity - 1)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <span className="w-12 text-center font-medium">{item.newQuantity}</span>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleItemQuantityChange(item.id, item.newQuantity + 1)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            {item.newQuantity !== item.originalQuantity && (
+                              <Badge variant={item.newQuantity > item.originalQuantity ? "default" : "destructive"}>
+                                {item.newQuantity > item.originalQuantity ? '+' : ''}
+                                ${((item.newQuantity - item.originalQuantity) * item.unitPrice).toFixed(2)}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        {item.newQuantity !== item.originalQuantity && (
-                          <span className={`text-sm font-medium ${
-                            item.newQuantity > item.originalQuantity ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {item.newQuantity > item.originalQuantity ? '+' : ''}
-                            ${((item.newQuantity - item.originalQuantity) * item.unitPrice).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
 
                 {priceDifference !== 0 && (
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">Total Price Change:</span>
-                      <span className={`font-bold ${priceDifference > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {priceDifference > 0 ? '+' : ''}${Math.abs(priceDifference).toFixed(2)}
-                      </span>
-                    </div>
-                    {priceDifference > 0 && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        Additional payment will be required after approval.
-                      </p>
-                    )}
-                    {priceDifference < 0 && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        A refund will be processed after approval.
-                      </p>
-                    )}
-                  </div>
+                  <Card className="bg-muted">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium">Total Price Change:</span>
+                        <Badge variant={priceDifference > 0 ? "default" : "destructive"} className="text-lg px-3">
+                          {priceDifference > 0 ? '+' : ''}${Math.abs(priceDifference).toFixed(2)}
+                        </Badge>
+                      </div>
+                      {priceDifference > 0 && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Additional payment will be required after approval.
+                        </p>
+                      )}
+                      {priceDifference < 0 && (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          A refund will be processed after approval.
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             )}
 
-            {/* Shipping Address */}
             {modificationType === 'shipping_address' && (
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Update Shipping Address</h3>
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Update Shipping Address</h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    placeholder="First Name"
-                    value={shippingAddress?.firstName || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, firstName: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Last Name"
-                    value={shippingAddress?.lastName || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, lastName: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Address Line 1"
-                    value={shippingAddress?.line1 || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, line1: e.target.value }))}
-                    className="md:col-span-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="City"
-                    value={shippingAddress?.city || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="State"
-                    value={shippingAddress?.state || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="ZIP Code"
-                    value={shippingAddress?.postalCode || ''}
-                    onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
-                    className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={shippingAddress?.firstName || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, firstName: e.target.value }))}
+                      placeholder="First Name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={shippingAddress?.lastName || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, lastName: e.target.value }))}
+                      placeholder="Last Name"
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <Label htmlFor="address1">Address Line 1</Label>
+                    <Input
+                      id="address1"
+                      value={shippingAddress?.line1 || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, line1: e.target.value }))}
+                      placeholder="Address Line 1"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      value={shippingAddress?.city || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, city: e.target.value }))}
+                      placeholder="City"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      value={shippingAddress?.state || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, state: e.target.value }))}
+                      placeholder="State"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="zipCode">ZIP Code</Label>
+                    <Input
+                      id="zipCode"
+                      value={shippingAddress?.postalCode || ''}
+                      onChange={(e) => setShippingAddress((prev: any) => ({ ...prev, postalCode: e.target.value }))}
+                      placeholder="ZIP Code"
+                    />
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Special Instructions */}
             {modificationType === 'special_instructions' && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Special Instructions
-                </label>
-                <textarea
+              <div className="space-y-2">
+                <Label htmlFor="special-instructions">Special Instructions</Label>
+                <Textarea
+                  id="special-instructions"
                   value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter any special delivery or handling instructions..."
                 />
               </div>
             )}
 
-            {/* Reason */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reason for modification *
-              </label>
-              <textarea
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason for modification *</Label>
+              <Textarea
+                id="reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Please explain why you need to modify this order..."
                 required
               />
             </div>
 
-            {/* Actions */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
+            <div className="flex justify-end space-x-3 pt-6 border-t">
+              <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={!isModificationValid() || loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="min-w-[200px]"
               >
                 {loading ? 'Submitting...' : 'Submit Modification Request'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

@@ -6,6 +6,116 @@ import { notFound } from "next/navigation";
 // export const dynamic = 'force-dynamic';
 // export const revalidate = 0;
 
+// Client component for product listing with filters
+function ProductListingPage({ products, searchTerm }: { products: any[], searchTerm: string }) {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {searchTerm.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Products
+        </h1>
+        <p className="text-gray-600">Found {products.length} products</p>
+      </div>
+
+      {/* Filters */}
+      <div className="mb-8 bg-white p-6 rounded-lg shadow-sm border">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Price Range Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+            <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <option value="">All Prices</option>
+              <option value="0-50">$0 - $50</option>
+              <option value="50-100">$50 - $100</option>
+              <option value="100-200">$100 - $200</option>
+              <option value="200+">$200+</option>
+            </select>
+          </div>
+
+          {/* Brand Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+            <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <option value="">All Brands</option>
+              {[...new Set(products.map(p => p.brand_name).filter(Boolean))].map(brand => (
+                <option key={brand} value={brand}>{brand}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Category Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+            <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <option value="">All Categories</option>
+              {[...new Set(products.map(p => p.category_name).filter(Boolean))].map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+            <select className="w-full border border-gray-300 rounded-md px-3 py-2">
+              <option value="name">Name A-Z</option>
+              <option value="name-desc">Name Z-A</option>
+              <option value="price">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      
+      {/* Product Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {products.map((product: any) => (
+          <div key={product.product_id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+            <div className="aspect-square bg-gray-200">
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={product.images[0].image_url}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="text-gray-500">No image</span>
+                </div>
+              )}
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.short_description}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-xl font-bold text-primary-red">
+                  ${typeof product.base_price === 'number' ? product.base_price.toFixed(2) : parseFloat(product.base_price || 0).toFixed(2)}
+                </span>
+                <Link
+                  href={`/products/${product.slug}`}
+                  className="bg-primary-red text-white px-4 py-2 rounded-md hover:bg-primary-red-dark transition-colors"
+                >
+                  View Details
+                </Link>
+              </div>
+              {product.rating > 0 && (
+                <div className="flex items-center mt-2">
+                  <span className="text-yellow-500">★</span>
+                  <span className="ml-1 text-sm text-gray-600">{product.rating}</span>
+                  {product.review_count > 0 && (
+                    <span className="ml-1 text-sm text-gray-500">({product.review_count})</span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Define a type for the product data structure
 type ProductData = {
   product_id: number;
@@ -134,35 +244,104 @@ const mockProducts: Record<string, ProductData> = {
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  // Get static product data for metadata
-  const product = mockProducts[params.slug];
+  // Await params as required in Next.js 15
+  const { slug } = await params;
+  
+  // Try to fetch real product data for metadata
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/products/${slug}`);
+    if (response.ok) {
+      const data = await response.json();
+      const products = data.products;
+      
+      if (products && products.length > 0) {
+        if (products.length === 1) {
+          // Single product
+          const product = products[0];
+          return {
+            title: `${product.name} | Smart Blinds Hub`,
+            description: product.short_description || "Custom window treatments from Smart Blinds Hub",
+          };
+        } else {
+          // Multiple products - create category-style metadata
+          const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          return {
+            title: `${categoryName} Products | Smart Blinds Hub`,
+            description: `Browse our collection of ${categoryName.toLowerCase()} products. Found ${products.length} products to choose from.`,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching product for metadata:', error);
+  }
 
-  if (!product) {
+  // Fallback to mock data
+  const product = mockProducts[slug];
+  if (product) {
     return {
-      title: "Product Not Found | Smart Blinds Hub",
-      description: "The requested product could not be found.",
+      title: `${product.name} | Smart Blinds Hub`,
+      description: product.short_description || "Custom window treatments from Smart Blinds Hub",
     };
   }
 
+  // Final fallback
+  const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   return {
-    title: `${product.name} | Smart Blinds Hub`,
-    description: product.short_description || "Custom window treatments from Smart Blinds Hub",
+    title: `${categoryName} Products | Smart Blinds Hub`,
+    description: `Browse our collection of ${categoryName.toLowerCase()} products and window treatments.`,
   };
 }
 
-export default function ProductDetailPage({
+export default async function ProductDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  // Use mock data instead of fetching from API
-  const product = mockProducts[params.slug];
+  // Await params as required in Next.js 15
+  const { slug } = await params;
+  
+  // Try to fetch real product data first
+  let products = null;
+  let isMultiple = false;
+  let searchTerm = slug;
+  
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/products/${slug}`, {
+      cache: 'no-store' // Ensure fresh data
+    });
+    if (response.ok) {
+      const data = await response.json();
+      products = data.products;
+      isMultiple = data.isMultiple;
+      searchTerm = data.searchTerm || slug;
+    }
+  } catch (error) {
+    console.error('Error fetching products:', error);
+  }
+  
+  // Fallback to mock data if API fails
+  if (!products || products.length === 0) {
+    const mockProduct = mockProducts[slug];
+    if (mockProduct) {
+      products = [mockProduct];
+      isMultiple = false;
+    }
+  }
 
-  if (!product) {
+  if (!products || products.length === 0) {
     notFound();
   }
+  
+  // If multiple products, show product listing with filters
+  if (isMultiple || products.length > 1) {
+    return <ProductListingPage products={products} searchTerm={searchTerm} />;
+  }
+  
+  // Single product - show detailed view
+  const product = products[0];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -250,11 +429,11 @@ export default function ProductDetailPage({
           {/* Price */}
           <div className="mb-6">
             <span className="text-2xl font-bold text-primary-red">
-              ${product.base_price.toFixed(2)}
+              ${typeof product.base_price === 'number' ? product.base_price.toFixed(2) : parseFloat(product.base_price || 0).toFixed(2)}
             </span>
             {product.is_on_sale && product.sale_price && (
               <span className="ml-2 text-gray-500 line-through">
-                ${product.sale_price.toFixed(2)}
+                ${typeof product.sale_price === 'number' ? product.sale_price.toFixed(2) : parseFloat(product.sale_price || 0).toFixed(2)}
               </span>
             )}
           </div>

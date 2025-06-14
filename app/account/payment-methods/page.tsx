@@ -408,7 +408,7 @@ const PaymentMethodsContent: React.FC = () => {
               <button
                 type="submit"
                 disabled={!stripe || processingAction === 'adding'}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
               >
                 {processingAction === 'adding' ? 'Adding...' : 'Add Payment Method'}
               </button>

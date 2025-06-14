@@ -158,7 +158,7 @@ export default function VendorProductEditPage() {
           <input name="benefits" value={form.benefits} onChange={handleChange} className="w-full border p-2 rounded" />
         </div>
         {error && <div className="text-red-600">{error}</div>}
-        <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark" disabled={saving}>
+        <button type="submit" className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors" disabled={saving}>
           {saving ? 'Saving...' : 'Update Product'}
         </button>
       </form>

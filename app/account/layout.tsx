@@ -5,15 +5,13 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   Home,
-  ShoppingBag,
   ShoppingCart,
-  MapPin,
-  User,
-  Settings,
   Ruler,
   BookmarkIcon,
-  ChevronRight,
-  LogOut
+  Settings,
+  LogOut,
+  User,
+  ChevronRight
 } from 'lucide-react';
 
 interface UserData {
@@ -106,7 +104,6 @@ export default function AccountLayout({
           {/* Sidebar */}
           <aside className="w-full md:w-64 shrink-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              {/* Portal Title */}
               <div className="px-4 py-4 border-b border-gray-200">
                 <Link href="/account" className="text-xl font-bold text-primary-red">
                   My Account

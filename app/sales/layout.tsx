@@ -1,13 +1,20 @@
 'use client';
 
-import Link from 'next/link';
-import { getCurrentUser, hasRole } from '@/lib/auth-client';
-import { redirect, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import Link from 'next/link';
 import {
   Home, ShoppingCart, Package, Users, MessageSquare,
-  Settings, LogOut, BarChart3, UserCheck
+  Settings, LogOut, BarChart3, UserCheck, User, ChevronRight
 } from 'lucide-react';
+
+interface UserData {
+  userId: number;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+}
 
 export default function SalesLayout({
   children,
@@ -15,25 +22,32 @@ export default function SalesLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const pathname = usePathname();
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const fetchUser = async () => {
       try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser || !hasRole(currentUser, ['admin', 'sales'])) {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user.role !== 'sales' && data.user.role !== 'admin') {
+            router.push('/');
+            return;
+          }
+          setUser(data.user);
+        } else {
           router.push('/login?redirect=/sales');
-          return;
         }
-        setUser(currentUser);
       } catch (error) {
-        router.push('/login?redirect=/sales');
+        console.error('Error fetching user:', error);
       } finally {
         setLoading(false);
       }
     };
-    checkAuth();
+
+    fetchUser();
   }, [router]);
 
   const handleLogout = async () => {
@@ -59,114 +73,126 @@ export default function SalesLayout({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">Loading...</div>
+      <div className="container mx-auto px-4 py-12 flex justify-center">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32 mb-8"></div>
+          <div className="h-64 bg-gray-200 rounded w-full max-w-md"></div>
+        </div>
       </div>
     );
   }
 
+  if (!user || (user.role !== 'sales' && user.role !== 'admin')) {
+    return null;
+  }
+
+  const menuItems = [
+    { href: '/sales', label: 'Dashboard', icon: <Home size={18} /> },
+    { href: '/sales/leads', label: 'Leads', icon: <Users size={18} /> },
+    { href: '/sales/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+    { href: '/sales/quotes', label: 'Quotes', icon: <Package size={18} /> },
+    { href: '/sales/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
+    { href: '/sales/assistance', label: 'Customer Assistance', icon: <UserCheck size={18} /> },
+    { href: '/sales/support', label: 'Support', icon: <MessageSquare size={18} /> },
+    { href: '/sales/settings', label: 'Settings', icon: <Settings size={18} /> },
+  ];
+
   return (
-    <div className="flex min-h-screen bg-white">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 hidden md:block">
-        <div className="h-full flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <Link href="/sales" className="flex items-center">
-              <span className="font-bold text-xl text-primary-red">Sales Portal</span>
-            </Link>
-          </div>
+    <div className="bg-white min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-4 py-4 border-b border-gray-200">
+                <Link href="/sales" className="text-xl font-bold text-primary-red">
+                  Sales Portal
+                </Link>
+                <div className="mt-3 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                      {user?.firstName && user?.lastName ? (
+                        <span className="text-primary-red font-medium text-xs">
+                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                        </span>
+                      ) : (
+                        <User size={16} className="text-primary-red" />
+                      )}
+                    </div>
+                    <span className="text-sm text-primary">
+                      {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
+                    </span>
+                  </div>
+                  <Link href="/" className="text-xs text-secondary hover:text-primary">
+                    Store →
+                  </Link>
+                </div>
+              </div>
+              <nav className="mt-2">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 transition-colors ${
+                      pathname === item.href
+                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
+                        : 'text-secondary hover:bg-default'
+                    }`}
+                  >
+                    <span className="mr-3">{item.icon}</span>
+                    <span>{item.label}</span>
+                    {pathname === item.href && (
+                      <ChevronRight size={16} className="ml-auto" />
+                    )}
+                  </Link>
+                ))}
 
-          <nav className="flex-1 overflow-y-auto p-4">
-            <ul className="space-y-1">
-              <li>
-                <Link href="/sales" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <Home className="mr-3 h-5 w-5" />
-                  <span>Dashboard</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/leads" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <Users className="mr-3 h-5 w-5" />
-                  <span>Leads</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/orders" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <ShoppingCart className="mr-3 h-5 w-5" />
-                  <span>Orders</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/quotes" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <Package className="mr-3 h-5 w-5" />
-                  <span>Quotes</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/analytics" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <BarChart3 className="mr-3 h-5 w-5" />
-                  <span>Analytics</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/assistance" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <UserCheck className="mr-3 h-5 w-5" />
-                  <span>Customer Assistance</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/sales/support" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <MessageSquare className="mr-3 h-5 w-5" />
-                  <span>Support</span>
-                </Link>
-              </li>
-            </ul>
-
-            <hr className="my-4" />
-
-            <ul className="space-y-1">
-              <li>
-                <Link href="/sales/settings" className="flex items-center px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <Settings className="mr-3 h-5 w-5" />
-                  <span>Settings</span>
-                </Link>
-              </li>
-              <li>
-                <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">
-                  <LogOut className="mr-3 h-5 w-5" />
-                  <span>Log out</span>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
+                >
+                  <span className="mr-3"><LogOut size={18} /></span>
+                  <span>Logout</span>
                 </button>
-              </li>
-            </ul>
-          </nav>
-
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-primary-red text-white flex items-center justify-center">
-                {user?.firstName?.charAt(0) || 'S'}
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
-                <p className="text-xs text-gray-500">Sales Representative</p>
-              </div>
+              </nav>
             </div>
-          </div>
-        </div>
-      </aside>
 
-      {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
-        <div className="flex justify-between items-center">
-          <Link href="/sales" className="font-bold text-lg text-primary-red">
-            Sales Portal
-          </Link>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
+              <h3 className="font-medium text-primary mb-2">Quick Actions</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <Link href="/sales/leads/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">➕</span> Add New Lead
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/sales/quotes/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📄</span> Create Quote
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/sales/assistance" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">🎧</span> Customer Support
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/sales/analytics" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">📊</span> View Performance
+                  </Link>
+                </li>
+              </ul>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="flex-1">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              {children}
+            </div>
+          </main>
         </div>
       </div>
-
-      {/* Main Content */}
-      <main className="flex-1 p-6 overflow-y-auto">
-        {children}
-      </main>
     </div>
   );
 }

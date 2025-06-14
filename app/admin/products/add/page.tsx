@@ -102,7 +102,7 @@ export default function AddProductPage() {
         <h1 className="text-2xl font-bold">Add New Product</h1>
         <button
           onClick={handleSave}
-          className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg"
+          className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
         >
           Save Product
         </button>

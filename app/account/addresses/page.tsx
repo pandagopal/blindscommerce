@@ -83,7 +83,7 @@ export default function AddressesPage() {
           <input name="country" value={form.country || ''} onChange={handleChange} placeholder="Country" className="border p-2 rounded" required />
           <input name="phone" value={form.phone || ''} onChange={handleChange} placeholder="Phone (optional)" className="border p-2 rounded md:col-span-2" />
         </div>
-        <button type="submit" className="mt-4 bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">
+        <button type="submit" className="mt-4 bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">
           {editingId ? 'Update Address' : 'Add Address'}
         </button>
         {editingId && (

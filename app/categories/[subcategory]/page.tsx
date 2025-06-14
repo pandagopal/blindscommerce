@@ -132,8 +132,9 @@ const subcategoryData: Record<string, { name: string; description: string }> = {
   },
 };
 
-export default function SubcategoryPage({ params }: { params: { subcategory: string } }) {
-  const data = subcategoryData[params.subcategory];
+export default async function SubcategoryPage({ params }: { params: Promise<{ subcategory: string }> }) {
+  const { subcategory } = await params;
+  const data = subcategoryData[subcategory];
   if (!data) return notFound();
   return (
     <div className={styles.container}>

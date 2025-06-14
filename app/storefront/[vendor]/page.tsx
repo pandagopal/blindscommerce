@@ -11,9 +11,9 @@ const dbConfig = {
 };
 
 interface VendorPageProps {
-  params: {
+  params: Promise<{
     vendor: string;
-  };
+  }>;
 }
 
 interface PageData {
@@ -132,7 +132,8 @@ async function getVendorPageData(subdomain: string): Promise<{
 }
 
 export default async function VendorPage({ params }: VendorPageProps) {
-  const { homepage, featuredProducts, storefront } = await getVendorPageData(params.vendor);
+  const { vendor } = await params;
+  const { homepage, featuredProducts, storefront } = await getVendorPageData(vendor);
 
   if (!storefront) {
     notFound();
@@ -143,7 +144,7 @@ export default async function VendorPage({ params }: VendorPageProps) {
       homepage={homepage}
       featuredProducts={featuredProducts}
       storefront={storefront}
-      subdomain={params.vendor}
+      subdomain={vendor}
     />
   );
 }

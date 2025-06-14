@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status'); // 'active', 'inactive', 'scheduled', 'expired'
     const type = searchParams.get('type'); // 'percentage', 'fixed_amount', 'free_shipping', 'upgrade'
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     }
 
     const connection = await getConnection();
-    const offset = (page - 1) * limit;
+    const offset = Math.max(0, (page - 1) * limit);
 
     // Build WHERE clause
     let whereConditions = ['vendor_id = ?'];
@@ -116,13 +116,14 @@ export async function GET(request: NextRequest) {
     const total = countResult[0].total;
 
     // Get coupons with pagination
+    // Note: LIMIT and OFFSET must be included directly in the query string for MySQL2
     const query = `
       SELECT * FROM vendor_coupons 
       WHERE ${whereClause}
       ORDER BY ${sortBy} ${sortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
-    queryParams.push(limit, offset);
+    // Don't push limit and offset to queryParams
 
     const [coupons] = await connection.execute<VendorCoupon[]>(query, queryParams);
 

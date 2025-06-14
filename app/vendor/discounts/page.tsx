@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, Calendar, BarChart3 } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, Calendar, BarChart3, Save, AlertCircle } from 'lucide-react';
 
 interface VendorDiscount {
   discount_id: number;
@@ -63,10 +63,244 @@ interface VendorCoupon {
   created_at: string;
 }
 
+// Discount Form Component
+interface DiscountFormProps {
+  activeTab: string;
+  onSuccess: () => void;
+}
+
+function DiscountForm({ activeTab, onSuccess }: DiscountFormProps) {
+  const [formData, setFormData] = useState({
+    name: '',
+    code: '',
+    displayName: '',
+    description: '',
+    discountType: 'percentage',
+    discountValue: '',
+    minimumOrderValue: '',
+    maximumDiscountAmount: '',
+    validFrom: '',
+    validUntil: '',
+    usageLimit: '',
+    isActive: true
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const endpoint = activeTab === 'discounts' ? '/api/vendor/discounts' : '/api/vendor/coupons';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        onSuccess();
+        // Reset form
+        setFormData({
+          name: '',
+          code: '',
+          displayName: '',
+          description: '',
+          discountType: 'percentage',
+          discountValue: '',
+          minimumOrderValue: '',
+          maximumDiscountAmount: '',
+          validFrom: '',
+          validUntil: '',
+          usageLimit: '',
+          isActive: true
+        });
+      }
+    } catch (error) {
+      console.error('Error creating discount/coupon:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {activeTab === 'discounts' ? 'Discount Name' : 'Coupon Name'}
+          </label>
+          <Input
+            value={formData.name}
+            onChange={(e) => handleChange('name', e.target.value)}
+            placeholder="Enter name"
+            required
+          />
+        </div>
+
+        {activeTab === 'coupons' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Coupon Code</label>
+            <Input
+              value={formData.code}
+              onChange={(e) => handleChange('code', e.target.value.toUpperCase())}
+              placeholder="SAVE10"
+              required
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Display Name</label>
+          <Input
+            value={formData.displayName}
+            onChange={(e) => handleChange('displayName', e.target.value)}
+            placeholder="Name shown to customers"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Description</label>
+        <Input
+          value={formData.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          placeholder="Optional description"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type</label>
+          <Select value={formData.discountType} onValueChange={(value) => handleChange('discountType', value)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">Percentage</SelectItem>
+              <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+              {activeTab === 'coupons' && (
+                <>
+                  <SelectItem value="free_shipping">Free Shipping</SelectItem>
+                  <SelectItem value="upgrade">Upgrade</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {formData.discountType === 'percentage' ? 'Percentage (%)' : 'Amount ($)'}
+          </label>
+          <Input
+            type="number"
+            value={formData.discountValue}
+            onChange={(e) => handleChange('discountValue', e.target.value)}
+            placeholder={formData.discountType === 'percentage' ? '10' : '25.00'}
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Order Value ($)</label>
+          <Input
+            type="number"
+            value={formData.minimumOrderValue}
+            onChange={(e) => handleChange('minimumOrderValue', e.target.value)}
+            placeholder="0.00"
+          />
+        </div>
+
+        {formData.discountType === 'percentage' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Discount Amount ($)</label>
+            <Input
+              type="number"
+              value={formData.maximumDiscountAmount}
+              onChange={(e) => handleChange('maximumDiscountAmount', e.target.value)}
+              placeholder="Optional cap"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Valid From</label>
+          <Input
+            type="date"
+            value={formData.validFrom}
+            onChange={(e) => handleChange('validFrom', e.target.value)}
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Valid Until (Optional)</label>
+          <Input
+            type="date"
+            value={formData.validUntil}
+            onChange={(e) => handleChange('validUntil', e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Usage Limit (Optional)</label>
+        <Input
+          type="number"
+          value={formData.usageLimit}
+          onChange={(e) => handleChange('usageLimit', e.target.value)}
+          placeholder="Leave empty for unlimited"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          checked={formData.isActive}
+          onCheckedChange={(checked) => handleChange('isActive', checked)}
+        />
+        <label className="text-sm font-medium">Active immediately</label>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline">
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={saving}
+          className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
+        >
+          {saving ? (
+            <>
+              <span className="animate-spin mr-2">⌛</span>
+              Creating...
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4 mr-2" />
+              Create {activeTab === 'discounts' ? 'Discount' : 'Coupon'}
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 export default function VendorDiscountsPage() {
   const [discounts, setDiscounts] = useState<VendorDiscount[]>([]);
   const [coupons, setCoupons] = useState<VendorCoupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -86,6 +320,7 @@ export default function VendorDiscountsPage() {
   const fetchDiscounts = async () => {
     try {
       setLoading(true);
+      setError('');
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
@@ -100,6 +335,10 @@ export default function VendorDiscountsPage() {
       if (response.ok) {
         setDiscounts(data.discounts);
         setPagination(data.pagination);
+      } else {
+        console.error('Error response from API:', response.status, data);
+        const errorMessage = data.details ? `${data.error}: ${data.details}` : (data.error || 'Failed to fetch discounts');
+        setError(errorMessage);
       }
     } catch (error) {
       console.error('Error fetching discounts:', error);
@@ -124,6 +363,9 @@ export default function VendorDiscountsPage() {
       if (response.ok) {
         setCoupons(data.coupons);
         setPagination(data.pagination);
+      } else {
+        console.error('Error response from API:', response.status, data);
+        setError(data.error || 'Failed to fetch coupons');
       }
     } catch (error) {
       console.error('Error fetching coupons:', error);
@@ -244,10 +486,10 @@ export default function VendorDiscountsPage() {
                 Analytics
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-96">
+            <SheetContent className="w-96 bg-white">
               <SheetHeader>
-                <SheetTitle>Discount Analytics</SheetTitle>
-                <SheetDescription>
+                <SheetTitle className="text-xl font-semibold text-gray-900">Discount Analytics</SheetTitle>
+                <SheetDescription className="text-gray-600">
                   View performance metrics for your discounts and coupons
                 </SheetDescription>
               </SheetHeader>
@@ -282,16 +524,21 @@ export default function VendorDiscountsPage() {
                 Add New
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Create New {activeTab === 'discounts' ? 'Discount' : 'Coupon'}</DialogTitle>
-                <DialogDescription>
+                <DialogTitle className="text-xl font-semibold text-gray-900">Create New {activeTab === 'discounts' ? 'Discount' : 'Coupon'}</DialogTitle>
+                <DialogDescription className="text-gray-600">
                   Set up a new {activeTab === 'discounts' ? 'automatic discount' : 'coupon code'} for your products
                 </DialogDescription>
               </DialogHeader>
-              {/* Form would go here */}
-              <div className="text-center py-8 text-gray-500">
-                Form component would be implemented here
+              <div className="mt-4">
+                <DiscountForm activeTab={activeTab} onSuccess={() => {
+                if (activeTab === 'discounts') {
+                  fetchDiscounts();
+                } else {
+                  fetchCoupons();
+                }
+              }} />
               </div>
             </DialogContent>
           </Dialog>
@@ -360,6 +607,18 @@ export default function VendorDiscountsPage() {
         </div>
       )}
 
+      {/* Error Display */}
+      {error && (
+        <Card className="border-red-200 bg-red-50 mb-4">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <span className="text-red-700">{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
@@ -370,7 +629,7 @@ export default function VendorDiscountsPage() {
         <TabsContent value="discounts" className="space-y-4">
           {loading ? (
             <div className="text-center py-8">Loading discounts...</div>
-          ) : discounts.length === 0 ? (
+          ) : error ? null : discounts.length === 0 ? (
             <Card>
               <CardContent className="text-center py-8">
                 <p className="text-gray-500 mb-4">No discounts found</p>

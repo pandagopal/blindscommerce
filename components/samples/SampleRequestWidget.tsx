@@ -2,6 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { Package, AlertCircle, CheckCircle, Clock, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface UserLimits {
   remainingLifetime: number;
@@ -182,87 +189,94 @@ export default function SampleRequestWidget({
     <div className="space-y-6">
       {/* Limits Information */}
       {showLimitsInfo && userLimits && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <Info className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
-            <div className="flex-1">
-              <h3 className="font-medium text-blue-900 mb-1">Sample Request Limits</h3>
-              <div className="text-sm text-blue-700 space-y-1">
-                <div className="flex justify-between">
-                  <span>Remaining this period:</span>
-                  <span className="font-medium">{userLimits.remainingPeriod} samples</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Lifetime remaining:</span>
-                  <span className="font-medium">{userLimits.remainingLifetime} samples</span>
-                </div>
-                <div className="text-xs text-blue-600 mt-2">
-                  Period resets: {new Date(userLimits.periodEnd).toLocaleDateString()}
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-start">
+              <Info className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-medium text-blue-900 mb-3">Sample Request Limits</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-blue-700">Remaining this period:</span>
+                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                      {userLimits.remainingPeriod} samples
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-blue-700">Lifetime remaining:</span>
+                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                      {userLimits.remainingLifetime} samples
+                    </Badge>
+                  </div>
+                  <div className="text-xs text-blue-600 mt-2">
+                    Period resets: {new Date(userLimits.periodEnd).toLocaleDateString()}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Suspension Notice */}
       {userLimits?.isSuspended && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
-            <span className="text-red-800">
-              Your sample request privileges have been suspended. Please contact customer service.
-            </span>
-          </div>
-        </div>
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-4">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-2" />
+              <span className="text-red-800">
+                Your sample request privileges have been suspended. Please contact customer service.
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Category Filter */}
       <div className="flex flex-wrap gap-2 mb-4">
-        <button
+        <Button
+          variant={selectedCategory === null ? "default" : "outline"}
+          size="sm"
           onClick={() => setSelectedCategory(null)}
-          className={`px-3 py-1 rounded-full text-sm transition-colors ${
-            selectedCategory === null
-              ? 'bg-primary-red text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+          className="rounded-full"
         >
           All Categories
-        </button>
+        </Button>
         {categories.map(category => (
-          <button
+          <Button
             key={category.id}
+            variant={selectedCategory === category.id ? "default" : "outline"}
+            size="sm"
             onClick={() => setSelectedCategory(category.id)}
-            className={`px-3 py-1 rounded-full text-sm transition-colors ${
-              selectedCategory === category.id
-                ? 'bg-primary-red text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className="rounded-full"
           >
             {category.name}
-          </button>
+          </Button>
         ))}
       </div>
 
       {/* Selected Samples Counter */}
       {selectedSwatches.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-              <span className="text-green-800">
-                {selectedSwatches.length} sample{selectedSwatches.length !== 1 ? 's' : ''} selected
-              </span>
+        <Card className="border-green-200 bg-green-50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                <span className="text-green-800 font-medium">
+                  {selectedSwatches.length} sample{selectedSwatches.length !== 1 ? 's' : ''} selected
+                </span>
+              </div>
+              <Button
+                onClick={() => setShowRequestForm(true)}
+                disabled={!canSubmitRequest() || userLimits?.isSuspended}
+                className="bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                Request Samples
+              </Button>
             </div>
-            <button
-              onClick={() => setShowRequestForm(true)}
-              disabled={!canSubmitRequest() || userLimits?.isSuspended}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-1 rounded text-sm transition-colors"
-            >
-              Request Samples
-            </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Swatches Grid */}
@@ -272,17 +286,18 @@ export default function SampleRequestWidget({
           const isDisabled = !swatch.inStock || userLimits?.isSuspended;
           
           return (
-            <div
+            <Card
               key={swatch.id}
-              className={`relative border-2 rounded-lg p-3 cursor-pointer transition-all ${
+              className={`relative cursor-pointer transition-all ${
                 isSelected
-                  ? 'border-primary-red bg-red-50'
+                  ? 'border-primary ring-2 ring-primary/20 bg-primary/5'
                   : isDisabled
-                  ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:shadow-md'
               }`}
               onClick={() => !isDisabled && handleSwatchSelect(swatch.id)}
             >
+              <CardContent className="p-3">
               {/* Sample Image */}
               <div className="aspect-square bg-gray-100 rounded-md mb-2 overflow-hidden">
                 {swatch.image ? (
@@ -308,172 +323,167 @@ export default function SampleRequestWidget({
                 )}
               </div>
 
-              {/* Badges */}
-              <div className="absolute top-2 right-2 space-y-1">
-                {swatch.isPremium && (
-                  <div className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded">
-                    Premium
-                  </div>
-                )}
-                {!swatch.inStock && (
-                  <div className="bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded">
-                    Out of Stock
-                  </div>
-                )}
-              </div>
-
-              {/* Selection Indicator */}
-              {isSelected && (
-                <div className="absolute top-2 left-2">
-                  <CheckCircle className="h-5 w-5 text-primary-red" />
+                {/* Badges */}
+                <div className="absolute top-2 right-2 space-y-1">
+                  {swatch.isPremium && (
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 text-xs">
+                      Premium
+                    </Badge>
+                  )}
+                  {!swatch.inStock && (
+                    <Badge variant="destructive" className="text-xs">
+                      Out of Stock
+                    </Badge>
+                  )}
                 </div>
-              )}
-            </div>
+
+                {/* Selection Indicator */}
+                {isSelected && (
+                  <div className="absolute top-2 left-2">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           );
         })}
       </div>
 
       {/* Request Form Modal */}
-      {showRequestForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <h3 className="text-lg font-bold mb-4">Request Sample Shipping</h3>
+      <Dialog open={showRequestForm} onOpenChange={setShowRequestForm}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Request Sample Shipping</DialogTitle>
+            <DialogDescription>
+              Enter your shipping details to receive the selected samples.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                placeholder="Your full name"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address *</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                placeholder="your.email@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Address *</Label>
+              <Input
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+                required
+                placeholder="123 Main Street"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="city">City *</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formData.city}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
+                  placeholder="City"
                 />
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+              <div className="space-y-2">
+                <Label htmlFor="state">State *</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={formData.state}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
+                  placeholder="State"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address *
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="zipCode">ZIP Code *</Label>
+              <Input
+                id="zipCode"
+                name="zipCode"
+                value={formData.zipCode}
+                onChange={handleInputChange}
+                required
+                placeholder="12345"
+              />
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City *
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    State *
-                  </label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="priority">Shipping Priority</Label>
+              <Select name="priority" value={formData.priority} onValueChange={(value) => setFormData(prev => ({ ...prev, priority: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STANDARD">Standard (3-5 business days)</SelectItem>
+                  <SelectItem value="EXPRESS">Express (1-2 business days) - $5.99</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ZIP Code *
-                </label>
-                <input
-                  type="text"
-                  name="zipCode"
-                  value={formData.zipCode}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
-                />
-              </div>
+            {error && (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="p-3">
+                  <div className="flex items-center">
+                    <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Shipping Priority
-                </label>
-                <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-red focus:border-primary-red"
-                >
-                  <option value="STANDARD">Standard (3-5 business days)</option>
-                  <option value="EXPRESS">Express (1-2 business days) - $5.99</option>
-                </select>
-              </div>
+            {success && (
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="p-3">
+                  <div className="flex items-center">
+                    <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                    <p className="text-green-700 text-sm">{success}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              )}
-
-              {success && (
-                <div className="bg-green-50 border border-green-200 rounded-md p-3">
-                  <p className="text-green-700 text-sm">{success}</p>
-                </div>
-              )}
-
-              <div className="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={() => setShowRequestForm(false)}
-                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className={`px-6 py-2 bg-primary-red text-white rounded-md transition-colors ${
-                    submitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-red-dark'
-                  }`}
-                >
-                  {submitting ? 'Submitting...' : `Request ${selectedSwatches.length} Samples`}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+              <Button type="button" variant="outline" onClick={() => setShowRequestForm(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="min-w-[150px]"
+              >
+                {submitting ? 'Submitting...' : `Request ${selectedSwatches.length} Samples`}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

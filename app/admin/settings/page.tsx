@@ -212,7 +212,7 @@ export default function AdminSettingsPage() {
           <Button
             onClick={() => saveSettings()}
             disabled={saving}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save All'}
@@ -302,7 +302,7 @@ export default function AdminSettingsPage() {
                 <Button
                   onClick={() => saveSettings('notifications')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Notification Settings
@@ -388,7 +388,7 @@ export default function AdminSettingsPage() {
                 <Button
                   onClick={() => saveSettings('payments')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Payment Settings
@@ -492,7 +492,7 @@ export default function AdminSettingsPage() {
                 <Button
                   onClick={() => saveSettings('security')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Security Settings
@@ -614,7 +614,7 @@ export default function AdminSettingsPage() {
                 <Button
                   onClick={() => saveSettings('integrations')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Integration Settings

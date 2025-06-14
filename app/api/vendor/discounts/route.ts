@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status'); // 'active', 'inactive', 'scheduled', 'expired'
     const type = searchParams.get('type'); // 'percentage', 'fixed_amount', 'tiered'
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     const connection = await getConnection();
-    const offset = (page - 1) * limit;
+    const offset = Math.max(0, (page - 1) * limit);
 
     // Build WHERE clause
     let whereConditions = ['vendor_id = ?'];
@@ -111,13 +111,14 @@ export async function GET(request: NextRequest) {
     const total = countResult[0].total;
 
     // Get discounts with pagination
+    // Note: LIMIT and OFFSET must be included directly in the query string for MySQL2
     const query = `
       SELECT * FROM vendor_discounts 
       WHERE ${whereClause}
       ORDER BY ${sortBy} ${sortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
-    queryParams.push(limit, offset);
+    // Don't push limit and offset to queryParams
 
     const [discounts] = await connection.execute<VendorDiscount[]>(query, queryParams);
 
@@ -134,9 +135,13 @@ export async function GET(request: NextRequest) {
       }
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching vendor discounts:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error.message || 'Unknown error',
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    }, { status: 500 });
   }
 }
 

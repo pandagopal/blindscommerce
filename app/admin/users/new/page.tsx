@@ -270,7 +270,7 @@ export default function NewUserPage() {
             <button
               type="submit"
               disabled={loading || !!validationErrors.email || !!validationErrors.phone}
-              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50"
+              className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
             >
               {loading ? 'Creating...' : 'Create User'}
             </button>

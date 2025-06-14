@@ -31,6 +31,7 @@ interface Product {
 export default function VendorProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -50,12 +51,21 @@ export default function VendorProductsPage() {
   const fetchProducts = async () => {
     try {
       setLoading(true);
+      setError('');
       const res = await fetch('/api/vendor/products');
-      if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
+      
+      if (!res.ok) {
+        setError(data.error || `Failed to fetch products: ${res.status}`);
+        console.error('Error response:', res.status, data);
+        return;
+      }
+      
       setProducts(data.products || []);
+      console.log('Fetched products:', data.products?.length || 0);
     } catch (error) {
       console.error('Error fetching products:', error);
+      setError('Failed to connect to server');
     } finally {
       setLoading(false);
     }
@@ -284,6 +294,16 @@ export default function VendorProductsPage() {
           </div>
         </div>
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+          <div className="flex items-center">
+            <AlertTriangleIcon className="h-5 w-5 mr-2" />
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
       {/* Products Table */}
       {loading ? (

@@ -45,9 +45,25 @@ export async function generateToken(user: User): Promise<string> {
   return token;
 }
 
-// Helper to verify JWT token
-export async function verifyToken(token: string): Promise<any> {
+// Helper to verify JWT token from string
+export async function verifyToken(token: string): Promise<any>;
+// Helper to verify JWT token from NextRequest
+export async function verifyToken(request: NextRequest): Promise<any>;
+// Implementation
+export async function verifyToken(tokenOrRequest: string | NextRequest): Promise<any> {
   try {
+    let token: string;
+    
+    if (typeof tokenOrRequest === 'string') {
+      token = tokenOrRequest;
+    } else {
+      // Extract token from NextRequest cookies
+      token = tokenOrRequest.cookies.get('auth_token')?.value || '';
+      if (!token) {
+        return null;
+      }
+    }
+    
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'Blinds_secret');
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;

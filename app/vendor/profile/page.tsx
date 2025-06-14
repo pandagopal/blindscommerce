@@ -509,7 +509,7 @@ export default function VendorProfilePage() {
               <Button 
                 type="submit" 
                 disabled={updating}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
               >
                 {updating ? (
                   <>
@@ -588,7 +588,7 @@ export default function VendorProfilePage() {
               <Button 
                 type="submit" 
                 disabled={updating}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
               >
                 {updating ? (
                   <>
@@ -663,7 +663,7 @@ export default function VendorProfilePage() {
               <Button 
                 type="submit" 
                 disabled={updating}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
               >
                 {updating ? (
                   <>
@@ -689,7 +689,7 @@ export default function VendorProfilePage() {
           <input name="day" value={hourForm.day || ''} onChange={handleHourChange} placeholder="Day" className="border p-2 rounded" required />
           <input name="open" value={hourForm.open || ''} onChange={handleHourChange} placeholder="Open (e.g. 09:00)" className="border p-2 rounded" required />
           <input name="close" value={hourForm.close || ''} onChange={handleHourChange} placeholder="Close (e.g. 17:00)" className="border p-2 rounded" required />
-          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingHourId ? 'Update' : 'Add'}</button>
+          <button type="submit" className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">{editingHourId ? 'Update' : 'Add'}</button>
           {editingHourId && <button type="button" onClick={() => { setHourForm({ day: '', open: '', close: '' }); setEditingHourId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
         </form>
         {hours.length === 0 ? <p className="text-gray-600">No business hours set.</p> : (
@@ -712,7 +712,7 @@ export default function VendorProfilePage() {
         <form onSubmit={handleDocSubmit} className="flex gap-2 mb-4 flex-wrap">
           <input name="name" value={docForm.name || ''} onChange={handleDocChange} placeholder="Document Name" className="border p-2 rounded" required />
           <input name="url" value={docForm.url || ''} onChange={handleDocChange} placeholder="URL" className="border p-2 rounded" required />
-          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingDocId ? 'Update' : 'Add'}</button>
+          <button type="submit" className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">{editingDocId ? 'Update' : 'Add'}</button>
           {editingDocId && <button type="button" onClick={() => { setDocForm({ name: '', url: '' }); setEditingDocId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
         </form>
         {docs.length === 0 ? <p className="text-gray-600">No legal documents uploaded.</p> : (
@@ -734,7 +734,7 @@ export default function VendorProfilePage() {
         <h2 className="text-xl font-semibold mb-2">Shipping Addresses</h2>
         <form onSubmit={handleShipSubmit} className="flex gap-2 mb-4 flex-wrap">
           <input name="address" value={shipForm.address || ''} onChange={handleShipChange} placeholder="Address" className="border p-2 rounded w-96" required />
-          <button type="submit" className="bg-primary-red text-white px-4 py-2 rounded hover:bg-primary-red-dark">{editingShipId ? 'Update' : 'Add'}</button>
+          <button type="submit" className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">{editingShipId ? 'Update' : 'Add'}</button>
           {editingShipId && <button type="button" onClick={() => { setShipForm({ address: '' }); setEditingShipId(null); }} className="text-gray-600 underline ml-2">Cancel</button>}
         </form>
         {shipping.length === 0 ? <p className="text-gray-600">No shipping addresses set.</p> : (

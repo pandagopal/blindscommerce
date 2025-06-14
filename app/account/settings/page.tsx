@@ -283,7 +283,7 @@ export default function AccountSettingsPage() {
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">
                   {saving ? (
                     <>
                       <span className="animate-spin mr-2">⌛</span>
@@ -362,7 +362,7 @@ export default function AccountSettingsPage() {
                   )}
                 </div>
 
-                <Button type="submit" disabled={saving}>
+                <Button type="submit" disabled={saving} className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors">
                   {saving ? (
                     <>
                       <span className="animate-spin mr-2">⌛</span>

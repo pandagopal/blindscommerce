@@ -185,8 +185,8 @@ export const validateVendorAccess = async (userId: number): Promise<VendorValida
     const pool = await getPool();
     
     const [rows] = await pool.execute(
-      `SELECT vendor_id, status, is_approved 
-       FROM vendors 
+      `SELECT vendor_info_id as vendor_id, approval_status as status, is_verified as is_approved 
+       FROM vendor_info 
        WHERE user_id = ? AND is_active = 1`,
       [userId]
     );
@@ -203,14 +203,14 @@ export const validateVendorAccess = async (userId: number): Promise<VendorValida
     if (!vendor.is_approved) {
       return {
         isValid: false,
-        error: 'Vendor account is not approved'
+        error: 'Vendor account is not verified'
       };
     }
     
-    if (vendor.status !== 'active') {
+    if (vendor.status !== 'approved') {
       return {
         isValid: false,
-        error: 'Vendor account is not active'
+        error: 'Vendor account is not approved'
       };
     }
     

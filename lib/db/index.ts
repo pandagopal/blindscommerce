@@ -400,7 +400,8 @@ export const getProductBySlug = async (slug: string): Promise<any | null> => {
       p.name,
       p.slug,
       p.sku,
-      p.description,
+      p.short_description,
+      p.full_description,
       p.base_price,
       p.category_id,
       c.name as category_name,
@@ -408,21 +409,17 @@ export const getProductBySlug = async (slug: string): Promise<any | null> => {
       p.brand_id,
       b.name as brand_name,
       p.primary_image_url,
-      p.images,
-      p.features,
-      p.specifications,
+      p.rating,
+      p.review_count,
       p.is_active,
       p.is_featured,
       p.created_at,
-      p.updated_at,
-      COALESCE(AVG(pr.rating), 0) as average_rating,
-      COUNT(DISTINCT pr.review_id) as review_count
+      p.updated_at
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.category_id
     LEFT JOIN brands b ON p.brand_id = b.brand_id
-    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
     WHERE p.slug = ? AND p.is_active = 1
-    GROUP BY p.product_id`,
+    LIMIT 1`,
     [slug]
   );
 
@@ -430,32 +427,91 @@ export const getProductBySlug = async (slug: string): Promise<any | null> => {
   
   const product = rows[0];
   
-  // Parse JSON fields
-  if (product.images) {
-    try {
-      product.images = JSON.parse(product.images);
-    } catch (e) {
-      product.images = [];
-    }
-  }
-  
-  if (product.features) {
-    try {
-      product.features = JSON.parse(product.features);
-    } catch (e) {
-      product.features = [];
-    }
-  }
-  
-  if (product.specifications) {
-    try {
-      product.specifications = JSON.parse(product.specifications);
-    } catch (e) {
-      product.specifications = {};
-    }
-  }
-  
-  return product;
+  // Transform data to match expected format
+  return {
+    ...product,
+    // Ensure numeric types
+    base_price: parseFloat(product.base_price || 0),
+    rating: parseFloat(product.rating || 0),
+    review_count: parseInt(product.review_count || 0),
+    
+    // Add missing fields expected by the UI
+    is_on_sale: false, // Default for now
+    sale_price: null,  // Default for now
+    
+    // Handle images - create array from primary_image_url if no images exist
+    images: product.primary_image_url ? [
+      {
+        image_id: 1,
+        image_url: product.primary_image_url,
+        is_primary: true
+      }
+    ] : [],
+    
+    // Default empty arrays for missing features
+    features: []
+  };
+};
+
+// New function to get products by partial slug match (for category-like pages)
+export const getProductsBySlugPattern = async (slug: string): Promise<any[]> => {
+  const pool = await getPool();
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.sku,
+      p.short_description,
+      p.full_description,
+      p.base_price,
+      p.category_id,
+      c.name as category_name,
+      c.slug as category_slug,
+      p.brand_id,
+      b.name as brand_name,
+      p.primary_image_url,
+      p.rating,
+      p.review_count,
+      p.is_active,
+      p.is_featured,
+      p.created_at,
+      p.updated_at
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN brands b ON p.brand_id = b.brand_id
+    WHERE p.slug LIKE ? AND p.is_active = 1
+    ORDER BY 
+      CASE WHEN p.slug = ? THEN 1 ELSE 2 END,
+      p.name
+    LIMIT 50`,
+    [`%${slug}%`, slug]
+  );
+
+  // Transform all products
+  return rows.map(product => ({
+    ...product,
+    // Ensure numeric types
+    base_price: parseFloat(product.base_price || 0),
+    rating: parseFloat(product.rating || 0),
+    review_count: parseInt(product.review_count || 0),
+    
+    // Add missing fields expected by the UI
+    is_on_sale: false, // Default for now
+    sale_price: null,  // Default for now
+    
+    // Handle images - create array from primary_image_url if no images exist
+    images: product.primary_image_url ? [
+      {
+        image_id: 1,
+        image_url: product.primary_image_url,
+        is_primary: true
+      }
+    ] : [],
+    
+    // Default empty arrays for missing features
+    features: []
+  }));
 };
 
 // Get products with filtering, pagination, and sorting
