@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "bunx biome lint --write && bunx tsc --noEmit",
     "format": "bunx biome format --write",
-    "db:setup": "bun lib/db/setup.ts"
+    "db:setup": "bun lib/db/setup.ts",
+    "postinstall": "npm run build || echo 'Build will run on deployment'"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
