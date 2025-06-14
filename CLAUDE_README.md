@@ -375,6 +375,22 @@ TUYA_API_SECRET=...
 - **Dynamic imports** for large components
 - **Database query** optimization with connection pooling
 
+### Products Page Layout Fix (December 2024)
+- **Issue**: Products appearing at bottom instead of beside filters on `/products?category=1`
+- **Root Cause**: `ProductFilters` component was returning both sidebar AND sorting header in fragment
+- **Solution**: 
+  - Split `ProductFilters` to return only the filter sidebar
+  - Created separate `ProductSortHeader` component for sorting controls
+  - Updated products page layout to properly structure sidebar and products section
+- **Layout Structure**:
+  ```
+  grid grid-cols-1 md:grid-cols-4 gap-6
+  ├── md:col-span-1 (Filter Sidebar)
+  └── md:col-span-3 (Products Section)
+      ├── ProductSortHeader
+      └── ProductGrid
+  ```
+
 ---
 
 ## 🔄 Future Development Roadmap

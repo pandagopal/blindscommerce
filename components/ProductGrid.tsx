@@ -30,7 +30,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
       {products.map((product) => (
         <div
           key={product.product_id}
@@ -50,25 +50,25 @@ export default function ProductGrid({ products }: ProductGridProps) {
                 </div>
               )}
             </div>
-            <div className="p-4">
-              <h3 className="text-lg font-medium mb-1 text-gray-900">
+            <div className="p-3">
+              <h3 className="text-sm font-medium mb-1 text-gray-900 line-clamp-2">
                 {product.name}
               </h3>
-              <p className="text-sm text-gray-500 mb-2">
+              <p className="text-xs text-gray-500 mb-2">
                 {product.category_name}
               </p>
               {product.short_description && (
-                <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                   {product.short_description}
                 </p>
               )}
               <div className="flex justify-between items-center">
-                <span className="text-primary-red font-bold">
+                <span className="text-primary-red font-bold text-sm">
                   ${(parseFloat(product?.base_price) || 0).toFixed(2)}
                 </span>
                 <div className="flex items-center">
-                  <span className="text-yellow-400">★</span>
-                  <span className="text-sm text-gray-600 ml-1">
+                  <span className="text-yellow-400 text-sm">★</span>
+                  <span className="text-xs text-gray-600 ml-1">
                     {product?.rating ? parseFloat(product.rating).toFixed(1) : "N/A"}
                   </span>
                 </div>

@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getPool } from "@/lib/db";
 import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
+import ProductSortHeader from "@/components/ProductSortHeader";
 
 // Enable dynamic rendering for database fetching
 export const dynamic = 'force-dynamic';
@@ -199,20 +200,26 @@ export default async function ProductsPage({
 
       {/* Filters and products section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Pass the data to our client components */}
-        <ProductFilters
-          categories={categories}
-          features={features}
-          defaultCategoryId={categoryId}
-          initialMinPrice={minPrice}
-          initialMaxPrice={maxPrice}
-          initialSort={sortParam}
-          initialFeatures={featureIds}
-          productCount={products.length}
-        />
+        {/* Filters sidebar */}
+        <div className="md:col-span-1">
+          <ProductFilters
+            categories={categories}
+            features={features}
+            defaultCategoryId={categoryId}
+            initialMinPrice={minPrice}
+            initialMaxPrice={maxPrice}
+            initialSort={sortParam}
+            initialFeatures={featureIds}
+            productCount={products.length}
+          />
+        </div>
 
-        {/* Products grid section */}
+        {/* Products section with sorting header */}
         <div className="md:col-span-3">
+          <ProductSortHeader
+            productCount={products.length}
+            initialSort={sortParam}
+          />
           <ProductGrid products={products} />
         </div>
         </div>
