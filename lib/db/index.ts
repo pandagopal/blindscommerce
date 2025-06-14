@@ -295,3 +295,74 @@ export const getUserOrders = async (userId: string | number, limit: number = 10,
 
   return rows;
 };
+
+// Get order by ID with optional user ID check
+export const getOrderById = async (orderId: number, userId?: number | null): Promise<any | null> => {
+  const pool = await getPool();
+  
+  // Build query based on whether we need to filter by user
+  let query = `
+    SELECT 
+      o.order_id,
+      o.order_number,
+      o.user_id,
+      o.status,
+      o.total_amount,
+      o.subtotal,
+      o.tax_amount,
+      o.shipping_amount,
+      o.discount_amount,
+      o.currency,
+      o.shipping_address,
+      o.billing_address,
+      o.payment_method,
+      o.payment_status,
+      o.tracking_number,
+      o.notes,
+      o.created_at,
+      o.updated_at,
+      u.email as user_email,
+      u.first_name,
+      u.last_name,
+      u.phone
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.user_id
+    WHERE o.order_id = ?`;
+  
+  const params: (number | null)[] = [orderId];
+  
+  // If userId is provided, add it to the WHERE clause
+  if (userId !== null && userId !== undefined) {
+    query += ' AND o.user_id = ?';
+    params.push(userId);
+  }
+  
+  const [rows] = await pool.execute<RowDataPacket[]>(query, params);
+  
+  if (rows.length === 0) return null;
+  
+  const order = rows[0];
+  
+  // Get order items
+  const [items] = await pool.execute<RowDataPacket[]>(
+    `SELECT 
+      oi.order_item_id,
+      oi.product_id,
+      oi.quantity,
+      oi.price,
+      oi.discount_amount,
+      oi.tax_amount,
+      oi.total,
+      p.name as product_name,
+      p.sku,
+      p.image_url
+    FROM order_items oi
+    LEFT JOIN products p ON oi.product_id = p.product_id
+    WHERE oi.order_id = ?`,
+    [orderId]
+  );
+  
+  order.items = items;
+  
+  return order;
+};
