@@ -1,7 +1,7 @@
 import * as mysql from 'mysql2/promise';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { v4 as uuidv4 } from 'uuid';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // Types for database operations
 type QueryParams = string | number | boolean | Date | Buffer | null;

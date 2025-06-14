@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 interface UserRow extends RowDataPacket {
   user_id: number;

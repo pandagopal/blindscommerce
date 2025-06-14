@@ -44,7 +44,6 @@
     "@types/jsonwebtoken": "^9.0.9",
     "@types/three": "^0.177.0",
     "axios": "^1.8.4",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "braintree": "^3.31.0",
     "class-variance-authority": "^0.7.1",
@@ -88,7 +87,6 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@eslint/eslintrc": "^3",
-    "@types/bcrypt": "^5.0.2",
     "@types/node": "^20.17.47",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
@@ -100,6 +98,7 @@
     "@types/webxr": "^0.5.10",
     "autoprefixer": "^10.4.21",
     "dotenv": "^16.5.0",
+    "ignore-loader": "^0.1.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
