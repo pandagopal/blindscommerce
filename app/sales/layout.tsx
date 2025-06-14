@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { getCurrentUser, hasRole } from '@/lib/auth';
+import { getCurrentUser, hasRole } from '@/lib/auth-client';
 import { redirect, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
