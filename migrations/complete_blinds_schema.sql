@@ -790,6 +790,50 @@ LOCK TABLES `cart_promotions` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `cart_vendor_discounts`
+--
+
+DROP TABLE IF EXISTS `cart_vendor_discounts`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cart_vendor_discounts` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `cart_id` int NOT NULL,
+  `vendor_id` int NOT NULL,
+  `discount_id` int DEFAULT NULL,
+  `coupon_id` int DEFAULT NULL,
+  `discount_type` enum('automatic','coupon') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `discount_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_amount` decimal(10,2) NOT NULL,
+  `applied_to_items` json NOT NULL COMMENT 'Array of cart_item_ids and their discount amounts',
+  `subtotal_before` decimal(10,2) NOT NULL,
+  `subtotal_after` decimal(10,2) NOT NULL,
+  `applied_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_cart_vendor_discount` (`cart_id`,`vendor_id`,`discount_type`,`discount_code`),
+  KEY `idx_cart_vendor_discounts` (`cart_id`,`vendor_id`),
+  KEY `fk_cart_discount_vendor` (`vendor_id`),
+  KEY `fk_cart_discount_discount` (`discount_id`),
+  KEY `fk_cart_discount_coupon` (`coupon_id`),
+  CONSTRAINT `fk_cart_discount_cart` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cart_discount_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `vendor_coupons` (`coupon_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cart_discount_discount` FOREIGN KEY (`discount_id`) REFERENCES `vendor_discounts` (`discount_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_cart_discount_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cart_vendor_discounts`
+--
+
+LOCK TABLES `cart_vendor_discounts` WRITE;
+/*!40000 ALTER TABLE `cart_vendor_discounts` DISABLE KEYS */;
+/*!40000 ALTER TABLE `cart_vendor_discounts` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `carts`
 --
 
@@ -892,7 +936,7 @@ DROP TABLE IF EXISTS `chat_sessions`;
 CREATE TABLE `chat_sessions` (
   `session_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
-  `expert_id` int DEFAULT NULL,
+  `sales_staff_id` int DEFAULT NULL,
   `session_type` enum('support','consultation','sales') COLLATE utf8mb4_unicode_ci DEFAULT 'support',
   `status` enum('active','ended','waiting') COLLATE utf8mb4_unicode_ci DEFAULT 'active',
   `started_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -901,9 +945,9 @@ CREATE TABLE `chat_sessions` (
   `feedback` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`session_id`),
   KEY `user_id` (`user_id`),
-  KEY `expert_id` (`expert_id`),
+  KEY `expert_id` (`sales_staff_id`),
   CONSTRAINT `chat_sessions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
-  CONSTRAINT `chat_sessions_ibfk_2` FOREIGN KEY (`expert_id`) REFERENCES `experts` (`expert_id`) ON DELETE SET NULL
+  CONSTRAINT `chat_sessions_ibfk_2` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1167,7 +1211,7 @@ DROP TABLE IF EXISTS `consultation_bookings`;
 CREATE TABLE `consultation_bookings` (
   `booking_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `expert_id` int DEFAULT NULL,
+  `sales_staff_id` int DEFAULT NULL,
   `slot_id` int DEFAULT NULL,
   `consultation_type` enum('virtual','in-home','phone') COLLATE utf8mb4_unicode_ci DEFAULT 'virtual',
   `status` enum('scheduled','confirmed','completed','cancelled','rescheduled') COLLATE utf8mb4_unicode_ci DEFAULT 'scheduled',
@@ -1181,10 +1225,10 @@ CREATE TABLE `consultation_bookings` (
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`booking_id`),
   KEY `user_id` (`user_id`),
-  KEY `expert_id` (`expert_id`),
+  KEY `expert_id` (`sales_staff_id`),
   KEY `slot_id` (`slot_id`),
   CONSTRAINT `consultation_bookings_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `consultation_bookings_ibfk_2` FOREIGN KEY (`expert_id`) REFERENCES `experts` (`expert_id`) ON DELETE SET NULL,
+  CONSTRAINT `consultation_bookings_ibfk_2` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE SET NULL,
   CONSTRAINT `consultation_bookings_ibfk_3` FOREIGN KEY (`slot_id`) REFERENCES `consultation_slots` (`slot_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -1410,7 +1454,7 @@ DROP TABLE IF EXISTS `consultation_slots`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `consultation_slots` (
   `slot_id` int NOT NULL AUTO_INCREMENT,
-  `expert_id` int NOT NULL,
+  `sales_staff_id` int DEFAULT NULL,
   `date` date NOT NULL,
   `start_time` time NOT NULL,
   `end_time` time NOT NULL,
@@ -1420,9 +1464,9 @@ CREATE TABLE `consultation_slots` (
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`slot_id`),
-  UNIQUE KEY `expert_date_time` (`expert_id`,`date`,`start_time`),
-  KEY `expert_id` (`expert_id`),
-  CONSTRAINT `consultation_slots_ibfk_1` FOREIGN KEY (`expert_id`) REFERENCES `experts` (`expert_id`) ON DELETE CASCADE
+  UNIQUE KEY `expert_date_time` (`sales_staff_id`,`date`,`start_time`),
+  KEY `expert_id` (`sales_staff_id`),
+  CONSTRAINT `consultation_slots_ibfk_1` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -2092,41 +2136,6 @@ CREATE TABLE `dynamic_pricing_rules` (
 LOCK TABLES `dynamic_pricing_rules` WRITE;
 /*!40000 ALTER TABLE `dynamic_pricing_rules` DISABLE KEYS */;
 /*!40000 ALTER TABLE `dynamic_pricing_rules` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `experts`
---
-
-DROP TABLE IF EXISTS `experts`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `experts` (
-  `expert_id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `specialization` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `experience_years` int DEFAULT NULL,
-  `certification_details` text COLLATE utf8mb4_unicode_ci,
-  `availability_schedule` json DEFAULT NULL,
-  `hourly_rate` decimal(8,2) DEFAULT NULL,
-  `rating` decimal(3,2) DEFAULT NULL,
-  `total_consultations` int DEFAULT '0',
-  `is_active` tinyint(1) DEFAULT '1',
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`expert_id`),
-  UNIQUE KEY `user_id` (`user_id`),
-  CONSTRAINT `experts_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `experts`
---
-
-LOCK TABLES `experts` WRITE;
-/*!40000 ALTER TABLE `experts` DISABLE KEYS */;
-/*!40000 ALTER TABLE `experts` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -4770,7 +4779,7 @@ CREATE TABLE `products` (
   `is_featured` tinyint(1) DEFAULT '0',
   `is_active` tinyint(1) DEFAULT '1',
   `stock_status` enum('in_stock','out_of_stock','limited_stock') COLLATE utf8mb4_unicode_ci DEFAULT 'in_stock',
-  `sku` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `sku` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `category_id` int DEFAULT NULL,
@@ -4781,13 +4790,14 @@ CREATE TABLE `products` (
   PRIMARY KEY (`product_id`),
   UNIQUE KEY `slug` (`slug`),
   UNIQUE KEY `sku` (`sku`),
+  UNIQUE KEY `sku_2` (`sku`),
   KEY `brand_id` (`brand_id`),
   KEY `is_active` (`is_active`),
   KEY `stock_status` (`stock_status`),
   KEY `fk_products_category` (`category_id`),
   CONSTRAINT `fk_products_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`category_id`) ON DELETE SET NULL,
   CONSTRAINT `products_ibfk_1` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`brand_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=65 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -4796,7 +4806,7 @@ CREATE TABLE `products` (
 
 LOCK TABLES `products` WRITE;
 /*!40000 ALTER TABLE `products` DISABLE KEYS */;
-INSERT INTO `products` VALUES (1,1,'Premium Cellular Shades','premium-cellular-shades','Energy-efficient cellular shades for any room','Our premium cellular shades offer excellent insulation and light control for your home.',150.00,NULL,0,0,1,'in_stock','CELL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,1,'/images/products/cellular-shades.jpg',1,'active'),(2,2,'Classic Wood Blinds','classic-wood-blinds','Beautiful wooden blinds for traditional homes','Handcrafted wooden blinds that add warmth and elegance to any space.',200.00,NULL,0,0,1,'in_stock','WOOD-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,2,'/images/products/wood-blinds.jpg',1,'active'),(3,3,'Modern Roller Shades','modern-roller-shades','Sleek roller shades for contemporary spaces','Minimalist roller shades perfect for modern home decor.',120.00,NULL,0,0,1,'in_stock','ROLL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,3,'/images/products/roller-shades.jpg',1,'active'),(4,4,'Luxury Plantation Shutters','luxury-plantation-shutters','Premium plantation shutters','High-end plantation shutters that increase home value.',400.00,NULL,0,0,1,'in_stock','SHUT-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,4,'/images/products/plantation-shutters.jpg',1,'active');
+INSERT INTO `products` VALUES (1,1,'Premium Cellular Shades','premium-cellular-shades','Energy-efficient cellular shades for any room','Our premium cellular shades offer excellent insulation and light control for your home.',150.00,NULL,0,0,1,'in_stock','CELL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,1,'/images/products/cellular-shades.jpg',1,'active'),(2,2,'Classic Wood Blinds','classic-wood-blinds','Beautiful wooden blinds for traditional homes','Handcrafted wooden blinds that add warmth and elegance to any space.',200.00,NULL,0,0,1,'in_stock','WOOD-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,2,'/images/products/wood-blinds.jpg',1,'active'),(3,3,'Modern Roller Shades','modern-roller-shades','Sleek roller shades for contemporary spaces','Minimalist roller shades perfect for modern home decor.',120.00,NULL,0,0,1,'in_stock','ROLL-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,3,'/images/products/roller-shades.jpg',1,'active'),(4,4,'Luxury Plantation Shutters','luxury-plantation-shutters','Premium plantation shutters','High-end plantation shutters that increase home value.',400.00,NULL,0,0,1,'in_stock','SHUT-001','2025-06-10 22:25:51','2025-06-10 22:25:51',NULL,4,'/images/products/plantation-shutters.jpg',1,'active'),(45,1,'Fabric Cornices','fabric-cornices','Fabric Cornices','Cornices',99.99,NULL,0,0,1,'in_stock','SKU_FABRIC_CORNICES','2025-06-01 22:51:59','2025-06-01 22:51:59',1,0,'https://www.smartblindshub.com/product-images/2034f6ab-a488-ee11-94a4-0a986990730e.jpg',0,'active'),(46,3,'By-Pass Shutters','by-pass-shutters','By-Pass Shutters','Faux Wood Shutters',99.99,NULL,0,0,1,'in_stock','SKU_BY_PASS_SHUTTERS','2025-06-01 22:52:01','2025-06-01 22:52:01',1,0,'https://www.smartblindshub.com/product-images/be0208c0-c992-ee11-94a4-0a986990730e.jpg',0,'active'),(47,4,'Sky Pole','sky-pole','Sky Pole','Parts and Accessories',99.99,NULL,0,0,1,'in_stock','SKU_SKY_POLE','2025-06-01 22:52:02','2025-06-01 22:52:02',1,0,'https://www.smartblindshub.com/product-images/d316ff62-50cc-ee11-94a4-0a986990730e.jpg',0,'active'),(48,1,'Banded Shades','banded-shades','Banded Shades','Dual Sheer Shades',99.99,NULL,0,0,1,'in_stock','SKU_BANDED_SHADES','2025-06-01 22:52:03','2025-06-01 22:52:03',1,0,'https://www.smartblindshub.com/product-images/4ba3afe6-9c7a-ef11-848c-0afffee37a07.jpg',0,'active'),(49,1,'2 Inch Premium Wood Blinds','2-inch-premium-wood-blinds','2 Inch Premium Wood Blinds','Wood Blinds',99.99,NULL,0,0,1,'in_stock','SKU_2_INCH_PREMIUM_WOOD_BLINDS','2025-06-01 22:52:05','2025-06-01 22:52:05',1,0,'https://www.smartblindshub.com/product-images/49404e11-e631-f011-848d-0afffee37a07.jpg',0,'active'),(50,1,'Designer Solar Roller Shades','designer-solar-roller-shades','Designer Solar Roller Shades','Solar Shades',99.99,NULL,0,0,1,'in_stock','SKU_DESIGNER_SOLAR_ROLLER_SHADES','2025-06-01 22:52:06','2025-06-01 22:52:06',2,0,'https://www.smartblindshub.com/product-images/010e98a2-034a-ef11-9593-0a986990730e.jpg',0,'active'),(51,1,'Skylight 1 Inch Mini Blinds','skylight-1-inch-mini-blinds','Skylight 1 Inch Mini Blinds','Skylights',99.99,NULL,0,0,1,'in_stock','SKU_SKYLIGHT_1_INCH_MINI_BLINDS','2025-06-01 22:52:08','2025-06-01 22:52:08',1,0,'https://www.smartblindshub.com/product-images/6eaaedb6-e49d-ee11-94a4-0a986990730e.jpg',0,'active'),(52,1,'Designer Light Filtering Skylight Cellular Shades','designer-light-filtering-skylight-cellular-shades','Designer Light Filtering Skylight Cellular Shades','Skylights',99.99,NULL,0,0,1,'in_stock','SKU_DESIGNER_LIGHT_FILTERING_SKYLIGHT_CELLULAR_SHADES','2025-06-01 22:52:09','2025-06-01 22:52:09',1,0,'https://www.smartblindshub.com/product-images/5b2d2349-e59d-ee11-94a4-0a986990730e.jpg',0,'active'),(53,1,'French Door Shutters','french-door-shutters','French Door Shutters','Faux Wood Shutters',99.99,NULL,0,0,1,'in_stock','SKU_FRENCH_DOOR_SHUTTERS','2025-06-01 22:52:10','2025-06-01 22:52:10',1,0,'https://www.smartblindshub.com/product-images/e3f1c591-c992-ee11-94a4-0a986990730e.jpg',0,'active'),(54,1,'Custom Composite Wood Arch','custom-composite-wood-arch','Custom Composite Wood Arch','Arches',99.99,NULL,0,0,1,'in_stock','SKU_CUSTOM_COMPOSITE_WOOD_ARCH','2025-06-01 22:52:12','2025-06-01 22:52:12',1,0,'https://www.smartblindshub.com/product-images/9b59dc19-9088-ee11-94a4-0a986990730e.jpg',0,'active'),(55,1,'Blackout Angle Top or Bottom Cellular Shades','blackout-angle-top-or-bottom-cellular-shades','Blackout Angle Top or Bottom Cellular Shades','Angle Tops',99.99,NULL,0,0,1,'in_stock','SKU_BLACKOUT_ANGLE_TOP_OR_BOTTOM_CELLULAR_SHADES','2025-06-01 22:52:13','2025-06-01 22:52:13',1,0,'https://www.smartblindshub.com/product-images/a2c31513-c407-ef11-94a4-0a986990730e.jpg',0,'active'),(56,1,'Premium 2 Inch Mini Blinds','premium-2-inch-mini-blinds','Premium 2 Inch Mini Blinds','Mini Blinds',99.99,NULL,0,0,1,'in_stock','SKU_PREMIUM_2_INCH_MINI_BLINDS','2025-06-01 22:52:14','2025-06-01 22:52:14',1,0,'https://www.smartblindshub.com/product-images/9035f001-cc92-ee11-94a4-0a986990730e.jpg',0,'active'),(57,1,'Casual Grommet Curtains','casual-grommet-curtains','Casual Grommet Curtains','Curtains and Drapes',99.99,NULL,0,0,1,'in_stock','SKU_CASUAL_GROMMET_CURTAINS','2025-06-01 22:52:16','2025-06-01 22:52:16',2,0,'https://www.smartblindshub.com/product-images/a0c7a99a-cc92-ee11-94a4-0a986990730e.jpg',0,'active'),(58,1,'Designer Woven Wood Shades','designer-woven-wood-shades','Designer Woven Wood Shades','Woven Wood Shades',99.99,NULL,0,0,1,'in_stock','SKU_DESIGNER_WOVEN_WOOD_SHADES','2025-06-01 22:52:18','2025-06-01 22:52:18',1,0,'https://www.smartblindshub.com/product-images/7c0b3a31-cd92-ee11-94a4-0a986990730e.jpg',0,'active'),(59,1,'Designer Roller Shades','designer-roller-shades','Designer Roller Shades','Roller Shades',99.99,NULL,0,0,1,'in_stock','SKU_DESIGNER_ROLLER_SHADES','2025-06-01 22:52:20','2025-06-01 22:52:20',2,0,'https://www.smartblindshub.com/product-images/3b8a5d6e-cd92-ee11-94a4-0a986990730e.jpg',0,'active'),(60,1,'Premium Faux Wood Blinds','premium-faux-wood-blinds','Premium Faux Wood Blinds','Faux Wood Blinds',99.99,NULL,0,0,1,'in_stock','SKU_PREMIUM_FAUX_WOOD_BLINDS','2025-06-01 22:52:21','2025-06-01 22:52:21',1,0,'https://www.smartblindshub.com/product-images/02f8a697-cd92-ee11-94a4-0a986990730e.jpg',0,'active'),(61,1,'Dual Sheer Shades','dual-sheer-shades','Dual Sheer Shades','Dual Sheer Shades',99.99,NULL,0,0,1,'in_stock','SKU_DUAL_SHEER_SHADES','2025-06-01 22:52:22','2025-06-01 22:52:22',1,0,'https://www.smartblindshub.com/product-images/04b8c0b8-cd92-ee11-94a4-0a986990730e.jpg',0,'active'),(62,1,'Motorized Roller Shades','motorized-roller-shades','Motorized Roller Shades','Motorized Blinds',199.99,NULL,0,0,1,'in_stock','SKU_MOTORIZED_ROLLER_SHADES','2025-06-01 22:52:24','2025-06-01 22:52:24',4,0,'https://www.smartblindshub.com/product-images/e3c9e4d9-cd92-ee11-94a4-0a986990730e.jpg',0,'active'),(63,1,'Premium Vertical Blinds','premium-vertical-blinds','Premium Vertical Blinds','Vertical Blinds',99.99,NULL,0,0,1,'in_stock','SKU_PREMIUM_VERTICAL_BLINDS','2025-06-01 22:52:25','2025-06-01 22:52:25',1,0,'https://www.smartblindshub.com/product-images/ec2e7ffe-cd92-ee11-94a4-0a986990730e.jpg',0,'active');
 /*!40000 ALTER TABLE `products` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
@@ -5259,6 +5269,89 @@ LOCK TABLES `room_visualizations` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `sales_assistance_sessions`
+--
+
+DROP TABLE IF EXISTS `sales_assistance_sessions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sales_assistance_sessions` (
+  `session_id` int NOT NULL AUTO_INCREMENT,
+  `customer_user_id` int NOT NULL,
+  `sales_staff_id` int DEFAULT NULL,
+  `access_pin` varchar(8) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `session_type` enum('cart_assistance','consultation','general_support') COLLATE utf8mb4_unicode_ci DEFAULT 'cart_assistance',
+  `status` enum('pending','active','completed','expired') COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `customer_cart_id` int DEFAULT NULL,
+  `permissions` json DEFAULT NULL COMMENT 'What sales staff can do: view_cart, modify_cart, apply_discounts, etc.',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` timestamp NULL DEFAULT NULL,
+  `accepted_at` timestamp NULL DEFAULT NULL,
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `notes` text COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`session_id`),
+  UNIQUE KEY `unique_active_pin` (`access_pin`,`status`),
+  KEY `customer_user_id` (`customer_user_id`),
+  KEY `sales_staff_id` (`sales_staff_id`),
+  KEY `customer_cart_id` (`customer_cart_id`),
+  KEY `idx_pin_status` (`access_pin`,`status`),
+  KEY `idx_expires` (`expires_at`),
+  CONSTRAINT `sales_assistance_sessions_ibfk_1` FOREIGN KEY (`customer_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_assistance_sessions_ibfk_2` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE SET NULL,
+  CONSTRAINT `sales_assistance_sessions_ibfk_3` FOREIGN KEY (`customer_cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sales_assistance_sessions`
+--
+
+LOCK TABLES `sales_assistance_sessions` WRITE;
+/*!40000 ALTER TABLE `sales_assistance_sessions` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sales_assistance_sessions` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `sales_cart_access_log`
+--
+
+DROP TABLE IF EXISTS `sales_cart_access_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sales_cart_access_log` (
+  `log_id` int NOT NULL AUTO_INCREMENT,
+  `assistance_session_id` int NOT NULL,
+  `sales_staff_id` int NOT NULL,
+  `customer_user_id` int NOT NULL,
+  `cart_id` int NOT NULL,
+  `action_type` enum('view_cart','add_item','remove_item','modify_item','apply_discount','remove_discount','add_coupon','remove_coupon') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `action_details` json DEFAULT NULL COMMENT 'Details of what was changed',
+  `previous_state` json DEFAULT NULL COMMENT 'State before change',
+  `new_state` json DEFAULT NULL COMMENT 'State after change',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`log_id`),
+  KEY `assistance_session_id` (`assistance_session_id`),
+  KEY `sales_staff_id` (`sales_staff_id`),
+  KEY `customer_user_id` (`customer_user_id`),
+  KEY `cart_id` (`cart_id`),
+  KEY `idx_created_at` (`created_at`),
+  CONSTRAINT `sales_cart_access_log_ibfk_1` FOREIGN KEY (`assistance_session_id`) REFERENCES `sales_assistance_sessions` (`session_id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_cart_access_log_ibfk_2` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_cart_access_log_ibfk_3` FOREIGN KEY (`customer_user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_cart_access_log_ibfk_4` FOREIGN KEY (`cart_id`) REFERENCES `carts` (`cart_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sales_cart_access_log`
+--
+
+LOCK TABLES `sales_cart_access_log` WRITE;
+/*!40000 ALTER TABLE `sales_cart_access_log` DISABLE KEYS */;
+/*!40000 ALTER TABLE `sales_cart_access_log` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `sales_staff`
 --
 
@@ -5268,7 +5361,14 @@ DROP TABLE IF EXISTS `sales_staff`;
 CREATE TABLE `sales_staff` (
   `sales_staff_id` int NOT NULL AUTO_INCREMENT,
   `user_id` int DEFAULT NULL,
+  `vendor_id` int DEFAULT NULL,
   `territory` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `specialization` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `experience_years` int DEFAULT NULL,
+  `availability_schedule` json DEFAULT NULL,
+  `hourly_rate` decimal(8,2) DEFAULT NULL,
+  `rating` decimal(3,2) DEFAULT NULL,
+  `total_consultations` int DEFAULT '0',
   `commission_rate` decimal(5,2) DEFAULT '0.00',
   `target_sales` decimal(10,2) DEFAULT '0.00',
   `total_sales` decimal(10,2) DEFAULT '0.00',
@@ -5280,6 +5380,8 @@ CREATE TABLE `sales_staff` (
   PRIMARY KEY (`sales_staff_id`),
   KEY `user_id` (`user_id`),
   KEY `manager_id` (`manager_id`),
+  KEY `idx_sales_staff_vendor` (`vendor_id`),
+  CONSTRAINT `fk_sales_staff_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE SET NULL,
   CONSTRAINT `sales_staff_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
   CONSTRAINT `sales_staff_ibfk_2` FOREIGN KEY (`manager_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -5291,8 +5393,42 @@ CREATE TABLE `sales_staff` (
 
 LOCK TABLES `sales_staff` WRITE;
 /*!40000 ALTER TABLE `sales_staff` DISABLE KEYS */;
-INSERT INTO `sales_staff` VALUES (1,4,'North Region',5.00,100000.00,45000.00,1,'2024-01-01',NULL,'2025-06-08 21:13:09','2025-06-08 21:13:09'),(2,4,'North Region',5.00,100000.00,45000.00,1,'2024-01-01',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54');
+INSERT INTO `sales_staff` VALUES (1,4,NULL,'North Region',NULL,NULL,NULL,NULL,NULL,0,5.00,100000.00,45000.00,1,'2024-01-01',NULL,'2025-06-08 21:13:09','2025-06-08 21:13:09'),(2,4,NULL,'North Region',NULL,NULL,NULL,NULL,NULL,0,5.00,100000.00,45000.00,1,'2024-01-01',NULL,'2025-06-08 21:14:54','2025-06-08 21:14:54');
 /*!40000 ALTER TABLE `sales_staff` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `sales_staff_online_status`
+--
+
+DROP TABLE IF EXISTS `sales_staff_online_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `sales_staff_online_status` (
+  `status_id` int NOT NULL AUTO_INCREMENT,
+  `sales_staff_id` int NOT NULL,
+  `is_online` tinyint(1) DEFAULT '0',
+  `is_available_for_assistance` tinyint(1) DEFAULT '0',
+  `current_active_sessions` int DEFAULT '0',
+  `max_concurrent_sessions` int DEFAULT '5',
+  `last_activity` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `notification_preferences` json DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`status_id`),
+  UNIQUE KEY `sales_staff_id` (`sales_staff_id`),
+  CONSTRAINT `sales_staff_online_status_ibfk_1` FOREIGN KEY (`sales_staff_id`) REFERENCES `sales_staff` (`sales_staff_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `sales_staff_online_status`
+--
+
+LOCK TABLES `sales_staff_online_status` WRITE;
+/*!40000 ALTER TABLE `sales_staff_online_status` DISABLE KEYS */;
+INSERT INTO `sales_staff_online_status` VALUES (1,1,1,1,0,5,'2025-06-13 20:45:10',NULL,'2025-06-13 20:45:10','2025-06-13 20:45:10');
+/*!40000 ALTER TABLE `sales_staff_online_status` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -6306,7 +6442,7 @@ CREATE TABLE `upload_security_config` (
   KEY `idx_active` (`is_active`),
   KEY `updated_by` (`updated_by`),
   CONSTRAINT `upload_security_config_ibfk_1` FOREIGN KEY (`updated_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6315,7 +6451,7 @@ CREATE TABLE `upload_security_config` (
 
 LOCK TABLES `upload_security_config` WRITE;
 /*!40000 ALTER TABLE `upload_security_config` DISABLE KEYS */;
-INSERT INTO `upload_security_config` VALUES (1,'general_site_name','Smart Blinds Hub','string','Website name',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(2,'general_site_description','Premium window treatments and smart home solutions','string','Website description',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(3,'general_contact_email','sales@smartblindshub.com','string','Contact email',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(4,'general_phone','+1 (425) 222-1188','string','Contact phone',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(5,'general_currency','USD','string','Default currency',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(6,'general_tax_rate','10.25','string','Default tax rate',1,1,'2025-06-10 22:44:48','2025-06-10 22:45:34'),(7,'payments_stripe_enabled','true','boolean','Enable Stripe payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(8,'payments_paypal_enabled','true','boolean','Enable PayPal payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(9,'payments_klarna_enabled','true','boolean','Enable Klarna payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(10,'payments_minimum_order_amount','25.00','string','Minimum order amount',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(11,'security_session_timeout_minutes','30','string','Session timeout in minutes',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(12,'security_login_attempts_limit','5','string','Max login attempts',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(17,'general_address','123 Business Ave, Austin, TX 78701','string','General setting: address',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34'),(18,'general_timezone','America/Los_Angeles','string','General setting: timezone',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34'),(21,'general_maintenance_mode','false','boolean','General setting: maintenance mode',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34');
+INSERT INTO `upload_security_config` VALUES (1,'general_site_name','Smart Blinds Hub','string','Website name',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(2,'general_site_description','Premium window treatments and smart home solutions','string','Website description',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(3,'general_contact_email','sales@smartblindshub.com','string','Contact email',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(4,'general_phone','+1 (425) 222-1188','string','Contact phone',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(5,'general_currency','USD','string','Default currency',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(6,'general_tax_rate','10.25','string','Default tax rate',1,1,'2025-06-10 22:44:48','2025-06-13 22:26:02'),(7,'payments_stripe_enabled','true','boolean','Enable Stripe payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(8,'payments_paypal_enabled','true','boolean','Enable PayPal payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(9,'payments_klarna_enabled','true','boolean','Enable Klarna payments',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(10,'payments_minimum_order_amount','25.00','string','Minimum order amount',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(11,'security_session_timeout_minutes','30','string','Session timeout in minutes',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(12,'security_login_attempts_limit','5','string','Max login attempts',1,NULL,'2025-06-10 22:44:48','2025-06-10 22:44:48'),(17,'general_address','123 Business Ave, Austin, TX 78701','string','General setting: address',1,1,'2025-06-10 22:45:34','2025-06-13 22:26:02'),(18,'general_timezone','America/Los_Angeles','string','General setting: timezone',1,1,'2025-06-10 22:45:34','2025-06-13 22:26:02'),(21,'general_maintenance_mode','false','boolean','General setting: maintenance mode',1,1,'2025-06-10 22:45:34','2025-06-10 22:45:34');
 /*!40000 ALTER TABLE `upload_security_config` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -6555,7 +6691,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `users` WRITE;
 /*!40000 ALTER TABLE `users` DISABLE KEYS */;
-INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-11 05:49:12','2025-06-08 21:13:09','2025-06-11 05:49:12',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-12 22:56:19','2025-06-08 21:13:09','2025-06-12 22:56:19',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-10 23:44:34','2025-06-08 21:13:09','2025-06-10 23:44:34',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-09 19:10:57','2025-06-08 21:13:09','2025-06-09 19:10:57',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-10 22:50:26','2025-06-08 21:13:09','2025-06-10 22:50:26',1);
+INSERT INTO `users` VALUES (1,'admin@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','Admin','User',NULL,'admin',1,1,1,'2025-06-13 21:27:32','2025-06-08 21:13:09','2025-06-13 21:27:32',1),(2,'vendor@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','vendor','User',NULL,'vendor',0,1,1,'2025-06-14 02:05:51','2025-06-08 21:13:09','2025-06-14 02:05:51',1),(3,'customer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','customer','User',NULL,'customer',0,1,1,'2025-06-13 22:27:00','2025-06-08 21:13:09','2025-06-13 22:27:00',1),(4,'sales@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','sales','User',NULL,'sales',0,1,1,'2025-06-13 20:32:58','2025-06-08 21:13:09','2025-06-13 20:32:58',1),(5,'installer@smartblindshub.com','$2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6','installer','User',NULL,'installer',0,1,1,'2025-06-10 22:50:26','2025-06-08 21:13:09','2025-06-10 22:50:26',1);
 /*!40000 ALTER TABLE `users` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -6665,6 +6801,116 @@ LOCK TABLES `vendor_commissions` WRITE;
 UNLOCK TABLES;
 
 --
+-- Table structure for table `vendor_coupons`
+--
+
+DROP TABLE IF EXISTS `vendor_coupons`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_coupons` (
+  `coupon_id` int NOT NULL AUTO_INCREMENT,
+  `vendor_id` int NOT NULL,
+  `coupon_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `coupon_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `display_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `terms_conditions` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `discount_type` enum('percentage','fixed_amount','free_shipping','upgrade') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_value` decimal(8,2) NOT NULL,
+  `maximum_discount_amount` decimal(10,2) DEFAULT NULL,
+  `minimum_order_value` decimal(10,2) DEFAULT '0.00',
+  `minimum_quantity` int DEFAULT '1',
+  `applies_to` enum('all_vendor_products','specific_products','specific_categories') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'all_vendor_products',
+  `target_ids` json DEFAULT NULL COMMENT 'Array of product/category IDs',
+  `excluded_ids` json DEFAULT NULL COMMENT 'Array of excluded product/category IDs',
+  `customer_types` json DEFAULT NULL COMMENT 'Array: retail, trade, commercial',
+  `customer_groups` json DEFAULT NULL COMMENT 'Array of customer group IDs',
+  `first_time_customers_only` tinyint(1) DEFAULT '0',
+  `existing_customers_only` tinyint(1) DEFAULT '0',
+  `allowed_regions` json DEFAULT NULL COMMENT 'Array of state/region codes',
+  `excluded_regions` json DEFAULT NULL COMMENT 'Array of excluded regions',
+  `usage_limit_total` int DEFAULT NULL,
+  `usage_limit_per_customer` int DEFAULT '1',
+  `usage_count` int DEFAULT '0',
+  `valid_from` datetime NOT NULL,
+  `valid_until` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `auto_activate` tinyint(1) DEFAULT '0',
+  `auto_deactivate` tinyint(1) DEFAULT '0',
+  `stackable_with_discounts` tinyint(1) DEFAULT '1',
+  `stackable_with_other_coupons` tinyint(1) DEFAULT '0',
+  `priority` int DEFAULT '0' COMMENT 'Higher number = higher priority',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_by` int NOT NULL COMMENT 'Vendor user who created',
+  PRIMARY KEY (`coupon_id`),
+  UNIQUE KEY `unique_vendor_coupon_code` (`vendor_id`,`coupon_code`),
+  KEY `idx_vendor_coupon_active` (`vendor_id`,`is_active`,`valid_from`,`valid_until`),
+  KEY `idx_coupon_code_lookup` (`coupon_code`),
+  KEY `fk_vendor_coupon_vendor` (`vendor_id`),
+  KEY `fk_vendor_coupon_creator` (`created_by`),
+  CONSTRAINT `fk_vendor_coupon_creator` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE RESTRICT,
+  CONSTRAINT `fk_vendor_coupon_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `vendor_coupons`
+--
+
+LOCK TABLES `vendor_coupons` WRITE;
+/*!40000 ALTER TABLE `vendor_coupons` DISABLE KEYS */;
+INSERT INTO `vendor_coupons` VALUES (1,2,'SAVE15NOW','save_15_percent','Save 15% Today','Get 15% off your entire order from our store',NULL,'percentage',15.00,NULL,100.00,1,'all_vendor_products',NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,1,0,'2025-06-13 19:16:13',NULL,1,0,0,1,0,0,'2025-06-14 02:16:13','2025-06-14 02:16:13',1),(2,2,'FREESHIP','free_shipping','Free Shipping','Free shipping on orders over $250',NULL,'free_shipping',0.00,NULL,250.00,1,'all_vendor_products',NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,1,0,'2025-06-13 19:16:13',NULL,1,0,0,1,0,0,'2025-06-14 02:16:13','2025-06-14 02:16:13',1),(3,2,'WELCOME25','welcome_discount','Welcome New Customer','$25 off your first order',NULL,'fixed_amount',25.00,NULL,150.00,1,'all_vendor_products',NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,1,0,'2025-06-13 19:16:13',NULL,1,0,0,1,0,0,'2025-06-14 02:16:13','2025-06-14 02:16:13',1),(4,2,'PREMIUM50','premium_upgrade','Premium Upgrade Coupon','$50 off premium product upgrades',NULL,'upgrade',50.00,NULL,0.00,1,'specific_products',NULL,NULL,NULL,NULL,0,0,NULL,NULL,NULL,2,0,'2025-06-13 19:16:13',NULL,1,0,0,1,0,0,'2025-06-14 02:16:13','2025-06-14 02:16:13',1);
+/*!40000 ALTER TABLE `vendor_coupons` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `vendor_discount_usage`
+--
+
+DROP TABLE IF EXISTS `vendor_discount_usage`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `vendor_discount_usage` (
+  `usage_id` int NOT NULL AUTO_INCREMENT,
+  `vendor_id` int NOT NULL,
+  `discount_id` int DEFAULT NULL,
+  `coupon_id` int DEFAULT NULL,
+  `user_id` int DEFAULT NULL,
+  `order_id` int DEFAULT NULL,
+  `cart_id` int DEFAULT NULL,
+  `usage_type` enum('discount','coupon') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `discount_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `original_amount` decimal(10,2) NOT NULL,
+  `discount_amount` decimal(10,2) NOT NULL,
+  `final_amount` decimal(10,2) NOT NULL,
+  `quantity` int DEFAULT '1',
+  `applied_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `order_completed_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`usage_id`),
+  KEY `idx_vendor_usage` (`vendor_id`,`usage_type`,`applied_at`),
+  KEY `idx_discount_usage` (`discount_id`),
+  KEY `idx_coupon_usage` (`coupon_id`),
+  KEY `idx_user_usage` (`user_id`),
+  KEY `idx_order_usage` (`order_id`),
+  CONSTRAINT `fk_vendor_usage_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `vendor_coupons` (`coupon_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vendor_usage_discount` FOREIGN KEY (`discount_id`) REFERENCES `vendor_discounts` (`discount_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vendor_usage_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vendor_usage_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_vendor_usage_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `vendor_discount_usage`
+--
+
+LOCK TABLES `vendor_discount_usage` WRITE;
+/*!40000 ALTER TABLE `vendor_discount_usage` DISABLE KEYS */;
+/*!40000 ALTER TABLE `vendor_discount_usage` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `vendor_discounts`
 --
 
@@ -6675,8 +6921,16 @@ CREATE TABLE `vendor_discounts` (
   `discount_id` int NOT NULL AUTO_INCREMENT,
   `vendor_id` int NOT NULL,
   `discount_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `display_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `terms_conditions` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `discount_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `discount_type` enum('percentage','fixed_amount','tiered','bulk_pricing') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `is_automatic` tinyint(1) DEFAULT '1',
+  `stackable_with_coupons` tinyint(1) DEFAULT '1',
+  `priority` int DEFAULT '0' COMMENT 'Higher number = higher priority',
   `discount_value` decimal(8,2) NOT NULL,
+  `volume_tiers` json DEFAULT NULL COMMENT 'Array of {min_qty, max_qty, discount_percent, discount_amount}',
   `minimum_order_value` decimal(10,2) DEFAULT '0.00',
   `maximum_discount_amount` decimal(10,2) DEFAULT NULL,
   `minimum_quantity` int DEFAULT '1',
@@ -6692,24 +6946,16 @@ CREATE TABLE `vendor_discounts` (
   `usage_count` int DEFAULT '0',
   `usage_limit_total` int DEFAULT NULL,
   `usage_limit_per_customer` int DEFAULT NULL,
-  `admin_approved` tinyint(1) DEFAULT '0',
-  `approved_by` int DEFAULT NULL COMMENT 'Admin user who approved',
-  `approved_at` timestamp NULL DEFAULT NULL,
-  `admin_notes` text COLLATE utf8mb4_unicode_ci,
-  `requested_by` int NOT NULL COMMENT 'Vendor user who requested',
-  `request_reason` text COLLATE utf8mb4_unicode_ci,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`discount_id`),
-  KEY `fk_vendor_discount_approver` (`approved_by`),
-  KEY `fk_vendor_discount_requester` (`requested_by`),
+  UNIQUE KEY `unique_vendor_discount_code` (`vendor_id`,`discount_code`),
   KEY `idx_vendor_discounts` (`vendor_id`,`is_active`),
-  KEY `idx_admin_approval` (`admin_approved`,`approved_at`),
   KEY `idx_validity_dates` (`valid_from`,`valid_until`),
-  CONSTRAINT `fk_vendor_discount_approver` FOREIGN KEY (`approved_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL,
-  CONSTRAINT `fk_vendor_discount_requester` FOREIGN KEY (`requested_by`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  KEY `idx_vendor_discount_active` (`vendor_id`,`is_active`,`valid_from`,`valid_until`),
+  KEY `idx_discount_code` (`discount_code`),
   CONSTRAINT `fk_vendor_discount_vendor` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6718,6 +6964,7 @@ CREATE TABLE `vendor_discounts` (
 
 LOCK TABLES `vendor_discounts` WRITE;
 /*!40000 ALTER TABLE `vendor_discounts` DISABLE KEYS */;
+INSERT INTO `vendor_discounts` VALUES (1,2,'bulk_order_10_percent','Bulk Order Discount','Get 10% off orders over $500',NULL,NULL,'percentage',1,1,0,10.00,NULL,500.00,NULL,1,'all_vendor_products',NULL,NULL,NULL,NULL,NULL,'2025-06-13 19:16:13',NULL,1,0,NULL,NULL,'2025-06-14 02:16:13','2025-06-14 02:16:13'),(2,2,'first_time_customer','First Time Customer','Welcome discount for new customers',NULL,NULL,'percentage',1,1,0,15.00,NULL,100.00,NULL,1,'all_vendor_products',NULL,NULL,NULL,NULL,NULL,'2025-06-13 19:16:13',NULL,1,0,NULL,NULL,'2025-06-14 02:16:13','2025-06-14 02:16:13'),(3,2,'volume_pricing','Volume Discount Tiers','Tiered discounts based on quantity',NULL,NULL,'tiered',1,1,0,0.00,NULL,0.00,NULL,1,'all_vendor_products',NULL,NULL,NULL,NULL,NULL,'2025-06-13 19:16:13',NULL,1,0,NULL,NULL,'2025-06-14 02:16:13','2025-06-14 02:16:13'),(4,2,'summer_sale_2024','Summer Sale 2024','Limited time summer discount',NULL,'SUMMER20','percentage',0,1,0,20.00,NULL,200.00,NULL,1,'all_vendor_products',NULL,NULL,NULL,NULL,NULL,'2025-06-13 19:16:13','2025-07-13 19:16:13',1,0,NULL,NULL,'2025-06-14 02:16:13','2025-06-14 02:16:13'),(5,2,'free_upgrade','Free Upgrade Promotion','$50 off premium upgrades',NULL,'UPGRADE50','fixed_amount',0,1,0,50.00,NULL,0.00,NULL,1,'specific_products',NULL,NULL,NULL,NULL,NULL,'2025-06-13 19:16:13','2025-08-12 19:16:13',1,0,NULL,NULL,'2025-06-14 02:16:13','2025-06-14 02:16:13');
 /*!40000 ALTER TABLE `vendor_discounts` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -6816,7 +7063,7 @@ CREATE TABLE `vendor_info` (
 
 LOCK TABLES `vendor_info` WRITE;
 /*!40000 ALTER TABLE `vendor_info` DISABLE KEYS */;
-INSERT INTO `vendor_info` VALUES (2,2,'Test Vendor Business','vendor@smartblindshub.com','555-0123','Test vendor for development',NULL,NULL,NULL,1,NULL,'approved',NULL,NULL,NULL,NULL,NULL,NULL,'United States',0.00,0.00,1,'2025-06-08 21:14:54','2025-06-08 21:14:54',15.00,'monthly',50.00,'bank_transfer',NULL,NULL,0,0);
+INSERT INTO `vendor_info` VALUES (2,2,'Test Vendor Business','vendor@smartblindshub.com','555-0123','Test vendor for development',NULL,NULL,NULL,1,NULL,'approved',NULL,NULL,NULL,NULL,NULL,NULL,'United States',0.00,0.00,1,'2025-06-08 21:14:54','2025-06-13 17:19:29',15.00,'monthly',50.00,'bank_transfer',NULL,NULL,0,0);
 /*!40000 ALTER TABLE `vendor_info` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -6967,7 +7214,7 @@ CREATE TABLE `vendor_products` (
   KEY `is_active` (`is_active`),
   CONSTRAINT `vendor_products_ibfk_1` FOREIGN KEY (`vendor_id`) REFERENCES `vendor_info` (`vendor_info_id`) ON DELETE CASCADE,
   CONSTRAINT `vendor_products_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -6976,6 +7223,7 @@ CREATE TABLE `vendor_products` (
 
 LOCK TABLES `vendor_products` WRITE;
 /*!40000 ALTER TABLE `vendor_products` DISABLE KEYS */;
+INSERT INTO `vendor_products` VALUES (2,2,1,NULL,150.00,100,1,0,1,0,'Our premium cellular shades offer excellent insulation and light control for your home.',NULL,'2025-06-13 05:34:30','2025-06-13 05:34:30'),(3,2,2,NULL,200.00,100,1,0,1,0,'Handcrafted wooden blinds that add warmth and elegance to any space.',NULL,'2025-06-13 05:34:30','2025-06-13 05:34:30'),(4,2,3,NULL,120.00,100,1,0,1,0,'Minimalist roller shades perfect for modern home decor.',NULL,'2025-06-13 05:34:30','2025-06-13 05:34:30'),(5,2,4,NULL,400.00,100,1,0,1,0,'High-end plantation shutters that increase home value.',NULL,'2025-06-13 05:34:30','2025-06-13 05:34:30');
 /*!40000 ALTER TABLE `vendor_products` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -7446,4 +7694,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-06-12 18:30:27
+-- Dump completed on 2025-06-13 19:19:13

@@ -15,7 +15,8 @@ import {
   User,
   ChevronRight,
   LogOut,
-  Store
+  Store,
+  Percent
 } from 'lucide-react';
 
 interface UserData {
@@ -88,6 +89,7 @@ export default function VendorLayout({
   const menuItems = [
     { href: '/vendor', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/vendor/products', label: 'Products', icon: <ShoppingBag size={18} /> },
+    { href: '/vendor/discounts', label: 'Discounts & Coupons', icon: <Percent size={18} /> },
     { href: '/vendor/storefront', label: 'Storefront', icon: <Store size={18} /> },
     { href: '/vendor/sales-team', label: 'Sales Team', icon: <User size={18} /> },
     { href: '/vendor/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
@@ -165,6 +167,11 @@ export default function VendorLayout({
                 <li>
                   <Link href="/vendor/products/new" className="text-primary-red hover:text-primary-dark flex items-center">
                     <span className="mr-2">➕</span> Add New Product
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/vendor/discounts" className="text-primary-red hover:text-primary-dark flex items-center">
+                    <span className="mr-2">🏷️</span> Manage Discounts
                   </Link>
                 </li>
                 <li>

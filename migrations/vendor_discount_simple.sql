@@ -1,36 +1,12 @@
 -- ================================================================
--- Enhanced Vendor Discount & Coupon System
--- Migrates from Global Admin Control to Vendor-Level Control
+-- Enhanced Vendor Discount & Coupon System - Simple Migration
+-- Create new tables and sample data only
 -- ================================================================
 
--- 1. Enhanced Vendor Discounts Table (update existing structure)
 -- ================================================================
-ALTER TABLE `vendor_discounts` 
-ADD COLUMN `discount_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `discount_name`,
-ADD COLUMN `is_automatic` tinyint(1) DEFAULT '1' AFTER `discount_type`,
-ADD COLUMN `volume_tiers` json DEFAULT NULL COMMENT 'Array of {min_qty, max_qty, discount_percent, discount_amount}' AFTER `discount_value`,
-ADD COLUMN `stackable_with_coupons` tinyint(1) DEFAULT '1' AFTER `is_automatic`,
-ADD COLUMN `priority` int DEFAULT '0' COMMENT 'Higher number = higher priority' AFTER `stackable_with_coupons`,
-ADD COLUMN `display_name` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL AFTER `discount_name`,
-ADD COLUMN `description` text COLLATE utf8mb4_unicode_ci AFTER `display_name`,
-ADD COLUMN `terms_conditions` text COLLATE utf8mb4_unicode_ci AFTER `description`,
-DROP COLUMN `admin_approved`,
-DROP COLUMN `approved_by`,
-DROP COLUMN `approved_at`,
-DROP COLUMN `admin_notes`,
-DROP COLUMN `requested_by`,
-DROP COLUMN `request_reason`;
-
--- Add index for discount codes
-ALTER TABLE `vendor_discounts` 
-ADD UNIQUE KEY `unique_vendor_discount_code` (`vendor_id`, `discount_code`),
-ADD KEY `idx_vendor_discount_active` (`vendor_id`, `is_active`, `valid_from`, `valid_until`),
-ADD KEY `idx_discount_code` (`discount_code`);
-
+-- 1. New Vendor Coupons Table
 -- ================================================================
--- 2. New Vendor Coupons Table
--- ================================================================
-CREATE TABLE `vendor_coupons` (
+CREATE TABLE IF NOT EXISTS `vendor_coupons` (
   `coupon_id` int NOT NULL AUTO_INCREMENT,
   `vendor_id` int NOT NULL,
   `coupon_code` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL,
@@ -94,9 +70,9 @@ CREATE TABLE `vendor_coupons` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
--- 3. Vendor Discount Usage Tracking
+-- 2. Vendor Discount Usage Tracking
 -- ================================================================
-CREATE TABLE `vendor_discount_usage` (
+CREATE TABLE IF NOT EXISTS `vendor_discount_usage` (
   `usage_id` int NOT NULL AUTO_INCREMENT,
   `vendor_id` int NOT NULL,
   `discount_id` int DEFAULT NULL,
@@ -127,9 +103,9 @@ CREATE TABLE `vendor_discount_usage` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ================================================================
--- 4. Cart Item Vendor Discounts (for multi-vendor cart support)
+-- 3. Cart Item Vendor Discounts (for multi-vendor cart support)
 -- ================================================================
-CREATE TABLE `cart_vendor_discounts` (
+CREATE TABLE IF NOT EXISTS `cart_vendor_discounts` (
   `id` int NOT NULL AUTO_INCREMENT,
   `cart_id` int NOT NULL,
   `vendor_id` int NOT NULL,
@@ -156,79 +132,3 @@ CREATE TABLE `cart_vendor_discounts` (
   CONSTRAINT `fk_cart_discount_discount` FOREIGN KEY (`discount_id`) REFERENCES `vendor_discounts` (`discount_id`) ON DELETE CASCADE,
   CONSTRAINT `fk_cart_discount_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `vendor_coupons` (`coupon_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ================================================================
--- 5. Sample Data - Volume Discount Tiers
--- ================================================================
--- Insert sample volume discount for a vendor
-INSERT INTO `vendor_discounts` (
-  `vendor_id`, `discount_name`, `display_name`, `description`,
-  `discount_type`, `is_automatic`, `volume_tiers`,
-  `applies_to`, `valid_from`, `is_active`
-) VALUES (
-  1, 'volume_discount_5_plus', 'Volume Discount - 5+ Items',
-  'Get increasing discounts when you buy more items from our store',
-  'tiered', 1,
-  '[
-    {"min_qty": 5, "max_qty": 9, "discount_percent": 5.0},
-    {"min_qty": 10, "max_qty": 14, "discount_percent": 10.0},
-    {"min_qty": 15, "max_qty": null, "discount_percent": 15.0}
-  ]',
-  'all_vendor_products', NOW(), 1
-);
-
--- Insert sample product-specific discount
-INSERT INTO `vendor_discounts` (
-  `vendor_id`, `discount_name`, `discount_code`, `display_name`, 
-  `discount_type`, `is_automatic`, `discount_value`,
-  `applies_to`, `target_ids`, `valid_from`, `valid_until`, `is_active`
-) VALUES (
-  1, 'cordless_upgrade_free', 'CORDLESS2024', 'Free Cordless Upgrade',
-  'fixed_amount', 0, 50.00,
-  'specific_products', '[101, 102, 103]',
-  '2024-01-01 00:00:00', '2024-12-31 23:59:59', 1
-);
-
--- Insert sample vendor coupon
-INSERT INTO `vendor_coupons` (
-  `vendor_id`, `coupon_code`, `coupon_name`, `display_name`,
-  `description`, `discount_type`, `discount_value`,
-  `minimum_order_value`, `applies_to`, `valid_from`, `usage_limit_per_customer`,
-  `is_active`, `created_by`
-) VALUES (
-  1, 'SAVE10NOW', 'save_10_percent', 'Save 10% Today',
-  'Get 10% off your entire order from our store',
-  'percentage', 10.00, 50.00, 'all_vendor_products',
-  NOW(), 1, 1, 1
-);
-
--- ================================================================
--- 6. Disable Global Discount Tables (Admin Level)
--- ================================================================
--- Note: We keep these tables but mark them as deprecated
--- The admin interface will only show commission settings
-
--- Add deprecated flag to global tables
-ALTER TABLE `coupon_codes` 
-ADD COLUMN `deprecated` tinyint(1) DEFAULT '1' COMMENT 'Moved to vendor-level control';
-
-ALTER TABLE `promotional_campaigns` 
-ADD COLUMN `deprecated` tinyint(1) DEFAULT '1' COMMENT 'Moved to vendor-level control';
-
-ALTER TABLE `volume_discounts` 
-ADD COLUMN `deprecated` tinyint(1) DEFAULT '1' COMMENT 'Moved to vendor-level control';
-
--- ================================================================
--- 7. Update existing data (if needed)
--- ================================================================
--- Mark existing global discounts as deprecated
-UPDATE `coupon_codes` SET `deprecated` = 1;
-UPDATE `promotional_campaigns` SET `deprecated` = 1;
-UPDATE `volume_discounts` SET `deprecated` = 1;
-
--- ================================================================
--- 8. Create indexes for performance
--- ================================================================
-CREATE INDEX `idx_vendor_discounts_lookup` ON `vendor_discounts` (`vendor_id`, `is_active`, `applies_to`);
-CREATE INDEX `idx_vendor_coupons_lookup` ON `vendor_coupons` (`vendor_id`, `is_active`, `coupon_code`);
-CREATE INDEX `idx_discount_usage_analytics` ON `vendor_discount_usage` (`vendor_id`, `applied_at`, `usage_type`);
