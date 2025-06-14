@@ -170,3 +170,59 @@ setInterval(() => {
   registrationRateLimiter.cleanup();
   apiRateLimiter.cleanup();
 }, 60 * 60 * 1000);
+
+// Vendor access validation
+export interface VendorValidation {
+  isValid: boolean;
+  vendorId?: number;
+  error?: string;
+}
+
+export const validateVendorAccess = async (userId: number): Promise<VendorValidation> => {
+  try {
+    // Import here to avoid circular dependencies
+    const { getPool } = await import('@/lib/db/index');
+    const pool = await getPool();
+    
+    const [rows] = await pool.execute(
+      `SELECT vendor_id, status, is_approved 
+       FROM vendors 
+       WHERE user_id = ? AND is_active = 1`,
+      [userId]
+    );
+    
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return {
+        isValid: false,
+        error: 'No vendor account found for this user'
+      };
+    }
+    
+    const vendor = rows[0] as any;
+    
+    if (!vendor.is_approved) {
+      return {
+        isValid: false,
+        error: 'Vendor account is not approved'
+      };
+    }
+    
+    if (vendor.status !== 'active') {
+      return {
+        isValid: false,
+        error: 'Vendor account is not active'
+      };
+    }
+    
+    return {
+      isValid: true,
+      vendorId: vendor.vendor_id
+    };
+  } catch (error) {
+    console.error('Error validating vendor access:', error);
+    return {
+      isValid: false,
+      error: 'Failed to validate vendor access'
+    };
+  }
+};

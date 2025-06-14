@@ -366,3 +366,201 @@ export const getOrderById = async (orderId: number, userId?: number | null): Pro
   
   return order;
 };
+
+// Category functions
+export const getCategoryBySlug = async (slug: string): Promise<any | null> => {
+  const pool = await getPool();
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT 
+      category_id,
+      name,
+      slug,
+      description,
+      image_url,
+      parent_id,
+      display_order,
+      is_active,
+      created_at,
+      updated_at
+    FROM categories 
+    WHERE slug = ? AND is_active = 1`,
+    [slug]
+  );
+
+  if (rows.length === 0) return null;
+  return rows[0];
+};
+
+// Product functions
+export const getProductBySlug = async (slug: string): Promise<any | null> => {
+  const pool = await getPool();
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.sku,
+      p.description,
+      p.base_price,
+      p.category_id,
+      c.name as category_name,
+      c.slug as category_slug,
+      p.brand_id,
+      b.name as brand_name,
+      p.primary_image_url,
+      p.images,
+      p.features,
+      p.specifications,
+      p.is_active,
+      p.is_featured,
+      p.created_at,
+      p.updated_at,
+      COALESCE(AVG(pr.rating), 0) as average_rating,
+      COUNT(DISTINCT pr.review_id) as review_count
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN brands b ON p.brand_id = b.brand_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    WHERE p.slug = ? AND p.is_active = 1
+    GROUP BY p.product_id`,
+    [slug]
+  );
+
+  if (rows.length === 0) return null;
+  
+  const product = rows[0];
+  
+  // Parse JSON fields
+  if (product.images) {
+    try {
+      product.images = JSON.parse(product.images);
+    } catch (e) {
+      product.images = [];
+    }
+  }
+  
+  if (product.features) {
+    try {
+      product.features = JSON.parse(product.features);
+    } catch (e) {
+      product.features = [];
+    }
+  }
+  
+  if (product.specifications) {
+    try {
+      product.specifications = JSON.parse(product.specifications);
+    } catch (e) {
+      product.specifications = {};
+    }
+  }
+  
+  return product;
+};
+
+// Get products with filtering, pagination, and sorting
+interface GetProductsParams {
+  limit?: number;
+  offset?: number;
+  categoryId?: number | null;
+  search?: string | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
+export const getProducts = async (params: GetProductsParams): Promise<any[]> => {
+  const {
+    limit = 10,
+    offset = 0,
+    categoryId,
+    search,
+    minPrice,
+    maxPrice,
+    sortBy = 'name',
+    sortOrder = 'asc'
+  } = params;
+
+  const pool = await getPool();
+  
+  // Build WHERE clause
+  const conditions: string[] = ['p.is_active = 1'];
+  const queryParams: any[] = [];
+  
+  if (categoryId) {
+    conditions.push('p.category_id = ?');
+    queryParams.push(categoryId);
+  }
+  
+  if (search) {
+    conditions.push('(p.name LIKE ? OR p.description LIKE ?)');
+    queryParams.push(`%${search}%`, `%${search}%`);
+  }
+  
+  if (minPrice !== null) {
+    conditions.push('p.base_price >= ?');
+    queryParams.push(minPrice);
+  }
+  
+  if (maxPrice !== null) {
+    conditions.push('p.base_price <= ?');
+    queryParams.push(maxPrice);
+  }
+  
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+  
+  // Validate sort column to prevent SQL injection
+  const allowedSortColumns = ['name', 'base_price', 'created_at', 'rating'];
+  const sortColumn = allowedSortColumns.includes(sortBy) ? sortBy : 'name';
+  const sortDirection = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
+  
+  // Add limit and offset
+  queryParams.push(limit, offset);
+  
+  const query = `
+    SELECT 
+      p.product_id,
+      p.name,
+      p.slug,
+      p.sku,
+      p.description,
+      p.base_price,
+      p.category_id,
+      c.name as category_name,
+      c.slug as category_slug,
+      p.primary_image_url,
+      p.is_featured,
+      COALESCE(AVG(pr.rating), 0) as rating,
+      COUNT(DISTINCT pr.review_id) as review_count
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.category_id
+    LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+    ${whereClause}
+    GROUP BY p.product_id
+    ORDER BY ${sortColumn === 'rating' ? 'rating' : `p.${sortColumn}`} ${sortDirection}
+    LIMIT ? OFFSET ?
+  `;
+  
+  const [rows] = await pool.execute<RowDataPacket[]>(query, queryParams);
+  return rows;
+};
+
+// Get database connection (returns a connection from the pool)
+export const getConnection = async () => {
+  const pool = await getPool();
+  return pool.getConnection();
+};
+
+// Export db object with execute method for direct queries
+export const db = {
+  execute: async <T extends RowDataPacket>(query: string, params?: any[]): Promise<[T[], any]> => {
+    const pool = await getPool();
+    return pool.execute<T[]>(query, params || []);
+  },
+  
+  query: async <T extends RowDataPacket>(query: string, params?: any[]): Promise<[T[], any]> => {
+    const pool = await getPool();
+    return pool.query<T[]>(query, params || []);
+  }
+};
