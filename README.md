@@ -10,10 +10,6 @@ Smart Blinds Hub provides a complete solution for browsing, configuring, and pur
 
 The platform uses JWT-based authentication with role-based access control.
 
-### Default Admin Credentials
-- **Email**: admin@smartblindshub.com
-- **Password**:
-
 ## User Roles
 
 ### 1. Customer

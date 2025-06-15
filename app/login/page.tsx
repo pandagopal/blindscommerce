@@ -86,18 +86,18 @@ function LoginForm() {
 
   // Simplified role-specific login credentials for demo
   // $2b$10$fGssFF6RytcT3P.jeHyPL.1dvOgfFsnvY2DyDUlddvNsmhHdDSvs6
-  const loginExamples = [
-    { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
-    { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
-    { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'Admin@1234' },
-    { role: 'Sales', email: 'sales@smartblindshub.com', password: 'Admin@1234' },
-    { role: 'Installer', email: 'installer@smartblindshub.com', password: 'Admin@1234' }
-  ];
+  // const loginExamples = [
+  //   { role: 'Customer', email: 'customer@smartblindshub.com', password: 'Admin@1234' },
+  //   { role: 'Admin', email: 'admin@smartblindshub.com', password: 'Admin@1234'},
+  //   { role: 'Vendor', email: 'vendor@smartblindshub.com', password: 'Admin@1234' },
+  //   { role: 'Sales', email: 'sales@smartblindshub.com', password: 'Admin@1234' },
+  //   { role: 'Installer', email: 'installer@smartblindshub.com', password: 'Admin@1234' }
+  // ];
 
-  const fillCredentials = (email: string, password: string) => {
-    setEmail(email);
-    setPassword(password);
-  };
+  // const fillCredentials = (email: string, password: string) => {
+  //   setEmail(email);
+  //   setPassword(password);
+  // };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
