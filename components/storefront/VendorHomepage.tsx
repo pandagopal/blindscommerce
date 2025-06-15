@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, ShoppingCart, Eye, ArrowRight } from 'lucide-react';
+import VendorReviews from '@/components/vendor/VendorReviews';
 
 interface PageData {
   pageId: number;
@@ -274,6 +275,14 @@ export default function VendorHomepage({
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      {/* Customer Reviews */}
+      <section className="container mx-auto px-4">
+        <VendorReviews 
+          vendorId={storefront.vendorId} 
+          vendorName={storefront.storefrontName}
+        />
       </section>
 
       {/* Call to Action */}

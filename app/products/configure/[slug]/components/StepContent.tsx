@@ -5,6 +5,7 @@ import { Check, Info } from 'lucide-react';
 import { useConfig } from './ConfigurationContext';
 import RoomVisualizer from './RoomVisualizer';
 import PriceBreakdown from './PriceBreakdown';
+import FractionInput from '@/components/ui/FractionInput';
 
 const StepContent = () => {
   const {
@@ -87,83 +88,23 @@ const StepContent = () => {
 
           <div>
             <h2 className="text-lg font-medium mb-3">2. Enter Dimensions</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Width (inches)
-                </label>
-                <div className="flex">
-                  <input
-                    type="number"
-                    min="12"
-                    max="96"
-                    step="0.125"
-                    value={config.width}
-                    onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value) || 12)}
-                    className={`w-full p-2 border rounded-md ${
-                      dimensionErrors.width ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  <div className="ml-2 flex items-center">
-                    <button
-                      className="p-1 border border-gray-300 rounded-l-md"
-                      onClick={() => handleDimensionChange('width', Math.max(12, config.width - 0.125))}
-                    >
-                      -
-                    </button>
-                    <button
-                      className="p-1 border-t border-r border-b border-gray-300 rounded-r-md"
-                      onClick={() => handleDimensionChange('width', Math.min(96, config.width + 0.125))}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-1">
-                  <p className="text-xs text-gray-500">Min: 12" - Max: 96"</p>
-                  {dimensionErrors.width && (
-                    <p className="text-xs text-red-500 mt-1">{dimensionErrors.width}</p>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Height (inches)
-                </label>
-                <div className="flex">
-                  <input
-                    type="number"
-                    min="12"
-                    max="108"
-                    step="0.125"
-                    value={config.height}
-                    onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value) || 12)}
-                    className={`w-full p-2 border rounded-md ${
-                      dimensionErrors.height ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  <div className="ml-2 flex items-center">
-                    <button
-                      className="p-1 border border-gray-300 rounded-l-md"
-                      onClick={() => handleDimensionChange('height', Math.max(12, config.height - 0.125))}
-                    >
-                      -
-                    </button>
-                    <button
-                      className="p-1 border-t border-r border-b border-gray-300 rounded-r-md"
-                      onClick={() => handleDimensionChange('height', Math.min(108, config.height + 0.125))}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-                <div className="mt-1">
-                  <p className="text-xs text-gray-500">Min: 12" - Max: 108"</p>
-                  {dimensionErrors.height && (
-                    <p className="text-xs text-red-500 mt-1">{dimensionErrors.height}</p>
-                  )}
-                </div>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FractionInput
+                label="Width (inches)"
+                value={config.width}
+                onChange={(value) => handleDimensionChange('width', value)}
+                min={12}
+                max={96}
+                error={dimensionErrors.width}
+              />
+              <FractionInput
+                label="Height (inches)"
+                value={config.height}
+                onChange={(value) => handleDimensionChange('height', value)}
+                min={12}
+                max={108}
+                error={dimensionErrors.height}
+              />
             </div>
             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
               <div className="flex">
