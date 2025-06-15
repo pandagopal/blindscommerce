@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 import { 
   Package, 
   Clock, 
@@ -34,7 +34,7 @@ interface SampleOrder {
 }
 
 export default function CustomerSamplesPage() {
-  const { user } = useAuth();
+  const { isAuthorized, isLoading, user } = useRoleAuth('customer');
   const [orders, setOrders] = useState<SampleOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -109,6 +109,18 @@ export default function CustomerSamplesPage() {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -144,7 +156,7 @@ export default function CustomerSamplesPage() {
               </button>
             </div>
             <SampleRequestWidget
-              userEmail={user.email}
+              userEmail={user?.email || ''}
               onRequestComplete={(orderId) => {
                 setShowRequestForm(false);
                 fetchOrders();

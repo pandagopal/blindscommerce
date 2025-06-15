@@ -14,7 +14,7 @@ import {
   Eye,
   X
 } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 
 interface BulkJob {
   job_id: string;
@@ -43,7 +43,7 @@ interface ProductStats {
 }
 
 export default function VendorBulkProductsPage() {
-  const { user } = useAuth();
+  const { isAuthorized, isLoading } = useRoleAuth('vendor');
   const [activeTab, setActiveTab] = useState<'import' | 'export' | 'jobs'>('import');
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<BulkJob[]>([]);
@@ -202,6 +202,18 @@ export default function VendorBulkProductsPage() {
       default: return RefreshCw;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

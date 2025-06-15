@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -41,17 +41,17 @@ export default function TradeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { isAuthorized, isLoading } = useRoleAuth('trade');
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    if (!loading && (!user || (user.role !== 'trade' && user.customer_type !== 'trade'))) {
+    if (!isLoading && !isAuthorized) {
       router.push('/auth/login?redirect=/trade');
     }
-  }, [user, loading, router]);
+  }, [isAuthorized, isLoading, router]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
@@ -59,7 +59,7 @@ export default function TradeLayout({
     );
   }
 
-  if (!user || (user.role !== 'trade' && user.customer_type !== 'trade')) {
+  if (!isAuthorized) {
     return null;
   }
 

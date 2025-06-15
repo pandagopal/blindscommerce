@@ -63,6 +63,12 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
   return (      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Hero Section with Multiple Slides */}
         <section className="relative h-[600px]">
+          {/* Coming Soon Banner */}
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
+            <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-8 py-3 rounded-full shadow-lg animate-pulse">
+              <span className="font-bold text-2xl">Coming Soon!</span>
+            </div>
+          </div>
           <Swiper
             modules={[Autoplay, Navigation, Pagination]}
             navigation

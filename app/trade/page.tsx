@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 import {
   DollarSign,
   ShoppingCart,
@@ -26,7 +26,7 @@ interface DashboardStats {
 }
 
 export default function TradeDashboard() {
-  const { user } = useAuth();
+  const { isAuthorized, isLoading } = useRoleAuth('trade');
   const [stats, setStats] = useState<DashboardStats>({
     monthlyVolume: 45280,
     activeProjects: 12,

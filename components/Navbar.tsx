@@ -508,9 +508,6 @@ const Navbar = () => {
     <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center space-x-8 py-3 text-sm">
-          <Link href="/brands" className="text-gray-600 hover:text-primary-red font-medium">
-            Shop by Brand
-          </Link>
           <Link href="/rooms" className="text-gray-600 hover:text-primary-red font-medium">
             Shop by Room
           </Link>

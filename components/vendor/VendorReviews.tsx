@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Star, ThumbsUp, Shield, Calendar, User } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 import VendorReviewForm from './VendorReviewForm';
 
 interface VendorRating {
@@ -43,7 +43,8 @@ interface VendorReviewsProps {
 }
 
 export default function VendorReviews({ vendorId, vendorName }: VendorReviewsProps) {
-  const { user } = useAuth();
+  const { isAuthorized, isLoading, session } = useRoleAuth('customer');
+  const user = session?.user;
   const [ratings, setRatings] = useState<VendorRating[]>([]);
   const [stats, setStats] = useState<VendorRatingStats | null>(null);
   const [loading, setLoading] = useState(true);

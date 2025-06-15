@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Star, X, AlertCircle, CheckCircle } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
+import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 
 interface VendorReviewFormProps {
   vendorId: number;
@@ -21,7 +21,8 @@ export default function VendorReviewForm({
   onClose,
   onSuccess,
 }: VendorReviewFormProps) {
-  const { user } = useAuth();
+  const { isAuthorized, isLoading, session } = useRoleAuth('customer');
+  const user = session?.user;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
