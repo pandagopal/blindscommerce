@@ -246,31 +246,7 @@ function LoginForm() {
             </button>
           </div>
         </div>
-
         {/* Demo credentials section */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
-          <p className="text-center text-sm font-medium text-gray-700 mb-3">
-            Demo Credentials (for testing)
-          </p>
-          <div className="bg-gray-50 border border-gray-200 rounded-md p-3">
-            <div className="grid grid-cols-1 gap-2">
-              {loginExamples.map((example, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => fillCredentials(example.email, example.password)}
-                  className="text-left text-xs hover:bg-gray-100 p-1 rounded flex justify-between"
-                >
-                  <span className="font-medium">{example.role}:</span>
-                  <span className="text-gray-600">{example.email}</span>
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-gray-500 mt-2 text-center">
-              Click on a role to populate credentials for testing
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
