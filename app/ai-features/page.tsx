@@ -84,11 +84,7 @@ export default function AIFeaturesPage() {
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative container mx-auto px-4 py-20 text-center">
           <div className="max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-white/20 text-white border-white/30">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Phase 1 AI Features Now Live
-            </Badge>
-            
+                     
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               The Future of 
               <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
