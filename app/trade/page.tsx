@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
+import { useRouter } from 'next/navigation';
 import {
   DollarSign,
   ShoppingCart,
@@ -25,8 +25,18 @@ interface DashboardStats {
   creditLimit: number;
 }
 
+interface User {
+  userId: number;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  role: string;
+}
+
 export default function TradeDashboard() {
-  const { isAuthorized, isLoading } = useRoleAuth('trade');
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     monthlyVolume: 45280,
     activeProjects: 12,
@@ -99,6 +109,43 @@ export default function TradeDashboard() {
       color: 'bg-orange-500',
     },
   ];
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user.role !== 'trade_professional') {
+            router.push('/');
+            return;
+          }
+          setUser(data.user);
+        } else {
+          router.push('/login?redirect=/trade');
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        router.push('/login?redirect=/trade');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

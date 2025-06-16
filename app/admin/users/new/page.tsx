@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
+import { ROLE_HIERARCHY, getAvailableRolesForUser, UserRole } from '@/lib/roleHierarchy';
 
 // Email validation regex
 const EMAIL_REGEX = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -27,6 +28,8 @@ export default function NewUserPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState<UserRole>('admin');
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [validationErrors, setValidationErrors] = useState({
     email: '',
     phone: ''
@@ -40,6 +43,34 @@ export default function NewUserPage() {
     role: 'customer',
     isActive: true
   });
+
+  useEffect(() => {
+    // Get current user's role and available roles they can create
+    const fetchUserRole = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const userData = await response.json();
+          const userRole = userData.role as UserRole;
+          setCurrentUserRole(userRole);
+          const roles = getAvailableRolesForUser(userRole);
+          setAvailableRoles(roles);
+          
+          // Set default role to first available
+          if (roles.length > 0) {
+            setFormData(prev => ({ ...prev, role: roles[0].name }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user role:', error);
+        // Fallback to admin permissions
+        const roles = getAvailableRolesForUser('admin');
+        setAvailableRoles(roles);
+      }
+    };
+
+    fetchUserRole();
+  }, []);
 
   const validateEmail = (email: string) => {
     if (!email) return 'Email is required';
@@ -243,12 +274,20 @@ export default function NewUserPage() {
                 onChange={handleChange}
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
               >
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-                <option value="vendor">Vendor</option>
-                <option value="sales">Sales Staff</option>
-                <option value="installer">Installer</option>
+                {availableRoles.map((roleInfo) => (
+                  <option key={roleInfo.name} value={roleInfo.name}>
+                    {roleInfo.displayName}
+                  </option>
+                ))}
               </select>
+              {formData.role && ROLE_HIERARCHY[formData.role as UserRole] && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                  <p className="text-sm text-blue-800">
+                    <strong>{ROLE_HIERARCHY[formData.role as UserRole].displayName}:</strong>{' '}
+                    {ROLE_HIERARCHY[formData.role as UserRole].description}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

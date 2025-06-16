@@ -6,6 +6,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password, firstName, lastName, phone, role } = body;
 
+    // IMPORTANT: Public registration is ONLY for customers
+    // Vendors, installers, and other roles must be created by admin
+    const userRole = 'customer'; // Force customer role for public registration
+
     // Basic validation
     if (!email || !password || !firstName || !lastName) {
       return NextResponse.json(
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       phone,
-      role || 'customer' // Default to customer role if not specified
+      userRole // Always use customer role for public registration
     );
 
     if (!newUser) {

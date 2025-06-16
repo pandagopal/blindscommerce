@@ -81,44 +81,90 @@
 ### Authentication System
 - **JWT tokens** with 24-hour expiration
 - **HTTP-only cookies** for security
-- **Role-based access control** with middleware protection
+- **Role-based access control** with comprehensive middleware protection
 - **Password requirements**: 8+ chars, uppercase, lowercase, number, special char
+- **Role hierarchy enforcement** with permission-based access control
 
-### User Roles & Capabilities
+### Registration & User Creation Rules
+- **Public Registration**: ONLY for customers via `/register` page
+- **Business Accounts**: Created by admins via `/admin/users/new`
+- **Sales Teams**: Created by vendors via `/vendor/sales-team`
+- **Role Validation**: Enforced at API level with proper hierarchy checks
 
-#### 1. **Customer**
-- Browse and configure products
-- Manage cart, wishlist, orders
-- Save measurements and configurations
-- Book consultations and installations
-- Account management (addresses, payments, etc.)
+### Complete User Role Hierarchy
 
-#### 2. **Admin**
-- **Full system access**
-- User and vendor management
-- Product catalog administration
-- Order management and analytics
-- System settings and database management
-- Pricing controls (discounts, commissions)
+#### 1. **Super Admin** (Level 100)
+- **Platform ownership** with complete system access
+- Can create: Admin, Vendor, Installer, Customer, Trade Professional
+- Can manage: All user types and roles
+- Permissions: Full system control, financial access, analytics
 
-#### 3. **Vendor**
-- Product catalog management
-- Order fulfillment
-- Custom storefront (`/storefront/[vendor]`)
-- Performance analytics
-- Business profile management
+#### 2. **Admin** (Level 90)
+- **Platform administration** with broad access
+- Can create: Vendor, Installer, Trade Professional
+- Can manage: Vendors, installers, customers, trade professionals
+- Permissions: User management, vendor approval, order management, analytics
 
-#### 4. **Sales Representative**
-- Lead management and customer assistance
-- Quote creation and order support
-- Performance tracking and analytics
-- Customer communication tools
+#### 3. **Vendor** (Level 70)
+- **Business partner** selling products on platform
+- Can create: Sales Representatives
+- Can manage: Own sales team
+- Permissions: Product management, order fulfillment, storefront control, sales team management
 
-#### 5. **Installer**
-- Job scheduling and route optimization
-- Installation appointments management
-- Material tracking and job completion
-- Customer communication and reporting
+#### 4. **Installer** (Level 60)
+- **Professional installation services**
+- Can create: None
+- Can manage: None
+- Permissions: Installation jobs, measurements, customer contact for assigned work
+
+#### 5. **Sales Representative** (Level 50)
+- **Vendor's sales team member**
+- Can create: None
+- Can manage: None
+- Permissions: Lead management, quotes, commission tracking, assigned customer contact
+
+#### 6. **Trade Professional** (Level 40)
+- **B2B customers** (designers, architects, contractors)
+- Can create: None
+- Can manage: None
+- Permissions: Trade pricing access, project management, client management
+
+#### 7. **Customer** (Level 10)
+- **Regular consumers** purchasing window treatments
+- Can create: None (self-registration only)
+- Can manage: Own account
+- Permissions: Shopping, orders, account management, reviews
+
+### Role Hierarchy Implementation Files
+
+#### Core System Files
+- **`/lib/roleHierarchy.ts`**: Complete role definitions, permissions, and hierarchy logic
+- **`/lib/middleware/roleGuard.ts`**: Role-based access control middleware and utilities
+- **`/app/api/auth/register/route.ts`**: Enforces customer-only public registration
+- **`/app/register/page.tsx`**: Updated UI with customer-only messaging
+
+#### Admin User Management
+- **`/app/admin/users/new/page.tsx`**: Dynamic role selection based on current user permissions
+- **`/app/api/admin/users/route.ts`**: Handles creation of all business role types
+
+#### Vendor Sales Team Management
+- **`/app/vendor/sales-team/page.tsx`**: Complete sales team management interface
+- **`/api/vendor/sales-team/route.ts`**: API for vendor to create/manage sales staff
+
+### E-commerce Competitive Strategy
+This role system enables competition with Amazon through:
+- **Marketplace functionality** via vendor ecosystem
+- **B2B sales capabilities** through trade professionals and sales teams
+- **Service marketplace** integration with installers
+- **Scalable administration** with hierarchical management
+- **Relationship-based selling** through vendor-managed sales teams
+
+### Security & Access Control
+- **Route protection** middleware enforces proper access levels
+- **Permission-based** system with granular controls
+- **Role creation validation** prevents unauthorized account types
+- **Dynamic UI** shows only appropriate options based on user role
+- **Hierarchical management** ensures proper business structure
 
 ---
 
@@ -390,6 +436,30 @@ TUYA_API_SECRET=...
       ├── ProductSortHeader
       └── ProductGrid
   ```
+
+### Login System & Role Hierarchy Overhaul (December 2024)
+- **Challenge**: Implement secure role-based user creation system to compete with Amazon
+- **Implementation**: Complete authentication and authorization system with 7-tier role hierarchy
+- **Key Features**:
+  - **Restricted Public Registration**: Only customers can self-register via `/register`
+  - **Admin-Controlled Business Accounts**: Vendors, installers, trade professionals created by admin
+  - **Vendor Sales Team Management**: Vendors can create and manage their own sales representatives
+  - **Comprehensive Role Hierarchy**: 7 levels from Customer (10) to Super Admin (100)
+  - **Permission-Based Access Control**: Granular permissions with middleware enforcement
+  - **Dynamic UI Controls**: Role-appropriate options shown based on current user permissions
+
+- **Security Enhancements**:
+  - Role creation validation at API level
+  - Route protection middleware for all dashboard areas
+  - Hierarchical management permissions
+  - Proper business account approval workflow
+
+- **Files Created/Modified**:
+  - `/lib/roleHierarchy.ts` - Complete role system definitions
+  - `/lib/middleware/roleGuard.ts` - Access control middleware
+  - `/app/api/auth/register/route.ts` - Customer-only registration enforcement
+  - `/app/register/page.tsx` - Updated UI with clear messaging
+  - `/app/admin/users/new/page.tsx` - Dynamic role selection for admins
 
 ---
 
