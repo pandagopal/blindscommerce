@@ -72,14 +72,15 @@ async function setupTestUsers(connection) {
   for (const user of users) {
     try {
       await connection.execute(
-        `INSERT INTO users (email, password, role, name, phone, status, created_at, updated_at) 
-         VALUES (?, ?, ?, ?, ?, 'active', NOW(), NOW())
+        `INSERT INTO users (email, password_hash, role, first_name, last_name, phone, is_active, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, ?, ?, 1, NOW(), NOW())
          ON DUPLICATE KEY UPDATE 
-         password = VALUES(password), 
-         name = VALUES(name), 
+         password_hash = VALUES(password_hash), 
+         first_name = VALUES(first_name), 
+         last_name = VALUES(last_name),
          phone = VALUES(phone),
          updated_at = NOW()`,
-        [user.email, user.password, user.role, user.name, user.phone]
+        [user.email, user.password, user.role, user.name.split(' ')[0], user.name.split(' ').slice(1).join(' '), user.phone]
       );
       console.log(`✓ Created/Updated user: ${user.email} (${user.role})`);
     } catch (error) {
@@ -179,12 +180,19 @@ async function setupTestProducts(connection) {
 
   for (const product of products) {
     try {
+      // First get the category_id
+      const [categoryRows] = await connection.execute(
+        'SELECT category_id FROM categories WHERE name = ?',
+        [product.category]
+      );
+      
+      const categoryId = categoryRows.length > 0 ? categoryRows[0].category_id : null;
+
       const [result] = await connection.execute(
         `INSERT INTO products (
           name, slug, short_description, full_description, sku, base_price, 
-          category, min_width, max_width, min_height, max_height, 
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
+          category_id, status, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW(), NOW())
         ON DUPLICATE KEY UPDATE 
         name = VALUES(name),
         short_description = VALUES(short_description),
@@ -194,20 +202,40 @@ async function setupTestProducts(connection) {
         [
           product.name, product.slug, product.short_description, 
           product.full_description, product.sku, product.base_price,
-          product.category, product.min_width, product.max_width,
-          product.min_height, product.max_height
+          categoryId
         ]
       );
 
       const productId = result.insertId;
 
-      // Create vendor-product relationship
+      // First ensure vendor_info exists for this vendor
       await connection.execute(
-        `INSERT INTO vendor_products (vendor_id, product_id, vendor_sku, vendor_price, created_at)
-         VALUES (?, ?, ?, ?, NOW())
-         ON DUPLICATE KEY UPDATE vendor_price = VALUES(vendor_price)`,
-        [product.vendor_id, productId, product.sku, product.base_price]
+        `INSERT IGNORE INTO vendor_info (user_id, business_name, business_email, created_at)
+         VALUES (?, ?, ?, NOW())`,
+        [
+          product.vendor_id, 
+          `Vendor Business ${product.vendor_id}`, 
+          `vendor${product.vendor_id}@smartblindshub.com`
+        ]
       );
+
+      // Get vendor_info_id
+      const [vendorInfoRows] = await connection.execute(
+        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+        [product.vendor_id]
+      );
+
+      if (vendorInfoRows.length > 0) {
+        const vendorInfoId = vendorInfoRows[0].vendor_info_id;
+        
+        // Create vendor-product relationship
+        await connection.execute(
+          `INSERT INTO vendor_products (vendor_id, product_id, vendor_sku, vendor_price, created_at)
+           VALUES (?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE vendor_price = VALUES(vendor_price)`,
+          [vendorInfoId, productId, product.sku, product.base_price]
+        );
+      }
 
       console.log(`✓ Created/Updated product: ${product.name}`);
     } catch (error) {
@@ -260,11 +288,11 @@ async function setupTestConfiguration(connection) {
   for (const color of colors) {
     try {
       await connection.execute(
-        `INSERT INTO colors (name, color_code, category, created_at)
+        `INSERT INTO colors (name, hex_code, color_family, created_at)
          VALUES (?, ?, ?, NOW())
          ON DUPLICATE KEY UPDATE 
-         color_code = VALUES(color_code),
-         category = VALUES(category)`,
+         hex_code = VALUES(hex_code),
+         color_family = VALUES(color_family)`,
         [color.name, color.code, color.category]
       );
       console.log(`✓ Created/Updated color: ${color.name}`);
@@ -284,11 +312,11 @@ async function setupTestConfiguration(connection) {
   for (const material of materials) {
     try {
       await connection.execute(
-        `INSERT INTO materials (name, description, opacity_level, created_at)
+        `INSERT INTO materials (name, description, material_type, created_at)
          VALUES (?, ?, ?, NOW())
          ON DUPLICATE KEY UPDATE 
          description = VALUES(description),
-         opacity_level = VALUES(opacity_level)`,
+         material_type = VALUES(material_type)`,
         [material.name, material.description, material.opacity]
       );
       console.log(`✓ Created/Updated material: ${material.name}`);
@@ -322,7 +350,7 @@ async function setupTestOrders(connection) {
       user_id: customerId,
       subtotal: 399.98,
       tax_amount: 32.00,
-      shipping_cost: 15.00,
+      shipping_amount: 15.00,
       total_amount: 446.98,
       status: 'pending',
       payment_status: 'paid'
@@ -331,7 +359,7 @@ async function setupTestOrders(connection) {
       user_id: customerId,
       subtotal: 249.99,
       tax_amount: 20.00,
-      shipping_cost: 15.00,
+      shipping_amount: 15.00,
       total_amount: 284.99,
       status: 'processing',
       payment_status: 'paid'
@@ -345,12 +373,12 @@ async function setupTestOrders(connection) {
       
       const [result] = await connection.execute(
         `INSERT INTO orders (
-          order_number, user_id, subtotal, tax_amount, shipping_cost, 
+          order_number, user_id, subtotal, tax_amount, shipping_amount, 
           total_amount, status, payment_status, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
           orderNumber, order.user_id, order.subtotal, order.tax_amount,
-          order.shipping_cost, order.total_amount, order.status, order.payment_status
+          order.shipping_amount, order.total_amount, order.status, order.payment_status
         ]
       );
 
@@ -369,9 +397,9 @@ async function setupTestOrders(connection) {
 
         await connection.execute(
           `INSERT INTO order_items (
-            order_id, product_id, quantity, price, options, created_at
-          ) VALUES (?, ?, ?, ?, ?, NOW())`,
-          [orderId, product.product_id, 1, product.base_price, JSON.stringify(configuration)]
+            order_id, product_id, quantity, unit_price, total_price, product_options, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+          [orderId, product.product_id, 1, product.base_price, product.base_price, JSON.stringify(configuration)]
         );
       }
 
