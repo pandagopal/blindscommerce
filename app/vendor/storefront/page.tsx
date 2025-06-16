@@ -66,7 +66,7 @@ export default function VendorStorefrontPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading storefront...</p>
         </div>
       </div>
@@ -77,8 +77,8 @@ export default function VendorStorefrontPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="text-center py-12">
-          <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
-            <Store className="w-8 h-8 text-purple-600" />
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+            <Store className="w-8 h-8 text-primary-red" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Create {vendorCompanyName} Storefront</h1>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">
@@ -86,7 +86,7 @@ export default function VendorStorefrontPage() {
           </p>
           <button
             onClick={() => {/* TODO: Open create storefront modal */}}
-            className="inline-flex items-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-flex items-center px-6 py-3 bg-primary-red hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
           >
             <Plus className="w-5 h-5 mr-2" />
             Create Storefront
@@ -147,7 +147,7 @@ export default function VendorStorefrontPage() {
           </Link>
           <button
             onClick={() => {/* TODO: Open edit storefront modal */}}
-            className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center px-4 py-2 bg-primary-red hover:bg-red-700 text-white rounded-lg transition-colors"
           >
             <Edit className="w-4 h-4 mr-2" />
             Edit Storefront

@@ -95,7 +95,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
                       <div className="flex gap-4">
                         <Link 
                           href="/products" 
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
+                          className="bg-primary-red hover:bg-red-700 text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
                         >
                           Shop Now
                         </Link>

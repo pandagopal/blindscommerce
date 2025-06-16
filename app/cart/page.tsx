@@ -42,7 +42,7 @@ export default function CartPage() {
           </p>
           <Link
             href="/products"
-            className="inline-block bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
+            className="inline-block bg-primary-red hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
           >
             Continue Shopping
           </Link>
@@ -245,7 +245,7 @@ export default function CartPage() {
 
               <button
                 onClick={handleCheckout}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl"
+                className="w-full bg-primary-red hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl"
               >
                 Proceed to Checkout
               </button>

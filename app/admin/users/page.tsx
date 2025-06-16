@@ -221,7 +221,7 @@ export default function AdminUsersPage() {
           </Link>
           <Link
             href="/admin/users/new"
-            className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
+            className="flex items-center p-2 text-white bg-primary-red border border-primary-red rounded-md hover:bg-red-700"
           >
             <PlusIcon size={16} className="mr-1" />
             <span className="text-sm">Add User</span>

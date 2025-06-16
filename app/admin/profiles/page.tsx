@@ -493,7 +493,7 @@ export default function AdminProfilesPage() {
         <Button
           onClick={saveProfile}
           disabled={loading}
-          className="bg-purple-600 hover:bg-purple-700"
+          className="bg-primary-red hover:bg-red-700"
         >
           {loading ? (
             <>

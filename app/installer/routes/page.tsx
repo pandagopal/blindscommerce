@@ -202,7 +202,7 @@ export default function InstallerRoutesPage() {
             <p className="text-gray-600">Optimize your daily routes and track progress</p>
           </div>
           
-          <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+          <Button className="bg-primary-red hover:bg-red-700">
             <Route className="h-4 w-4 mr-2" />
             Optimize Route
           </Button>

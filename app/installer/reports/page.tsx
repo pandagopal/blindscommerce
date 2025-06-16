@@ -190,7 +190,7 @@ export default function InstallerReportsPage() {
             
             <Button
               onClick={() => exportReport('complete')}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+              className="bg-primary-red hover:bg-red-700"
             >
               <Download className="h-4 w-4 mr-2" />
               Export Report

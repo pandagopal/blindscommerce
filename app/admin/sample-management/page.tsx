@@ -174,7 +174,7 @@ export default function SampleManagementPage() {
           <p className="text-gray-600">Manage sample requests and fulfillment</p>
         </div>
         <div className="flex space-x-2">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+          <button className="bg-primary-red text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center">
             <BarChart3 className="h-4 w-4 mr-2" />
             Analytics
           </button>
@@ -496,7 +496,7 @@ export default function SampleManagementPage() {
                 {selectedOrder.status === 'pending' && (
                   <button
                     onClick={() => handleStatusUpdate(selectedOrder.order_id, 'processing')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    className="px-4 py-2 bg-primary-red text-white rounded-md hover:bg-red-700"
                   >
                     Start Processing
                   </button>

@@ -322,7 +322,7 @@ export default function ProductCreationForm({
           <Button
             variant="outline"
             onClick={handleBack}
-            className={userRole === 'vendor' ? "border-purple-200 text-purple-600 hover:bg-purple-50" : ""}
+            className="border-primary-red text-primary-red hover:bg-red-50"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Products
@@ -342,12 +342,7 @@ export default function ProductCreationForm({
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            variant={userRole === 'admin' ? 'default' : 'default'}
-            className={
-              userRole === 'vendor'
-                ? "bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                : ""
-            }
+            className="bg-primary-red hover:bg-red-700 text-white"
           >
             {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
             {isSaving ? 'Saving...' : isEditMode ? 'Update Product' : 'Save Product'}
@@ -370,43 +365,43 @@ export default function ProductCreationForm({
           }`}>
             <TabsTrigger 
               value="basic-info" 
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Basic Info
             </TabsTrigger>
             <TabsTrigger 
               value="options"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Options
             </TabsTrigger>
             <TabsTrigger 
               value="fabric"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Fabric
             </TabsTrigger>
             <TabsTrigger 
               value="pricing"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Pricing Matrix
             </TabsTrigger>
             <TabsTrigger 
               value="images"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Images
             </TabsTrigger>
             <TabsTrigger 
               value="features"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Features
             </TabsTrigger>
             <TabsTrigger 
               value="recommendations"
-              className={userRole === 'vendor' ? "data-[state=active]:bg-purple-500 data-[state=active]:text-white" : ""}
+              className="data-[state=active]:bg-primary-red data-[state=active]:text-white"
             >
               Room Recommendations
             </TabsTrigger>

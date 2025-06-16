@@ -269,7 +269,7 @@ export default function SampleRequestWidget({
               <Button
                 onClick={() => setShowRequestForm(true)}
                 disabled={!canSubmitRequest() || userLimits?.isSuspended}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-primary-red hover:bg-red-700"
                 size="sm"
               >
                 Request Samples

@@ -178,7 +178,7 @@ export default function VendorProductsPage() {
         </div>
         <Link
           href="/vendor/products/new"
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-red hover:bg-red-700"
         >
           <PlusIcon className="w-4 h-4 mr-2" />
           Add New Product
@@ -203,7 +203,7 @@ export default function VendorProductsPage() {
               type="submit"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
-              <span className="text-sm text-blue-600">Search</span>
+              <span className="text-sm text-primary-red">Search</span>
             </button>
           </form>
 
@@ -378,7 +378,7 @@ export default function VendorProductsPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-sm">
-                    <span className={product.is_listing_enabled ? 'text-blue-600' : 'text-gray-400'}>
+                    <span className={product.is_listing_enabled ? 'text-primary-red' : 'text-gray-400'}>
                       {product.is_listing_enabled ? 'Listed' : 'Unlisted'}
                     </span>
                   </td>
@@ -396,7 +396,7 @@ export default function VendorProductsPage() {
                       </Link>
                       <Link
                         href={`/vendor/products/new?edit=${product.product_id}`}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-primary-red hover:text-red-700"
                         title="Edit Product"
                       >
                         <EditIcon className="h-5 w-5" />
@@ -427,8 +427,8 @@ export default function VendorProductsPage() {
         </div>
       ) : (
         <div className="text-center bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <PackageIcon className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <PackageIcon className="w-8 h-8 text-primary-red" />
           </div>
           <h3 className="mt-4 text-lg font-medium text-gray-900">No Products Found</h3>
           <p className="mt-2 text-gray-500 mb-6 max-w-md mx-auto">
@@ -454,7 +454,7 @@ export default function VendorProductsPage() {
             )}
             <Link
               href="/vendor/products/new"
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-red hover:bg-red-700"
             >
               Add New Product
             </Link>
@@ -511,7 +511,7 @@ export default function VendorProductsPage() {
                     onClick={() => setCurrentPage(pageNumber)}
                     className={`px-3 py-1 rounded-md text-sm font-medium ${
                       currentPage === pageNumber
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-primary-red text-white'
                         : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                     }`}
                   >

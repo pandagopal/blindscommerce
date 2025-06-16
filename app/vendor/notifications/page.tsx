@@ -161,7 +161,7 @@ export default function VendorNotificationsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function VendorNotificationsPage() {
           <TabsTrigger value="all">
             All Notifications
             {unreadCount > 0 && (
-              <Badge className="ml-2 bg-purple-600">{unreadCount}</Badge>
+              <Badge className="ml-2 bg-primary-red">{unreadCount}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -215,7 +215,7 @@ export default function VendorNotificationsPage() {
                 <Card
                   key={notification.notification_id}
                   className={`transition-all ${
-                    !notification.is_read ? 'border-purple-200 bg-purple-50' : ''
+                    !notification.is_read ? 'border-red-200 bg-red-50' : ''
                   }`}
                 >
                   <CardContent className="p-4">
@@ -243,7 +243,7 @@ export default function VendorNotificationsPage() {
                               {notification.action_url && (
                                 <a
                                   href={notification.action_url}
-                                  className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                                  className="text-xs text-primary-red hover:text-red-700 font-medium"
                                 >
                                   View Details →
                                 </a>
@@ -384,7 +384,7 @@ export default function VendorNotificationsPage() {
               </div>
 
               <div className="pt-4">
-                <Button className="bg-purple-600 hover:bg-purple-700">
+                <Button className="bg-primary-red hover:bg-red-700">
                   Save Preferences
                 </Button>
               </div>

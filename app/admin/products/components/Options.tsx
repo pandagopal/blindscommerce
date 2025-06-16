@@ -63,8 +63,8 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
         maxWidth: 96,
         minHeight: 12,
         maxHeight: 120,
-        widthIncrement: 0.125,
-        heightIncrement: 0.125,
+        widthIncrement: 0.125,  // Fixed to 1/8" industry standard
+        heightIncrement: 0.125, // Fixed to 1/8" industry standard
       },
       mountTypes: data.mountTypes && data.mountTypes.length > 0 ? data.mountTypes : [
         { name: 'Inside Mount', price_adjustment: 0, enabled: false },
@@ -163,66 +163,64 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
           <CardTitle>📐 Dimensions Settings</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="minWidth">Min Width (inches)</Label>
-              <Input
-                id="minWidth"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.minWidth}
-                onChange={(e) => handleDimensionChange('minWidth', parseFloat(e.target.value) || 0)}
-              />
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-medium text-blue-800 mb-2">📏 Measurement Precision</h4>
+              <p className="text-sm text-blue-700">
+                All measurements use industry-standard <strong>1/8" (0.125") increments</strong> for precise fitting.
+                Customers will select measurements in eighths: 24", 24 1/8", 24 1/4", 24 3/8", 24 1/2", etc.
+              </p>
             </div>
-            <div>
-              <Label htmlFor="maxWidth">Max Width (inches)</Label>
-              <Input
-                id="maxWidth"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.maxWidth}
-                onChange={(e) => handleDimensionChange('maxWidth', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="widthIncrement">Width Increment</Label>
-              <Input
-                id="widthIncrement"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.widthIncrement}
-                onChange={(e) => handleDimensionChange('widthIncrement', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="minHeight">Min Height (inches)</Label>
-              <Input
-                id="minHeight"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.minHeight}
-                onChange={(e) => handleDimensionChange('minHeight', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="maxHeight">Max Height (inches)</Label>
-              <Input
-                id="maxHeight"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.maxHeight}
-                onChange={(e) => handleDimensionChange('maxHeight', parseFloat(e.target.value) || 0)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="heightIncrement">Height Increment</Label>
-              <Input
-                id="heightIncrement"
-                type="number"
-                step="0.125"
-                value={currentData.dimensions.heightIncrement}
-                onChange={(e) => handleDimensionChange('heightIncrement', parseFloat(e.target.value) || 0)}
-              />
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <Label htmlFor="minWidth">Min Width (inches)</Label>
+                <Input
+                  id="minWidth"
+                  type="number"
+                  step="0.125"
+                  placeholder="e.g., 12"
+                  value={currentData.dimensions.minWidth}
+                  onChange={(e) => handleDimensionChange('minWidth', parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum width for this product</p>
+              </div>
+              <div>
+                <Label htmlFor="maxWidth">Max Width (inches)</Label>
+                <Input
+                  id="maxWidth"
+                  type="number"
+                  step="0.125"
+                  placeholder="e.g., 96"
+                  value={currentData.dimensions.maxWidth}
+                  onChange={(e) => handleDimensionChange('maxWidth', parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum width for this product</p>
+              </div>
+              <div>
+                <Label htmlFor="minHeight">Min Height (inches)</Label>
+                <Input
+                  id="minHeight"
+                  type="number"
+                  step="0.125"
+                  placeholder="e.g., 12"
+                  value={currentData.dimensions.minHeight}
+                  onChange={(e) => handleDimensionChange('minHeight', parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-gray-500 mt-1">Minimum height for this product</p>
+              </div>
+              <div>
+                <Label htmlFor="maxHeight">Max Height (inches)</Label>
+                <Input
+                  id="maxHeight"
+                  type="number"
+                  step="0.125"
+                  placeholder="e.g., 120"
+                  value={currentData.dimensions.maxHeight}
+                  onChange={(e) => handleDimensionChange('maxHeight', parseFloat(e.target.value) || 0)}
+                />
+                <p className="text-xs text-gray-500 mt-1">Maximum height for this product</p>
+              </div>
             </div>
           </div>
         </CardContent>
