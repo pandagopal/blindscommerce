@@ -1,0 +1,337 @@
+# Artillery.io Load Testing Configuration for BlindsCommerce
+# Run with: artillery run tests/load/artillery-load-test.yml
+
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm-up phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm-up"
+    
+    # Load test phase
+    - duration: 300
+      arrivalRate: 20
+      name: "Load test"
+    
+    # Peak load phase  
+    - duration: 180
+      arrivalRate: 50
+      name: "Peak load"
+    
+    # Stress test phase
+    - duration: 120
+      arrivalRate: 100
+      name: "Stress test"
+    
+    # Cool down phase
+    - duration: 60
+      arrivalRate: 5
+      name: "Cool down"
+
+  payload:
+    path: "test-data/users.csv"
+    fields:
+      - "email"
+      - "password"
+      - "role"
+
+  variables:
+    searchTerms:
+      - "roller shade"
+      - "cellular"
+      - "motorized"
+      - "blackout"
+      - "cordless"
+      - "white"
+      - "gray"
+      - "beige"
+      - "custom"
+      - "premium"
+      - "smart"
+      - "energy efficient"
+    
+    productSlugs:
+      - "premium-roller-shade"
+      - "cellular-shade"
+      - "motorized-smart-blind"
+      - "vendor-a-roller-shade"
+      - "vendor-b-cellular-shade"
+    
+    configurations:
+      - width: 48.5
+        height: 72.0
+        color_id: 1
+        material_id: 1
+        control_type: "cordless"
+      - width: 36.0
+        height: 60.0
+        color_id: 2
+        material_id: 2
+        control_type: "motorized"
+      - width: 60.0
+        height: 84.0
+        color_id: 3
+        material_id: 1
+        control_type: "cordless"
+
+  plugins:
+    metrics-by-endpoint:
+      useOnlyRequestNames: true
+    
+  defaults:
+    headers:
+      'Content-Type': 'application/json'
+      'User-Agent': 'Artillery Load Test'
+
+scenarios:
+  # Anonymous user browsing (40% of traffic)
+  - name: "Anonymous Browsing"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          name: "Homepage"
+          capture:
+            json: "$.title"
+            as: "pageTitle"
+      
+      - think: 2
+      
+      - get:
+          url: "/products"
+          name: "Product Catalog"
+      
+      - think: 3
+      
+      - get:
+          url: "/api/products/search"
+          name: "Product Search"
+          qs:
+            q: "{{ $randomString(searchTerms) }}"
+      
+      - think: 2
+      
+      - get:
+          url: "/products/{{ $randomString(productSlugs) }}"
+          name: "Product Details"
+
+  # Authenticated user shopping (30% of traffic)
+  - name: "Shopping Workflow"
+    weight: 30
+    flow:
+      # Login
+      - post:
+          url: "/api/auth/login"
+          name: "Login"
+          json:
+            email: "{{ email }}"
+            password: "{{ password }}"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      
+      - think: 1
+      
+      # Browse products
+      - get:
+          url: "/products"
+          name: "Browse Products"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 3
+      
+      # Configure product
+      - get:
+          url: "/api/products/{{ $randomString(productSlugs) }}/configuration"
+          name: "Get Configuration Options"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 2
+      
+      # Calculate pricing
+      - post:
+          url: "/api/products/{{ $randomString(productSlugs) }}/pricing"
+          name: "Calculate Pricing"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            width: "{{ $randomNumber(24, 96) }}"
+            height: "{{ $randomNumber(36, 120) }}"
+            color_id: "{{ $randomNumber(1, 6) }}"
+            material_id: "{{ $randomNumber(1, 4) }}"
+            control_type: "cordless"
+      
+      - think: 5
+      
+      # Add to cart
+      - post:
+          url: "/api/cart/enhanced"
+          name: "Add to Cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            product_id: 1
+            quantity: 1
+            configuration:
+              width: 48.5
+              height: 72.0
+              color_id: 1
+              material_id: 1
+              control_type: "cordless"
+      
+      - think: 2
+      
+      # View cart
+      - get:
+          url: "/api/cart/enhanced"
+          name: "View Cart"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      
+      - think: 3
+      
+      # Update cart quantity (50% chance)
+      - loop:
+          count: 1
+          over: [1]
+          flow:
+            - function: "randomCartAction"
+
+  # Product configuration intensive (20% of traffic)
+  - name: "Configuration Heavy"
+    weight: 20
+    flow:
+      # Login as customer
+      - post:
+          url: "/api/auth/login"
+          name: "Customer Login"
+          json:
+            email: "customer@smartblindshub.com"
+            password: "Admin@1234"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      
+      # Multiple configuration attempts
+      - loop:
+          count: 5
+          over: "{{ productSlugs }}"
+          flow:
+            - get:
+                url: "/api/products/{{ $loopElement }}/configuration"
+                name: "Get Config Options"
+                headers:
+                  Authorization: "Bearer {{ authToken }}"
+            
+            - think: 1
+            
+            - post:
+                url: "/api/products/{{ $loopElement }}/pricing"
+                name: "Price Calculation"
+                headers:
+                  Authorization: "Bearer {{ authToken }}"
+                json:
+                  width: "{{ $randomNumber(20, 100) }}"
+                  height: "{{ $randomNumber(30, 120) }}"
+                  color_id: "{{ $randomNumber(1, 6) }}"
+                  material_id: "{{ $randomNumber(1, 4) }}"
+                  control_type: "{{ $pick(['cordless', 'motorized', 'chain']) }}"
+            
+            - think: 2
+
+  # Admin/Vendor operations (10% of traffic)
+  - name: "Admin Operations"
+    weight: 10
+    flow:
+      # Login as admin
+      - post:
+          url: "/api/auth/login"
+          name: "Admin Login"
+          json:
+            email: "admin@smartblindshub.com"
+            password: "Admin@1234"
+          capture:
+            json: "$.token"
+            as: "adminToken"
+      
+      - think: 1
+      
+      # Dashboard operations
+      - get:
+          url: "/api/admin/dashboard/stats"
+          name: "Admin Dashboard"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+      
+      - think: 2
+      
+      - get:
+          url: "/api/admin/orders"
+          name: "Admin Orders"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+          qs:
+            page: 1
+            limit: 20
+      
+      - think: 1
+      
+      - get:
+          url: "/api/admin/users"
+          name: "Admin Users"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+          qs:
+            page: 1
+            limit: 20
+      
+      - think: 2
+      
+      - get:
+          url: "/api/admin/vendors"
+          name: "Admin Vendors"
+          headers:
+            Authorization: "Bearer {{ adminToken }}"
+
+# Custom JavaScript functions
+processor: "./tests/load/artillery-functions.js"
+
+# Performance thresholds
+ensure:
+  thresholds:
+    - http.response_time.p95: 2000  # 95th percentile under 2 seconds
+    - http.response_time.p99: 5000  # 99th percentile under 5 seconds
+    - http.request_rate: 100        # At least 100 requests per second during peak
+    - http.codes.200: 95            # 95% success rate
+    - http.codes.4xx: 5             # Less than 5% client errors
+    - http.codes.5xx: 1             # Less than 1% server errors
+
+# Plugins for enhanced reporting
+plugins:
+  # Real-time monitoring
+  - plugin: "artillery-plugin-statsd"
+    config:
+      host: "localhost"
+      port: 8125
+      prefix: "blindscommerce.load_test"
+  
+  # Memory usage monitoring
+  - plugin: "artillery-plugin-memory-inspector"
+    config:
+      enableGC: true
+  
+  # Custom metrics
+  - plugin: "artillery-plugin-metrics-by-endpoint"
+    config:
+      useOnlyRequestNames: true
+      metricsNamespace: "blindscommerce_api"
+
+# Test data files (create these in test-data/ directory)
+# users.csv should contain:
+# email,password,role
+# customer@smartblindshub.com,Admin@1234,customer
+# vendor@smartblindshub.com,Admin@1234,vendor
+# admin@smartblindshub.com,Admin@1234,admin

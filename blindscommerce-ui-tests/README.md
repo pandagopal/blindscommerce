@@ -1,242 +1,312 @@
 # BlindsCommerce UI Testing Suite
 
-A comprehensive UI testing framework for the BlindsCommerce e-commerce platform using Playwright.
+A comprehensive UI testing framework for the BlindsCommerce e-commerce platform using Playwright, K6, and Artillery.
 
-## Overview
-
-This testing suite validates the complete product workflow from vendor creation to order placement, including:
-
-- **Vendor Product Creation** - Multi-step product forms, bulk uploads, validation
-- **Customer Product Configuration** - 7-step configurator with industry-standard measurements
-- **Cart & Checkout** - Cart management, guest checkout, payment processing
-- **Role-Based Access Control** - 7-tier user hierarchy permissions
-
-## Quick Start
+## 🚀 **Quick Start (5 Minutes)**
 
 ```bash
-# Install dependencies
-npm install
+# 1. Navigate to test directory
+cd /Users/gopal/BlindsCode/blindscommerce/blindscommerce-ui-tests
 
-# Install browser engines
-npm run install-browsers
+# 2. Install dependencies
+npm install && npm run install-browsers
 
-# Run all tests
-npm test
+# 3. Setup test data
+npm run setup-test-data
 
-# Run tests with UI mode
-npm run test:ui
-
-# Run specific workflow tests
-npm run test:workflow
-```
-
-## Test Structure
-
-```
-tests/
-├── workflows/
-│   ├── vendor-product-creation.spec.ts     # Vendor product management
-│   ├── customer-product-configuration.spec.ts  # Product configurator
-│   └── cart-checkout-workflow.spec.ts      # Cart to order completion
-├── auth/
-│   └── role-based-access.spec.ts           # Permission testing
-└── utils/
-    └── test-helpers.ts                      # Reusable test utilities
-```
-
-## Key Test Scenarios
-
-### Vendor Workflow
-- Complete product creation with validation
-- Bulk product upload via CSV
-- Product editing and status management
-- Multi-vendor isolation testing
-
-### Customer Workflow  
-- 7-step product configuration:
-  1. Dimensions (with 1/8" fraction inputs)
-  2. Colors & Materials
-  3. Control Options
-  4. Rail Configurations
-  5. Room Visualization
-  6. Configuration Review
-  7. Add to Cart
-- Price calculation accuracy
-- Configuration persistence
-- Mobile responsive testing
-
-### Cart & Checkout
-- Multi-item cart management
-- Guest vs. authenticated checkout
-- Sample requests & installation booking
-- Coupon application
-- Multi-vendor order handling
-- Payment processing (Stripe integration)
-
-### Access Control
-- 7-tier role hierarchy validation
-- Permission inheritance testing
-- Cross-role data isolation
-- Session management
-
-## Configuration
-
-### Environment Setup
-Copy `.env.example` to `.env` and configure:
-
-```bash
-BASE_URL=http://localhost:3000
-TEST_ADMIN_EMAIL=admin@test.com
-TEST_VENDOR_EMAIL=vendor@test.com
-TEST_CUSTOMER_EMAIL=customer@test.com
-# ... additional config
-```
-
-### Browser Configuration
-Tests run across multiple browsers and devices:
-- Desktop: Chrome, Firefox, Safari
-- Mobile: Pixel 5, iPhone 12
-
-## Test Data Requirements
-
-### Required Test Users
-The following test users must exist in your database:
-
-```sql
--- Admin user
-INSERT INTO users (email, password, role) VALUES 
-('admin@test.com', 'hashed_password', 'admin');
-
--- Vendor user
-INSERT INTO users (email, password, role) VALUES 
-('vendor@test.com', 'hashed_password', 'vendor');
-
--- Customer user
-INSERT INTO users (email, password, role) VALUES 
-('customer@test.com', 'hashed_password', 'customer');
-```
-
-### Required Test Products
-Sample products with slugs:
-- `premium-roller-shade`
-- `cellular-shade`
-- `vendor-a-roller-shade`
-- `vendor-b-cellular-shade`
-
-## Running Tests
-
-### Local Development
-```bash
-# Start the main application
+# 4. Start main application (separate terminal)
 cd ../
 npm run dev
 
-# In parallel, run tests
-cd blindscommerce-ui-tests
-npm test
+# 5. Run basic tests
+npm test                    # All UI tests
+npm run test:load          # Load testing
 ```
 
-### CI/CD Integration
+## 📋 **What This Testing Suite Covers**
+
+### **Complete User Workflows** ✅
+- **Vendor Product Creation** - Multi-step forms, bulk uploads, validation
+- **Customer Product Configuration** - 7-step configurator with 1/8" precision
+- **Cart & Checkout** - End-to-end purchase workflow
+- **Admin Management** - User, vendor, order management
+- **Role-Based Access** - 7-tier permission system testing
+
+### **All User Roles** ✅
+- **Admin** - Dashboard management, user/vendor oversight
+- **Vendor** - Product creation, bulk operations, analytics
+- **Sales** - Lead management, quotes, commission tracking
+- **Installer** - Job scheduling, installation workflow, materials
+- **Customer** - Product browsing, configuration, purchasing
+
+### **Performance & Load Testing** ✅
+- **Playwright Load Tests** - Real browser concurrent user simulation
+- **K6 Load Tests** - High-performance API stress testing
+- **Artillery Load Tests** - Comprehensive scenario-based testing
+- **Performance Monitoring** - Memory usage, response times, throughput
+
+### **API Integration Testing** ✅
+- **Authentication** - JWT tokens, role validation, session management
+- **Product APIs** - CRUD operations, search, pricing calculations
+- **Cart Operations** - Add/remove/update items, pricing updates
+- **Order Processing** - Creation, status updates, fulfillment
+- **Error Handling** - Validation, rate limiting, graceful failures
+
+## 🏗️ **Project Structure**
+
+```
+blindscommerce-ui-tests/
+├── tests/
+│   ├── workflows/           # Core user journeys
+│   │   ├── vendor-product-creation.spec.ts
+│   │   ├── customer-product-configuration.spec.ts
+│   │   └── cart-checkout-workflow.spec.ts
+│   ├── admin/              # Admin management tests
+│   ├── sales/              # Sales operations
+│   ├── installer/          # Installation jobs
+│   ├── auth/               # Role permissions
+│   ├── api/                # Backend API testing
+│   ├── performance/        # Performance monitoring
+│   └── load/               # Load testing (NEW!)
+│       ├── load-testing.spec.ts     # Playwright load tests
+│       ├── k6-load-tests.js         # K6 performance tests
+│       └── artillery-load-test.yml  # Artillery scenario tests
+├── scripts/
+│   └── setup-test-data.js  # Auto-creates test users/products
+├── test-data/              # Test data files
+├── utils/                  # Test helpers and utilities
+├── TEST_EXECUTION_GUIDE.md # Complete setup guide
+├── LOAD_TESTING_GUIDE.md   # Load testing guide (NEW!)
+└── playwright.config.ts    # Test configuration
+```
+
+## 🧪 **Test Categories**
+
+### **1. Workflow Tests** (`npm run test:workflow`)
 ```bash
-# Headless mode for CI
-npm test
-
-# Generate reports
-npm run report
+# Core user journeys
+npm run test:vendor         # Vendor product creation
+npm run test:customer       # Product configuration  
+npm run test:cart          # Cart to checkout
 ```
 
-### Debug Mode
+### **2. Role-Based Tests**
 ```bash
-# Debug failing tests
-npm run test:debug
-
-# Run with browser visible
-npm run test:headed
+npm run test:admin         # Admin dashboard tests
+npm run test:sales         # Sales workflow tests
+npm run test:installer     # Installer job tests
+npm run test:auth          # Permission testing
 ```
 
-## Test Utilities
-
-The `TestHelpers` class provides reusable functions:
-
-```typescript
-// Login as different roles
-await helpers.loginAs('vendor');
-await helpers.loginAs('customer');
-
-// Product configuration
-await helpers.navigateToProductConfiguration('product-slug');
-await helpers.completeBasicProductConfiguration();
-
-// Cart operations
-await helpers.addToCart();
-await helpers.proceedToCheckout();
-
-// Form helpers
-await helpers.fillFractionInput('[data-testid="width"]', 48, '3/8');
-await helpers.fillShippingAddress();
-await helpers.fillPaymentInfo();
+### **3. API Integration** (`npm run test:api`)
+```bash
+# Backend API testing
+# - Authentication endpoints
+# - Product management APIs
+# - Cart and order operations
+# - Error handling validation
 ```
 
-## Data Attributes
+### **4. Performance Tests** (`npm run test:performance`)
+```bash
+# Page load performance
+# Memory usage monitoring
+# Resource optimization
+# Mobile performance
+```
 
-Tests rely on `data-testid` attributes in the application:
+### **5. Load Testing** (`npm run test:load`) **🆕**
+```bash
+npm run test:load          # Playwright concurrent users
+npm run load:k6           # K6 API stress testing
+npm run load:artillery    # Artillery scenario testing
+npm run load:stress       # High-intensity stress test
+```
 
-### Required Test IDs
-- Navigation: `user-menu`, `logout-button`
-- Forms: `email`, `password`, `login-button`
-- Product Config: `width-input`, `height-input`, `next-step`
-- Cart: `add-to-cart`, `checkout-button`, `cart-item`
-- Checkout: `place-order`, `order-confirmation`
+## 🔧 **Setup Requirements**
 
-## Reporting
+### **System Requirements**
+- **Node.js** v18+ 
+- **MySQL** v8.0+
+- **Chrome/Chromium** (auto-installed)
+- **Main BlindsCommerce app** running on localhost:3000
 
-Tests generate multiple report formats:
-- **HTML Report**: Interactive test results with screenshots
-- **JSON Report**: Machine-readable results for CI integration
-- **JUnit XML**: Compatible with most CI systems
+### **Install Dependencies**
+```bash
+# Core dependencies
+npm install
 
-## Best Practices
+# Browser engines  
+npm run install-browsers
 
-1. **Test Independence**: Each test is isolated and can run independently
-2. **Data Cleanup**: Tests use fresh data or clean up after themselves
-3. **Realistic Scenarios**: Tests mirror real user workflows
-4. **Error Handling**: Tests validate both success and failure paths
-5. **Performance**: Tests include timing validations for UX
+# Load testing tools (optional)
+brew install k6                    # macOS
+npm install -g artillery           # All platforms
+```
 
-## Troubleshooting
+### **Environment Setup**
+```bash
+# Copy and configure environment
+cp .env.example .env
 
-### Common Issues
+# Key settings:
+BASE_URL=http://localhost:3000
+TEST_DB_NAME=blindscommerce_test
+TEST_ADMIN_EMAIL=admin@smartblindshub.com
+TEST_ADMIN_PASSWORD=Admin@1234
+```
 
-**Test Timeout**
-- Increase timeout in `playwright.config.ts`
-- Add explicit waits: `await page.waitForSelector()`
+### **Test Data Setup**
+```bash
+# Auto-create test users, products, orders
+npm run setup-test-data
 
-**Authentication Failures**
-- Verify test user credentials in database
-- Check session timeout settings
+# Clean and recreate (if needed)
+npm run setup-clean
+```
 
-**Element Not Found**
-- Ensure `data-testid` attributes exist in application
-- Use browser dev tools to verify selectors
+## 🎯 **Key Features**
 
-**Database State**
-- Reset test database between runs
-- Ensure test products exist with correct slugs
+### **Industry-Standard Testing** ✅
+- **Fraction Precision** - Tests 1/8" measurement inputs
+- **Multi-Vendor** - Tests marketplace functionality
+- **Role Hierarchy** - 7-tier user permission system
+- **Real E-commerce Workflows** - Complete purchase journeys
 
-## Contributing
+### **Comprehensive Coverage** ✅
+- **Cross-Browser** - Chrome, Firefox, Safari, Mobile
+- **Multiple Devices** - Desktop, tablet, mobile testing
+- **Performance Monitoring** - Load times, memory usage
+- **Error Scenarios** - Validation, edge cases, failures
 
-1. Add new test scenarios in appropriate workflow files
-2. Update `TestHelpers` for reusable functionality
-3. Maintain `data-testid` attributes in application code
-4. Document new test requirements in this README
+### **Advanced Load Testing** ✅
+- **Concurrent Users** - Simulate 10-200+ simultaneous users
+- **Realistic Behavior** - Browser, configurator, shopper patterns
+- **API Stress Testing** - High-volume backend testing
+- **Performance Thresholds** - Industry-standard benchmarks
 
-## Integration with Main Application
+### **Self-Contained** ✅
+- **Independent Database** - Uses separate test database
+- **Auto Test Data** - Creates users, products, orders automatically
+- **Complete Documentation** - Step-by-step guides
+- **CI/CD Ready** - GitHub Actions, Docker support
 
-This testing suite validates the workflow analyzed in the main application:
+## 📊 **Understanding Test Results**
 
-1. **Vendor Creation** → `app/vendor/products/new/page.tsx`
-2. **Product Configuration** → `app/products/configure/[slug]/page.tsx`
-3. **Cart Management** → `context/CartContext.tsx`
-4. **Order Creation** → `app/api/orders/create/route.ts`
+### **Success Indicators** ✅
+```bash
+✅ Test Pass Rate > 95%
+✅ Page Load Times < 3 seconds
+✅ API Response Times < 1 second
+✅ Load Test Success Rate > 90%
+✅ Memory Growth < 200% over test duration
+```
 
-The tests ensure the complete product lifecycle functions correctly end-to-end.
+### **Warning Signs** ⚠️
+```bash
+⚠️  Test Pass Rate 90-95%
+⚠️  Page Load Times 3-5 seconds
+⚠️  API Response Times 1-2 seconds
+⚠️  Load Test Success Rate 80-90%
+⚠️  Memory Growth 200-400%
+```
+
+### **Critical Issues** ❌
+```bash
+❌ Test Pass Rate < 90%
+❌ Page Load Times > 5 seconds
+❌ API Response Times > 2 seconds
+❌ Load Test Success Rate < 80%
+❌ Memory Growth > 400%
+❌ Application crashes during testing
+```
+
+## 🚀 **Common Commands**
+
+### **Daily Testing**
+```bash
+npm test                   # Run all UI tests
+npm run test:smoke        # Quick smoke tests
+npm run test:critical     # Critical path tests
+```
+
+### **Development Testing**
+```bash
+npm run test:headed       # Watch tests run in browser
+npm run test:debug        # Debug failing tests
+npm run test:ui           # Interactive test UI
+```
+
+### **Performance Testing**
+```bash
+npm run test:performance  # Performance monitoring
+npm run test:load         # Load testing suite
+npm run load:stress       # Stress test (200 users)
+```
+
+### **Reporting**
+```bash
+npm run report            # View HTML test reports
+playwright show-report    # Detailed test results
+```
+
+## 🔍 **Troubleshooting**
+
+### **Common Issues**
+
+#### Tests Failing Immediately
+```bash
+# Check if main app is running
+curl http://localhost:3000
+# Should return HTML, not connection error
+
+# Start main application
+cd /Users/gopal/BlindsCode/blindscommerce
+npm run dev
+```
+
+#### Database Connection Errors
+```bash
+# Verify database exists
+mysql -u root -p blindscommerce_test -e "SHOW TABLES;"
+
+# Recreate test data
+npm run setup-clean
+npm run setup-test-data
+```
+
+#### Load Tests Showing High Error Rates
+```bash
+# Check system resources
+top -p $(pgrep node)
+iostat 1 5
+
+# Common solutions:
+# - Increase database connection pool
+# - Add memory to system
+# - Optimize slow database queries
+```
+
+## 📚 **Documentation**
+
+- **TEST_EXECUTION_GUIDE.md** - Complete setup and execution guide
+- **LOAD_TESTING_GUIDE.md** - Comprehensive load testing documentation
+- **Test Helper Classes** - Reusable functions for all workflows
+- **Example Test Files** - Reference implementations
+
+## 🎯 **What Makes This Special**
+
+1. **Complete E-commerce Coverage** - Tests entire workflow from vendor → customer → order
+2. **Industry-Standard Measurements** - Uses 1/8" fraction inputs like real blinds companies
+3. **Multi-Role Architecture** - Tests 7-tier role hierarchy (admin, vendor, sales, installer, customer)
+4. **Realistic Load Testing** - Simulates actual user behavior patterns
+5. **Self-Contained** - Independent project with own database and test data
+6. **Production-Ready** - Can be used for continuous monitoring and CI/CD
+
+## 🚀 **Get Started Now**
+
+1. **Quick Test**: `npm install && npm run setup-test-data && npm test`
+2. **Load Testing**: See `LOAD_TESTING_GUIDE.md` for comprehensive load testing
+3. **Full Documentation**: See `TEST_EXECUTION_GUIDE.md` for complete setup
+
+This testing suite ensures your BlindsCommerce platform can handle real-world traffic and provides the confidence to scale your business! 🎯
