@@ -1,0 +1,67 @@
+{
+  "name": "blindscommerce-ui-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive UI testing suite for BlindsCommerce e-commerce platform",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui",
+    "test:workflow": "playwright test tests/workflows/",
+    "test:vendor": "playwright test tests/workflows/vendor-product-creation.spec.ts",
+    "test:customer": "playwright test tests/workflows/customer-product-configuration.spec.ts",
+    "test:cart": "playwright test tests/workflows/cart-checkout-workflow.spec.ts",
+    "test:admin": "playwright test tests/admin/",
+    "test:sales": "playwright test tests/sales/",
+    "test:installer": "playwright test tests/installer/",
+    "test:auth": "playwright test tests/auth/",
+    "test:api": "playwright test tests/api/",
+    "test:performance": "playwright test tests/performance/",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:critical": "playwright test --grep @critical",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install",
+    "setup-test-data": "node scripts/setup-test-data.js",
+    "setup-clean": "node scripts/setup-test-data.js --cleanup",
+    "lint": "eslint . --ext .ts,.js",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "ui-testing", 
+    "playwright", 
+    "e-commerce", 
+    "blinds", 
+    "automation",
+    "testing",
+    "end-to-end",
+    "workflow"
+  ],
+  "author": "BlindsCommerce Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "dotenv": "^16.0.0",
+    "mysql2": "^3.6.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/smartblindshub/blindscommerce-ui-tests.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smartblindshub/blindscommerce-ui-tests/issues"
+  },
+  "homepage": "https://github.com/smartblindshub/blindscommerce-ui-tests#readme"
+}
