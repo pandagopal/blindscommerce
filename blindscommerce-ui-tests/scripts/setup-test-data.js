@@ -11,6 +11,7 @@ require('dotenv').config();
 async function createConnection() {
   return await mysql.createConnection({
     host: process.env.TEST_DB_HOST || 'localhost',
+    port: process.env.TEST_DB_PORT || 3306,
     user: process.env.TEST_DB_USER || 'root',
     password: process.env.TEST_DB_PASSWORD || '',
     database: process.env.TEST_DB_NAME || 'blindscommerce_test',
