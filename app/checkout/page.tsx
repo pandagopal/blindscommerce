@@ -7,6 +7,8 @@ import { useCart } from "@/context/CartContext";
 import { ChevronLeft, CreditCard, Truck, ShieldCheck, Lock } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
+import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
 
 // Initialize Stripe with the publishable key from environment variables
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
@@ -1048,6 +1050,12 @@ export default function CheckoutPage() {
                   Secure checkout with Stripe
                 </span>
               </div>
+            </div>
+
+            {/* Guarantees */}
+            <div className="mt-6 space-y-3">
+              <SatisfactionGuarantee variant="banner" />
+              <PriceMatchGuarantee variant="banner" />
             </div>
           </div>
         </div>

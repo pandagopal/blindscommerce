@@ -174,6 +174,9 @@ export function ConfigProvider({
     { id: 1, name: 'Inside Mount', description: 'Fits inside the window frame for a clean look', priceModifier: 0, isDefault: true },
     { id: 2, name: 'Outside Mount', description: 'Mounts outside the window frame', priceModifier: 0, isDefault: false },
     { id: 3, name: 'Ceiling Mount', description: 'Attaches to the ceiling above window', priceModifier: 10, isDefault: false },
+    { id: 4, name: 'No-Drill Tension', description: 'No drilling required - uses tension to stay in place', priceModifier: 15, isDefault: false },
+    { id: 5, name: 'No-Drill Magnetic', description: 'Magnetic brackets for metal window frames', priceModifier: 20, isDefault: false },
+    { id: 6, name: 'No-Drill Adhesive', description: 'Strong adhesive strips - no holes or damage', priceModifier: 12, isDefault: false },
   ], []);
 
   const controlTypes = React.useMemo<ControlType[]>(() => [

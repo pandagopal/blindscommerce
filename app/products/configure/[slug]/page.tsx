@@ -7,6 +7,9 @@ import { useCart } from "@/context/CartContext";
 import { ChevronRight, ChevronLeft, Check, Bookmark, ShoppingCart, Info, CheckCircle } from "lucide-react";
 import { ConfigProvider, useConfig, Product } from "./components/ConfigurationContext";
 import StepContent from "./components/StepContent";
+import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
+import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
+import NoDrillHighlight from "@/components/ui/NoDrillHighlight";
 
 export default function ProductConfiguratorPage() {
   const params = useParams();
@@ -410,6 +413,13 @@ function ConfiguratorContent({ slug }: { slug: string }) {
           </div>
         </div>
       )}
+
+      {/* Guarantees and Features */}
+      <div className="mt-8 space-y-4">
+        <SatisfactionGuarantee variant="banner" />
+        <PriceMatchGuarantee variant="banner" productId={product?.id?.toString()} />
+        <NoDrillHighlight variant="banner" />
+      </div>
     </div>
   );
 }
