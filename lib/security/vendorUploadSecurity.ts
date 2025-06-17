@@ -86,10 +86,12 @@ export interface SecureUploadResult {
 export class SecureVendorUpload {
   private vendorId: number;
   private uploadType: keyof typeof VENDOR_UPLOAD_LIMITS;
+  private productId?: string;
 
-  constructor(vendorId: number, uploadType: keyof typeof VENDOR_UPLOAD_LIMITS) {
+  constructor(vendorId: number, uploadType: keyof typeof VENDOR_UPLOAD_LIMITS, productId?: string) {
     this.vendorId = vendorId;
     this.uploadType = uploadType;
+    this.productId = productId;
   }
 
   async processFile(file: File): Promise<SecureUploadResult> {
@@ -252,6 +254,12 @@ export class SecureVendorUpload {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
     const vendorHash = createHash('md5').update(this.vendorId.toString()).digest('hex').substring(0, 8);
+    
+    // Include product ID prefix if provided
+    if (this.productId) {
+      return `product_${this.productId}_${vendorHash}_${timestamp}_${random}`;
+    }
+    
     return `${vendorHash}_${timestamp}_${random}`;
   }
 
@@ -280,7 +288,7 @@ export class SecureCustomerUpload {
     
     // Similar implementation to vendor upload but with customer-specific limits
     // Reuse the secure processing logic from SecureVendorUpload
-    const vendorUpload = new SecureVendorUpload(this.customerId, 'productImages'); // Temporary for reuse
+    const vendorUpload = new SecureVendorUpload(this.customerId, 'productImages', undefined); // Temporary for reuse
     
     // Override limits for customer-specific validation
     const result = await vendorUpload.processFile(file);

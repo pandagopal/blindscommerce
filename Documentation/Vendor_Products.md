@@ -370,3 +370,42 @@ CREATE TABLE `vendor_discounts` (
    - Vendor mobile dashboard
    - Order notifications
    - Quick product updates
+
+So We Have Two Different Pricing Systems:
+
+    1. Main Pricing Matrix Tab → product_pricing_matrix (width x height grid)
+    2. Fabric Pricing Matrix → product_fabric_pricing (width ranges per fabric type)
+
+⏺ Exactly! You've identified the key distinction. There are indeed two separate pricing systems:
+
+  1. Main Pricing Matrix Tab
+
+  - Table: product_pricing_matrix
+  - Structure: Width × Height grid pricing
+  - Columns: width_min, width_max, height_min, height_max, base_price, price_per_sqft
+  - Purpose: Overall product pricing based on dimensions
+  - Component: PricingMatrix.tsx
+
+  2. Fabric Pricing Matrix
+
+  - Table: product_fabric_pricing
+  - Structure: Width ranges per fabric type (no height consideration)
+  - Columns: min_width, max_width, price_per_sqft (linked to fabric_option_id)
+  - Purpose: Additional fabric-specific pricing per square foot
+  - Component: Fabric price matrix within Fabric.tsx
+
+  Key Differences:
+  - Main pricing considers both width AND height ranges
+  - Fabric pricing only considers width ranges (height is handled differently)
+  - Main pricing sets base product price
+  - Fabric pricing adds fabric-specific costs on top
+
+  Database Verification:
+  - product_pricing_matrix: Contains the main dimensional pricing grid
+  - product_fabric_pricing: Contains fabric-specific width-based pricing (where we found the 10, 11, 20, 23 values)
+
+  This dual pricing system allows for:
+  1. Base product pricing by dimensions (main matrix)
+  2. Additional fabric upgrade costs by width ranges (fabric matrix)
+
+  The final customer price would be: Base Price + Fabric Price + Any other options

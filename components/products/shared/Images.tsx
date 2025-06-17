@@ -19,9 +19,10 @@ interface ImagesProps {
   images: ImageFile[];
   onChange: (images: ImageFile[]) => void;
   isReadOnly?: boolean;
+  productId?: string;
 }
 
-export default function Images({ images, onChange, isReadOnly = false }: ImagesProps) {
+export default function Images({ images, onChange, isReadOnly = false, productId }: ImagesProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -32,6 +33,9 @@ export default function Images({ images, onChange, isReadOnly = false }: ImagesP
       try {
         const formData = new FormData();
         formData.append('file', file);
+        if (productId) {
+          formData.append('productId', productId);
+        }
 
         const response = await fetch('/api/upload/images', {
           method: 'POST',
@@ -44,20 +48,20 @@ export default function Images({ images, onChange, isReadOnly = false }: ImagesP
 
         const result = await response.json();
         return {
-          id: Math.random().toString(36).substring(7),
+          id: `${productId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           file,
           url: result.url,
-          alt: file.name,
+          alt: `${productId || 'new'}_${file.name}`,
           is_primary: false
         };
       } catch (error) {
         console.error('Error uploading file:', error);
         // Fallback to object URL for preview
         return {
-          id: Math.random().toString(36).substring(7),
+          id: `${productId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
           file,
           url: URL.createObjectURL(file),
-          alt: file.name,
+          alt: `${productId || 'new'}_${file.name}`,
           is_primary: false
         };
       }
@@ -160,7 +164,7 @@ export default function Images({ images, onChange, isReadOnly = false }: ImagesP
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image, index) => (
             <div
-              key={image.id}
+              key={`${image.id}-${index}`}
               draggable={!isReadOnly}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
@@ -169,13 +173,19 @@ export default function Images({ images, onChange, isReadOnly = false }: ImagesP
                 ${draggedIndex === index ? 'opacity-50' : ''}`}
             >
               <div className="aspect-square relative">
-                <Image
-                  src={image.url}
-                  alt={image.alt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                />
+                {image.url && image.url.trim() !== '' ? (
+                  <Image
+                    src={image.url}
+                    alt={image.alt || 'Product image'}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
               </div>
               
               {!isReadOnly && (

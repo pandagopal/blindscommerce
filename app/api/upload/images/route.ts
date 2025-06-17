@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
 
     const data = await request.formData();
     const file: File | null = data.get('file') as unknown as File;
+    const productId = data.get('productId') as string;
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
@@ -33,11 +34,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Generate unique filename
+    // Generate unique filename with product ID prefix
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
     const extension = file.name.split('.').pop();
-    const filename = `${timestamp}_${randomString}.${extension}`;
+    const filename = productId 
+      ? `product_${productId}_${timestamp}_${randomString}.${extension}`
+      : `${timestamp}_${randomString}.${extension}`;
 
     // Create upload directory if it doesn't exist
     const uploadDir = join(process.cwd(), 'public', 'uploads', 'products');

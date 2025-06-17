@@ -79,7 +79,8 @@ interface PricingMatrixProps {
 export default function PricingMatrix({ initialData, onChange, isReadOnly = false }: PricingMatrixProps) {
   const [priceMatrix, setPriceMatrix] = useState<Record<string, string>>(initialData?.priceMatrix || {});
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const [showAllRanges, setShowAllRanges] = useState(false);
+  const rowsPerPage = 20; // Increased to show more ranges per page
 
   // Update state when initialData changes
   useEffect(() => {
@@ -89,24 +90,23 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
   }, [initialData]);
 
   const handlePriceChange = (widthRange: string, heightRange: string, value: string) => {
-    const key = `${widthRange}-${heightRange}`;
+    const key = `${widthRange}_${heightRange}`;
     
-    setPriceMatrix(prev => ({
-      ...prev,
+    // Create updated price matrix
+    const updatedPriceMatrix = {
+      ...priceMatrix,
       [key]: value
-    }));
+    };
+    
+    setPriceMatrix(updatedPriceMatrix);
 
     // Parse the width and height ranges to get min/max values
-    const [widthLabel, heightLabel] = key.split('-');
     const widthRangeData = WIDTH_RANGES.find(r => r.label === widthRange);
     const heightRangeData = HEIGHT_RANGES.find(r => r.label === heightRange);
 
     // Create array of pricing matrix entries matching database structure
-    const matrixEntries = Object.entries({
-      ...priceMatrix,
-      [key]: value
-    }).map(([rangeKey, price]) => {
-      const [wRange, hRange] = rangeKey.split('-');
+    const matrixEntries = Object.entries(updatedPriceMatrix).map(([rangeKey, price]) => {
+      const [wRange, hRange] = rangeKey.split('_');
       const wData = WIDTH_RANGES.find(r => r.label === wRange);
       const hData = HEIGHT_RANGES.find(r => r.label === hRange);
       
@@ -125,25 +125,36 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
     }).filter(Boolean);
 
     onChange({
-      priceMatrix,
+      priceMatrix: updatedPriceMatrix,
       matrixEntries
     });
   };
 
   const getPrice = (widthRange: string, heightRange: string): string => {
-    const key = `${widthRange}-${heightRange}`;
+    const key = `${widthRange}_${heightRange}`;
     return priceMatrix[key] || '0.00';
   };
 
-  // Calculate pagination
+  // Calculate pagination or show all ranges
   const totalPages = Math.ceil(HEIGHT_RANGES.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const visibleHeightRanges = HEIGHT_RANGES.slice(startIndex, startIndex + rowsPerPage);
+  const startIndex = showAllRanges ? 0 : (currentPage - 1) * rowsPerPage;
+  const endIndex = showAllRanges ? HEIGHT_RANGES.length : startIndex + rowsPerPage;
+  const visibleHeightRanges = HEIGHT_RANGES.slice(startIndex, endIndex);
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-center">All Sizes in INCHES</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-center">All Sizes in INCHES</CardTitle>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAllRanges(!showAllRanges)}
+              className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary/90"
+            >
+              {showAllRanges ? 'Show Paginated' : 'Show All (up to 300")'}
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -170,8 +181,12 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                         type="number"
                         value={getPrice(widthRange.label, heightRange.label)}
                         onChange={(e) => handlePriceChange(widthRange.label, heightRange.label, e.target.value)}
+                        onFocus={(e) => {
+                          if (e.target.value === '0' || e.target.value === '0.00') {
+                            e.target.select();
+                          }
+                        }}
                         className="text-center border-0 h-12"
-                        step="0.01"
                         min="0"
                         disabled={isReadOnly}
                         placeholder="0.00"
@@ -185,27 +200,35 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
         </div>
 
         {/* Pagination Controls */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
-            Page {currentPage} of {totalPages}
+        {!showAllRanges && (
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages} (Height ranges: {visibleHeightRanges[0]?.label} to {visibleHeightRanges[visibleHeightRanges.length - 1]?.label})
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
-            >
-              Next
-            </button>
+        )}
+        
+        {showAllRanges && (
+          <div className="mt-4 text-sm text-muted-foreground text-center">
+            Showing all height ranges: 11-20" to 291-300" ({HEIGHT_RANGES.length} ranges total)
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

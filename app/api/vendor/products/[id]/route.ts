@@ -496,7 +496,7 @@ export async function PUT(
         short_description = ?,
         full_description = ?, 
         base_price = ?, 
-        brand_id = NULL,
+        brand_id = ?,
         is_active = ?,
         is_featured = ?,
         primary_image_url = ?,
@@ -509,10 +509,10 @@ export async function PUT(
         short_description,
         description,
         base_price,
-        null,
+        null, // brand_id
         is_active,
         is_featured,
-        images && images.length > 0 ? images[0] : null,
+        images && images.length > 0 ? (typeof images[0] === 'string' ? images[0] : images[0].url || null) : null,
         productId
       ]
     );

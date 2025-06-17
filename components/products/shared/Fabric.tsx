@@ -170,8 +170,8 @@ const PriceInput = ({
     }
   };
 
-  // Also set typing on click to fix double-click issue
-  const handleClick = () => {
+  // Fix double-click issue by also handling mousedown
+  const handleMouseDown = () => {
     setIsUserTyping(true);
   };
 
@@ -184,7 +184,7 @@ const PriceInput = ({
       onChange={handleChange}
       onBlur={handleBlur}
       onFocus={handleFocus}
-      onClick={handleClick}
+      onMouseDown={handleMouseDown}
       className={className}
       placeholder="0.00"
       disabled={isReadOnly}

@@ -437,6 +437,142 @@ TUYA_API_SECRET=...
       └── ProductGrid
   ```
 
+### PRODUCT_MGMT_FABRIC_TAB_FIX_2025_01
+ISSUE: fabric_focus_loss + img_blob_disappear + multi_tab_save_partial
+ROOT: immediate_onChange + blob_urls + state_conflicts
+
+SOLUTION_PATTERN: unified_save_all_tabs_at_once
+- NO_onChange_calls_during_edit
+- blob_preview_only → upload_on_save
+- fabricRef.getCurrentData() pattern
+- productId_in_img_names: `${productId}_${category}_${fabricIndex}_${file.name}`
+
+SAVE_FLOW:
+```
+saveProduct() {
+  // ALL tabs: productData.* (direct state)
+  // FABRIC tab: fabricRef.current?.getCurrentData() (special)
+  // IMG processing: blob:// → /api/vendor/upload → real_url
+  // API: complete_snapshot_all_tabs
+}
+```
+
+FILES:
+- Fabric.tsx: local_state + isUserTyping + ref_pattern
+- UnifiedProductPage.tsx: fabricRef + img_upload_logic
+- /api/vendor/upload/route.ts: vendor_id→vendor_info_id
+
+TAB_DATA_SOURCES:
+basic|options|pricing|images|features|rooms: productData.*
+fabric: fabricRef.getCurrentData() + img_upload_processing
+
+STATE_MGMT:
+- FabricNameInput/PriceInput: useState(local) + blur_commit
+- NO React.memo, NO complex_commit_logic
+- coloredFabric|sheerFabric|blackoutFabric: identical_component
+
+PRICING_SYSTEMS_DISCOVERED:
+```json
+{
+  "main_pricing_matrix": {
+    "table": "product_pricing_matrix",
+    "structure": "width_min, width_max, height_min, height_max, base_price, price_per_sqft", 
+    "purpose": "overall_product_pricing_by_dimensions",
+    "component": "PricingMatrix.tsx",
+    "grid": "width_x_height_ranges"
+  },
+  "fabric_pricing_matrix": {
+    "table": "product_fabric_pricing", 
+    "structure": "fabric_option_id, min_width, max_width, price_per_sqft",
+    "purpose": "fabric_specific_pricing_per_sqft",
+    "component": "Fabric.tsx_price_matrix_section",
+    "grid": "width_ranges_only_per_fabric_type"
+  }
+}
+```
+
+FABRIC_DATA_FLOW_TRACED:
+database: product_fabric_options(3_records) + product_fabric_pricing(33_records) + product_fabric_images(5_records)
+api: /api/vendor/products/[id]/route.ts → formatFabricData() → loads_real_data
+ui: shows_real_pricing_values(10,11,20,23) not_defaults
+fix: double_click_issue → onMouseDown_vs_onClick
+
+IMAGE_NAMING_SECURITY_PROTOCOL:
+```json
+{
+  "security_benefits": {
+    "malicious_file_identification": "product_243_a1b2c3d4_timestamp_random.ext",
+    "rapid_threat_response": "quarantine_all_files_matching_product_243_*",
+    "bulk_security_actions": "disable_product_flag_vendor_scan_portfolio", 
+    "audit_trail": "forensic_analysis_vendor_behavior_monitoring",
+    "automated_scanning": "product_grouped_ml_threat_detection"
+  },
+  "naming_convention": {
+    "fabric_images": "product_{productId}_{vendorHash}_{timestamp}_{random}.ext",
+    "main_images": "product_{productId}_{timestamp}_{random}.ext",
+    "local_preview": "{productId}_{category}_{fabricIndex}_{filename}"
+  },
+  "implementation": {
+    "SecureVendorUpload.generateSecureFileId()": "includes_product_prefix_when_provided",
+    "/api/vendor/upload": "accepts_productId_parameter",
+    "/api/upload/images": "supports_product_prefix_naming",
+    "Components": "Fabric.tsx + Images.tsx + UnifiedProductPage.tsx"
+  },
+  "security_scenarios": {
+    "malicious_detection": "product_243_hash_time_rand.jpg → quarantine_product_243_* → disable_listing → flag_vendor",
+    "forensic_investigation": "trace_vendor_by_hash → analyze_upload_patterns → compliance_reporting",
+    "threat_containment": "rapid_bulk_actions_on_product_or_vendor_level"
+  }
+}
+```
+
+PRICING_MATRIX_CRITICAL_BUG_FIX_2025:
+```json
+{
+  "issue_type": "data_format_key_separator_conflict",
+  "severity": "critical_data_loss",
+  "symptoms": {
+    "user_input": "pricing_matrix_inputs_not_accepting_values",
+    "save_behavior": "api_returns_200_but_no_database_entries",
+    "edit_behavior": "pricing_tab_shows_all_zeros_on_reload",
+    "database_state": "product_pricing_matrix_table_remains_empty"
+  },
+  "root_cause": {
+    "problem": "key_format_separator_conflict_between_component_and_parser",
+    "technical_detail": "UnifiedProductPage creates keys like '11-20-21-30' but PricingMatrix.split('-') creates wrong array",
+    "data_flow_break": "wRange='11', hRange='20' → lookup fails → WIDTH_RANGES.find(label='11') → undefined → no_db_save"
+  },
+  "solution": {
+    "key_format_change": "separator changed from '-' to '_'",
+    "old_format": "11-20-21-30 (widthRange + '-' + heightRange)",
+    "new_format": "11-20_21-30 (widthRange + '_' + heightRange)",
+    "parsing_fix": "split('_') gives ['11-20', '21-30'] → correct_lookup_succeeds"
+  },
+  "files_modified": {
+    "UnifiedProductPage.tsx": "line_76: key = `${widthRange}_${heightRange}`",
+    "PricingMatrix.tsx": [
+      "line_92: key = `${widthRange}_${heightRange}`",
+      "line_108: rangeKey.split('_')",
+      "line_139: key = `${widthRange}_${heightRange}`"
+    ]
+  },
+  "data_flow_fixed": {
+    "user_input": "25.00 → input_onChange",
+    "component": "handlePriceChange → updatedPriceMatrix['11-20_21-30'] = '25.00'",
+    "conversion": "matrixEntries with width_min=11, width_max=20, base_price=25.00",
+    "api_save": "INSERT INTO product_pricing_matrix with proper values",
+    "database": "actual_data_stored_successfully",
+    "reload": "edit_page_shows_saved_pricing_data"
+  },
+  "validation_commands": {
+    "test_save": "enter_pricing_data → click_update_product",
+    "verify_db": "SELECT * FROM product_pricing_matrix WHERE product_id = ?",
+    "test_reload": "refresh_edit_page → verify_pricing_tab_populated"
+  },
+  "importance": "CRITICAL - affects_all_vendor_pricing_workflows_and_revenue_calculations"
+}
+```
+
 ### Login System & Role Hierarchy Overhaul (December 2024)
 - **Challenge**: Implement secure role-based user creation system to compete with Amazon
 - **Implementation**: Complete authentication and authorization system with 7-tier role hierarchy

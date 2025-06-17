@@ -62,6 +62,27 @@ const SHADE_CATEGORIES = [
   'Shades'
 ];
 
+// Convert pricing matrix entries to the format expected by PricingMatrix component
+const convertPricingMatrixToObject = (matrixEntries: any[]): Record<string, string> => {
+  const priceMatrix: Record<string, string> = {};
+  
+  if (!Array.isArray(matrixEntries)) return priceMatrix;
+  
+  matrixEntries.forEach(entry => {
+    if (entry.width_min && entry.width_max && entry.height_min && entry.height_max) {
+      // Create the key format that matches PricingMatrix component expectations
+      const widthRange = `${Math.floor(entry.width_min)}-${Math.floor(entry.width_max)}`;
+      const heightRange = `${Math.floor(entry.height_min)}-${Math.floor(entry.height_max)}`;
+      const key = `${widthRange}_${heightRange}`;
+      
+      // Store the base price as string with 2 decimal places
+      priceMatrix[key] = parseFloat(entry.base_price || 0).toFixed(2);
+    }
+  });
+  
+  return priceMatrix;
+};
+
 export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -252,7 +273,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             bottomRailOptions: []
           },
           pricing: { 
-            matrixEntries: Array.isArray(product.pricing_matrix) ? product.pricing_matrix : []
+            matrixEntries: Array.isArray(product.pricing_matrix) ? product.pricing_matrix : [],
+            priceMatrix: Array.isArray(product.pricing_matrix) ? 
+              convertPricingMatrixToObject(product.pricing_matrix) : {}
           },
           images: Array.isArray(product.images) ? product.images : [],
           features: Array.isArray(product.features) ? product.features : [],
@@ -312,6 +335,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                     formData.append('files', image.file);
                     formData.append('uploadType', 'productImages');
                     formData.append('category', `fabric_${fabricType}`);
+                    formData.append('productId', productId || 'new');
                     
                     const uploadResponse = await fetch('/api/vendor/upload', {
                       method: 'POST',
@@ -880,7 +904,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
               <TabsContent value="pricing">
                 <PricingMatrix
-                  data={productData.pricing}
+                  dimensions={productData.options.dimensions}
+                  initialData={productData.pricing}
                   onChange={(data) => updateProductData('pricing', data)}
                   isReadOnly={isViewMode}
                 />
@@ -891,12 +916,13 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                   images={productData.images}
                   onChange={(data) => updateProductData('images', data)}
                   isReadOnly={isViewMode}
+                  productId={productId}
                 />
               </TabsContent>
 
               <TabsContent value="features">
                 <Features
-                  data={productData.features}
+                  features={productData.features}
                   onChange={(data) => updateProductData('features', data)}
                   isReadOnly={isViewMode}
                 />

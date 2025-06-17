@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const uploadType = formData.get('uploadType') as keyof typeof VENDOR_UPLOAD_LIMITS;
     const category = formData.get('category') as string;
+    const productId = formData.get('productId') as string;
     const files = formData.getAll('files') as File[];
 
     // Validate upload type
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process files securely
-    const secureUpload = new SecureVendorUpload(vendor.vendor_info_id, uploadType);
+    const secureUpload = new SecureVendorUpload(vendor.vendor_info_id, uploadType, productId);
     const results = [];
     const errors = [];
 
