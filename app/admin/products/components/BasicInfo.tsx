@@ -155,7 +155,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Product Name</FormLabel>
+              <FormLabel>Product Name *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter product name" {...field} disabled={isReadOnly} />
               </FormControl>
@@ -225,7 +225,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           name="categories"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Categories</FormLabel>
+              <FormLabel>Categories *</FormLabel>
               <FormControl>
                 <MultiSelect
                   options={
@@ -262,7 +262,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           name="primaryCategory"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Primary Category</FormLabel>
+              <FormLabel>Primary Category *</FormLabel>
               <Select 
                 onValueChange={field.onChange} 
                 value={field.value}
@@ -336,7 +336,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           name="shortDescription"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Short Description</FormLabel>
+              <FormLabel>Short Description *</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Enter a brief description"
