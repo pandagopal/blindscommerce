@@ -54,14 +54,27 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleAddFeature = () => {
-    if (!newFeature.title || !newFeature.description || isReadOnly) return;
+    console.log('handleAddFeature called with:', { newFeature, isReadOnly });
+    if (!newFeature.title || !newFeature.description || isReadOnly) {
+      console.log('handleAddFeature early return:', { 
+        hasTitle: !!newFeature.title, 
+        hasDescription: !!newFeature.description, 
+        isReadOnly 
+      });
+      return;
+    }
 
     const feature = {
       ...newFeature,
       id: Math.random().toString(36).substring(7)
     };
 
-    onChange([...features, feature]);
+    console.log('Adding feature:', feature);
+    console.log('Current features:', features);
+    const newFeatures = [...features, feature];
+    console.log('New features array:', newFeatures);
+    
+    onChange(newFeatures);
     setNewFeature({
       id: '',
       title: '',
@@ -141,14 +154,14 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
                   setNewFeature({ ...newFeature, icon: value })
                 }
               >
-                <SelectTrigger>
+                <SelectTrigger className="min-w-[200px]">
                   <SelectValue placeholder="Select an icon (optional)" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="w-full min-w-[200px]">
                   {AVAILABLE_ICONS.map((icon) => (
                     <SelectItem key={icon.value} value={icon.value}>
                       <div className="flex items-center gap-2">
-                        <span className="w-4 h-4">{icon.label}</span>
+                        <span className="whitespace-nowrap">{icon.label}</span>
                       </div>
                     </SelectItem>
                   ))}
@@ -207,11 +220,11 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
                   <SelectTrigger className="min-w-[200px]">
                     <SelectValue placeholder="Select an icon" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full min-w-[200px]">
                     {AVAILABLE_ICONS.map((icon) => (
                       <SelectItem key={icon.value} value={icon.value}>
                         <div className="flex items-center gap-2">
-                          <span className="w-4 h-4">{icon.label}</span>
+                          <span className="whitespace-nowrap">{icon.label}</span>
                         </div>
                       </SelectItem>
                     ))}

@@ -573,6 +573,133 @@ PRICING_MATRIX_CRITICAL_BUG_FIX_2025:
 }
 ```
 
+### FEATURES_TAB_SAVE_LOAD_FIX_2025:
+```json
+{
+  "issue_type": "features_data_not_populating_after_save",
+  "severity": "high_functionality_missing",
+  "symptoms": {
+    "save_behavior": "features_saved_successfully_to_database",
+    "edit_behavior": "features_tab_empty_on_product_edit_reload",
+    "data_flow": "save_works_but_load_missing",
+    "user_impact": "vendors_cannot_edit_existing_product_features"
+  },
+  "root_cause": {
+    "problem": "GET_route_missing_features_query_and_formatting",
+    "missing_component": "features_data_extraction_from_database",
+    "api_gap": "features_array_not_included_in_product_response"
+  },
+  "solution": {
+    "database_query": "JOIN product_features + features tables to get product-specific features",
+    "api_response": "include formatted features array in product data",
+    "data_format": "match Features.tsx component expectations with id, title, description, icon",
+    "filtering": "only include features with category='product_specific'"
+  },
+  "implementation": {
+    "query_added": "SELECT f.feature_id, f.name as title, f.description, f.icon FROM product_features pf JOIN features f ON pf.feature_id = f.feature_id WHERE pf.product_id = ? AND f.category = 'product_specific'",
+    "formatting": "map to {id, title, description, icon} structure",
+    "api_inclusion": "features: formattedFeatures in product response",
+    "component_compatibility": "matches Features.tsx interface expectations"
+  },
+  "data_flow_complete": {
+    "save": "Features component → API → features table + product_features junction",
+    "load": "Database → API → Features component → populated form",
+    "round_trip": "add_feature → save_product → reload_edit → features_visible"
+  },
+  "storage_architecture": {
+    "approach": "product_specific_features_not_global_references",
+    "features_table": "stores individual feature records with category='product_specific'",
+    "product_features_table": "junction table linking products to their specific features",
+    "business_logic": "each product has its own unique features list"
+  },
+  "files_modified": {
+    "api_route": "/app/api/vendor/products/[id]/route.ts - added features query and formatting in GET method",
+    "line_changes": "added featureRows query + formattedFeatures mapping + features in response"
+  },
+  "validation_commands": {
+    "test_save": "add_features → save_product → verify_database_entries",
+    "test_load": "reload_edit_page → verify_features_tab_populated", 
+    "verify_db": "SELECT * FROM features f JOIN product_features pf ON f.feature_id = pf.feature_id WHERE pf.product_id = ?"
+  },
+  "importance": "HIGH - enables_complete_product_feature_management_workflow"
+}
+```
+
+### FEATURES_AND_ROOMS_POPULATION_FIX_2025:
+```json
+{
+  "issue_type": "features_and_rooms_tabs_not_populating_on_edit",
+  "severity": "high_functionality_broken",
+  "symptoms": {
+    "save_behavior": "both_features_and_rooms_save_successfully_with_success_message", 
+    "edit_behavior": "tabs_show_empty_when_editing_existing_products",
+    "api_save": "data_reaches_database_correctly",
+    "api_load": "data_not_returned_in_product_response"
+  },
+  "root_causes": {
+    "features_tab": {
+      "problem": "features_query_had_incorrect_WHERE_clause",
+      "issue": "AND f.category = 'product_specific' filter was too restrictive",
+      "fix": "removed_category_filter_to_load_all_product_features"
+    },
+    "rooms_tab": {
+      "problem": "complete_absence_of_room_recommendations_queries",
+      "missing_get": "no_query_to_load_room_data_from_product_rooms_table",
+      "missing_put": "no_logic_to_save_room_recommendations_data",
+      "missing_destructure": "roomRecommendations_not_extracted_from_request_body"
+    }
+  },
+  "complete_solution": {
+    "features_loading": {
+      "query_fixed": "SELECT f.feature_id, f.name as title, f.description, f.icon FROM product_features pf JOIN features f ON pf.feature_id = f.feature_id WHERE pf.product_id = ?",
+      "formatting": "map to {id, title, description, icon} structure",
+      "response_inclusion": "features: formattedFeatures"
+    },
+    "rooms_loading": {
+      "query_added": "SELECT room_type, suitability_score, special_considerations FROM product_rooms WHERE product_id = ? ORDER BY suitability_score DESC",
+      "formatting": "map to {id, roomType, recommendation, priority} structure", 
+      "response_inclusion": "roomRecommendations: formattedRoomRecommendations"
+    },
+    "rooms_saving": {
+      "destructure_added": "roomRecommendations extracted from request body",
+      "delete_existing": "DELETE FROM product_rooms WHERE product_id = ?",
+      "insert_new": "INSERT INTO product_rooms with room_type, suitability_score, special_considerations"
+    }
+  },
+  "data_flow_complete": {
+    "features": "save_to_features+product_features → load_from_product_features+features → populate_Features_component",
+    "rooms": "save_to_product_rooms → load_from_product_rooms → populate_RoomRecommendations_component",
+    "round_trip_test": "add_data → save_product → reload_edit → verify_both_tabs_populated"
+  },
+  "database_tables": {
+    "features_storage": {
+      "features_table": "stores_individual_feature_records",
+      "product_features_table": "junction_table_linking_products_to_features"
+    },
+    "rooms_storage": {
+      "product_rooms_table": "stores_room_recommendations_per_product",
+      "fields": "product_id, room_type, suitability_score, special_considerations"
+    }
+  },
+  "files_modified": {
+    "api_route": "/app/api/vendor/products/[id]/route.ts",
+    "changes": [
+      "GET: added featureRows and roomRows queries",
+      "GET: added formattedFeatures and formattedRoomRecommendations mapping", 
+      "GET: included both in product response",
+      "PUT: added roomRecommendations to destructuring",
+      "PUT: added complete room recommendations save logic"
+    ]
+  },
+  "validation_tests": {
+    "features_test": "add_feature → save → reload_edit → verify_features_tab_populated",
+    "rooms_test": "add_room_recommendation → save → reload_edit → verify_rooms_tab_populated",
+    "database_verify": "check_features+product_features_tables AND product_rooms_table_for_saved_data"
+  },
+  "importance": "CRITICAL - restores_complete_product_management_functionality_for_features_and_rooms_tabs"
+}
+```
+
 ### Login System & Role Hierarchy Overhaul (December 2024)
 - **Challenge**: Implement secure role-based user creation system to compete with Amazon
 - **Implementation**: Complete authentication and authorization system with 7-tier role hierarchy

@@ -22,7 +22,7 @@ interface RoomRecommendation {
 }
 
 interface RoomRecommendationsProps {
-  recommendations: RoomRecommendation[];
+  recommendations?: RoomRecommendation[];
   onChange: (recommendations: RoomRecommendation[]) => void;
   isReadOnly?: boolean;
 }
@@ -43,11 +43,14 @@ const ROOM_TYPES = [
 ];
 
 export default function RoomRecommendations({ recommendations, onChange, isReadOnly = false }: RoomRecommendationsProps) {
+  // Add null safety check
+  const safeRecommendations = recommendations || [];
+  
   const [newRecommendation, setNewRecommendation] = useState<RoomRecommendation>({
     id: '',
     roomType: '',
     recommendation: '',
-    priority: recommendations.length + 1
+    priority: safeRecommendations.length + 1
   });
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
@@ -59,19 +62,19 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
       id: Math.random().toString(36).substring(7)
     };
 
-    onChange([...recommendations, recommendation]);
+    onChange([...safeRecommendations, recommendation]);
     setNewRecommendation({
       id: '',
       roomType: '',
       recommendation: '',
-      priority: recommendations.length + 2
+      priority: safeRecommendations.length + 2
     });
   };
 
   const handleRemoveRecommendation = (index: number) => {
     if (isReadOnly) return;
 
-    const newRecommendations = [...recommendations];
+    const newRecommendations = [...safeRecommendations];
     newRecommendations.splice(index, 1);
     
     // Update priorities
@@ -94,7 +97,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
-    const newRecommendations = [...recommendations];
+    const newRecommendations = [...safeRecommendations];
     const draggedRecommendation = newRecommendations[draggedIndex];
     newRecommendations.splice(draggedIndex, 1);
     newRecommendations.splice(index, 0, draggedRecommendation);
@@ -116,7 +119,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
   const handleUpdateRecommendation = (index: number, field: keyof RoomRecommendation, value: string) => {
     if (isReadOnly) return;
 
-    const newRecommendations = [...recommendations];
+    const newRecommendations = [...safeRecommendations];
     newRecommendations[index] = {
       ...newRecommendations[index],
       [field]: value
@@ -169,7 +172,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
         )}
 
         <div className="space-y-2">
-          {recommendations.map((rec, index) => (
+          {safeRecommendations.map((rec, index) => (
             <div
               key={rec.id}
               draggable={!isReadOnly}

@@ -333,10 +333,63 @@ export async function GET(
       return ranges;
     };
 
+    // Get product features (with error handling)
+    let featureRows = [];
+    try {
+      console.log('Querying features for product ID:', productId);
+      const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT f.feature_id, f.name, f.description, f.icon
+         FROM product_features pf
+         JOIN features f ON pf.feature_id = f.feature_id
+         WHERE pf.product_id = ?
+         ORDER BY f.display_order, f.created_at`,
+        [productId]
+      );
+      featureRows = rows;
+      console.log('Features query result:', featureRows);
+    } catch (featuresError) {
+      console.error('Features query error:', featuresError);
+      featureRows = []; // Continue with empty array if query fails
+    }
+
+    // Get room recommendations (with error handling)
+    let roomRows = [];
+    try {
+      console.log('Querying rooms for product ID:', productId);
+      const [rows] = await pool.query<RowDataPacket[]>(
+        `SELECT room_type, suitability_score, special_considerations 
+         FROM product_rooms 
+         WHERE product_id = ? 
+         ORDER BY suitability_score DESC`,
+        [productId]
+      );
+      roomRows = rows;
+      console.log('Rooms query result:', roomRows);
+    } catch (roomsError) {
+      console.error('Rooms query error:', roomsError);
+      roomRows = []; // Continue with empty array if query fails
+    }
+
     // Format categories data
     const allCategories = categoryRows.map(row => row.category_name);
     const primaryCategory = categoryRows.find(row => row.is_primary)?.category_name || 
                            (categoryRows.length > 0 ? categoryRows[0].category_name : '');
+
+    // Format features data
+    const formattedFeatures = featureRows.map(feature => ({
+      id: feature.feature_id.toString(),
+      title: feature.name, // Fixed: use 'name' column from database
+      description: feature.description,
+      icon: feature.icon || ''
+    }));
+
+    // Format room recommendations data
+    const formattedRoomRecommendations = roomRows.map((room, index) => ({
+      id: `room_${room.room_type}_${index}`,
+      roomType: room.room_type,
+      recommendation: room.special_considerations || '',
+      priority: room.suitability_score || 5
+    }));
 
     // Format response
     const formattedProduct = {
@@ -375,7 +428,9 @@ export async function GET(
       ],
       options: formattedOptions,
       pricing_matrix: pricingRows,
-      fabric_options: formatFabricData()
+      fabric_options: formatFabricData(),
+      features: formattedFeatures,
+      roomRecommendations: formattedRoomRecommendations
     };
 
     return NextResponse.json({ 
@@ -415,6 +470,14 @@ export async function PUT(
     }
 
     const body = await request.json();
+    
+    // DEBUG: Log the entire request body
+    console.log('=== PUT REQUEST DEBUG ===');
+    console.log('Full request body:', JSON.stringify(body, null, 2));
+    console.log('Features in body:', body.features);
+    console.log('RoomRecommendations in body:', body.roomRecommendations);
+    console.log('========================');
+    
     const {
       name,
       slug,
@@ -431,7 +494,9 @@ export async function PUT(
       images,
       options,
       pricing_matrix,
-      fabric
+      fabric,
+      features,
+      roomRecommendations
     } = body;
 
     const pool = await getPool();
@@ -689,6 +754,94 @@ export async function PUT(
         }
       }
     }
+
+    // Handle features data update if provided
+    console.log('=== FEATURES PROCESSING ===');
+    console.log('features variable:', features);
+    console.log('features type:', typeof features);
+    console.log('features is array:', Array.isArray(features));
+    console.log('features length:', features?.length);
+    
+    if (features && Array.isArray(features)) {
+      console.log('Processing features array...');
+      // Delete existing product features first
+      await pool.query('DELETE FROM product_features WHERE product_id = ?', [productId]);
+      
+      // Save product-specific features
+      for (const feature of features) {
+        console.log('Processing feature:', feature);
+        if (feature.title && feature.description) {
+          console.log('Inserting feature:', feature.title);
+          // Insert feature into features table
+          const [featureResult] = await pool.query<ResultSetHeader>(
+            `INSERT INTO features (name, description, icon, category, is_active, display_order, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              feature.title,
+              feature.description,
+              feature.icon || null,
+              'product_specific', // Category to identify product-specific features
+              1, // is_active
+              0  // display_order
+            ]
+          );
+          
+          const featureId = featureResult.insertId;
+          console.log('Inserted feature with ID:', featureId);
+          
+          // Link feature to product in product_features table
+          await pool.query(
+            `INSERT INTO product_features (product_id, feature_id, created_at)
+             VALUES (?, ?, NOW())`,
+            [productId, featureId]
+          );
+          console.log('Linked feature to product');
+        } else {
+          console.log('Skipping feature - missing title or description:', feature);
+        }
+      }
+    } else {
+      console.log('No features to process or not an array');
+    }
+    console.log('==========================')
+
+    // Handle room recommendations data update if provided
+    console.log('==== ROOMS RECOMMENDATIONS DEBUG ====');
+    console.log('roomRecommendations variable:', roomRecommendations);
+    console.log('roomRecommendations type:', typeof roomRecommendations);
+    console.log('roomRecommendations is array:', Array.isArray(roomRecommendations));
+    console.log('roomRecommendations length:', roomRecommendations?.length);
+    
+    if (roomRecommendations && Array.isArray(roomRecommendations)) {
+      console.log('Processing room recommendations array...');
+      // Delete existing room recommendations first
+      await pool.query('DELETE FROM product_rooms WHERE product_id = ?', [productId]);
+      console.log('Deleted existing room recommendations for product:', productId);
+      
+      // Save room recommendations
+      for (const room of roomRecommendations) {
+        console.log('Processing room:', room);
+        if (room.roomType && room.roomType.trim()) {
+          console.log('Inserting room recommendation:', room.roomType);
+          await pool.query(
+            `INSERT INTO product_rooms (product_id, room_type, suitability_score, special_considerations, created_at)
+             VALUES (?, ?, ?, ?, NOW())`,
+            [
+              productId,
+              room.roomType,
+              room.priority || 5,
+              room.recommendation || ''
+            ]
+          );
+          console.log('Successfully inserted room recommendation');
+        } else {
+          console.log('Skipping room - missing roomType:', room);
+        }
+      }
+    } else {
+      console.log('No room recommendations to process or not an array');
+    }
+    console.log('=====================================');
 
     return NextResponse.json({
       success: true,

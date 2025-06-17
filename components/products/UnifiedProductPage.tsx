@@ -390,8 +390,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         images: productData.images,
         options: productData.options,
         pricing_matrix: productData.pricing.matrixEntries,
-        fabric: processedFabricData
+        fabric: processedFabricData,
+        features: productData.features,
+        roomRecommendations: productData.roomRecommendations
       };
+      
       
       const response = await fetch(apiEndpoint, {
         method,
@@ -845,13 +848,14 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <Button
                   variant="outline"
                   onClick={handleBack}
+                  className="px-6 py-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={saveProduct}
                   disabled={saving}
-                  className="bg-primary-red hover:bg-red-700"
+                  className="px-6 py-2 bg-primary-red text-white hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                 >
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isEditMode ? 'Update Product' : 'Create Product'}
@@ -930,7 +934,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
               <TabsContent value="rooms">
                 <RoomRecommendations
-                  data={productData.roomRecommendations}
+                  recommendations={productData.roomRecommendations}
                   onChange={(data) => updateProductData('roomRecommendations', data)}
                   isReadOnly={isViewMode}
                 />
