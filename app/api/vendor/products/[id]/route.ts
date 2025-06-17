@@ -59,9 +59,18 @@ export async function GET(
         p.status,
         p.is_active,
         p.is_featured,
-        b.name as brand_name
+        p.mount_types,
+        p.control_types,
+        p.custom_width_min,
+        p.custom_width_max,
+        p.custom_height_min,
+        p.custom_height_max,
+        p.headrail_id,
+        p.bottom_rail_id,
+        vi.business_name as brand_name
       FROM products p
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE p.product_id = ?`;
       queryParams = [productId];
     } else {
@@ -79,14 +88,22 @@ export async function GET(
         p.status,
         p.is_active,
         p.is_featured,
+        p.mount_types,
+        p.control_types,
+        p.custom_width_min,
+        p.custom_width_max,
+        p.custom_height_min,
+        p.custom_height_max,
+        p.headrail_id,
+        p.bottom_rail_id,
         vp.vendor_price,
         vp.quantity_available,
         vp.vendor_description,
         vp.is_active as vendor_active,
-        b.name as brand_name
+        vi.business_name as brand_name
       FROM vendor_products vp
       JOIN products p ON vp.product_id = p.product_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE vp.vendor_id = ? AND p.product_id = ?`;
       queryParams = [vendorId, productId];
     }
@@ -162,36 +179,15 @@ export async function GET(
       [productId]
     );
 
-    // Get dimension data if exists
-    const [dimensionRows] = await pool.query<RowDataPacket[]>(
-      `SELECT pd.*, dt.name as dimension_name 
-       FROM product_dimensions pd
-       JOIN dimension_types dt ON pd.dimension_type_id = dt.dimension_type_id
-       WHERE pd.product_id = ?`,
-      [productId]
-    );
-
-    // Process dimension data
+    // Process dimension data from products table columns
     let dimensions = {
-      minWidth: 12,
-      maxWidth: 96,
-      minHeight: 12,
-      maxHeight: 120,
+      minWidth: product.custom_width_min ? parseFloat(product.custom_width_min.toString()) : 12,
+      maxWidth: product.custom_width_max ? parseFloat(product.custom_width_max.toString()) : 96,
+      minHeight: product.custom_height_min ? parseFloat(product.custom_height_min.toString()) : 12,
+      maxHeight: product.custom_height_max ? parseFloat(product.custom_height_max.toString()) : 120,
       widthIncrement: 0.125,
       heightIncrement: 0.125
     };
-
-    dimensionRows.forEach(row => {
-      if (row.dimension_name === 'Width') {
-        dimensions.minWidth = parseFloat(row.min_value) || 12;
-        dimensions.maxWidth = parseFloat(row.max_value) || 96;
-        dimensions.widthIncrement = parseFloat(row.increment_value) || 0.125;
-      } else if (row.dimension_name === 'Height') {
-        dimensions.minHeight = parseFloat(row.min_value) || 12;
-        dimensions.maxHeight = parseFloat(row.max_value) || 120;
-        dimensions.heightIncrement = parseFloat(row.increment_value) || 0.125;
-      }
-    });
 
     // Format options data from rows into the expected structure
     const formattedOptions = {
@@ -208,40 +204,27 @@ export async function GET(
     };
 
     // Parse options from products table direct columns
-    console.log('=== DEBUGGING OPTIONS PARSING ===');
-    console.log('Raw product.mount_types:', product.mount_types);
-    console.log('Raw product.control_types:', product.control_types);
-    console.log('Type of mount_types:', typeof product.mount_types);
-    console.log('Type of control_types:', typeof product.control_types);
-
     // Parse mount types from comma-separated string
     if (product.mount_types) {
-      console.log('Processing mount_types...');
       const mountTypes = product.mount_types.split(',').filter(mt => mt.trim());
-      console.log('Parsed mount types:', mountTypes);
       formattedOptions.mountTypes = mountTypes.map(name => ({
         name: name.trim(),
         price_adjustment: 0,
         enabled: true,
         description: ''
       }));
-      console.log('Formatted mount types:', formattedOptions.mountTypes);
     }
 
     // Parse control types from semicolon and colon separated string
     if (product.control_types) {
-      console.log('Processing control_types...');
       const controlGroups = product.control_types.split(';').filter(cg => cg.trim());
-      console.log('Control groups:', controlGroups);
       controlGroups.forEach(group => {
         const items = group.split(',').filter(item => item.trim());
-        console.log('Group items:', items);
         items.forEach(item => {
           if (item.includes(':')) {
             const [subcategory, name] = item.split(':');
             const cleanSubcategory = subcategory.trim();
             const cleanName = name.trim();
-            console.log(`Adding to ${cleanSubcategory}: ${cleanName}`);
             
             if (formattedOptions.controlTypes[cleanSubcategory]) {
               formattedOptions.controlTypes[cleanSubcategory].push({
@@ -256,8 +239,34 @@ export async function GET(
       });
     }
 
-    console.log('Final formatted options:', JSON.stringify(formattedOptions, null, 2));
-    console.log('=== END DEBUGGING ===');
+    // Get headrail options
+    const [allHeadrailOptions] = await pool.query<RowDataPacket[]>(
+      'SELECT headrail_id, name, description FROM headrail_options WHERE is_active = 1',
+      []
+    );
+
+    // Get bottom rail options  
+    const [allBottomRailOptions] = await pool.query<RowDataPacket[]>(
+      'SELECT bottom_rail_id, name, description FROM bottom_rail_options WHERE is_active = 1',
+      []
+    );
+
+    // Add valance and bottom rail options to formattedOptions
+    formattedOptions.valanceOptions = allHeadrailOptions.map(option => ({
+      id: option.headrail_id,
+      name: option.name,
+      price_adjustment: 0,
+      enabled: product.headrail_id === option.headrail_id,
+      description: option.description || ''
+    }));
+
+    formattedOptions.bottomRailOptions = allBottomRailOptions.map(option => ({
+      id: option.bottom_rail_id,
+      name: option.name,
+      price_adjustment: 0,
+      enabled: product.bottom_rail_id === option.bottom_rail_id,
+      description: option.description || ''
+    }));
 
     // Format fabric data
     const formatFabricData = () => {
@@ -476,25 +485,7 @@ export async function PUT(
       }
     }
 
-    // Handle brand mapping - find or create brand
-    let brandId = null;
-    if (brand && brand.trim()) {
-      const [brandRows] = await pool.query<RowDataPacket[]>(
-        'SELECT brand_id FROM brands WHERE name = ?',
-        [brand.trim()]
-      );
-      if (brandRows.length > 0) {
-        brandId = brandRows[0].brand_id;
-      } else {
-        // Create new brand if it doesn't exist
-        const brandSlug = brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const [brandResult] = await pool.query<ResultSetHeader>(
-          'INSERT INTO brands (name, slug, is_active, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
-          [brand.trim(), brandSlug]
-        );
-        brandId = brandResult.insertId;
-      }
-    }
+    // Note: brand_id is now deprecated, using vendor's business_name as brand
 
     // Update product
     await pool.query(
@@ -505,7 +496,7 @@ export async function PUT(
         short_description = ?,
         full_description = ?, 
         base_price = ?, 
-        brand_id = ?,
+        brand_id = NULL,
         is_active = ?,
         is_featured = ?,
         primary_image_url = ?,
@@ -518,7 +509,7 @@ export async function PUT(
         short_description,
         description,
         base_price,
-        brandId,
+        null,
         is_active,
         is_featured,
         images && images.length > 0 ? images[0] : null,
@@ -568,33 +559,16 @@ export async function PUT(
 
     // Handle options data update - save directly to products table
     if (options && typeof options === 'object') {
-      console.log('Saving options data:', JSON.stringify(options, null, 2));
-      
-      // Save dimensions if provided
+      // Prepare dimension data
+      let dimensionUpdates = {};
       if (options.dimensions) {
         const dims = options.dimensions;
-        
-        // Delete existing dimensions first
-        await pool.query(
-          'DELETE FROM product_dimensions WHERE product_id = ?',
-          [productId]
-        );
-        
-        // Insert width dimension
-        await pool.query(
-          `INSERT INTO product_dimensions (product_id, dimension_type_id, min_value, max_value, increment_value, created_at)
-           SELECT ?, dt.dimension_type_id, ?, ?, ?, NOW()
-           FROM dimension_types dt WHERE dt.name = 'Width'`,
-          [productId, dims.minWidth || 12, dims.maxWidth || 96, dims.widthIncrement || 0.125]
-        );
-
-        // Insert height dimension
-        await pool.query(
-          `INSERT INTO product_dimensions (product_id, dimension_type_id, min_value, max_value, increment_value, created_at)
-           SELECT ?, dt.dimension_type_id, ?, ?, ?, NOW()
-           FROM dimension_types dt WHERE dt.name = 'Height'`,
-          [productId, dims.minHeight || 12, dims.maxHeight || 120, dims.heightIncrement || 0.125]
-        );
+        dimensionUpdates = {
+          custom_width_min: dims.minWidth || 12,
+          custom_width_max: dims.maxWidth || 96,
+          custom_height_min: dims.minHeight || 12,
+          custom_height_max: dims.maxHeight || 120
+        };
       }
 
       // Prepare options data for direct storage in products table
@@ -610,25 +584,52 @@ export async function PUT(
           .filter(str => str.length > 0)
           .join(';') : '';
 
+      // Prepare headrail and bottom rail data
+      let headrailId = null;
+      let bottomRailId = null;
+
+      if (options.valanceOptions && Array.isArray(options.valanceOptions)) {
+        const selectedHeadrail = options.valanceOptions.find(option => option.enabled);
+        headrailId = selectedHeadrail ? selectedHeadrail.id : null;
+      }
+
+      if (options.bottomRailOptions && Array.isArray(options.bottomRailOptions)) {
+        const selectedBottomRail = options.bottomRailOptions.find(option => option.enabled);
+        bottomRailId = selectedBottomRail ? selectedBottomRail.id : null;
+      }
+
+      // Build the SET clause dynamically
+      const updateFields = [];
+      const updateValues = [];
+
+      updateFields.push('mount_types = ?', 'control_types = ?');
+      updateValues.push(mountTypesData, controlTypesData);
+
+      // Add dimension updates if provided
+      if (Object.keys(dimensionUpdates).length > 0) {
+        Object.entries(dimensionUpdates).forEach(([field, value]) => {
+          updateFields.push(`${field} = ?`);
+          updateValues.push(value);
+        });
+      }
+
+      // Add headrail and bottom rail updates
+      updateFields.push('headrail_id = ?', 'bottom_rail_id = ?');
+      updateValues.push(headrailId, bottomRailId);
+
+      updateFields.push('updated_at = NOW()');
+      updateValues.push(productId);
+
       // Update products table with options data
-      console.log('=== DEBUGGING OPTIONS SAVING ===');
-      console.log('Original options object:', JSON.stringify(options, null, 2));
-      console.log('Processed mount_types string:', mountTypesData);
-      console.log('Processed control_types string:', controlTypesData);
-      
       await pool.query(
-        'UPDATE products SET mount_types = ?, control_types = ?, updated_at = NOW() WHERE product_id = ?',
-        [mountTypesData, controlTypesData, productId]
+        `UPDATE products SET ${updateFields.join(', ')} WHERE product_id = ?`,
+        updateValues
       );
-      
-      console.log('Options data saved to products table');
     }
 
     // Handle fabric data update if provided
     if (fabric && typeof fabric === 'object') {
-      console.log('Saving fabric data:', JSON.stringify(fabric, null, 2));
-      
-      // Delete existing fabric data
+      // Delete existing fabric data first
       await pool.query('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
       
       // Save fabric options
@@ -640,9 +641,9 @@ export async function PUT(
             if (fabricOption.enabled && fabricOption.name) {
               const [fabricResult] = await pool.query<ResultSetHeader>(
                 `INSERT INTO product_fabric_options 
-                 (product_id, fabric_type, fabric_name, is_enabled, description, created_at)
-                 VALUES (?, ?, ?, ?, ?, NOW())`,
-                [productId, fabricType, fabricOption.name, fabricOption.enabled, fabricOption.description || '']
+                 (product_id, vendor_id, fabric_type, fabric_name, is_enabled, description, created_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+                [productId, vendorId, fabricType, fabricOption.name, fabricOption.enabled, fabricOption.description || '']
               );
               
               const fabricOptionId = fabricResult.insertId;

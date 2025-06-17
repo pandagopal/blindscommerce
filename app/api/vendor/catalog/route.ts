@@ -75,12 +75,13 @@ export async function GET(req: NextRequest) {
           p.base_price,
           p.is_active,
           c.name as category_name,
-          b.name as brand_name,
+          COALESCE(vi.business_name, 'Unknown') as brand_name,
           CASE WHEN vp.product_id IS NOT NULL THEN 1 ELSE 0 END as is_associated
         FROM products p
         LEFT JOIN product_categories pc ON p.product_id = pc.product_id AND pc.is_primary = 1
         LEFT JOIN categories c ON pc.category_id = c.category_id
-        LEFT JOIN brands b ON p.brand_id = b.brand_id
+        LEFT JOIN vendor_products vp_any ON p.product_id = vp_any.product_id
+        LEFT JOIN vendor_info vi ON vp_any.vendor_id = vi.vendor_info_id
         LEFT JOIN vendor_products vp ON p.product_id = vp.product_id AND vp.vendor_id = ?
         WHERE p.is_active = 1 AND vp.product_id IS NULL
         ORDER BY p.name ASC`,
@@ -107,12 +108,12 @@ export async function GET(req: NextRequest) {
         p.base_price,
         p.is_active as product_is_active,
         c.name as category_name,
-        b.name as brand_name
+        vi.business_name as brand_name
       FROM vendor_products vp
       JOIN products p ON vp.product_id = p.product_id
       LEFT JOIN product_categories pc ON p.product_id = pc.product_id AND pc.is_primary = 1
       LEFT JOIN categories c ON pc.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE vp.vendor_id = ?
       ORDER BY vp.created_at DESC`,
       [vendorId]

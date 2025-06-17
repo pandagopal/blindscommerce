@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react";
 import BasicInfo from '@/components/products/shared/BasicInfo';
 import PricingMatrix from '@/components/products/shared/PricingMatrix';
 import Options from '@/components/products/shared/Options';
-import Fabric from '@/components/products/shared/Fabric';
+import Fabric, { FabricRef } from '@/components/products/shared/Fabric';
 import Images from '@/components/products/shared/Images';
 import Features from '@/components/products/shared/Features';
 import RoomRecommendations from '@/components/products/shared/RoomRecommendations';
@@ -100,6 +100,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   const [totalProducts, setTotalProducts] = useState(0);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+
+  // Ref for getting current fabric data
+  const fabricRef = useRef<FabricRef>(null);
 
   // Form mode states
   const [saving, setSaving] = useState(false);
@@ -209,9 +212,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (res.ok && data.product) {
         const product = data.product;
         
-        // Debug: Log the API response to see what we're getting
-        console.log('API Response for product:', product);
-        
         // Options and fabric data now come from the main product API response
         let optionsData = product.options;
         let fabricData = product.fabric_options;
@@ -291,6 +291,61 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       const apiEndpoint = isEditMode ? `${baseEndpoint}/${productId}` : baseEndpoint;
       const method = isEditMode ? 'PUT' : 'POST';
       
+      // Get current fabric data from ref
+      const currentFabricData = fabricRef.current?.getCurrentData() || productData.fabric;
+      
+      // Process fabric images - upload any new images that are still using blob URLs
+      const processedFabricData = { ...currentFabricData };
+      
+      for (const fabricType of ['coloredFabric', 'sheerFabric', 'blackoutFabric'] as const) {
+        if (processedFabricData[fabricType]) {
+          for (let i = 0; i < processedFabricData[fabricType].length; i++) {
+            const fabric = processedFabricData[fabricType][i];
+            if (fabric.images && fabric.images.length > 0) {
+              const uploadedImages = [];
+              
+              for (const image of fabric.images) {
+                // If it's a blob URL, we need to upload the file
+                if (image.url.startsWith('blob:') && image.file) {
+                  try {
+                    const formData = new FormData();
+                    formData.append('files', image.file);
+                    formData.append('uploadType', 'productImages');
+                    formData.append('category', `fabric_${fabricType}`);
+                    
+                    const uploadResponse = await fetch('/api/vendor/upload', {
+                      method: 'POST',
+                      body: formData,
+                    });
+                    
+                    const uploadResult = await uploadResponse.json();
+                    
+                    if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
+                      uploadedImages.push({
+                        ...image,
+                        url: uploadResult.uploaded[0].secureUrl,
+                      });
+                    } else {
+                      toast.error(`Failed to upload fabric image: ${image.name}`);
+                      throw new Error('Image upload failed');
+                    }
+                  } catch (error) {
+                    console.error('Error uploading fabric image:', error);
+                    toast.error(`Failed to upload fabric image: ${image.name}`);
+                    throw error;
+                  }
+                } else {
+                  // Image is already uploaded, keep it as is
+                  uploadedImages.push(image);
+                }
+              }
+              
+              processedFabricData[fabricType][i].images = uploadedImages;
+            }
+          }
+        }
+      }
+      
       // Transform productData to the format expected by the API
       const apiData = {
         // Basic info fields
@@ -311,7 +366,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         images: productData.images,
         options: productData.options,
         pricing_matrix: productData.pricing.matrixEntries,
-        fabric: productData.fabric
+        fabric: processedFabricData
       };
       
       const response = await fetch(apiEndpoint, {
@@ -815,9 +870,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
               <TabsContent value="fabric">
                 <Fabric
+                  ref={fabricRef}
                   data={productData.fabric}
                   onChange={(data) => updateProductData('fabric', data)}
                   isReadOnly={isViewMode}
+                  productId={productId}
                 />
               </TabsContent>
 

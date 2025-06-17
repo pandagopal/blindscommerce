@@ -93,19 +93,20 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // Search for brands (top 2)
+    // Search for brands (vendor business names) (top 2)
     const [brands] = await pool.execute<RowDataPacket[]>(`
       SELECT 
-        b.brand_id,
-        b.name,
-        COUNT(p.product_id) as product_count
-      FROM brands b
-      LEFT JOIN products p ON b.brand_id = p.brand_id AND p.is_active = TRUE
-      WHERE b.is_active = TRUE AND b.name LIKE ?
-      GROUP BY b.brand_id, b.name
+        vi.vendor_info_id as brand_id,
+        vi.business_name as name,
+        COUNT(DISTINCT p.product_id) as product_count
+      FROM vendor_info vi
+      LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
+      LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
+      WHERE vi.is_active = TRUE AND vi.business_name LIKE ?
+      GROUP BY vi.vendor_info_id, vi.business_name
       HAVING product_count > 0
       ORDER BY 
-        CASE WHEN b.name LIKE ? THEN 1 ELSE 2 END,
+        CASE WHEN vi.business_name LIKE ? THEN 1 ELSE 2 END,
         product_count DESC
       LIMIT 2
     `, [searchTerm, `${query}%`]);

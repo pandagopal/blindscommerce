@@ -13,10 +13,10 @@ export async function GET(
 
     // Get product by slug
     const [products] = await db.execute(`
-      SELECT p.*, b.name as brand_name, vi.vendor_info_id
+      SELECT p.*, vi.business_name as brand_name, vi.vendor_info_id
       FROM products p
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
-      LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE p.slug = ? AND p.is_active = 1
     `, [params.slug]);
 

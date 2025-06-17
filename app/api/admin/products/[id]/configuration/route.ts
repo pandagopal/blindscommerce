@@ -18,9 +18,8 @@ export async function GET(
 
     // Get product with all configuration data
     const [product] = await pool.execute(`
-      SELECT p.*, b.name as brand_name, v.vendor_info_id
+      SELECT p.*, v.business_name as brand_name, v.vendor_info_id
       FROM products p
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       LEFT JOIN vendor_info v ON vp.vendor_id = v.vendor_info_id
       WHERE p.product_id = ?

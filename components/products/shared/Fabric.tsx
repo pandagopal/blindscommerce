@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Upload, X, Image as ImageIcon, Trash2, Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,12 @@ interface FabricProps {
   data: FabricData;
   onChange: (data: FabricData) => void;
   isReadOnly?: boolean;
+  productId?: string;
+}
+
+// Add ref interface for accessing current data
+export interface FabricRef {
+  getCurrentData: () => FabricData;
 }
 
 // Generate width ranges (10", 20", 30", ..., 118")
@@ -61,7 +67,132 @@ const generateWidthRanges = (): FabricPriceMatrix[] => {
   return ranges;
 };
 
-export default function Fabric({ data, onChange, isReadOnly = false }: FabricProps) {
+// Fabric name input with local state only - no automatic onChange calls
+const FabricNameInput = ({ 
+  value, 
+  onChange, 
+  isReadOnly, 
+  id, 
+  placeholder 
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  isReadOnly: boolean;
+  id: string;
+  placeholder: string;
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+
+  // Only update local value when prop value changes AND user is not currently typing
+  useEffect(() => {
+    if (!isUserTyping) {
+      setLocalValue(value);
+    }
+  }, [value, isUserTyping]);
+
+  // Handle input change with local state only - NO onChange call
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    setIsUserTyping(true);
+    // NO onChange call - changes stay local
+  };
+
+  // When user finishes typing (blur), allow external updates again and save the value
+  const handleBlur = () => {
+    setIsUserTyping(false);
+    // Save the current value to parent state
+    onChange(localValue);
+  };
+
+  // When user focuses, mark as typing
+  const handleFocus = () => {
+    setIsUserTyping(true);
+  };
+
+  return (
+    <Input
+      id={id}
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      placeholder={placeholder}
+      className="mt-1"
+      disabled={isReadOnly}
+    />
+  );
+};
+
+// Price input with local state only - no automatic onChange calls
+const PriceInput = ({ 
+  value, 
+  onChange, 
+  isReadOnly,
+  className 
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  isReadOnly: boolean;
+  className?: string;
+}) => {
+  const [localValue, setLocalValue] = useState(value === 0 ? '' : value.toString());
+  const [isUserTyping, setIsUserTyping] = useState(false);
+
+  // Only update local value when prop value changes AND user is not currently typing
+  useEffect(() => {
+    if (!isUserTyping) {
+      setLocalValue(value === 0 ? '' : value.toString());
+    }
+  }, [value, isUserTyping]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const stringValue = e.target.value;
+    setLocalValue(stringValue);
+    setIsUserTyping(true);
+    // NO onChange call - changes stay local
+  };
+
+  const handleBlur = () => {
+    setIsUserTyping(false);
+    // Save the current value to parent state
+    const numValue = localValue === '' ? 0 : parseFloat(localValue);
+    if (!isNaN(numValue)) {
+      onChange(Math.max(0, numValue));
+    }
+  };
+
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    setIsUserTyping(true);
+    if (e.target.value === '0') {
+      setLocalValue('');
+    }
+  };
+
+  // Also set typing on click to fix double-click issue
+  const handleClick = () => {
+    setIsUserTyping(true);
+  };
+
+  return (
+    <Input
+      type="number"
+      step="0.01"
+      min="0"
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      onFocus={handleFocus}
+      onClick={handleClick}
+      className={className}
+      placeholder="0.00"
+      disabled={isReadOnly}
+    />
+  );
+};
+
+const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly = false, productId }, ref) => {
   const [currentData, setCurrentData] = useState<FabricData>(() => {
     return {
       coloredFabric: data.coloredFabric && data.coloredFabric.length > 0 ? data.coloredFabric : [],
@@ -71,6 +202,25 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
   });
 
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
+
+  // Update currentData when data prop changes (e.g., when loading product data)
+  useEffect(() => {
+    if (data && Object.keys(data).length > 0) {
+      setCurrentData({
+        coloredFabric: data.coloredFabric && data.coloredFabric.length > 0 ? data.coloredFabric : [],
+        sheerFabric: data.sheerFabric && data.sheerFabric.length > 0 ? data.sheerFabric : [],
+        blackoutFabric: data.blackoutFabric && data.blackoutFabric.length > 0 ? data.blackoutFabric : []
+      });
+    }
+  }, [data]);
+
+  // Expose getCurrentData method to parent via ref
+  useImperativeHandle(ref, () => ({
+    getCurrentData: () => currentData
+  }), [currentData]);
+
+  // NO onChange calls - all changes stay local until parent calls getCurrentData()
+  // This was the final remaining automatic onChange call that was causing immediate saves
 
   const handleAddFabricOption = (category: keyof FabricData) => {
     if (isReadOnly) return;
@@ -90,7 +240,7 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
     };
 
     setCurrentData(newData);
-    onChange(newData);
+    // NO onChange call - changes stay local until "Update Product" is clicked
   };
 
   const handleRemoveFabricOption = (category: keyof FabricData, index: number) => {
@@ -102,7 +252,7 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
     };
 
     setCurrentData(newData);
-    onChange(newData);
+    // NO onChange call - changes stay local until "Update Product" is clicked
   };
 
   const handleFabricNameChange = (category: keyof FabricData, index: number, name: string) => {
@@ -113,7 +263,7 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
     newData[category][index] = { ...newData[category][index], name };
 
     setCurrentData(newData);
-    onChange(newData);
+    // This will only be called when user blurs the input field, not during typing
   };
 
   const handleFabricToggle = (category: keyof FabricData, index: number) => {
@@ -127,7 +277,7 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
     };
 
     setCurrentData(newData);
-    onChange(newData);
+    // NO onChange call - changes stay local until "Update Product" is clicked
   };
 
   const handlePriceMatrixChange = (
@@ -138,11 +288,14 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
   ) => {
     if (isReadOnly) return;
 
+    // Ensure positive values only
+    const positivePrice = Math.max(0, newPrice);
+    
     const newData = { ...currentData };
-    newData[category][fabricIndex].priceMatrix[priceIndex].pricePerSqft = newPrice;
+    newData[category][fabricIndex].priceMatrix[priceIndex].pricePerSqft = positivePrice;
 
     setCurrentData(newData);
-    onChange(newData);
+    // This will only be called when user blurs the input field, not during typing
   };
 
   const handleImageUpload = async (
@@ -169,14 +322,18 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
         continue;
       }
 
-      // Create preview URL
+      // Create preview URL for local display only
       const url = URL.createObjectURL(file);
       
+      // Create unique ID and name including product ID, category and fabric index for easy cleanup
+      const uniqueId = `${productId || 'new'}_${category}_${fabricIndex}_${Date.now()}_${i}`;
+      const uniqueName = `${productId || 'new'}_${category}_${fabricIndex}_${file.name}`;
+      
       newImages.push({
-        id: `${Date.now()}_${i}`,
-        url,
-        file,
-        name: file.name
+        id: uniqueId,
+        url, // Use blob URL for preview only
+        file, // Keep file object to upload later when saving
+        name: uniqueName
       });
     }
 
@@ -185,9 +342,8 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
       newData[category][fabricIndex].images = [...newData[category][fabricIndex].images, ...newImages];
 
       setCurrentData(newData);
-      onChange(newData);
-      
-      toast.success(`${newImages.length} image(s) added successfully`);
+      // NO onChange call - changes stay local until "Update Product" is clicked
+      // NO upload to server - images stay local until "Update Product" is clicked
     }
   };
 
@@ -205,7 +361,7 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
     newData[category][fabricIndex].images = newData[category][fabricIndex].images.filter((_, i) => i !== imageIndex);
 
     setCurrentData(newData);
-    onChange(newData);
+    // NO onChange call - changes stay local until "Update Product" is clicked
   };
 
   const FabricCategory = ({ 
@@ -237,27 +393,32 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
 
       <div className="space-y-6">
         {currentData[category].map((fabric, fabricIndex) => (
-          <Card key={fabric.id} className="border-l-4 border-l-blue-500">
+          <Card key={`${category}-${fabricIndex}`} className="border-l-4 border-l-blue-500">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="flex-1 space-y-4">
-                  <div className="flex items-center gap-4">
+                  {/* Enable/Disable Toggle */}
+                  <div className="flex items-center gap-2">
                     <Switch
                       checked={fabric.enabled}
                       onCheckedChange={() => handleFabricToggle(category, fabricIndex)}
                       disabled={isReadOnly}
                     />
-                    <div className="flex-1">
-                      <Label htmlFor={`${category}-name-${fabricIndex}`}>Fabric Name</Label>
-                      <Input
-                        id={`${category}-name-${fabricIndex}`}
-                        value={fabric.name}
-                        onChange={(e) => handleFabricNameChange(category, fabricIndex, e.target.value)}
-                        placeholder="Enter fabric name (e.g., Premium Cotton, Blackout Vinyl)"
-                        className="mt-1"
-                        disabled={isReadOnly}
-                      />
-                    </div>
+                    <Label className="text-sm font-medium">
+                      {fabric.enabled ? 'Enabled' : 'Disabled'}
+                    </Label>
+                  </div>
+                  
+                  {/* Fabric Name Field */}
+                  <div>
+                    <Label htmlFor={`${category}-name-${fabricIndex}`}>Fabric Name</Label>
+                    <FabricNameInput
+                      id={`${category}-name-${fabricIndex}`}
+                      value={fabric.name}
+                      onChange={(name) => handleFabricNameChange(category, fabricIndex, name)}
+                      placeholder="Enter fabric name (e.g., Premium Cotton, Blackout Vinyl)"
+                      isReadOnly={isReadOnly}
+                    />
                   </div>
                 </div>
                 {!isReadOnly && (
@@ -349,20 +510,11 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
                           {priceRange.widthRange}
                         </span>
                         <span className="text-sm text-gray-500">$</span>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
+                        <PriceInput
                           value={priceRange.pricePerSqft}
-                          onChange={(e) => handlePriceMatrixChange(
-                            category, 
-                            fabricIndex, 
-                            priceIndex, 
-                            parseFloat(e.target.value) || 0
-                          )}
-                          className="w-20 h-8 text-sm"
-                          placeholder="0.00"
-                          disabled={isReadOnly}
+                          onChange={(value) => handlePriceMatrixChange(category, fabricIndex, priceIndex, value)}
+                          isReadOnly={isReadOnly}
+                          className="w-24 h-8 text-sm"
                         />
                         <span className="text-sm text-gray-500">/sqft</span>
                       </div>
@@ -465,4 +617,8 @@ export default function Fabric({ data, onChange, isReadOnly = false }: FabricPro
       </Card>
     </div>
   );
-}
+});
+
+Fabric.displayName = 'Fabric';
+
+export default Fabric;

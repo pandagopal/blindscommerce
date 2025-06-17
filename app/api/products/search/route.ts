@@ -133,7 +133,8 @@ export async function GET(req: NextRequest) {
       FROM products p
       LEFT JOIN product_categories prodcat ON p.product_id = prodcat.product_id
       LEFT JOIN categories c ON prodcat.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       LEFT JOIN product_colors pcolors ON p.product_id = pcolors.product_id
       LEFT JOIN product_materials pm ON p.product_id = pm.product_id
       LEFT JOIN product_rooms pr ON p.product_id = pr.product_id
@@ -157,7 +158,7 @@ export async function GET(req: NextRequest) {
         OR p.name LIKE ?
         OR p.short_description LIKE ?
         OR c.name LIKE ?
-        OR b.name LIKE ?
+        OR vi.business_name LIKE ?
       )`);
       const searchTerm = `%${filters.query}%`;
       queryParams.push(filters.query, searchTerm, searchTerm, searchTerm, searchTerm);
@@ -216,9 +217,9 @@ export async function GET(req: NextRequest) {
       queryParams.push(...filters.materials);
     }
 
-    // Add brand filter
+    // Add brand filter (using vendor business names)
     if (filters.brands && filters.brands.length > 0) {
-      whereConditions.push(`b.name IN (${filters.brands.map(() => '?').join(',')})`);
+      whereConditions.push(`vi.business_name IN (${filters.brands.map(() => '?').join(',')})`);
       queryParams.push(...filters.brands);
     }
 
@@ -360,14 +361,16 @@ async function getSearchFacets(filters: SearchFilters, pool: any) {
       ORDER BY c.name
     `);
 
-    // Get available brands with counts
+    // Get available brands (vendor business names) with counts
     const [brands] = await pool.execute<RowDataPacket[]>(`
-      SELECT b.brand_id, b.name, COUNT(p.product_id) as count
-      FROM brands b
-      LEFT JOIN products p ON b.brand_id = p.brand_id AND p.is_active = TRUE
-      GROUP BY b.brand_id, b.name
+      SELECT vi.vendor_info_id as brand_id, vi.business_name as name, COUNT(DISTINCT p.product_id) as count
+      FROM vendor_info vi
+      LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
+      LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
+      WHERE vi.is_active = TRUE
+      GROUP BY vi.vendor_info_id, vi.business_name
       HAVING count > 0
-      ORDER BY b.name
+      ORDER BY vi.business_name
     `);
 
     // Get price ranges

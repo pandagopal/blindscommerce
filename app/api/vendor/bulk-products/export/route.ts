@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     const categoryFilter = searchParams.get('categoryFilter');
 
     // Build query
-    let whereClause = 'WHERE p.vendor_id = ?';
+    let whereClause = 'WHERE vp.vendor_id = ?';
     const queryParams: any[] = [vendorId];
 
     if (!includeInactive) {
@@ -102,7 +102,7 @@ export async function GET(request: NextRequest) {
       p.description,
       p.short_description,
       COALESCE(c.name, '') as category_name,
-      COALESCE(b.name, '') as brand_name,
+      COALESCE(vi.business_name, '') as brand_name,
       p.weight,
       p.width,
       p.height,
@@ -157,7 +157,8 @@ export async function GET(request: NextRequest) {
       SELECT ${selectFields}
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       ${includeInventory ? 'LEFT JOIN product_inventory i ON p.product_id = i.product_id' : ''}
       ${includeImages ? 'LEFT JOIN product_images pi ON p.product_id = pi.product_id' : ''}
       ${whereClause}

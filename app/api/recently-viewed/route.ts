@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
         p.review_count,
         p.is_active,
         c.name as category_name,
-        b.name as brand_name,
+        vi.business_name as brand_name,
         (
           SELECT image_url
           FROM product_images
@@ -82,7 +82,8 @@ export async function GET(req: NextRequest) {
       JOIN products p ON rv.product_id = p.product_id
       LEFT JOIN product_categories pc ON p.product_id = pc.product_id AND pc.is_primary = 1
       LEFT JOIN categories c ON pc.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE p.is_active = 1
     `;
 

@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     // Verify vendor is active and approved
     const pool = await getPool();
     const [vendors] = await pool.execute(
-      'SELECT vendor_id, is_active, verification_status FROM vendor_info WHERE user_id = ? AND is_active = 1',
+      'SELECT vendor_info_id, is_active, verification_status FROM vendor_info WHERE user_id = ? AND is_active = 1',
       [user.userId]
     );
 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const vendor = vendors[0] as { vendor_id: number; is_active: boolean; verification_status: string };
+    const vendor = vendors[0] as { vendor_info_id: number; is_active: boolean; verification_status: string };
     
     // Parse form data
     const formData = await request.formData();
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process files securely
-    const secureUpload = new SecureVendorUpload(vendor.vendor_id, uploadType);
+    const secureUpload = new SecureVendorUpload(vendor.vendor_info_id, uploadType);
     const results = [];
     const errors = [];
 
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
         if (result.success) {
           // Store file metadata in database
           await storeFileMetadata({
-            vendorId: vendor.vendor_id,
+            vendorId: vendor.vendor_info_id,
             fileId: result.fileId,
             originalName: result.originalName,
             uploadType,
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
     // Log upload activity for audit trail
     await logUploadActivity({
-      vendorId: vendor.vendor_id,
+      vendorId: vendor.vendor_info_id,
       userId: user.userId,
       uploadType,
       filesUploaded: results.length,
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
       SELECT file_id, original_name, upload_type, category, file_size,
              approval_status, scan_result, created_at
       FROM vendor_files 
-      WHERE vendor_id = (SELECT vendor_id FROM vendor_info WHERE user_id = ?)
+      WHERE vendor_id = (SELECT vendor_info_id FROM vendor_info WHERE user_id = ?)
     `;
     const params = [user.userId];
 
@@ -317,7 +317,7 @@ export async function DELETE(request: NextRequest) {
     const [files] = await pool.execute(`
       SELECT vf.file_id, vf.file_hash 
       FROM vendor_files vf
-      JOIN vendor_info vi ON vf.vendor_id = vi.vendor_id
+      JOIN vendor_info vi ON vf.vendor_id = vi.vendor_info_id
       WHERE vf.file_id = ? AND vi.user_id = ?
     `, [fileId, user.userId]);
 

@@ -181,16 +181,12 @@ async function processCSVImport(jobId: string, vendorId: number, headers: string
       ['processing', jobId]
     );
 
-    // Get category and brand mappings
+    // Get category mappings
     const [categories] = await pool.execute(
       'SELECT category_id, name FROM categories WHERE is_active = 1'
     );
-    const [brands] = await pool.execute(
-      'SELECT brand_id, name FROM brands WHERE is_active = 1'
-    );
 
     const categoryMap = new Map((categories as any[]).map(c => [c.name.toLowerCase(), c.category_id]));
-    const brandMap = new Map((brands as any[]).map(b => [b.name.toLowerCase(), b.brand_id]));
 
     // Process each row
     for (let i = 0; i < dataLines.length; i++) {
@@ -224,16 +220,7 @@ async function processCSVImport(jobId: string, vendorId: number, headers: string
           categoryMap.set(rowData.category_name.toLowerCase(), categoryId);
         }
 
-        // Get or create brand
-        let brandId = brandMap.get(rowData.brand_name?.toLowerCase());
-        if (!brandId && rowData.brand_name) {
-          const [brandResult] = await pool.execute<ResultSetHeader>(
-            'INSERT INTO brands (name, slug, is_active) VALUES (?, ?, 1)',
-            [rowData.brand_name, rowData.brand_name.toLowerCase().replace(/[^a-z0-9]/g, '-')]
-          );
-          brandId = brandResult.insertId;
-          brandMap.set(rowData.brand_name.toLowerCase(), brandId);
-        }
+        // Note: brand_name is ignored since vendor's business_name is used as brand
 
         // Create product slug
         const slug = rowData.name.toLowerCase()
@@ -255,14 +242,14 @@ async function processCSVImport(jobId: string, vendorId: number, headers: string
           await pool.execute(
             `UPDATE products SET 
              name = ?, slug = ?, description = ?, short_description = ?,
-             category_id = ?, brand_id = ?, base_price = ?, sale_price = ?,
+             category_id = ?, base_price = ?, sale_price = ?,
              weight = ?, width = ?, height = ?, depth = ?, material = ?, color = ?,
              is_active = ?, is_featured = ?, meta_title = ?, meta_description = ?,
              updated_at = NOW()
              WHERE product_id = ?`,
             [
               rowData.name, slug, rowData.description, rowData.short_description,
-              categoryId, brandId, parseFloat(rowData.base_price) || 0,
+              categoryId, parseFloat(rowData.base_price) || 0,
               rowData.sale_price ? parseFloat(rowData.sale_price) : null,
               parseFloat(rowData.weight) || 0, parseFloat(rowData.width) || 0,
               parseFloat(rowData.height) || 0, parseFloat(rowData.depth) || 0,
@@ -277,13 +264,13 @@ async function processCSVImport(jobId: string, vendorId: number, headers: string
           // Create new product
           await pool.execute(
             `INSERT INTO products 
-             (vendor_id, name, slug, sku, description, short_description, category_id, brand_id,
+             (vendor_id, name, slug, sku, description, short_description, category_id,
               base_price, sale_price, weight, width, height, depth, material, color,
               is_active, is_featured, meta_title, meta_description, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
               vendorId, rowData.name, slug, rowData.sku, rowData.description, 
-              rowData.short_description, categoryId, brandId,
+              rowData.short_description, categoryId,
               parseFloat(rowData.base_price) || 0,
               rowData.sale_price ? parseFloat(rowData.sale_price) : null,
               parseFloat(rowData.weight) || 0, parseFloat(rowData.width) || 0,

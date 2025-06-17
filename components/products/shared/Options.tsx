@@ -100,12 +100,61 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
     };
   });
 
+  // Update currentData when data prop changes (e.g., when loading product data)
+  useEffect(() => {
+    if (data && Object.keys(data).length > 0) {
+      setCurrentData({
+        dimensions: data.dimensions || {
+          minWidth: 12,
+          maxWidth: 96,
+          minHeight: 12,
+          maxHeight: 120,
+          widthIncrement: 0.125,
+          heightIncrement: 0.125,
+        },
+        mountTypes: data.mountTypes && data.mountTypes.length > 0 ? data.mountTypes : [
+          { name: 'Inside Mount', price_adjustment: 0, enabled: false },
+          { name: 'Outside Mount', price_adjustment: 0, enabled: false },
+        ],
+        controlTypes: {
+          liftSystems: data.controlTypes?.liftSystems && data.controlTypes.liftSystems.length > 0 ? data.controlTypes.liftSystems : [
+            { name: 'Cordless', price_adjustment: 0, enabled: false },
+            { name: 'Continuous Loop', price_adjustment: 25, enabled: false },
+          ],
+          wandSystem: data.controlTypes?.wandSystem && data.controlTypes.wandSystem.length > 0 ? data.controlTypes.wandSystem : [
+            { name: 'Standard Wand', price_adjustment: 15, enabled: false },
+            { name: 'Extended Wand', price_adjustment: 30, enabled: false },
+          ],
+          stringSystem: data.controlTypes?.stringSystem && data.controlTypes.stringSystem.length > 0 ? data.controlTypes.stringSystem : [
+            { name: 'String Lift', price_adjustment: 10, enabled: false },
+            { name: 'Chain System', price_adjustment: 20, enabled: false },
+          ],
+          remoteControl: data.controlTypes?.remoteControl && data.controlTypes.remoteControl.length > 0 ? data.controlTypes.remoteControl : [
+            { name: 'Basic Remote', price_adjustment: 150, enabled: false },
+            { name: 'Smart Home Compatible', price_adjustment: 250, enabled: false },
+          ],
+        },
+        valanceOptions: data.valanceOptions && data.valanceOptions.length > 0 ? data.valanceOptions : [
+          { name: 'Circular (With Fabric Insert)', price_adjustment: 45, enabled: false },
+          { name: 'Square (Without Fabric)', price_adjustment: 35, enabled: false },
+          { name: 'Fabric Wrapped', price_adjustment: 55, enabled: false },
+        ],
+        bottomRailOptions: data.bottomRailOptions && data.bottomRailOptions.length > 0 ? data.bottomRailOptions : [
+          { name: 'Fabric Wrapped', price_adjustment: 25, enabled: false },
+          { name: 'Just a Rail', price_adjustment: 0, enabled: false },
+        ],
+      });
+    }
+  }, [data]);
+
   const handleDimensionChange = (field: keyof DimensionSettings, value: number) => {
+    // Ensure positive values only
+    const positiveValue = Math.max(0, value);
     const newData = {
       ...currentData,
       dimensions: {
         ...currentData.dimensions,
-        [field]: value,
+        [field]: positiveValue,
       },
     };
     setCurrentData(newData);
@@ -179,9 +228,20 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   id="minWidth"
                   type="number"
                   step="0.125"
+                  min="0.125"
                   placeholder="e.g., 12"
-                  value={currentData.dimensions.minWidth}
-                  onChange={(e) => handleDimensionChange('minWidth', parseFloat(e.target.value) || 0)}
+                  value={currentData.dimensions.minWidth === 0 ? '' : currentData.dimensions.minWidth}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      handleDimensionChange('minWidth', value);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                    }
+                  }}
                   disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum width for this product</p>
@@ -192,9 +252,20 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   id="maxWidth"
                   type="number"
                   step="0.125"
+                  min="0.125"
                   placeholder="e.g., 96"
-                  value={currentData.dimensions.maxWidth}
-                  onChange={(e) => handleDimensionChange('maxWidth', parseFloat(e.target.value) || 0)}
+                  value={currentData.dimensions.maxWidth === 0 ? '' : currentData.dimensions.maxWidth}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      handleDimensionChange('maxWidth', value);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                    }
+                  }}
                   disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum width for this product</p>
@@ -205,9 +276,20 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   id="minHeight"
                   type="number"
                   step="0.125"
+                  min="0.125"
                   placeholder="e.g., 12"
-                  value={currentData.dimensions.minHeight}
-                  onChange={(e) => handleDimensionChange('minHeight', parseFloat(e.target.value) || 0)}
+                  value={currentData.dimensions.minHeight === 0 ? '' : currentData.dimensions.minHeight}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      handleDimensionChange('minHeight', value);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                    }
+                  }}
                   disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum height for this product</p>
@@ -218,9 +300,20 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   id="maxHeight"
                   type="number"
                   step="0.125"
+                  min="0.125"
                   placeholder="e.g., 120"
-                  value={currentData.dimensions.maxHeight}
-                  onChange={(e) => handleDimensionChange('maxHeight', parseFloat(e.target.value) || 0)}
+                  value={currentData.dimensions.maxHeight === 0 ? '' : currentData.dimensions.maxHeight}
+                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      handleDimensionChange('maxHeight', value);
+                    }
+                  }}
+                  onFocus={(e) => {
+                    if (e.target.value === '0') {
+                      e.target.value = '';
+                    }
+                  }}
                   disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum height for this product</p>
