@@ -1,22 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getCurrentUser } from '@/lib/auth';
+import { getPool } from '@/lib/db';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
 
 export async function POST(request: NextRequest) {
   try {
-    // Get session and verify user is vendor
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Get current user and verify user is vendor
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'vendor') {
+      return NextResponse.json({ error: 'Unauthorized - Vendor access required' }, { status: 401 });
     }
 
     const { productId, customizations = {} } = await request.json();
@@ -25,44 +17,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
+    const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await connection.execute<RowDataPacket[]>(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
-        [session.user.id]
+        [user.userId]
       );
 
-      if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
+      if (vendorRows.length === 0) {
         await connection.rollback();
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
-      const vendorId = (vendorRows[0] as any).vendor_info_id;
+      const vendorId = vendorRows[0].vendor_info_id;
 
       // Get original product details
-      const [productRows] = await connection.execute(
-        `SELECT * FROM products WHERE product_id = ? AND status = 'active'`,
+      const [productRows] = await connection.execute<RowDataPacket[]>(
+        `SELECT * FROM products WHERE product_id = ? AND is_active = 1`,
         [productId]
       );
 
-      if (!Array.isArray(productRows) || productRows.length === 0) {
+      if (productRows.length === 0) {
         await connection.rollback();
         return NextResponse.json({ error: 'Product not found or not active' }, { status: 404 });
       }
 
-      const originalProduct = productRows[0] as any;
+      const originalProduct = productRows[0];
 
       // Check if vendor already has this product
-      const [existingVendorProduct] = await connection.execute(
+      const [existingVendorProduct] = await connection.execute<RowDataPacket[]>(
         'SELECT vendor_product_id FROM vendor_products WHERE vendor_id = ? AND product_id = ?',
         [vendorId, productId]
       );
 
-      if (Array.isArray(existingVendorProduct) && existingVendorProduct.length > 0) {
+      if (existingVendorProduct.length > 0) {
         await connection.rollback();
         return NextResponse.json({ error: 'Product already exists in your catalog' }, { status: 409 });
       }
@@ -73,12 +66,11 @@ export async function POST(request: NextRequest) {
       const newProductPrice = customizations.price || originalProduct.base_price;
       const newProductDescription = customizations.description || originalProduct.full_description;
 
-      const [cloneResult] = await connection.execute(
+      const [cloneResult] = await connection.execute<ResultSetHeader>(
         `INSERT INTO products (
           brand_id, name, slug, short_description, full_description, 
-          base_price, is_featured, is_active, status, stock_status, 
-          sku, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 0, 1, 'draft', 'in_stock', ?, NOW(), NOW())`,
+          base_price, is_featured, is_active, sku, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, NOW(), NOW())`,
         [
           originalProduct.brand_id,
           newProductName,
@@ -90,16 +82,16 @@ export async function POST(request: NextRequest) {
         ]
       );
 
-      const newProductId = (cloneResult as any).insertId;
+      const newProductId = cloneResult.insertId;
 
-      // Create vendor-product relationship
+      // Create vendor-product relationship - also inactive by default
       await connection.execute(
         `INSERT INTO vendor_products (
           vendor_id, product_id, vendor_sku, vendor_price, 
           quantity_available, minimum_order_qty, lead_time_days,
-          is_active, status, vendor_description, vendor_notes,
+          is_active, vendor_description, vendor_notes,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, 10, 1, 7, 1, 'draft', ?, 'Cloned product', NOW(), NOW())`,
+        ) VALUES (?, ?, ?, ?, 10, 1, 7, 0, ?, 'Cloned product', NOW(), NOW())`,
         [
           vendorId,
           newProductId,
@@ -109,135 +101,71 @@ export async function POST(request: NextRequest) {
         ]
       );
 
-      // Copy product categories
-      const [categoryRows] = await connection.execute(
-        'SELECT category_id, is_primary FROM product_categories WHERE product_id = ?',
+      // Copy product categories if they exist
+      const [categoryRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT category_id FROM products WHERE product_id = ? AND category_id IS NOT NULL',
         [productId]
       );
 
-      if (Array.isArray(categoryRows) && categoryRows.length > 0) {
-        for (const category of categoryRows) {
-          await connection.execute(
-            'INSERT INTO product_categories (product_id, category_id, is_primary, created_at) VALUES (?, ?, ?, NOW())',
-            [newProductId, (category as any).category_id, (category as any).is_primary]
-          );
-        }
+      if (categoryRows.length > 0 && categoryRows[0].category_id) {
+        await connection.execute(
+          'UPDATE products SET category_id = ? WHERE product_id = ?',
+          [categoryRows[0].category_id, newProductId]
+        );
       }
 
       // Copy product images (if any)
-      const [imageRows] = await connection.execute(
-        'SELECT image_url, alt_text, is_primary, display_order FROM product_images WHERE product_id = ?',
+      const [imageRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT image_url, display_order FROM product_images WHERE product_id = ?',
         [productId]
       );
 
-      if (Array.isArray(imageRows) && imageRows.length > 0) {
+      if (imageRows.length > 0) {
         for (const image of imageRows) {
           await connection.execute(
-            'INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-            [newProductId, (image as any).image_url, (image as any).alt_text, (image as any).is_primary, (image as any).display_order]
+            'INSERT INTO product_images (product_id, image_url, display_order, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
+            [newProductId, image.image_url, image.display_order]
           );
         }
       }
 
-      // Copy product options (configurations)
-      const [optionRows] = await connection.execute(
-        'SELECT option_name, option_type, display_order, is_required FROM product_options WHERE product_id = ?',
+      // Copy pricing matrix if it exists
+      const [pricingRows] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM product_pricing_matrix WHERE product_id = ? AND is_active = 1',
         [productId]
       );
 
-      if (Array.isArray(optionRows) && optionRows.length > 0) {
-        for (const option of optionRows) {
-          const [optionResult] = await connection.execute(
-            'INSERT INTO product_options (product_id, option_name, option_type, display_order, is_required, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-            [newProductId, (option as any).option_name, (option as any).option_type, (option as any).display_order, (option as any).is_required]
-          );
-
-          const newOptionId = (optionResult as any).insertId;
-
-          // Copy option values
-          const [optionValueRows] = await connection.execute(
-            'SELECT option_value, display_name, price_modifier, is_default FROM product_option_values WHERE option_id = ?',
-            [(option as any).option_id]
-          );
-
-          if (Array.isArray(optionValueRows) && optionValueRows.length > 0) {
-            for (const optionValue of optionValueRows) {
-              await connection.execute(
-                'INSERT INTO product_option_values (option_id, option_value, display_name, price_modifier, is_default, created_at) VALUES (?, ?, ?, ?, ?, NOW())',
-                [newOptionId, (optionValue as any).option_value, (optionValue as any).display_name, (optionValue as any).price_modifier, (optionValue as any).is_default]
-              );
-            }
-          }
-        }
-      }
-
-      // Copy product features
-      const [featureRows] = await connection.execute(
-        'SELECT feature_name, feature_value, description FROM product_features WHERE product_id = ?',
-        [productId]
-      );
-
-      if (Array.isArray(featureRows) && featureRows.length > 0) {
-        for (const feature of featureRows) {
+      if (pricingRows.length > 0) {
+        for (const pricing of pricingRows) {
           await connection.execute(
-            'INSERT INTO product_features (product_id, feature_name, feature_value, description, created_at) VALUES (?, ?, ?, ?, NOW())',
-            [newProductId, (feature as any).feature_name, (feature as any).feature_value, (feature as any).description]
+            `INSERT INTO product_pricing_matrix 
+             (product_id, width_min, width_max, height_min, height_max, base_price, price_per_sqft, is_active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
+            [
+              newProductId,
+              pricing.width_min,
+              pricing.width_max,
+              pricing.height_min,
+              pricing.height_max,
+              pricing.base_price,
+              pricing.price_per_sqft
+            ]
           );
         }
       }
-
-      // Create inheritance relationship
-      await connection.execute(
-        `INSERT INTO product_inheritance (
-          parent_product_id, child_product_id, vendor_id, 
-          inheritance_type, inherited_fields, custom_fields, 
-          created_at, updated_at
-        ) VALUES (?, ?, ?, 'clone', ?, ?, NOW(), NOW())`,
-        [
-          productId,
-          newProductId,
-          vendorId,
-          JSON.stringify({
-            name: false,
-            slug: false,
-            price: false,
-            description: false,
-            categories: true,
-            options: true,
-            features: true,
-            images: true
-          }),
-          JSON.stringify(customizations)
-        ]
-      );
-
-      // Log cloning activity
-      await connection.execute(
-        `INSERT INTO product_cloning_log (
-          original_product_id, cloned_product_id, vendor_id, cloned_by,
-          cloning_reason, customizations_made, cloning_status, created_at
-        ) VALUES (?, ?, ?, ?, 'Product cloned for vendor catalog', ?, 'completed', NOW())`,
-        [
-          productId,
-          newProductId,
-          vendorId,
-          session.user.id,
-          JSON.stringify(customizations)
-        ]
-      );
 
       await connection.commit();
 
       // Return success response with new product details
       return NextResponse.json({
         success: true,
-        message: 'Product cloned successfully',
+        message: 'Product cloned successfully. The cloned product is inactive and can be activated once ready.',
         clonedProduct: {
           productId: newProductId,
           name: newProductName,
           slug: newProductSlug,
           price: newProductPrice,
-          status: 'draft'
+          status: 'inactive'
         },
         originalProduct: {
           productId: originalProduct.product_id,
@@ -246,7 +174,7 @@ export async function POST(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
+      connection.release();
     }
 
   } catch (error) {

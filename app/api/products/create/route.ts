@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
     
     const {
       name,
+      slug,
       shortDescription,
       fullDescription,
       sku,
@@ -32,10 +33,31 @@ export async function POST(request: NextRequest) {
     try {
       await connection.query('BEGIN');
 
+      // Use provided slug or generate from name as fallback
+      let finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      
+      // Check if slug exists and make it unique
+      let slugCounter = 0;
+      let originalSlug = finalSlug;
+      while (true) {
+        const [existingProduct] = await connection.query(
+          'SELECT product_id FROM products WHERE slug = ? LIMIT 1',
+          [finalSlug]
+        );
+        
+        if (existingProduct.length === 0) {
+          break; // Slug is unique
+        }
+        
+        slugCounter++;
+        finalSlug = `${originalSlug}-${slugCounter}`;
+      }
+
       // Insert the product
       const [productResult] = await connection.query(
         `INSERT INTO products (
           name,
+          slug,
           short_description,
           full_description,
           sku,
@@ -46,8 +68,8 @@ export async function POST(request: NextRequest) {
           is_featured,
           created_at,
           updated_at
-        ) VALUES (?, ?, ?, ?, ?, 'in_stock', 'active', ?, ?, NOW(), NOW())`,
-        [name, shortDescription, fullDescription || '', sku, basePrice, isActive, isFeatured]
+        ) VALUES (?, ?, ?, ?, ?, ?, 'in_stock', 'active', ?, ?, NOW(), NOW())`,
+        [name, finalSlug, shortDescription, fullDescription || '', sku, basePrice, isActive, isFeatured]
       );
 
       const productId = productResult.insertId;

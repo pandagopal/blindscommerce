@@ -18,32 +18,67 @@ interface ImageFile {
 interface ImagesProps {
   images: ImageFile[];
   onChange: (images: ImageFile[]) => void;
+  isReadOnly?: boolean;
 }
 
-export default function Images({ images, onChange }: ImagesProps) {
+export default function Images({ images, onChange, isReadOnly = false }: ImagesProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newImages = acceptedFiles.map((file) => ({
-      id: Math.random().toString(36).substring(7),
-      file,
-      url: URL.createObjectURL(file),
-      alt: file.name,
-      is_primary: false
-    }));
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    if (isReadOnly) return;
 
+    // Upload files and get URLs
+    const uploadPromises = acceptedFiles.map(async (file) => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload/images', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+
+        const result = await response.json();
+        return {
+          id: Math.random().toString(36).substring(7),
+          file,
+          url: result.url,
+          alt: file.name,
+          is_primary: false
+        };
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        // Fallback to object URL for preview
+        return {
+          id: Math.random().toString(36).substring(7),
+          file,
+          url: URL.createObjectURL(file),
+          alt: file.name,
+          is_primary: false
+        };
+      }
+    });
+
+    const newImages = await Promise.all(uploadPromises);
     onChange([...images, ...newImages]);
-  }, [images, onChange]);
+  }, [images, onChange, isReadOnly]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'image/*': ['.png', '.jpg', '.jpeg', '.webp']
     },
-    multiple: true
+    multiple: true,
+    disabled: isReadOnly
   });
 
   const handleRemoveImage = (index: number) => {
+    if (isReadOnly) return;
+
     const newImages = [...images];
     const removedImage = newImages[index];
     
@@ -63,6 +98,8 @@ export default function Images({ images, onChange }: ImagesProps) {
   };
 
   const handleSetPrimary = (index: number) => {
+    if (isReadOnly) return;
+
     const newImages = images.map((image, i) => ({
       ...image,
       is_primary: i === index
@@ -71,10 +108,13 @@ export default function Images({ images, onChange }: ImagesProps) {
   };
 
   const handleDragStart = (index: number) => {
+    if (isReadOnly) return;
     setDraggedIndex(index);
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (isReadOnly) return;
+    
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
@@ -96,30 +136,32 @@ export default function Images({ images, onChange }: ImagesProps) {
         <CardTitle>Product Images</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div
-          {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}`}
-        >
-          <input {...getInputProps()} />
-          <ImageIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          {isDragActive ? (
-            <p>Drop the files here ...</p>
-          ) : (
-            <div className="space-y-2">
-              <p>Drag & drop product images here, or click to select files</p>
-              <p className="text-sm text-muted-foreground">
-                Supports: PNG, JPG, JPEG, WebP
-              </p>
-            </div>
-          )}
-        </div>
+        {!isReadOnly && (
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+              ${isDragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}`}
+          >
+            <input {...getInputProps()} />
+            <ImageIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+            {isDragActive ? (
+              <p>Drop the files here ...</p>
+            ) : (
+              <div className="space-y-2">
+                <p>Drag & drop product images here, or click to select files</p>
+                <p className="text-sm text-muted-foreground">
+                  Supports: PNG, JPG, JPEG, WebP
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {images.map((image, index) => (
             <div
               key={image.id}
-              draggable
+              draggable={!isReadOnly}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
@@ -136,27 +178,29 @@ export default function Images({ images, onChange }: ImagesProps) {
                 />
               </div>
               
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="absolute top-2 right-2 flex gap-2">
-                  {!image.is_primary && (
+              {!isReadOnly && (
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    {!image.is_primary && (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => handleSetPrimary(index)}
+                      >
+                        Set as Primary
+                      </Button>
+                    )}
                     <Button
                       size="sm"
-                      variant="secondary"
-                      onClick={() => handleSetPrimary(index)}
+                      variant="destructive"
+                      onClick={() => handleRemoveImage(index)}
                     >
-                      Set as Primary
+                      <X className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleRemoveImage(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  </div>
+                  <GripVertical className="absolute bottom-2 right-2 h-5 w-5 text-white cursor-move" />
                 </div>
-                <GripVertical className="absolute bottom-2 right-2 h-5 w-5 text-white cursor-move" />
-              </div>
+              )}
               
               {image.is_primary && (
                 <div className="absolute top-2 left-2 bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
@@ -169,4 +213,4 @@ export default function Images({ images, onChange }: ImagesProps) {
       </CardContent>
     </Card>
   );
-} 
+}

@@ -224,13 +224,6 @@ export default function VendorDashboard() {
           </div>
         </div>
 
-        {/* Product Management */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">Product Management</h2>
-          <button className="bg-primary-red text-white px-4 py-2 rounded-md hover:bg-primary-red-dark">
-            Add New Product
-          </button>
-        </div>
       </div>
 
       {/* Upcoming Activities */}

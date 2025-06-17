@@ -1,14 +1,21 @@
 'use client';
 
+import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation, Pagination } from 'swiper/modules';
 import { Star, Package } from 'lucide-react';
 import SampleRequestWidget from '@/components/samples/SampleRequestWidget';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import dynamic from 'next/dynamic';
+
+// Dynamically import Swiper to avoid SSR issues
+const Swiper = dynamic(() => import('swiper/react').then(mod => mod.Swiper), {
+  ssr: false,
+  loading: () => <div className="h-full bg-gray-200 animate-pulse" />
+});
+
+const SwiperSlide = dynamic(() => import('swiper/react').then(mod => mod.SwiperSlide), {
+  ssr: false
+});
 
 interface Category {
   id: number;
@@ -51,6 +58,22 @@ interface HomeClientProps {
 }
 
 export default function HomeClient({ categories, products, rooms = [], reviews = [] }: HomeClientProps) {
+  const [swiperModules, setSwiperModules] = React.useState<any>(null);
+
+  // Import Swiper CSS and modules dynamically
+  React.useEffect(() => {
+    const loadSwiper = async () => {
+      await import('swiper/css');
+      await import('swiper/css/navigation');
+      await import('swiper/css/pagination');
+      
+      const { Autoplay, Navigation, Pagination } = await import('swiper/modules');
+      setSwiperModules([Autoplay, Navigation, Pagination]);
+    };
+    
+    loadSwiper();
+  }, []);
+
   // Fallback rooms if none provided (only for graceful degradation)
   const defaultRooms = [
     { id: 1, name: 'Living Room', image: '/images/rooms/living-room.jpg', link: '/rooms?type=living-room' },
@@ -70,71 +93,77 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
               <span className="font-bold text-2xl">Coming Soon!</span>
             </div>
           </div>
-          <Swiper
-            modules={[Autoplay, Navigation, Pagination]}
-            navigation
-            pagination={{ clickable: true }}
-            autoplay={{ delay: 5000 }}
-            loop={true}
-            className="h-full [&_.swiper-pagination-bullet-active]:bg-primary-red [&_.swiper-button-next]:!text-white [&_.swiper-button-prev]:!text-white [&_.swiper-button-next]:!bg-black/50 [&_.swiper-button-prev]:!bg-black/50 [&_.swiper-button-next:hover]:!bg-black/70 [&_.swiper-button-prev:hover]:!bg-black/70"
-          >
-            <SwiperSlide>
-              <div className="relative h-full">
-                <Image
-                  src="/images/hero/hero-1.jpg"
-                  alt="Modern window treatments"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 via-blue-600/70 to-cyan-600/60" />
-                <div className="absolute inset-0 flex items-center">
-                  <div className="container mx-auto px-4">
-                    <div className="max-w-lg text-white">
-                      <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">Transform Your Windows</h1>
-                      <p className="text-xl mb-8 drop-shadow">Up to 40% off + Free Shipping</p>
-                      <div className="flex gap-4">
-                        <Link 
-                          href="/products" 
-                          className="bg-primary-red hover:bg-red-700 text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
-                        >
-                          Shop Now
-                        </Link>
-                        <Link 
-                          href="/measure-install" 
-                          className="bg-white hover:bg-gray-100 text-gray-900 px-8 py-3 rounded-full font-semibold transition-colors shadow-lg hover:shadow-xl"
-                        >
-                          Get Professional Help
+          {swiperModules ? (
+            <Swiper
+              modules={swiperModules}
+              navigation
+              pagination={{ clickable: true }}
+              autoplay={{ delay: 5000 }}
+              loop={true}
+              className="h-full [&_.swiper-pagination-bullet-active]:bg-primary-red [&_.swiper-button-next]:!text-white [&_.swiper-button-prev]:!text-white [&_.swiper-button-next]:!bg-black/50 [&_.swiper-button-prev]:!bg-black/50 [&_.swiper-button-next:hover]:!bg-black/70 [&_.swiper-button-prev:hover]:!bg-black/70"
+            >
+              <SwiperSlide>
+                <div className="relative h-full">
+                  <Image
+                    src="/images/hero/hero-1.jpg"
+                    alt="Modern window treatments"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 via-blue-600/70 to-cyan-600/60" />
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="container mx-auto px-4">
+                      <div className="max-w-lg text-white">
+                        <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">Transform Your Windows</h1>
+                        <p className="text-xl mb-8 drop-shadow">Up to 40% off + Free Shipping</p>
+                        <div className="flex gap-4">
+                          <Link 
+                            href="/products" 
+                            className="bg-primary-red hover:bg-red-700 text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
+                          >
+                            Shop Now
+                          </Link>
+                          <Link 
+                            href="/measure-install" 
+                            className="bg-white hover:bg-gray-100 text-gray-900 px-8 py-3 rounded-full font-semibold transition-colors shadow-lg hover:shadow-xl"
+                          >
+                            Get Professional Help
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </SwiperSlide>
+              <SwiperSlide>
+                <div className="relative h-full">
+                  <Image
+                    src="/images/hero/hero-2.jpg"
+                    alt="Luxury window treatments"
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 via-cyan-600/70 to-emerald-600/60" />
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="container mx-auto px-4">
+                      <div className="max-w-lg text-white">
+                        <h1 className="text-5xl font-bold mb-4">Summer Sale</h1>
+                        <p className="text-xl mb-8">Get an Extra 15% Off All Shades</p>
+                        <Link href="/products/shades" className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 rounded-full font-semibold transition-all inline-block">
+                          Shop Shades
                         </Link>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </SwiperSlide>
-          <SwiperSlide>
-            <div className="relative h-full">
-              <Image
-                src="/images/hero/hero-2.jpg"
-                alt="Luxury window treatments"
-                fill
-                className="object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 via-cyan-600/70 to-emerald-600/60" />
-              <div className="absolute inset-0 flex items-center">
-                <div className="container mx-auto px-4">
-                  <div className="max-w-lg text-white">
-                    <h1 className="text-5xl font-bold mb-4">Summer Sale</h1>
-                    <p className="text-xl mb-8">Get an Extra 15% Off All Shades</p>
-                    <Link href="/products/shades" className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 rounded-full font-semibold transition-all inline-block">
-                      Shop Shades
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              </SwiperSlide>
+            </Swiper>
+          ) : (
+            <div className="h-full bg-gray-200 animate-pulse flex items-center justify-center">
+              <span className="text-gray-500">Loading...</span>
             </div>
-          </SwiperSlide>
-        </Swiper>
+          )}
       </section>
       {/* Rest of the sections */}        {/* Promotion Banner Strip */}
         <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4">

@@ -42,6 +42,7 @@ interface FabricData {
 interface FabricProps {
   data: FabricData;
   onChange: (data: FabricData) => void;
+  isReadOnly?: boolean;
 }
 
 // Generate width ranges (10", 20", 30", ..., 118")
@@ -60,7 +61,7 @@ const generateWidthRanges = (): FabricPriceMatrix[] => {
   return ranges;
 };
 
-export default function Fabric({ data, onChange }: FabricProps) {
+export default function Fabric({ data, onChange, isReadOnly = false }: FabricProps) {
   const [currentData, setCurrentData] = useState<FabricData>(() => {
     return {
       coloredFabric: data.coloredFabric && data.coloredFabric.length > 0 ? data.coloredFabric : [],
@@ -72,6 +73,8 @@ export default function Fabric({ data, onChange }: FabricProps) {
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
 
   const handleAddFabricOption = (category: keyof FabricData) => {
+    if (isReadOnly) return;
+
     const newOption: FabricOption = {
       id: `${category}_${Date.now()}`,
       name: '',
@@ -91,6 +94,8 @@ export default function Fabric({ data, onChange }: FabricProps) {
   };
 
   const handleRemoveFabricOption = (category: keyof FabricData, index: number) => {
+    if (isReadOnly) return;
+
     const newData = {
       ...currentData,
       [category]: currentData[category].filter((_, i) => i !== index)
@@ -101,16 +106,25 @@ export default function Fabric({ data, onChange }: FabricProps) {
   };
 
   const handleFabricNameChange = (category: keyof FabricData, index: number, name: string) => {
+    if (isReadOnly) return;
+
     const newData = { ...currentData };
-    newData[category][index].name = name;
+    newData[category] = [...newData[category]];
+    newData[category][index] = { ...newData[category][index], name };
 
     setCurrentData(newData);
     onChange(newData);
   };
 
   const handleFabricToggle = (category: keyof FabricData, index: number) => {
+    if (isReadOnly) return;
+
     const newData = { ...currentData };
-    newData[category][index].enabled = !newData[category][index].enabled;
+    newData[category] = [...newData[category]];
+    newData[category][index] = { 
+      ...newData[category][index], 
+      enabled: !newData[category][index].enabled 
+    };
 
     setCurrentData(newData);
     onChange(newData);
@@ -122,6 +136,8 @@ export default function Fabric({ data, onChange }: FabricProps) {
     priceIndex: number, 
     newPrice: number
   ) => {
+    if (isReadOnly) return;
+
     const newData = { ...currentData };
     newData[category][fabricIndex].priceMatrix[priceIndex].pricePerSqft = newPrice;
 
@@ -134,7 +150,7 @@ export default function Fabric({ data, onChange }: FabricProps) {
     fabricIndex: number, 
     files: FileList | null
   ) => {
-    if (!files) return;
+    if (!files || isReadOnly) return;
 
     const newImages: FabricImage[] = [];
     
@@ -176,6 +192,8 @@ export default function Fabric({ data, onChange }: FabricProps) {
   };
 
   const handleRemoveImage = (category: keyof FabricData, fabricIndex: number, imageIndex: number) => {
+    if (isReadOnly) return;
+
     const newData = { ...currentData };
     const image = newData[category][fabricIndex].images[imageIndex];
     
@@ -205,14 +223,16 @@ export default function Fabric({ data, onChange }: FabricProps) {
           <h3 className="text-lg font-semibold">{title}</h3>
           <p className="text-sm text-gray-600">{description}</p>
         </div>
-        <Button
-          type="button"
-          onClick={() => handleAddFabricOption(category)}
-          className="flex items-center gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          Add {title} Option
-        </Button>
+        {!isReadOnly && (
+          <Button
+            type="button"
+            onClick={() => handleAddFabricOption(category)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add {title} Option
+          </Button>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -225,6 +245,7 @@ export default function Fabric({ data, onChange }: FabricProps) {
                     <Switch
                       checked={fabric.enabled}
                       onCheckedChange={() => handleFabricToggle(category, fabricIndex)}
+                      disabled={isReadOnly}
                     />
                     <div className="flex-1">
                       <Label htmlFor={`${category}-name-${fabricIndex}`}>Fabric Name</Label>
@@ -234,19 +255,22 @@ export default function Fabric({ data, onChange }: FabricProps) {
                         onChange={(e) => handleFabricNameChange(category, fabricIndex, e.target.value)}
                         placeholder="Enter fabric name (e.g., Premium Cotton, Blackout Vinyl)"
                         className="mt-1"
+                        disabled={isReadOnly}
                       />
                     </div>
                   </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemoveFabricOption(category, fabricIndex)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {!isReadOnly && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemoveFabricOption(category, fabricIndex)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </CardHeader>
 
@@ -255,14 +279,16 @@ export default function Fabric({ data, onChange }: FabricProps) {
               <div>
                 <Label>Fabric Images</Label>
                 <div className="mt-2">
-                  <input
-                    ref={(el) => fileInputRefs.current[`${category}_${fabricIndex}`] = el}
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => handleImageUpload(category, fabricIndex, e.target.files)}
-                    className="hidden"
-                  />
+                  {!isReadOnly && (
+                    <input
+                      ref={(el) => fileInputRefs.current[`${category}_${fabricIndex}`] = el}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleImageUpload(category, fabricIndex, e.target.files)}
+                      className="hidden"
+                    />
+                  )}
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {fabric.images.map((image, imageIndex) => (
@@ -274,28 +300,32 @@ export default function Fabric({ data, onChange }: FabricProps) {
                             className="w-full h-full object-cover"
                           />
                         </div>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleRemoveImage(category, fabricIndex, imageIndex)}
-                          className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
+                        {!isReadOnly && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveImage(category, fabricIndex, imageIndex)}
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
                         <p className="text-xs text-gray-500 mt-1 truncate">{image.name}</p>
                       </div>
                     ))}
                     
                     {/* Add Image Button */}
-                    <button
-                      type="button"
-                      onClick={() => fileInputRefs.current[`${category}_${fabricIndex}`]?.click()}
-                      className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors"
-                    >
-                      <Upload className="h-8 w-8 text-gray-400" />
-                      <span className="text-xs text-gray-500 mt-1">Add Images</span>
-                    </button>
+                    {!isReadOnly && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRefs.current[`${category}_${fabricIndex}`]?.click()}
+                        className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-gray-400 transition-colors"
+                      >
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <span className="text-xs text-gray-500 mt-1">Add Images</span>
+                      </button>
+                    )}
                   </div>
                   
                   <p className="text-xs text-gray-500 mt-2">
@@ -332,6 +362,7 @@ export default function Fabric({ data, onChange }: FabricProps) {
                           )}
                           className="w-20 h-8 text-sm"
                           placeholder="0.00"
+                          disabled={isReadOnly}
                         />
                         <span className="text-sm text-gray-500">/sqft</span>
                       </div>
@@ -354,9 +385,11 @@ export default function Fabric({ data, onChange }: FabricProps) {
           <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
             <ImageIcon className="h-12 w-12 text-gray-400 mx-auto mb-3" />
             <p className="text-gray-500 mb-4">No {title.toLowerCase()} options added yet</p>
-            <Button onClick={() => handleAddFabricOption(category)}>
-              Add First {title} Option
-            </Button>
+            {!isReadOnly && (
+              <Button onClick={() => handleAddFabricOption(category)}>
+                Add First {title} Option
+              </Button>
+            )}
           </div>
         )}
       </div>

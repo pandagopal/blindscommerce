@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
+import { getCurrentUser } from '@/lib/auth';
 
 interface SwatchRow extends RowDataPacket {
   swatch_id: string;
@@ -11,155 +11,273 @@ interface SwatchRow extends RowDataPacket {
   image_url: string;
   is_premium: number;
   is_available: number;
-  category_id: number;
   category_name: string;
   sample_fee: number;
 }
 
 interface CategoryRow extends RowDataPacket {
   category_id: number;
-  name: string;
-  description: string;
+  category_name: string;
+  slug: string;
 }
 
 interface LimitsRow extends RowDataPacket {
-  total_requests: number;
-  current_period_requests: number;
-  period_start: string;
-  period_end: string;
-  lifetime_limit: number;
-  period_limit: number;
-  is_suspended: number;
-  suspension_reason: string | null;
+  user_type: string;
+  max_monthly_requests: number;
+  max_total_requests: number;
+  max_active_requests: number;
+  cool_down_days: number;
+  max_samples_per_request: number;
+  requires_approval: number;
+  is_free: number;
+  cost_per_sample: number;
+  free_shipping_threshold: number;
+  can_request_custom_sizes: number;
+  can_request_large_samples: number;
 }
 
-// GET /api/swatches - Get available swatches and user limits
-export async function GET(req: NextRequest) {
+interface RequestHistoryRow extends RowDataPacket {
+  total_requests: number;
+  current_month_requests: number;
+  active_requests: number;
+  last_request_date: Date;
+}
+
+export async function GET(request: NextRequest) {
+  let connection;
   try {
-    const { searchParams } = new URL(req.url);
-    const categoryId = searchParams.get('category');
-    const email = searchParams.get('email');
+    const pool = await getPool();
+    connection = await pool.getConnection();
+    
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search');
+    const category = searchParams.get('category');
+    const material = searchParams.get('material');
+    const isPremium = searchParams.get('isPremium');
+    const userEmail = searchParams.get('email');
+
+    // Get current user
     const user = await getCurrentUser();
 
-    const userEmail = user?.email || email;
-    const pool = await getPool();
-
-    // Get available swatches with category filter
+    // Base query for swatches - using actual schema columns
     let swatchQuery = `
       SELECT 
-        s.swatch_id,
-        s.name,
-        s.color_code,
-        s.material_name,
-        s.image_url,
-        s.is_premium,
-        s.is_available,
-        s.category_id,
+        ms.swatch_id,
+        ms.name,
+        ms.color_code,
+        ms.material_name,
+        ms.image_url,
+        ms.is_premium,
+        ms.is_available,
         c.name as category_name,
-        s.sample_fee
-      FROM material_swatches s
-      LEFT JOIN categories c ON s.category_id = c.category_id
-      WHERE s.is_active = 1
+        ms.sample_fee
+      FROM material_swatches ms
+      LEFT JOIN categories c ON ms.category_id = c.category_id
+      WHERE ms.is_active = 1
     `;
-    
+
     const queryParams: any[] = [];
-    
-    if (categoryId) {
-      swatchQuery += ' AND s.category_id = ?';
-      queryParams.push(categoryId);
+
+    if (search) {
+      swatchQuery += ' AND (ms.name LIKE ? OR ms.description LIKE ?)';
+      queryParams.push(`%${search}%`, `%${search}%`);
     }
-    
-    swatchQuery += ' ORDER BY c.name, s.name';
 
-    const [swatchRows] = await pool.execute<SwatchRow[]>(swatchQuery, queryParams);
+    if (category) {
+      swatchQuery += ' AND c.slug = ?';
+      queryParams.push(category);
+    }
 
-    // Get all categories
-    const [categoryRows] = await pool.execute<CategoryRow[]>(
-      'SELECT category_id, name, description FROM categories WHERE category_id IN (SELECT DISTINCT category_id FROM material_swatches WHERE is_active = 1) ORDER BY name'
+    if (material) {
+      swatchQuery += ' AND ms.material_type = ?';
+      queryParams.push(material);
+    }
+
+    if (isPremium !== null) {
+      swatchQuery += ' AND ms.is_premium = ?';
+      queryParams.push(isPremium === 'true' ? 1 : 0);
+    }
+
+    swatchQuery += ' ORDER BY ms.name ASC';
+
+    const [swatchRows] = await connection.execute<SwatchRow[]>(swatchQuery, queryParams);
+
+    // Get categories - using actual schema (no is_active column)
+    const [categoryRows] = await connection.execute<CategoryRow[]>(
+      'SELECT category_id, name as category_name, slug FROM categories ORDER BY name'
     );
 
-    // Get user limits if email provided
+    // Get user limits and history
     let userLimits = null;
-    if (userEmail) {
-      const [limitsRows] = await pool.execute<LimitsRow[]>(
-        `SELECT 
-          total_requests,
-          current_period_requests,
-          period_start,
-          period_end,
-          lifetime_limit,
-          period_limit,
-          is_suspended,
-          suspension_reason
-        FROM sample_request_limits 
-        WHERE email = ? AND (user_id = ? OR user_id IS NULL)
-        ORDER BY user_id DESC
-        LIMIT 1`,
-        [userEmail, user?.userId || null]
+    
+    if (user || userEmail) {
+      // Determine user type based on role
+      const userType = user?.role === 'designer' ? 'designer' : 
+                      user?.role === 'trade' ? 'trade' : 
+                      user ? 'registered' : 'guest';
+
+      // Check if we have limits defined for this user type
+      const [limitsRows] = await connection.execute<LimitsRow[]>(
+        `SELECT * FROM sample_request_limits WHERE user_type = ? LIMIT 1`,
+        [userType]
       );
 
-      if (limitsRows.length > 0) {
-        const row = limitsRows[0];
-        userLimits = {
-          totalRequests: row.total_requests,
-          currentPeriodRequests: row.current_period_requests,
-          periodStart: row.period_start,
-          periodEnd: row.period_end,
-          lifetimeLimit: row.lifetime_limit,
-          periodLimit: row.period_limit,
-          isSuspended: Boolean(row.is_suspended),
-          suspensionReason: row.suspension_reason,
-          remainingLifetime: Math.max(0, row.lifetime_limit - row.total_requests),
-          remainingPeriod: Math.max(0, row.period_limit - row.current_period_requests)
+      // If no limits found, insert default limits for this user type
+      if (limitsRows.length === 0) {
+        const defaultLimits = {
+          guest: { monthly: 3, total: 5, active: 2, cooldown: 30, perRequest: 3 },
+          registered: { monthly: 5, total: 15, active: 3, cooldown: 30, perRequest: 5 },
+          designer: { monthly: 10, total: 50, active: 5, cooldown: 15, perRequest: 10 },
+          trade: { monthly: 20, total: 100, active: 10, cooldown: 7, perRequest: 20 }
         };
 
-        // Check if period has expired and reset if needed
-        const now = new Date();
-        const periodEnd = new Date(row.period_end);
-        
-        if (now > periodEnd) {
-          const newPeriodStart = now.toISOString().split('T')[0];
-          const newPeriodEnd = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-          
-          await pool.execute(
-            `UPDATE sample_request_limits 
-             SET current_period_requests = 0, 
-                 period_start = ?, 
-                 period_end = ? 
-             WHERE email = ?`,
-            [newPeriodStart, newPeriodEnd, userEmail]
+        const limits = defaultLimits[userType] || defaultLimits.guest;
+
+        try {
+          // Insert with only the columns that exist in the schema
+          await connection.execute(
+            `INSERT INTO sample_request_limits 
+             (user_type, max_monthly_requests, max_total_requests, max_active_requests, 
+              cool_down_days, max_samples_per_request, requires_approval, is_free, 
+              cost_per_sample, free_shipping_threshold, can_request_custom_sizes, can_request_large_samples) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              userType, 
+              limits.monthly, 
+              limits.total, 
+              limits.active, 
+              limits.cooldown, 
+              limits.perRequest,
+              0, // requires_approval
+              1, // is_free
+              0.00, // cost_per_sample
+              null, // free_shipping_threshold
+              0, // can_request_custom_sizes
+              0  // can_request_large_samples
+            ]
           );
 
-          userLimits.currentPeriodRequests = 0;
-          userLimits.periodStart = newPeriodStart;
-          userLimits.periodEnd = newPeriodEnd;
-          userLimits.remainingPeriod = row.period_limit;
+          // Re-fetch the inserted limits
+          const [newLimitsRows] = await connection.execute<LimitsRow[]>(
+            `SELECT * FROM sample_request_limits WHERE user_type = ? LIMIT 1`,
+            [userType]
+          );
+          if (newLimitsRows.length > 0) {
+            limitsRows.push(newLimitsRows[0]);
+          }
+        } catch (insertError) {
+          console.warn('Failed to insert default limits:', insertError);
         }
-      } else {
-        // Create default limits for new user
-        const periodStart = new Date().toISOString().split('T')[0];
-        const periodEnd = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        
-        await pool.execute(
-          `INSERT INTO sample_request_limits 
-           (user_id, email, total_requests, current_period_requests, period_start, period_end, lifetime_limit, period_limit) 
-           VALUES (?, ?, 0, 0, ?, ?, 15, 10)`,
-          [user?.userId || null, userEmail, periodStart, periodEnd]
-        );
+      }
 
+      if (limitsRows.length > 0) {
+        const limits = limitsRows[0];
+        
+        // Get user's request history using actual schema columns
+        const emailToCheck = userEmail || user?.email;
+        
+        let historyQuery: string;
+        const historyParams: any[] = [];
+        
+        if (user?.userId) {
+          historyQuery = `
+            SELECT 
+              COUNT(*) as total_requests,
+              COUNT(CASE WHEN request_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as current_month_requests,
+              COUNT(CASE WHEN status IN ('pending', 'approved', 'shipped') THEN 1 END) as active_requests,
+              MAX(request_date) as last_request_date
+            FROM sample_request_history 
+            WHERE status != 'cancelled' AND user_id = ?
+          `;
+          historyParams.push(user.userId);
+        } else if (emailToCheck) {
+          historyQuery = `
+            SELECT 
+              COUNT(*) as total_requests,
+              COUNT(CASE WHEN request_date >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 END) as current_month_requests,
+              COUNT(CASE WHEN status IN ('pending', 'approved', 'shipped') THEN 1 END) as active_requests,
+              MAX(request_date) as last_request_date
+            FROM sample_request_history 
+            WHERE status != 'cancelled' AND guest_email = ?
+          `;
+          historyParams.push(emailToCheck);
+        } else {
+          // Default query with no user filtering
+          historyQuery = `
+            SELECT 
+              0 as total_requests,
+              0 as current_month_requests,
+              0 as active_requests,
+              NULL as last_request_date
+          `;
+        }
+
+        const [historyRows] = await connection.execute<RequestHistoryRow[]>(historyQuery, historyParams);
+        const history = historyRows[0];
+        
+        // Check cooldown period
+        let isInCooldown = false;
+        if (history?.last_request_date) {
+          const lastRequestDate = new Date(history.last_request_date);
+          const cooldownEndDate = new Date(lastRequestDate);
+          cooldownEndDate.setDate(cooldownEndDate.getDate() + limits.cool_down_days);
+          isInCooldown = new Date() < cooldownEndDate;
+        }
+        
         userLimits = {
-          totalRequests: 0,
-          currentPeriodRequests: 0,
-          periodStart,
-          periodEnd,
-          lifetimeLimit: 15,
-          periodLimit: 10,
-          isSuspended: false,
-          suspensionReason: null,
-          remainingLifetime: 15,
-          remainingPeriod: 10
+          userType,
+          maxMonthlyRequests: limits.max_monthly_requests,
+          maxTotalRequests: limits.max_total_requests,
+          maxActiveRequests: limits.max_active_requests,
+          coolDownDays: limits.cool_down_days,
+          maxSamplesPerRequest: limits.max_samples_per_request,
+          requiresApproval: Boolean(limits.requires_approval),
+          isFree: Boolean(limits.is_free),
+          costPerSample: parseFloat(limits.cost_per_sample?.toString() || '0'),
+          freeShippingThreshold: parseFloat(limits.free_shipping_threshold?.toString() || '0'),
+          canRequestCustomSizes: Boolean(limits.can_request_custom_sizes),
+          canRequestLargeSamples: Boolean(limits.can_request_large_samples),
+          // User specific data
+          totalRequests: history?.total_requests || 0,
+          currentMonthRequests: history?.current_month_requests || 0,
+          activeRequests: history?.active_requests || 0,
+          remainingMonthly: Math.max(0, limits.max_monthly_requests - (history?.current_month_requests || 0)),
+          remainingTotal: Math.max(0, limits.max_total_requests - (history?.total_requests || 0)),
+          canRequestMore: !isInCooldown && 
+                         (history?.current_month_requests || 0) < limits.max_monthly_requests && 
+                         (history?.total_requests || 0) < limits.max_total_requests &&
+                         (history?.active_requests || 0) < limits.max_active_requests,
+          isInCooldown,
+          cooldownEndDate: history?.last_request_date ? 
+            new Date(new Date(history.last_request_date).getTime() + limits.cool_down_days * 24 * 60 * 60 * 1000) : null,
+          lastRequestDate: history?.last_request_date
         };
       }
+    } else {
+      // For non-authenticated users, provide guest limits
+      userLimits = {
+        userType: 'guest',
+        maxMonthlyRequests: 3,
+        maxTotalRequests: 5,
+        maxActiveRequests: 2,
+        coolDownDays: 30,
+        maxSamplesPerRequest: 3,
+        requiresApproval: false,
+        isFree: true,
+        costPerSample: 0,
+        freeShippingThreshold: 0,
+        canRequestCustomSizes: false,
+        canRequestLargeSamples: false,
+        totalRequests: 0,
+        currentMonthRequests: 0,
+        activeRequests: 0,
+        remainingMonthly: 3,
+        remainingTotal: 5,
+        canRequestMore: true,
+        isInCooldown: false,
+        cooldownEndDate: null,
+        lastRequestDate: null
+      };
     }
 
     // Format swatches data
@@ -171,21 +289,21 @@ export async function GET(req: NextRequest) {
       image: row.image_url,
       isPremium: Boolean(row.is_premium),
       inStock: Boolean(row.is_available),
-      categoryName: row.category_name,
-      sampleFee: row.sample_fee
+      categoryName: row.category_name || 'Uncategorized',
+      sampleFee: parseFloat(row.sample_fee?.toString() || '0')
     }));
 
     const categories = categoryRows.map(row => ({
       id: row.category_id,
-      name: row.name,
-      description: row.description
+      name: row.category_name,
+      slug: row.slug
     }));
 
     return NextResponse.json({
-      success: true,
       swatches,
       categories,
-      userLimits
+      userLimits,
+      totalCount: swatches.length
     });
 
   } catch (error) {
@@ -194,161 +312,9 @@ export async function GET(req: NextRequest) {
       { error: 'Failed to fetch swatches' },
       { status: 500 }
     );
-  }
-}
-
-// POST /api/swatches - Submit sample request
-export async function POST(req: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    const body = await req.json();
-    
-    const {
-      selectedSwatches,
-      shippingInfo,
-      priority = 'STANDARD'
-    } = body;
-
-    if (!selectedSwatches || selectedSwatches.length === 0) {
-      return NextResponse.json(
-        { error: 'No swatches selected' },
-        { status: 400 }
-      );
+  } finally {
+    if (connection) {
+      connection.release();
     }
-
-    if (!shippingInfo?.email || !shippingInfo?.name || !shippingInfo?.address) {
-      return NextResponse.json(
-        { error: 'Missing required shipping information' },
-        { status: 400 }
-      );
-    }
-
-    const pool = await getPool();
-
-    // Check user limits
-    const [limitsRows] = await pool.execute<LimitsRow[]>(
-      `SELECT * FROM sample_request_limits WHERE email = ? AND (user_id = ? OR user_id IS NULL) ORDER BY user_id DESC LIMIT 1`,
-      [shippingInfo.email, user?.userId || null]
-    );
-
-    if (limitsRows.length > 0) {
-      const limits = limitsRows[0];
-      
-      if (limits.is_suspended) {
-        return NextResponse.json(
-          { error: 'Sample request privileges are suspended' },
-          { status: 403 }
-        );
-      }
-
-      if (selectedSwatches.length > limits.period_limit - limits.current_period_requests) {
-        return NextResponse.json(
-          { error: `Cannot request more than ${limits.period_limit - limits.current_period_requests} samples this period` },
-          { status: 400 }
-        );
-      }
-
-      if (selectedSwatches.length > limits.lifetime_limit - limits.total_requests) {
-        return NextResponse.json(
-          { error: `Cannot request more than ${limits.lifetime_limit - limits.total_requests} total samples` },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Calculate shipping fee
-    let shippingFee = 0;
-    if (priority === 'EXPRESS') {
-      shippingFee = 5.99;
-    }
-
-    // Get swatch details for pricing
-    const swatchIds = selectedSwatches.map(() => '?').join(',');
-    const [swatchDetails] = await pool.execute<SwatchRow[]>(
-      `SELECT swatch_id, sample_fee FROM material_swatches WHERE swatch_id IN (${swatchIds})`,
-      selectedSwatches
-    );
-
-    const totalSampleFees = swatchDetails.reduce((sum, swatch) => sum + (swatch.sample_fee || 0), 0);
-    const totalAmount = totalSampleFees + shippingFee;
-
-    // Generate order ID
-    const orderId = 'SAMPLE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5).toUpperCase();
-
-    // Create sample order
-    const [orderResult] = await pool.execute(
-      `INSERT INTO sample_orders 
-       (order_id, user_id, email, shipping_name, shipping_address, shipping_city, shipping_state, shipping_zip, 
-        priority, sample_count, sample_fees, shipping_fee, total_amount, status) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
-      [
-        orderId,
-        user?.userId || null,
-        shippingInfo.email,
-        shippingInfo.name,
-        shippingInfo.address,
-        shippingInfo.city,
-        shippingInfo.state,
-        shippingInfo.zipCode,
-        priority,
-        selectedSwatches.length,
-        totalSampleFees,
-        shippingFee,
-        totalAmount
-      ]
-    );
-
-    const sampleOrderId = (orderResult as any).insertId;
-
-    // Add sample items
-    for (const swatchId of selectedSwatches) {
-      await pool.execute(
-        'INSERT INTO sample_order_items (sample_order_id, swatch_id) VALUES (?, ?)',
-        [sampleOrderId, swatchId]
-      );
-    }
-
-    // Update user limits
-    if (limitsRows.length > 0) {
-      await pool.execute(
-        `UPDATE sample_request_limits 
-         SET total_requests = total_requests + ?, 
-             current_period_requests = current_period_requests + ? 
-         WHERE email = ?`,
-        [selectedSwatches.length, selectedSwatches.length, shippingInfo.email]
-      );
-    }
-
-    // Record in history
-    await pool.execute(
-      `INSERT INTO sample_request_history 
-       (user_id, email, order_id, sample_count, request_type, is_express) 
-       VALUES (?, ?, ?, ?, 'standard', ?)`,
-      [user?.userId || null, shippingInfo.email, orderId, selectedSwatches.length, priority === 'EXPRESS']
-    );
-
-    // TODO: Send confirmation email
-    // TODO: Notify fulfillment team
-
-    return NextResponse.json({
-      success: true,
-      orderId,
-      message: 'Sample request submitted successfully',
-      orderDetails: {
-        orderId,
-        sampleCount: selectedSwatches.length,
-        totalAmount,
-        shippingFee,
-        priority,
-        estimatedDelivery: priority === 'EXPRESS' ? '1-2 business days' : '3-5 business days'
-      }
-    });
-
-  } catch (error) {
-    console.error('Error submitting sample request:', error);
-    return NextResponse.json(
-      { error: 'Failed to submit sample request' },
-      { status: 500 }
-    );
   }
 }

@@ -18,6 +18,7 @@ interface Feature {
 interface FeaturesProps {
   features: Feature[];
   onChange: (features: Feature[]) => void;
+  isReadOnly?: boolean;
 }
 
 const AVAILABLE_ICONS = [
@@ -43,7 +44,7 @@ const AVAILABLE_ICONS = [
   { value: 'percent', label: 'Percent' },
 ];
 
-export default function Features({ features, onChange }: FeaturesProps) {
+export default function Features({ features, onChange, isReadOnly = false }: FeaturesProps) {
   const [newFeature, setNewFeature] = useState<Feature>({
     id: '',
     title: '',
@@ -53,7 +54,7 @@ export default function Features({ features, onChange }: FeaturesProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleAddFeature = () => {
-    if (!newFeature.title || !newFeature.description) return;
+    if (!newFeature.title || !newFeature.description || isReadOnly) return;
 
     const feature = {
       ...newFeature,
@@ -70,16 +71,21 @@ export default function Features({ features, onChange }: FeaturesProps) {
   };
 
   const handleRemoveFeature = (index: number) => {
+    if (isReadOnly) return;
+
     const newFeatures = [...features];
     newFeatures.splice(index, 1);
     onChange(newFeatures);
   };
 
   const handleDragStart = (index: number) => {
+    if (isReadOnly) return;
     setDraggedIndex(index);
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (isReadOnly) return;
+    
     e.preventDefault();
     if (draggedIndex === null || draggedIndex === index) return;
 
@@ -96,6 +102,8 @@ export default function Features({ features, onChange }: FeaturesProps) {
   };
 
   const handleUpdateFeature = (index: number, field: keyof Feature, value: string) => {
+    if (isReadOnly) return;
+
     const newFeatures = [...features];
     newFeatures[index] = {
       ...newFeatures[index],
@@ -110,84 +118,93 @@ export default function Features({ features, onChange }: FeaturesProps) {
         <CardTitle>Product Features</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-4">
-          <div className="grid gap-4">
-            <Input
-              placeholder="Feature title"
-              value={newFeature.title}
-              onChange={(e) =>
-                setNewFeature({ ...newFeature, title: e.target.value })
-              }
-            />
-            <Textarea
-              placeholder="Feature description"
-              value={newFeature.description}
-              onChange={(e) =>
-                setNewFeature({ ...newFeature, description: e.target.value })
-              }
-            />
-            <Select
-              value={newFeature.icon}
-              onValueChange={(value) =>
-                setNewFeature({ ...newFeature, icon: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select an icon (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                {AVAILABLE_ICONS.map((icon) => (
-                  <SelectItem key={icon.value} value={icon.value}>
-                    <div className="flex items-center gap-2">
-                      <span className="w-4 h-4">{icon.label}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button onClick={handleAddFeature}>
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Feature
-            </Button>
+        {!isReadOnly && (
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              <Input
+                placeholder="Feature title"
+                value={newFeature.title}
+                onChange={(e) =>
+                  setNewFeature({ ...newFeature, title: e.target.value })
+                }
+              />
+              <Textarea
+                placeholder="Feature description"
+                value={newFeature.description}
+                onChange={(e) =>
+                  setNewFeature({ ...newFeature, description: e.target.value })
+                }
+              />
+              <Select
+                value={newFeature.icon}
+                onValueChange={(value) =>
+                  setNewFeature({ ...newFeature, icon: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an icon (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_ICONS.map((icon) => (
+                    <SelectItem key={icon.value} value={icon.value}>
+                      <div className="flex items-center gap-2">
+                        <span className="w-4 h-4">{icon.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddFeature}>
+                <PlusIcon className="h-4 w-4 mr-2" />
+                Add Feature
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="space-y-4">
           {features.map((feature, index) => (
             <div
               key={feature.id}
-              draggable
+              draggable={!isReadOnly}
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
               className={`flex items-start gap-4 p-4 rounded-lg border bg-card
                 ${draggedIndex === index ? 'opacity-50' : ''}`}
             >
-              <GripVertical className="h-5 w-5 mt-1 cursor-move text-muted-foreground" />
+              {!isReadOnly && (
+                <GripVertical className="h-5 w-5 mt-1 cursor-move text-muted-foreground" />
+              )}
               <div className="flex-1 space-y-4">
                 <div className="flex items-center justify-between">
                   <Input
                     value={feature.title}
                     onChange={(e) => handleUpdateFeature(index, 'title', e.target.value)}
                     className="max-w-[300px]"
+                    disabled={isReadOnly}
                   />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleRemoveFeature(index)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {!isReadOnly && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFeature(index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <Textarea
                   value={feature.description}
                   onChange={(e) => handleUpdateFeature(index, 'description', e.target.value)}
+                  disabled={isReadOnly}
                 />
                 <Select
                   value={feature.icon}
                   onValueChange={(value) => handleUpdateFeature(index, 'icon', value)}
+                  disabled={isReadOnly}
                 >
-                  <SelectTrigger className="max-w-[200px]">
+                  <SelectTrigger className="min-w-[200px]">
                     <SelectValue placeholder="Select an icon" />
                   </SelectTrigger>
                   <SelectContent>
@@ -207,4 +224,4 @@ export default function Features({ features, onChange }: FeaturesProps) {
       </CardContent>
     </Card>
   );
-} 
+}

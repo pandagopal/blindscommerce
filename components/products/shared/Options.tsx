@@ -182,6 +182,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   placeholder="e.g., 12"
                   value={currentData.dimensions.minWidth}
                   onChange={(e) => handleDimensionChange('minWidth', parseFloat(e.target.value) || 0)}
+                  disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum width for this product</p>
               </div>
@@ -194,6 +195,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   placeholder="e.g., 96"
                   value={currentData.dimensions.maxWidth}
                   onChange={(e) => handleDimensionChange('maxWidth', parseFloat(e.target.value) || 0)}
+                  disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum width for this product</p>
               </div>
@@ -206,6 +208,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   placeholder="e.g., 12"
                   value={currentData.dimensions.minHeight}
                   onChange={(e) => handleDimensionChange('minHeight', parseFloat(e.target.value) || 0)}
+                  disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Minimum height for this product</p>
               </div>
@@ -218,6 +221,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                   placeholder="e.g., 120"
                   value={currentData.dimensions.maxHeight}
                   onChange={(e) => handleDimensionChange('maxHeight', parseFloat(e.target.value) || 0)}
+                  disabled={isReadOnly}
                 />
                 <p className="text-xs text-gray-500 mt-1">Maximum height for this product</p>
               </div>
@@ -240,6 +244,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     id={`mount-${index}`}
                     checked={option.enabled}
                     onCheckedChange={() => handleOptionToggle('mountTypes', null, index)}
+                    disabled={isReadOnly}
                   />
                   <Label htmlFor={`mount-${index}`} className="font-medium">
                     {option.name}
@@ -253,7 +258,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('mountTypes', null, index, parseFloat(e.target.value) || 0)}
                     className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    disabled={!option.enabled}
+                    disabled={!option.enabled || isReadOnly}
                   />
                 </div>
               </div>
@@ -280,6 +285,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         id={`lift-${index}`}
                         checked={option.enabled}
                         onCheckedChange={() => handleOptionToggle('controlTypes', 'liftSystems', index)}
+                        disabled={isReadOnly}
                       />
                       <Label htmlFor={`lift-${index}`}>{option.name}</Label>
                     </div>
@@ -291,7 +297,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'liftSystems', index, parseFloat(e.target.value) || 0)}
                         className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        disabled={!option.enabled}
+                        disabled={!option.enabled || isReadOnly}
                       />
                     </div>
                   </div>
@@ -312,6 +318,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         id={`wand-${index}`}
                         checked={option.enabled}
                         onCheckedChange={() => handleOptionToggle('controlTypes', 'wandSystem', index)}
+                        disabled={isReadOnly}
                       />
                       <Label htmlFor={`wand-${index}`}>{option.name}</Label>
                     </div>
@@ -323,7 +330,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'wandSystem', index, parseFloat(e.target.value) || 0)}
                         className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        disabled={!option.enabled}
+                        disabled={!option.enabled || isReadOnly}
                       />
                     </div>
                   </div>
@@ -344,6 +351,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         id={`string-${index}`}
                         checked={option.enabled}
                         onCheckedChange={() => handleOptionToggle('controlTypes', 'stringSystem', index)}
+                        disabled={isReadOnly}
                       />
                       <Label htmlFor={`string-${index}`}>{option.name}</Label>
                     </div>
@@ -355,7 +363,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'stringSystem', index, parseFloat(e.target.value) || 0)}
                         className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        disabled={!option.enabled}
+                        disabled={!option.enabled || isReadOnly}
                       />
                     </div>
                   </div>
@@ -376,6 +384,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         id={`remote-${index}`}
                         checked={option.enabled}
                         onCheckedChange={() => handleOptionToggle('controlTypes', 'remoteControl', index)}
+                        disabled={isReadOnly}
                       />
                       <Label htmlFor={`remote-${index}`}>{option.name}</Label>
                     </div>
@@ -387,7 +396,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                         value={option.price_adjustment}
                         onChange={(e) => handlePriceChange('controlTypes', 'remoteControl', index, parseFloat(e.target.value) || 0)}
                         className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                        disabled={!option.enabled}
+                        disabled={!option.enabled || isReadOnly}
                       />
                     </div>
                   </div>
@@ -412,6 +421,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     id={`valance-${index}`}
                     checked={option.enabled}
                     onCheckedChange={() => handleOptionToggle('valanceOptions', null, index)}
+                    disabled={isReadOnly}
                   />
                   <Label htmlFor={`valance-${index}`} className="font-medium">
                     {option.name}
@@ -425,7 +435,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('valanceOptions', null, index, parseFloat(e.target.value) || 0)}
                     className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    disabled={!option.enabled}
+                    disabled={!option.enabled || isReadOnly}
                   />
                 </div>
               </div>
@@ -448,6 +458,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     id={`bottom-${index}`}
                     checked={option.enabled}
                     onCheckedChange={() => handleOptionToggle('bottomRailOptions', null, index)}
+                    disabled={isReadOnly}
                   />
                   <Label htmlFor={`bottom-${index}`} className="font-medium">
                     {option.name}
@@ -461,7 +472,7 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
                     value={option.price_adjustment}
                     onChange={(e) => handlePriceChange('bottomRailOptions', null, index, parseFloat(e.target.value) || 0)}
                     className={`w-20 h-8 text-sm ${!option.enabled ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    disabled={!option.enabled}
+                    disabled={!option.enabled || isReadOnly}
                   />
                 </div>
               </div>
@@ -471,4 +482,4 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
       </Card>
     </div>
   );
-} 
+}

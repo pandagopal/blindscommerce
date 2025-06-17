@@ -174,6 +174,7 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                         step="0.01"
                         min="0"
                         disabled={isReadOnly}
+                        placeholder="0.00"
                       />
                     </TableCell>
                   ))}
@@ -208,4 +209,4 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
       </CardContent>
     </Card>
   );
-} 
+}

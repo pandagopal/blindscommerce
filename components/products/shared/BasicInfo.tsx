@@ -19,7 +19,7 @@ import { MultiSelect } from "@/components/ui/multi-select";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-const formSchema = z.object({
+const createFormSchema = (isAdmin: boolean) => z.object({
   name: z.string()
     .min(1, "Product name is required")
     .max(255, "Product name cannot exceed 255 characters"),
@@ -35,12 +35,17 @@ const formSchema = z.object({
     .optional()
     .or(z.literal('')),
   sku: z.string()
+    .min(1, "SKU is required")
     .max(50, "SKU cannot exceed 50 characters")
-    .regex(/^[A-Za-z0-9-_]*$/, "SKU can only contain letters, numbers, hyphens, and underscores")
-    .optional()
-    .or(z.literal('')),
-  vendorId: z.string().optional(),
-  basePrice: z.number().min(0, "Base price must be positive").optional(),
+    .regex(/^[A-Za-z0-9-_]*$/, "SKU can only contain letters, numbers, hyphens, and underscores"),
+  slug: z.string()
+    .min(1, "Slug is required")
+    .max(255, "Slug cannot exceed 255 characters")
+    .regex(/^[a-z0-9-]+$/, "Slug can only contain lowercase letters, numbers, and hyphens"),
+  vendorId: isAdmin 
+    ? z.string().min(1, "Vendor assignment is required") 
+    : z.string().optional(),
+  basePrice: z.number().min(0.01, "Base price is required and must be greater than 0"),
   isActive: z.boolean(),
   isFeatured: z.boolean(),
 });
@@ -65,9 +70,10 @@ interface BasicInfoProps {
   onChange: (data: any) => void;
   showVendorSelection?: boolean; // New prop to control vendor dropdown visibility
   isReadOnly?: boolean; // New prop for read-only mode
+  isAdmin?: boolean; // New prop to determine if admin (makes vendor selection required)
 }
 
-export default function BasicInfo({ data, categories: propCategories, onChange, showVendorSelection = true, isReadOnly = false }: BasicInfoProps) {
+export default function BasicInfo({ data, categories: propCategories, onChange, showVendorSelection = true, isReadOnly = false, isAdmin = false }: BasicInfoProps) {
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -75,16 +81,36 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
   
   // Convert old data format to new format if needed
   const formData = React.useMemo(() => {
-    if (data.category && !data.categories) {
+    // Ensure data exists and has proper structure
+    const safeData = data || {};
+    
+    if (safeData.category && !safeData.categories) {
       return {
-        ...data,
-        categories: [data.category],
-        primaryCategory: data.category
+        ...safeData,
+        categories: [safeData.category],
+        primaryCategory: safeData.category
       };
     }
-    return data;
+    
+    // Return data with defaults for required fields
+    return {
+      name: '',
+      slug: '',
+      shortDescription: '',
+      fullDescription: '',
+      sku: '',
+      basePrice: 0,
+      vendorId: '',
+      isActive: true,
+      isFeatured: false,
+      categories: [],
+      primaryCategory: '',
+      brand: '',
+      ...safeData
+    };
   }, [data]);
 
+  const formSchema = createFormSchema(isAdmin);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: formData,
@@ -92,12 +118,24 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
 
   // Update form when data changes
   useEffect(() => {
-    console.log('BasicInfo useEffect - formData changed:', formData);
-    if (formData && Object.keys(formData).length > 0) {
-      console.log('Resetting form with data:', formData);
-      form.reset(formData);
+    // Check if we have actual data (not just defaults) by checking if name exists and is not empty
+    if (data && data.name && data.name.trim() !== '') {
+      // Force form reset with proper values after a delay to avoid render loops
+      const timer = setTimeout(() => {
+        form.reset(formData);
+        
+        // Set primary category after form reset if we have categories and a primary category
+        if (data.categories?.length > 0 && data.primaryCategory) {
+          // Give extra time for categories to populate in the form
+          setTimeout(() => {
+            form.setValue('primaryCategory', data.primaryCategory);
+          }, 100);
+        }
+      }, 50);
+      
+      return () => clearTimeout(timer);
     }
-  }, [formData, form]);
+  }, [data?.name, data?.categories?.length, data?.primaryCategory]); // Include primaryCategory in deps
 
   useEffect(() => {
     if (showVendorSelection) {
@@ -157,7 +195,23 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             <FormItem>
               <FormLabel>Product Name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter product name" {...field} disabled={isReadOnly} />
+                <Input 
+                  placeholder="Enter product name" 
+                  {...field} 
+                  disabled={isReadOnly}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    // Auto-generate slug from product name if slug is empty
+                    const currentSlug = form.getValues('slug');
+                    if (!currentSlug || currentSlug.trim() === '') {
+                      const autoSlug = e.target.value
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '-')
+                        .replace(/(^-|-$)/g, '');
+                      form.setValue('slug', autoSlug);
+                    }
+                  }}
+                />
               </FormControl>
               <FormDescription>
                 The name of your product as it will appear to customers
@@ -173,7 +227,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             name="vendorId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Assign to Vendor (Optional)</FormLabel>
+                <FormLabel>Assign to Vendor {isAdmin ? '*' : '(Hidden)'}</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isReadOnly}>
                   <FormControl>
                     <SelectTrigger>
@@ -239,9 +293,21 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                   selected={field.value || []}
                   onChange={(selected) => {
                     field.onChange(selected);
-                    // Auto-select first category as primary if none selected
-                    if (selected.length > 0 && !form.getValues("primaryCategory")) {
+                    const currentPrimary = form.getValues("primaryCategory");
+                    
+                    // If we have a primary category from the database and it's in the selected categories, keep it
+                    if (currentPrimary && selected.includes(currentPrimary)) {
+                      // Don't change anything, keep the database value
+                      return;
+                    }
+                    
+                    // Only auto-select primary if no primary is set and we have categories
+                    if (selected.length > 0 && (!currentPrimary || !selected.includes(currentPrimary))) {
                       form.setValue("primaryCategory", selected[0]);
+                    }
+                    // Clear primary if no categories selected
+                    if (selected.length === 0) {
+                      form.setValue("primaryCategory", "");
                     }
                   }}
                   placeholder="Select categories..."
@@ -260,33 +326,38 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
         <FormField
           control={form.control}
           name="primaryCategory"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Primary Category *</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-                disabled={isReadOnly || !form.watch("categories") || form.watch("categories").length === 0}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select primary category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {(form.watch("categories") || []).map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription>
-                Choose the main category for this product (must be one of the selected categories)
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            // Get current categories from form state  
+            const currentCategories = form.watch("categories") || [];
+            
+            return (
+              <FormItem>
+                <FormLabel>Primary Category *</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value || ""}
+                  disabled={isReadOnly || currentCategories.length === 0}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select primary category" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {currentCategories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>
+                  Choose the main category for this product (must be one of the selected categories)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField
@@ -294,7 +365,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           name="sku"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>SKU</FormLabel>
+              <FormLabel>SKU *</FormLabel>
               <FormControl>
                 <Input placeholder="Enter product SKU" {...field} disabled={isReadOnly} />
               </FormControl>
@@ -308,10 +379,36 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
 
         <FormField
           control={form.control}
+          name="slug"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL Slug *</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="product-url-slug" 
+                  {...field} 
+                  disabled={isReadOnly}
+                  onChange={(e) => {
+                    // Auto-format slug as user types
+                    const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-');
+                    field.onChange(slug);
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                URL-friendly version of the product name (will be used in product URLs)
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="basePrice"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Base Price ($)</FormLabel>
+              <FormLabel>Base Price ($) *</FormLabel>
               <FormControl>
                 <Input 
                   type="number" 
