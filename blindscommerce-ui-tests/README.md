@@ -22,6 +22,7 @@ npm run dev
 npm test                    # All UI tests
 npm run test:load          # Load testing
 ```
+npx playwright test tests/vendor/vendor-product-creation.spec.ts --headed --project=chromium --max-failures=1
 
 ## 📋 **What This Testing Suite Covers**
 

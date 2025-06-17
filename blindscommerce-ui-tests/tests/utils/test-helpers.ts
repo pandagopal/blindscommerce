@@ -1,5 +1,25 @@
 import { Page, expect } from '@playwright/test';
 
+// Standalone helper function for authentication and setup
+export async function beforeEach(page: Page, userEmail: string = 'vendor@smartblindshub.com') {
+  // Navigate to login page
+  await page.goto('/login');
+  await page.waitForLoadState('networkidle');
+  
+  // Fill login form with test credentials using the actual form field IDs
+  await page.fill('#email', userEmail);
+  await page.fill('#password', 'Admin@1234');
+  
+  // Submit login form
+  await page.click('button[type="submit"]');
+  
+  // Wait for successful login redirect with longer timeout
+  await page.waitForURL(url => !url.pathname.includes('/login'), { timeout: 15000 });
+  
+  // Wait for page to be fully loaded
+  await page.waitForLoadState('networkidle');
+}
+
 export class TestHelpers {
   constructor(private page: Page) {}
 
