@@ -43,7 +43,7 @@ export default function BasicInfo({ data, categories, onChange }: BasicInfoProps
     <div className="p-6 space-y-6">
       <FormField>
         <FormItem>
-          <FormLabel>Product Name</FormLabel>
+          <FormLabel>Product Name *</FormLabel>
           <FormControl>
             <Input
               name="name"
@@ -60,7 +60,7 @@ export default function BasicInfo({ data, categories, onChange }: BasicInfoProps
 
       <FormField>
         <FormItem>
-          <FormLabel>Category</FormLabel>
+          <FormLabel>Category *</FormLabel>
           <Select value={data.category} onValueChange={handleCategoryChange}>
             <SelectTrigger>
               <SelectValue placeholder="Select a category" />
@@ -98,7 +98,7 @@ export default function BasicInfo({ data, categories, onChange }: BasicInfoProps
 
       <FormField>
         <FormItem>
-          <FormLabel>Short Description</FormLabel>
+          <FormLabel>Short Description *</FormLabel>
           <FormControl>
             <Textarea
               name="shortDescription"
