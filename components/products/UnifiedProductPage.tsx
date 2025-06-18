@@ -368,6 +368,60 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     }
   };
 
+  // Process product images - handles upload for blob URLs
+  const processProductImages = async (images: any[], currentProductId?: string) => {
+    if (!images || !Array.isArray(images)) return images;
+    
+    const processedImages = [];
+    
+    for (let i = 0; i < images.length; i++) {
+      const image = images[i];
+      
+      if (image.url?.startsWith('blob:') && image.file) {
+        try {
+          const formData = new FormData();
+          formData.append('files', image.file);
+          formData.append('uploadType', 'productImages');
+          formData.append('category', 'product');
+          formData.append('productId', currentProductId || 'new');
+          
+          const uploadResponse = await fetch('/api/vendor/upload', {
+            method: 'POST',
+            body: formData,
+          });
+          
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error('Upload response error:', errorText);
+            throw new Error(`Upload failed with status ${uploadResponse.status}: ${errorText}`);
+          }
+          
+          const uploadResult = await uploadResponse.json();
+          
+          if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
+            const uploadedUrl = uploadResult.uploaded[0].secureUrl;
+            
+            processedImages.push({
+              ...image,
+              url: uploadedUrl,
+              file: undefined // Remove file reference after upload
+            });
+          } else {
+            throw new Error(`Upload failed: ${uploadResult.error || 'Unknown error'}`);
+          }
+        } catch (error) {
+          console.error(`Failed to upload image: ${image.alt}`, error);
+          throw new Error(`Failed to upload image: ${image.alt}`);
+        }
+      } else {
+        // Image already uploaded or no file to upload
+        processedImages.push(image);
+      }
+    }
+    
+    return processedImages;
+  };
+
   const saveProduct = async () => {
     try {
       setSaving(true);
@@ -381,6 +435,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       // Process fabric images - upload any new images that are still using blob URLs
       const processedFabricData = await processFabricImages(currentFabricData, productId);
+      
+      // Process product images - upload any new images that are still using blob URLs
+      const processedImages = await processProductImages(productData.images, productId);
       
       // Transform productData to the format expected by the API
       const apiData = {
@@ -399,7 +456,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         brand: productData.basicInfo.brand,
         
         // Other tabs data
-        images: productData.images,
+        images: processedImages,
         options: productData.options,
         pricing_matrix: productData.pricing.matrixEntries,
         fabric: processedFabricData,

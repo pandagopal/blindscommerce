@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { X, GripVertical, ImageIcon } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
+import { toast } from "sonner";
 
 interface ImageFile {
   id: string;
@@ -25,51 +26,59 @@ interface ImagesProps {
 export default function Images({ images, onChange, isReadOnly = false, productId }: ImagesProps) {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+  // Cleanup blob URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      images.forEach(image => {
+        if (image.url?.startsWith('blob:')) {
+          URL.revokeObjectURL(image.url);
+        }
+      });
+    };
+  }, []);
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
     if (isReadOnly) return;
 
-    // Upload files and get URLs
-    const uploadPromises = acceptedFiles.map(async (file) => {
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        if (productId) {
-          formData.append('productId', productId);
-        }
+    let successCount = 0;
+    let errorCount = 0;
 
-        const response = await fetch('/api/upload/images', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Upload failed');
-        }
-
-        const result = await response.json();
-        return {
-          id: `${productId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          file,
-          url: result.url,
-          alt: `${productId || 'new'}_${file.name}`,
-          is_primary: false
-        };
-      } catch (error) {
-        console.error('Error uploading file:', error);
-        // Fallback to object URL for preview
-        return {
-          id: `${productId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-          file,
-          url: URL.createObjectURL(file),
-          alt: `${productId || 'new'}_${file.name}`,
-          is_primary: false
-        };
+    // Create blob URLs for preview - NO upload yet
+    const newImages = acceptedFiles.map((file) => {
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`${file.name}: Invalid file type. Only JPEG, PNG, and WebP are allowed.`);
+        errorCount++;
+        return null;
       }
-    });
 
-    const newImages = await Promise.all(uploadPromises);
-    onChange([...images, ...newImages]);
-  }, [images, onChange, isReadOnly]);
+      // Validate file size (5MB limit)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        toast.error(`${file.name}: File too large. Maximum size is 5MB.`);
+        errorCount++;
+        return null;
+      }
+
+      // Create blob URL for preview
+      const blobUrl = URL.createObjectURL(file);
+      successCount++;
+      
+      return {
+        id: `${productId || 'new'}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        file,
+        url: blobUrl, // Blob URL for preview
+        alt: `${productId || 'new'}_${file.name}`,
+        is_primary: images.length === 0 // First image is primary
+      };
+    }).filter(Boolean) as ImageFile[];
+
+    if (newImages.length > 0) {
+      onChange([...images, ...newImages]);
+      toast.success(`${successCount} image(s) selected - will upload when you click "Update Product"`);
+    }
+  }, [images, onChange, isReadOnly, productId]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

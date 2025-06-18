@@ -391,8 +391,18 @@ export async function GET(
         vendor_description: product.vendor_description,
       }),
       images: [
-        ...(product.primary_image_url ? [product.primary_image_url] : []),
-        ...imageRows.map(img => img.image_url)
+        ...(product.primary_image_url ? [{
+          id: `${productId}_primary_image`,
+          url: product.primary_image_url,
+          alt: `${product.name} primary image`,
+          is_primary: true
+        }] : []),
+        ...imageRows.map((img, index) => ({
+          id: `${productId}_image_${index}`,
+          url: img.image_url,
+          alt: `${product.name} image ${index + 1}`,
+          is_primary: false
+        }))
       ],
       options: formattedOptions,
       pricing_matrix: pricingRows,
@@ -652,6 +662,25 @@ export async function PUT(
         `UPDATE products SET ${updateFields.join(', ')} WHERE product_id = ?`,
         updateValues
       );
+    }
+
+    // Handle images update if provided
+    if (images && Array.isArray(images) && images.length > 0) {
+      // Delete existing product images first
+      await pool.query('DELETE FROM product_images WHERE product_id = ?', [productId]);
+      
+      // Insert new images
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        if (image.url) {
+          await pool.query(
+            `INSERT INTO product_images 
+             (product_id, image_url, display_order, created_at)
+             VALUES (?, ?, ?, NOW())`,
+            [productId, image.url, i]
+          );
+        }
+      }
     }
 
     // Handle fabric data update if provided
