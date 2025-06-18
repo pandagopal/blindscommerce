@@ -204,18 +204,44 @@ export async function GET(
     };
 
     // Parse options from products table direct columns
-    // Parse mount types from comma-separated string
-    if (product.mount_types) {
-      const mountTypes = product.mount_types.split(',').filter(mt => mt.trim());
-      formattedOptions.mountTypes = mountTypes.map(name => ({
-        name: name.trim(),
-        price_adjustment: 0,
-        enabled: true,
-        description: ''
-      }));
-    }
+    // Define ALL available options with their default state
+    const allMountTypes = [
+      { name: 'Inside Mount', price_adjustment: 0, enabled: false },
+      { name: 'Outside Mount', price_adjustment: 0, enabled: false },
+    ];
 
-    // Parse control types from semicolon and colon separated string
+    const allControlTypes = {
+      liftSystems: [
+        { name: 'Cordless', price_adjustment: 0, enabled: false },
+        { name: 'Continuous Loop', price_adjustment: 25, enabled: false },
+      ],
+      wandSystem: [
+        { name: 'Standard Wand', price_adjustment: 15, enabled: false },
+        { name: 'Extended Wand', price_adjustment: 30, enabled: false },
+      ],
+      stringSystem: [
+        { name: 'String Lift', price_adjustment: 10, enabled: false },
+        { name: 'Chain System', price_adjustment: 20, enabled: false },
+      ],
+      remoteControl: [
+        { name: 'Basic Remote', price_adjustment: 150, enabled: false },
+        { name: 'Smart Home Compatible', price_adjustment: 250, enabled: false },
+      ],
+    };
+
+    // Parse saved mount types and mark them as enabled
+    if (product.mount_types) {
+      const savedMountTypes = product.mount_types.split(',').filter(mt => mt.trim());
+      savedMountTypes.forEach(savedType => {
+        const option = allMountTypes.find(mt => mt.name === savedType.trim());
+        if (option) {
+          option.enabled = true;
+        }
+      });
+    }
+    formattedOptions.mountTypes = allMountTypes;
+
+    // Parse saved control types and mark them as enabled
     if (product.control_types) {
       const controlGroups = product.control_types.split(';').filter(cg => cg.trim());
       controlGroups.forEach(group => {
@@ -226,18 +252,17 @@ export async function GET(
             const cleanSubcategory = subcategory.trim();
             const cleanName = name.trim();
             
-            if (formattedOptions.controlTypes[cleanSubcategory]) {
-              formattedOptions.controlTypes[cleanSubcategory].push({
-                name: cleanName,
-                price_adjustment: 0,
-                enabled: true,
-                description: ''
-              });
+            if (allControlTypes[cleanSubcategory]) {
+              const option = allControlTypes[cleanSubcategory].find(ct => ct.name === cleanName);
+              if (option) {
+                option.enabled = true;
+              }
             }
           }
         });
       });
     }
+    formattedOptions.controlTypes = allControlTypes;
 
     // Get headrail options
     const [allHeadrailOptions] = await pool.query<RowDataPacket[]>(
@@ -251,22 +276,43 @@ export async function GET(
       []
     );
 
-    // Add valance and bottom rail options to formattedOptions
-    formattedOptions.valanceOptions = allHeadrailOptions.map(option => ({
-      id: option.headrail_id,
-      name: option.name,
-      price_adjustment: 0,
-      enabled: product.headrail_id === option.headrail_id,
-      description: option.description || ''
-    }));
+    // Define ALL valance options with default prices
+    const allValanceOptions = [
+      { name: 'Circular (With Fabric Insert)', price_adjustment: 45, enabled: false },
+      { name: 'Square (Without Fabric)', price_adjustment: 35, enabled: false },
+      { name: 'Fabric Wrapped', price_adjustment: 55, enabled: false },
+    ];
 
-    formattedOptions.bottomRailOptions = allBottomRailOptions.map(option => ({
-      id: option.bottom_rail_id,
-      name: option.name,
-      price_adjustment: 0,
-      enabled: product.bottom_rail_id === option.bottom_rail_id,
-      description: option.description || ''
-    }));
+    // Define ALL bottom rail options with default prices
+    const allBottomRailOptionsData = [
+      { name: 'Fabric Wrapped', price_adjustment: 25, enabled: false },
+      { name: 'Just a Rail', price_adjustment: 0, enabled: false },
+    ];
+
+    // Mark the selected valance option as enabled
+    if (product.headrail_id && allHeadrailOptions.length > 0) {
+      const selectedHeadrail = allHeadrailOptions.find(opt => opt.headrail_id === product.headrail_id);
+      if (selectedHeadrail) {
+        const valanceOption = allValanceOptions.find(opt => opt.name === selectedHeadrail.name);
+        if (valanceOption) {
+          valanceOption.enabled = true;
+        }
+      }
+    }
+
+    // Mark the selected bottom rail option as enabled
+    if (product.bottom_rail_id && allBottomRailOptions.length > 0) {
+      const selectedBottomRail = allBottomRailOptions.find(opt => opt.bottom_rail_id === product.bottom_rail_id);
+      if (selectedBottomRail) {
+        const bottomRailOption = allBottomRailOptionsData.find(opt => opt.name === selectedBottomRail.name);
+        if (bottomRailOption) {
+          bottomRailOption.enabled = true;
+        }
+      }
+    }
+
+    formattedOptions.valanceOptions = allValanceOptions;
+    formattedOptions.bottomRailOptions = allBottomRailOptionsData;
 
     // Format fabric data to new format
     const formatFabricData = () => {
@@ -350,6 +396,7 @@ export async function GET(
       description: feature.description,
       icon: feature.icon || ''
     }));
+    
 
     // Format room recommendations data
     const formattedRoomRecommendations = roomRows.map((room, index) => ({
@@ -739,30 +786,47 @@ export async function PUT(
       // Save product-specific features
       for (const feature of features) {
         if (feature.title && feature.description) {
-          // Insert feature into features table, or update if it already exists
-          const [featureResult] = await pool.query<ResultSetHeader>(
-            `INSERT INTO features (name, description, icon, category, is_active, display_order, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE 
-               description = VALUES(description),
-               icon = VALUES(icon),
-               updated_at = NOW()`,
-            [
-              feature.title,
-              feature.description,
-              feature.icon || null,
-              'product_specific', // Category to identify product-specific features
-              1, // is_active
-              0  // display_order
-            ]
+          // First check if the feature already exists
+          const [existingFeature] = await pool.query<RowDataPacket[]>(
+            'SELECT feature_id FROM features WHERE name = ?',
+            [feature.title]
           );
           
-          const featureId = featureResult.insertId;
+          let featureId;
+          
+          if (existingFeature.length > 0) {
+            // Update existing feature
+            featureId = existingFeature[0].feature_id;
+            await pool.query(
+              `UPDATE features SET 
+                description = ?, 
+                icon = ?, 
+                updated_at = NOW() 
+               WHERE feature_id = ?`,
+              [feature.description, feature.icon || null, featureId]
+            );
+          } else {
+            // Insert new feature
+            const [featureResult] = await pool.query<ResultSetHeader>(
+              `INSERT INTO features (name, description, icon, category, is_active, display_order, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+              [
+                feature.title,
+                feature.description,
+                feature.icon || null,
+                'product_specific', // Category to identify product-specific features
+                1, // is_active
+                0  // display_order
+              ]
+            );
+            featureId = featureResult.insertId;
+          }
           
           // Link feature to product in product_features table
           await pool.query(
             `INSERT INTO product_features (product_id, feature_id, created_at)
-             VALUES (?, ?, NOW())`,
+             VALUES (?, ?, NOW())
+             ON DUPLICATE KEY UPDATE created_at = created_at`, // Do nothing if already linked
             [productId, featureId]
           );
         }

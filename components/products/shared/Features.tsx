@@ -167,7 +167,8 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
         )}
 
         <div className="space-y-4">
-          {features.map((feature, index) => (
+          {features && features.length > 0 ? (
+            features.map((feature, index) => (
             <div
               key={feature.id}
               draggable={!isReadOnly}
@@ -223,7 +224,12 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
                 </Select>
               </div>
             </div>
-          ))}
+          ))
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              {isReadOnly ? 'No features have been added to this product.' : 'No features added yet. Add your first feature above.'}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
