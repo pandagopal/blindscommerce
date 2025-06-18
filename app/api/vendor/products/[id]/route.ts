@@ -308,7 +308,6 @@ export async function GET(
     // Get product features (with error handling)
     let featureRows = [];
     try {
-      console.log('Querying features for product ID:', productId);
       const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT f.feature_id, f.name, f.description, f.icon
          FROM product_features pf
@@ -318,7 +317,6 @@ export async function GET(
         [productId]
       );
       featureRows = rows;
-      console.log('Features query result:', featureRows);
     } catch (featuresError) {
       console.error('Features query error:', featuresError);
       featureRows = []; // Continue with empty array if query fails
@@ -327,7 +325,6 @@ export async function GET(
     // Get room recommendations (with error handling)
     let roomRows = [];
     try {
-      console.log('Querying rooms for product ID:', productId);
       const [rows] = await pool.query<RowDataPacket[]>(
         `SELECT room_type, suitability_score, special_considerations 
          FROM product_rooms 
@@ -336,7 +333,6 @@ export async function GET(
         [productId]
       );
       roomRows = rows;
-      console.log('Rooms query result:', roomRows);
     } catch (roomsError) {
       console.error('Rooms query error:', roomsError);
       roomRows = []; // Continue with empty array if query fails
@@ -443,12 +439,6 @@ export async function PUT(
 
     const body = await request.json();
     
-    // DEBUG: Log the entire request body
-    console.log('=== PUT REQUEST DEBUG ===');
-    console.log('Full request body:', JSON.stringify(body, null, 2));
-    console.log('Features in body:', body.features);
-    console.log('RoomRecommendations in body:', body.roomRecommendations);
-    console.log('========================');
     
     const {
       name,
@@ -665,22 +655,12 @@ export async function PUT(
     }
 
     // Handle fabric data update if provided
-    console.log('=== FABRIC PROCESSING ===');
-    console.log('fabric variable:', fabric);
-    console.log('fabric type:', typeof fabric);
-    console.log('fabric is object:', typeof fabric === 'object');
-    
     if (fabric && typeof fabric === 'object' && fabric.fabrics && Array.isArray(fabric.fabrics)) {
       // Delete existing fabric data first
       await pool.query('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
-      console.log('Deleted existing fabric options for product:', productId);
-      
-      console.log('Processing fabric.fabrics array, length:', fabric.fabrics.length);
       
       for (const fabricOption of fabric.fabrics) {
-        console.log('Processing fabric option:', fabricOption);
         if (fabricOption.enabled && fabricOption.name && fabricOption.fabricType) {
-          console.log('Inserting fabric:', fabricOption.name, 'type:', fabricOption.fabricType);
           
           const [fabricResult] = await pool.query<ResultSetHeader>(
             `INSERT INTO product_fabric_options 
@@ -690,23 +670,19 @@ export async function PUT(
           );
           
           const fabricOptionId = fabricResult.insertId;
-          console.log('Inserted fabric option with ID:', fabricOptionId);
           
           // Save fabric image if any
           if (fabricOption.image && fabricOption.image.url) {
-            console.log('Saving fabric image:', fabricOption.image.url);
             await pool.query(
               `INSERT INTO product_fabric_images 
                (fabric_option_id, product_id, image_url, image_name, display_order, created_at)
                VALUES (?, ?, ?, ?, ?, NOW())`,
               [fabricOptionId, productId, fabricOption.image.url, fabricOption.image.name || '', 0]
             );
-            console.log('Saved fabric image successfully');
           }
           
           // Save fabric pricing (simple price per sqft)
           if (fabricOption.price && fabricOption.price > 0) {
-            console.log('Saving fabric price:', fabricOption.price);
             // Create a default pricing entry for the fabric
             await pool.query(
               `INSERT INTO product_fabric_pricing 
@@ -721,36 +697,19 @@ export async function PUT(
                 0
               ]
             );
-            console.log('Saved fabric pricing successfully');
           }
-        } else {
-          console.log('Skipping fabric option - missing required fields:', {
-            enabled: fabricOption.enabled,
-            name: fabricOption.name,
-            fabricType: fabricOption.fabricType
-          });
         }
       }
     }
-    console.log('==========================')
 
     // Handle features data update if provided
-    console.log('=== FEATURES PROCESSING ===');
-    console.log('features variable:', features);
-    console.log('features type:', typeof features);
-    console.log('features is array:', Array.isArray(features));
-    console.log('features length:', features?.length);
-    
     if (features && Array.isArray(features)) {
-      console.log('Processing features array...');
       // Delete existing product features first
       await pool.query('DELETE FROM product_features WHERE product_id = ?', [productId]);
       
       // Save product-specific features
       for (const feature of features) {
-        console.log('Processing feature:', feature);
         if (feature.title && feature.description) {
-          console.log('Inserting/updating feature:', feature.title);
           // Insert feature into features table, or update if it already exists
           const [featureResult] = await pool.query<ResultSetHeader>(
             `INSERT INTO features (name, description, icon, category, is_active, display_order, created_at)
@@ -770,7 +729,6 @@ export async function PUT(
           );
           
           const featureId = featureResult.insertId;
-          console.log('Inserted feature with ID:', featureId);
           
           // Link feature to product in product_features table
           await pool.query(
@@ -778,34 +736,18 @@ export async function PUT(
              VALUES (?, ?, NOW())`,
             [productId, featureId]
           );
-          console.log('Linked feature to product');
-        } else {
-          console.log('Skipping feature - missing title or description:', feature);
         }
       }
-    } else {
-      console.log('No features to process or not an array');
     }
-    console.log('==========================')
 
     // Handle room recommendations data update if provided
-    console.log('==== ROOMS RECOMMENDATIONS DEBUG ====');
-    console.log('roomRecommendations variable:', roomRecommendations);
-    console.log('roomRecommendations type:', typeof roomRecommendations);
-    console.log('roomRecommendations is array:', Array.isArray(roomRecommendations));
-    console.log('roomRecommendations length:', roomRecommendations?.length);
-    
     if (roomRecommendations && Array.isArray(roomRecommendations)) {
-      console.log('Processing room recommendations array...');
       // Delete existing room recommendations first
       await pool.query('DELETE FROM product_rooms WHERE product_id = ?', [productId]);
-      console.log('Deleted existing room recommendations for product:', productId);
       
       // Save room recommendations
       for (const room of roomRecommendations) {
-        console.log('Processing room:', room);
         if (room.roomType && room.roomType.trim()) {
-          console.log('Inserting room recommendation:', room.roomType);
           await pool.query(
             `INSERT INTO product_rooms (product_id, room_type, suitability_score, special_considerations, created_at)
              VALUES (?, ?, ?, ?, NOW())`,
@@ -816,15 +758,9 @@ export async function PUT(
               room.recommendation || ''
             ]
           );
-          console.log('Successfully inserted room recommendation');
-        } else {
-          console.log('Skipping room - missing roomType:', room);
         }
       }
-    } else {
-      console.log('No room recommendations to process or not an array');
     }
-    console.log('=====================================');
 
     return NextResponse.json({
       success: true,

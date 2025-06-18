@@ -307,21 +307,13 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   // Isolated method to process fabric images - handles upload for blob URLs
   const processFabricImages = async (fabricData: any, currentProductId?: string) => {
-    console.log('=== FABRIC IMAGE PROCESSING START ===');
-    console.log('Processing fabric data:', fabricData);
-    
     const processedData = { ...fabricData };
     
     if (processedData.fabrics && Array.isArray(processedData.fabrics)) {
-      console.log(`Processing ${processedData.fabrics.length} fabrics...`);
-      
       for (let i = 0; i < processedData.fabrics.length; i++) {
         const fabric = processedData.fabrics[i];
-        console.log(`Processing fabric ${i + 1}/${processedData.fabrics.length}:`, fabric.name);
         
         if (fabric.image && fabric.image.url?.startsWith('blob:') && fabric.image.file) {
-          console.log(`Uploading image for fabric: ${fabric.name}`);
-          
           try {
             const uploadedImage = await uploadSingleFabricImage(
               fabric.image, 
@@ -330,48 +322,30 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             );
             
             processedData.fabrics[i].image = uploadedImage;
-            console.log(`Successfully uploaded image for fabric: ${fabric.name}`);
             
           } catch (error) {
             console.error(`Failed to upload image for fabric: ${fabric.name}`, error);
             throw new Error(`Failed to upload image for fabric: ${fabric.name}`);
           }
-        } else {
-          console.log(`No upload needed for fabric: ${fabric.name} (already uploaded or no image)`);
         }
       }
     }
     
-    console.log('=== FABRIC IMAGE PROCESSING COMPLETE ===');
     return processedData;
   };
 
   // Upload a single fabric image
   const uploadSingleFabricImage = async (image: any, fabricType: string, currentProductId: string) => {
-    console.log(`Uploading single image: ${image.name} for ${fabricType}`);
-    
     const formData = new FormData();
     formData.append('files', image.file);
     formData.append('uploadType', 'productImages');
     formData.append('category', `fabric_${fabricType}`);
     formData.append('productId', currentProductId);
     
-    console.log('FormData prepared:', {
-      fileName: image.name,
-      fileSize: image.file.size,
-      fileType: image.file.type,
-      uploadType: 'productImages',
-      category: `fabric_${fabricType}`,
-      productId: currentProductId
-    });
-    
     const uploadResponse = await fetch('/api/vendor/upload', {
       method: 'POST',
       body: formData,
     });
-    
-    console.log(`Upload response status: ${uploadResponse.status}`);
-    console.log(`Upload response ok: ${uploadResponse.ok}`);
     
     if (!uploadResponse.ok) {
       const errorText = await uploadResponse.text();
@@ -380,11 +354,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     }
     
     const uploadResult = await uploadResponse.json();
-    console.log('Upload result:', uploadResult);
     
     if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
       const uploadedUrl = uploadResult.uploaded[0].secureUrl;
-      console.log(`Image uploaded successfully: ${uploadedUrl}`);
       
       return {
         ...image,
@@ -406,12 +378,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       // Get current fabric data from ref
       const currentFabricData = fabricRef.current?.getCurrentData() || productData.fabric;
-      console.log('Save Product - Current fabric data from ref:', currentFabricData);
-      console.log('Save Product - Fallback fabric data from productData:', productData.fabric);
       
       // Process fabric images - upload any new images that are still using blob URLs
       const processedFabricData = await processFabricImages(currentFabricData, productId);
-      console.log('Save Product - Processed fabric data:', processedFabricData);
       
       // Transform productData to the format expected by the API
       const apiData = {
@@ -437,10 +406,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         features: productData.features,
         roomRecommendations: productData.roomRecommendations
       };
-      
-      console.log('Save Product - Final API data being sent:', apiData);
-      console.log('Save Product - Fabric portion of API data:', apiData.fabric);
-      
       
       const response = await fetch(apiEndpoint, {
         method,

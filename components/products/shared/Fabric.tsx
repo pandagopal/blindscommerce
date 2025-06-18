@@ -59,16 +59,9 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
   // Only update local state on initial load, not on every data prop change
   // This prevents parent re-renders from resetting our local changes
   useEffect(() => {
-    console.log('Fabric useEffect triggered - data prop changed:', data);
-    console.log('Current localData before reset:', localData);
-    console.log('isInitialized:', isInitialized);
-    
     if (!isInitialized) {
-      console.log('First time initialization with data:', data);
       setLocalData(data);
       setIsInitialized(true);
-    } else {
-      console.log('Component already initialized, ignoring prop changes to preserve local state');
     }
   }, [data, isInitialized]);
 
@@ -105,15 +98,10 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
       enabled: true
     };
 
-    console.log('Adding new fabric:', newFabric);
-    console.log('Current localData before add:', localData);
-
     const updatedData = {
       ...localData,
       fabrics: [...localData.fabrics, newFabric]
     };
-
-    console.log('Updated data after add:', updatedData);
     handleDataChange(updatedData);
   };
 
@@ -131,13 +119,7 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
   const updateFabric = (fabricId: string, field: keyof FabricOption, value: any) => {
     if (isReadOnly) return;
 
-    console.log('updateFabric called:', { fabricId, field, value });
-    console.log('Current localData:', localData);
-    console.log('Looking for fabric with ID:', fabricId);
-    console.log('Available fabric IDs:', localData.fabrics.map(f => f.id));
-
     const fabricExists = localData.fabrics.some(fabric => fabric.id === fabricId);
-    console.log('Fabric exists:', fabricExists);
 
     if (!fabricExists) {
       console.error('Fabric not found with ID:', fabricId);
@@ -152,21 +134,16 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
       )
     };
 
-    console.log('Updated data:', updatedData);
     // NEVER call onChange - all changes stay local until parent calls getCurrentData()
     handleDataChange(updatedData);
   };
 
   const handleImageUpload = useCallback(async (fabricId: string, files: FileList | null) => {
-    console.log('handleImageUpload called:', { fabricId, files, isReadOnly });
-    
     if (!files || files.length === 0 || isReadOnly) {
-      console.log('Early return - no files or read only');
       return;
     }
 
     const file = files[0];
-    console.log('File selected:', { name: file.name, size: file.size, type: file.type });
     
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -195,13 +172,9 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
         name: file.name
       };
 
-      console.log('File selected, storing for upload on save:', file.name);
-      
       // Use setLocalData directly with current state instead of updateFabric
       setLocalData(currentData => {
-        console.log('setLocalData callback - currentData:', currentData);
         const fabricExists = currentData.fabrics.some(fabric => fabric.id === fabricId);
-        console.log('Fabric exists in current data:', fabricExists);
         
         if (!fabricExists) {
           console.error('Fabric not found in current data:', fabricId);
@@ -216,7 +189,6 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
           )
         };
         
-        console.log('Updated data with image:', updatedData);
         return updatedData;
       });
       
@@ -295,7 +267,6 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                           src={fabric.image.url}
                           alt={fabric.name || 'Fabric image'}
                           className="w-full h-full object-cover"
-                          onLoad={() => console.log('Image loaded successfully:', fabric.image?.url)}
                           onError={(e) => console.error('Image failed to load:', fabric.image?.url, e)}
                         />
                         {!isReadOnly && (

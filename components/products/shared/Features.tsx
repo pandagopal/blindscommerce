@@ -54,13 +54,7 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleAddFeature = () => {
-    console.log('handleAddFeature called with:', { newFeature, isReadOnly });
     if (!newFeature.title || !newFeature.description || isReadOnly) {
-      console.log('handleAddFeature early return:', { 
-        hasTitle: !!newFeature.title, 
-        hasDescription: !!newFeature.description, 
-        isReadOnly 
-      });
       return;
     }
 
@@ -69,10 +63,7 @@ export default function Features({ features, onChange, isReadOnly = false }: Fea
       id: Math.random().toString(36).substring(7)
     };
 
-    console.log('Adding feature:', feature);
-    console.log('Current features:', features);
     const newFeatures = [...features, feature];
-    console.log('New features array:', newFeatures);
     
     onChange(newFeatures);
     setNewFeature({
