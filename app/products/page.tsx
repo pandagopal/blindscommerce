@@ -1,10 +1,9 @@
 import { Metadata } from "next";
-import { getPool } from "@/lib/db";
 import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
 import ProductSortHeader from "@/components/ProductSortHeader";
 
-// Enable dynamic rendering for database fetching
+// Enable dynamic rendering for API fetching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -70,121 +69,39 @@ export default async function ProductsPage({
   const minPrice = getPriceFromParam(minPriceParam);
   const maxPrice = getPriceFromParam(maxPriceParam);
 
-  // Fetch data from the database
+  // Fetch data from API
   let categories = [];
   let products = [];
   let features = [];
 
   try {
-    const pool = await getPool();
+    // Build centralized API URL with query parameters
+    const apiUrl = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pages/products`);
     
-    // Fetch categories from database
-    try {
-      const [categoryRows] = await pool.query(
-        `SELECT 
-          category_id as id, 
-          name, 
-          slug, 
-          description,
-          image_url as image
-        FROM categories 
-        ORDER BY display_order ASC, name ASC`
-      );
-      categories = Array.isArray(categoryRows) ? categoryRows : [];
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      categories = [];
-    }
+    if (categoryId) apiUrl.searchParams.set('category', categoryId.toString());
+    if (minPrice !== null) apiUrl.searchParams.set('minPrice', minPrice.toString());
+    if (maxPrice !== null) apiUrl.searchParams.set('maxPrice', maxPrice.toString());
+    if (sortByParam) apiUrl.searchParams.set('sortBy', sortByParam);
+    if (sortOrderParam) apiUrl.searchParams.set('sortOrder', sortOrderParam);
+    if (searchParam) apiUrl.searchParams.set('search', searchParam);
+    if (featureIds.length > 0) apiUrl.searchParams.set('features', featureIds.join(','));
 
-    // Build product query with filters
-    let productQuery = `
-      SELECT 
-        p.product_id,
-        p.name,
-        p.slug,
-        p.short_description as description,
-        p.base_price,
-        p.primary_image_url as image,
-        c.name as category_name,
-        COALESCE(AVG(pr.rating), 0) as rating,
-        COUNT(DISTINCT pr.review_id) as review_count
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
-      WHERE p.status = 'active'
-    `;
-    
-    const queryParams: any[] = [];
-    
-    // Add category filter
-    if (categoryId) {
-      productQuery += ` AND p.category_id = ?`;
-      queryParams.push(categoryId);
-    }
-    
-    // Add price filters
-    if (minPrice !== null) {
-      productQuery += ` AND p.base_price >= ?`;
-      queryParams.push(minPrice);
-    }
-    
-    if (maxPrice !== null) {
-      productQuery += ` AND p.base_price <= ?`;
-      queryParams.push(maxPrice);
-    }
-    
-    // Add search filter
-    if (searchParam) {
-      productQuery += ` AND (p.name LIKE ? OR p.short_description LIKE ?)`;
-      queryParams.push(`%${searchParam}%`, `%${searchParam}%`);
-    }
-    
-    // Group by product
-    productQuery += ` GROUP BY p.product_id`;
-    
-    // Add sorting
-    if (sortByParam === 'price') {
-      productQuery += ` ORDER BY p.base_price ${sortOrderParam}`;
-    } else if (sortByParam === 'name') {
-      productQuery += ` ORDER BY p.name ${sortOrderParam}`;
-    } else if (sortByParam === 'newest') {
-      productQuery += ` ORDER BY p.created_at DESC`;
+    const response = await fetch(apiUrl.toString(), {
+      cache: 'no-store', // Ensure fresh data on each request
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success) {
+        categories = data.data.categories || [];
+        products = data.data.products || [];
+        features = data.data.features || [];
+      }
     } else {
-      // Default to rating
-      productQuery += ` ORDER BY rating DESC, review_count DESC`;
-    }
-    
-    // Add limit
-    productQuery += ` LIMIT 24`;
-    
-    try {
-      const [productRows] = await pool.query(productQuery, queryParams);
-      products = Array.isArray(productRows) ? productRows : [];
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      products = [];
-    }
-
-    // Fetch product features
-    try {
-      const [featureRows] = await pool.query(
-        `SELECT 
-          feature_id as id,
-          name,
-          description,
-          icon,
-          category
-        FROM features
-        WHERE is_active = 1
-        ORDER BY display_order ASC, name ASC`
-      );
-      features = Array.isArray(featureRows) ? featureRows : [];
-    } catch (error) {
-      console.error("Error fetching product features:", error);
-      features = [];
+      console.error("Centralized API request failed:", response.status, response.statusText);
     }
   } catch (error) {
-    console.error("Error connecting to database:", error);
+    console.error("Error fetching data from centralized API:", error);
     categories = [];
     products = [];
     features = [];

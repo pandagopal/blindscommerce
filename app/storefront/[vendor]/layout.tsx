@@ -1,7 +1,6 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import VendorStorefront from '@/components/storefront/VendorStorefront';
-import { getPool } from '@/lib/db';
 
 interface VendorLayoutProps {
   children: React.ReactNode;
@@ -32,46 +31,25 @@ interface StorefrontData {
 }
 
 async function getStorefrontData(subdomain: string): Promise<StorefrontData | null> {
-  const pool = await getPool();
-
   try {
-    const [rows] = await pool.execute(
-      `SELECT vs.*, vi.company_name
-       FROM vendor_storefronts vs
-       JOIN vendor_info vi ON vs.vendor_id = vi.vendor_info_id
-       WHERE vs.subdomain = ? AND vs.is_active = 1 AND vs.is_approved = 1`,
-      [subdomain]
-    );
-
-    if (!Array.isArray(rows) || rows.length === 0) {
-      return null;
-    }
-
-    const storefront = rows[0] as any;
+    const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pages/storefront/${subdomain}`;
     
-    return {
-      storefrontId: storefront.storefront_id,
-      vendorId: storefront.vendor_id,
-      subdomain: storefront.subdomain,
-      customDomain: storefront.custom_domain,
-      storefrontName: storefront.storefront_name,
-      description: storefront.description,
-      logoUrl: storefront.logo_url,
-      bannerUrl: storefront.banner_url,
-      themeSettings: storefront.theme_settings ? JSON.parse(storefront.theme_settings) : null,
-      seoTitle: storefront.seo_title,
-      seoDescription: storefront.seo_description,
-      seoKeywords: storefront.seo_keywords,
-      socialLinks: storefront.social_links ? JSON.parse(storefront.social_links) : null,
-      contactInfo: storefront.contact_info ? JSON.parse(storefront.contact_info) : null,
-      businessHours: storefront.business_hours ? JSON.parse(storefront.business_hours) : null,
-      isActive: storefront.is_active,
-      isApproved: storefront.is_approved,
-      companyName: storefront.company_name
-    };
+    const response = await fetch(apiUrl, {
+      cache: 'no-store', // Ensure fresh data on each request
+    });
 
-  } finally {
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        return result.data.storefront;
+      }
     }
+
+    return null;
+  } catch (error) {
+    console.error('Error fetching storefront data from centralized API:', error);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: VendorLayoutProps): Promise<Metadata> {
