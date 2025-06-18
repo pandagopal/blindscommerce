@@ -62,6 +62,7 @@ const SHADE_CATEGORIES = [
   'Shades'
 ];
 
+
 // Convert pricing matrix entries to the format expected by PricingMatrix component
 const convertPricingMatrixToObject = (matrixEntries: any[]): Record<string, string> => {
   const priceMatrix: Record<string, string> = {};
@@ -167,9 +168,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     images: [],
     features: [],
     fabric: {
-      coloredFabric: [],
-      sheerFabric: [],
-      blackoutFabric: []
+      fabrics: []
     },
     roomRecommendations: []
   });
@@ -177,13 +176,19 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   const productsPerPage = 25;
   const basePath = userRole === 'admin' ? '/admin/products' : '/vendor/products';
 
+  // Separate useEffect for list mode
   useEffect(() => {
     if (isListMode) {
       fetchProducts();
-    } else if (isEditMode || isViewMode) {
+    }
+  }, [currentPage, typeFilter, statusFilter, sortBy, sortOrder, searchQuery, isListMode]);
+
+  // Separate useEffect for edit/view mode - only depends on productId and mode
+  useEffect(() => {
+    if (isEditMode || isViewMode) {
       loadProductData();
     }
-  }, [currentPage, typeFilter, statusFilter, sortBy, sortOrder, searchQuery, isListMode, isEditMode, isViewMode, productId]);
+  }, [isEditMode, isViewMode, productId]);
 
   const fetchProducts = async () => {
     try {
@@ -235,8 +240,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         
         // Options and fabric data now come from the main product API response
         let optionsData = product.options;
-        let fabricData = product.fabric_options;
-        
         // Map API response to expected structure
         const mappedData = {
           basicInfo: {
@@ -279,11 +282,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           },
           images: Array.isArray(product.images) ? product.images : [],
           features: Array.isArray(product.features) ? product.features : [],
-          fabric: fabricData || {
-            coloredFabric: [],
-            sheerFabric: [],
-            blackoutFabric: []
-          },
+          fabric: product.fabric || { fabrics: [] },
           roomRecommendations: Array.isArray(product.roomRecommendations) ? product.roomRecommendations : []
         };
         
@@ -306,6 +305,97 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     }));
   };
 
+  // Isolated method to process fabric images - handles upload for blob URLs
+  const processFabricImages = async (fabricData: any, currentProductId?: string) => {
+    console.log('=== FABRIC IMAGE PROCESSING START ===');
+    console.log('Processing fabric data:', fabricData);
+    
+    const processedData = { ...fabricData };
+    
+    if (processedData.fabrics && Array.isArray(processedData.fabrics)) {
+      console.log(`Processing ${processedData.fabrics.length} fabrics...`);
+      
+      for (let i = 0; i < processedData.fabrics.length; i++) {
+        const fabric = processedData.fabrics[i];
+        console.log(`Processing fabric ${i + 1}/${processedData.fabrics.length}:`, fabric.name);
+        
+        if (fabric.image && fabric.image.url?.startsWith('blob:') && fabric.image.file) {
+          console.log(`Uploading image for fabric: ${fabric.name}`);
+          
+          try {
+            const uploadedImage = await uploadSingleFabricImage(
+              fabric.image, 
+              fabric.fabricType || 'general', 
+              currentProductId || 'new'
+            );
+            
+            processedData.fabrics[i].image = uploadedImage;
+            console.log(`Successfully uploaded image for fabric: ${fabric.name}`);
+            
+          } catch (error) {
+            console.error(`Failed to upload image for fabric: ${fabric.name}`, error);
+            throw new Error(`Failed to upload image for fabric: ${fabric.name}`);
+          }
+        } else {
+          console.log(`No upload needed for fabric: ${fabric.name} (already uploaded or no image)`);
+        }
+      }
+    }
+    
+    console.log('=== FABRIC IMAGE PROCESSING COMPLETE ===');
+    return processedData;
+  };
+
+  // Upload a single fabric image
+  const uploadSingleFabricImage = async (image: any, fabricType: string, currentProductId: string) => {
+    console.log(`Uploading single image: ${image.name} for ${fabricType}`);
+    
+    const formData = new FormData();
+    formData.append('files', image.file);
+    formData.append('uploadType', 'productImages');
+    formData.append('category', `fabric_${fabricType}`);
+    formData.append('productId', currentProductId);
+    
+    console.log('FormData prepared:', {
+      fileName: image.name,
+      fileSize: image.file.size,
+      fileType: image.file.type,
+      uploadType: 'productImages',
+      category: `fabric_${fabricType}`,
+      productId: currentProductId
+    });
+    
+    const uploadResponse = await fetch('/api/vendor/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    console.log(`Upload response status: ${uploadResponse.status}`);
+    console.log(`Upload response ok: ${uploadResponse.ok}`);
+    
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('Upload response error:', errorText);
+      throw new Error(`Upload failed with status ${uploadResponse.status}: ${errorText}`);
+    }
+    
+    const uploadResult = await uploadResponse.json();
+    console.log('Upload result:', uploadResult);
+    
+    if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
+      const uploadedUrl = uploadResult.uploaded[0].secureUrl;
+      console.log(`Image uploaded successfully: ${uploadedUrl}`);
+      
+      return {
+        ...image,
+        url: uploadedUrl,
+      };
+    } else {
+      console.error('Upload failed - unexpected result format:', uploadResult);
+      throw new Error(`Upload failed: ${uploadResult.error || 'Unknown error'}`);
+    }
+  };
+
   const saveProduct = async () => {
     try {
       setSaving(true);
@@ -316,59 +406,12 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       // Get current fabric data from ref
       const currentFabricData = fabricRef.current?.getCurrentData() || productData.fabric;
+      console.log('Save Product - Current fabric data from ref:', currentFabricData);
+      console.log('Save Product - Fallback fabric data from productData:', productData.fabric);
       
       // Process fabric images - upload any new images that are still using blob URLs
-      const processedFabricData = { ...currentFabricData };
-      
-      for (const fabricType of ['coloredFabric', 'sheerFabric', 'blackoutFabric'] as const) {
-        if (processedFabricData[fabricType]) {
-          for (let i = 0; i < processedFabricData[fabricType].length; i++) {
-            const fabric = processedFabricData[fabricType][i];
-            if (fabric.images && fabric.images.length > 0) {
-              const uploadedImages = [];
-              
-              for (const image of fabric.images) {
-                // If it's a blob URL, we need to upload the file
-                if (image.url.startsWith('blob:') && image.file) {
-                  try {
-                    const formData = new FormData();
-                    formData.append('files', image.file);
-                    formData.append('uploadType', 'productImages');
-                    formData.append('category', `fabric_${fabricType}`);
-                    formData.append('productId', productId || 'new');
-                    
-                    const uploadResponse = await fetch('/api/vendor/upload', {
-                      method: 'POST',
-                      body: formData,
-                    });
-                    
-                    const uploadResult = await uploadResponse.json();
-                    
-                    if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
-                      uploadedImages.push({
-                        ...image,
-                        url: uploadResult.uploaded[0].secureUrl,
-                      });
-                    } else {
-                      toast.error(`Failed to upload fabric image: ${image.name}`);
-                      throw new Error('Image upload failed');
-                    }
-                  } catch (error) {
-                    console.error('Error uploading fabric image:', error);
-                    toast.error(`Failed to upload fabric image: ${image.name}`);
-                    throw error;
-                  }
-                } else {
-                  // Image is already uploaded, keep it as is
-                  uploadedImages.push(image);
-                }
-              }
-              
-              processedFabricData[fabricType][i].images = uploadedImages;
-            }
-          }
-        }
-      }
+      const processedFabricData = await processFabricImages(currentFabricData, productId);
+      console.log('Save Product - Processed fabric data:', processedFabricData);
       
       // Transform productData to the format expected by the API
       const apiData = {
@@ -395,6 +438,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         roomRecommendations: productData.roomRecommendations
       };
       
+      console.log('Save Product - Final API data being sent:', apiData);
+      console.log('Save Product - Fabric portion of API data:', apiData.fabric);
+      
       
       const response = await fetch(apiEndpoint, {
         method,
@@ -415,8 +461,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       toast.success(isEditMode ? 'Product updated successfully!' : 'Product created successfully!');
       
-      // Redirect back to list
-      router.push(basePath);
+      // Don't redirect for edit mode - stay on current tab to allow continued editing
+      if (!isEditMode) {
+        // Only redirect to list for new product creation
+        router.push(basePath);
+      }
       
     } catch (error) {
       console.error('Error saving product:', error);
@@ -900,7 +949,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <Fabric
                   ref={fabricRef}
                   data={productData.fabric}
-                  onChange={(data) => updateProductData('fabric', data)}
+                  onChange={() => {}} // No-op function - all changes stay local until save
                   isReadOnly={isViewMode}
                   productId={productId}
                 />

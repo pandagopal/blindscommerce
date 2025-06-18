@@ -137,12 +137,13 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
     }
   }, [data?.name, data?.categories?.length, data?.primaryCategory]); // Include primaryCategory in deps
 
+  // Fetch data only once on mount
   useEffect(() => {
+    fetchCategories();
     if (showVendorSelection) {
       fetchVendors();
     }
-    fetchCategories();
-  }, [showVendorSelection]);
+  }, []); // Empty dependency array - only run once
 
   const fetchCategories = async () => {
     try {

@@ -268,70 +268,42 @@ export async function GET(
       description: option.description || ''
     }));
 
-    // Format fabric data
+    // Format fabric data to new format
     const formatFabricData = () => {
-      const fabricData = {
-        coloredFabric: [],
-        sheerFabric: [],
-        blackoutFabric: []
-      };
+      const fabrics = [];
 
       fabricRows.forEach(fabric => {
-        // Get pricing matrix for this fabric
+        // Get pricing for this fabric (use first price entry for simplicity)
         const fabricPricing = fabricPricingRows.filter(p => p.fabric_option_id === fabric.fabric_option_id);
-        const priceMatrix = fabricPricing.map(p => ({
-          widthRange: `${p.min_width}" - ${p.max_width}"`,
-          minWidth: parseFloat(p.min_width),
-          maxWidth: parseFloat(p.max_width),
-          pricePerSqft: parseFloat(p.price_per_sqft)
-        }));
+        const price = fabricPricing.length > 0 ? parseFloat(fabricPricing[0].price_per_sqft) : 0;
 
-        // Get images for this fabric
-        const fabricImages = fabricImageRows
+        // Get the first image for this fabric
+        const fabricImageRow = fabricImageRows
           .filter(img => img.fabric_option_id === fabric.fabric_option_id)
-          .map(img => ({
-            id: `img_${img.fabric_option_id}_${img.display_order}`,
-            url: img.image_url,
-            name: `Image ${img.display_order}`
-          }));
+          .sort((a, b) => a.display_order - b.display_order)[0];
+
+        // Filter out stale blob URLs - they should never be stored in database
+        const fabricImage = (fabricImageRow && !fabricImageRow.image_url?.startsWith('blob:')) ? {
+          id: `img_${fabricImageRow.fabric_option_id}_${fabricImageRow.display_order}`,
+          url: fabricImageRow.image_url,
+          name: fabricImageRow.image_name || `Image ${fabricImageRow.display_order}`
+        } : null;
 
         const fabricOption = {
           id: `fabric_${fabric.fabric_option_id}`,
           name: fabric.fabric_name || '',
-          images: fabricImages,
-          enabled: Boolean(fabric.is_enabled),
-          priceMatrix: priceMatrix.length > 0 ? priceMatrix : generateDefaultPriceMatrix(),
-          description: fabric.description || ''
+          image: fabricImage,
+          price: price,
+          fabricType: fabric.fabric_type || 'colored',
+          enabled: Boolean(fabric.is_enabled)
         };
 
-        // Categorize by fabric type
-        if (fabric.fabric_type === 'coloredFabric') {
-          fabricData.coloredFabric.push(fabricOption);
-        } else if (fabric.fabric_type === 'sheerFabric') {
-          fabricData.sheerFabric.push(fabricOption);
-        } else if (fabric.fabric_type === 'blackoutFabric') {
-          fabricData.blackoutFabric.push(fabricOption);
-        }
+        fabrics.push(fabricOption);
       });
 
-      return fabricData;
+      return { fabrics };
     };
 
-    // Generate default price matrix (matches Fabric component logic)
-    const generateDefaultPriceMatrix = () => {
-      const ranges = [];
-      for (let i = 10; i <= 118; i += 10) {
-        const minWidth = i - 9;
-        const maxWidth = i;
-        ranges.push({
-          widthRange: `${minWidth}" - ${maxWidth}"`,
-          minWidth,
-          maxWidth,
-          pricePerSqft: 0.00
-        });
-      }
-      return ranges;
-    };
 
     // Get product features (with error handling)
     let featureRows = [];
@@ -428,7 +400,7 @@ export async function GET(
       ],
       options: formattedOptions,
       pricing_matrix: pricingRows,
-      fabric_options: formatFabricData(),
+      fabric: formatFabricData(),
       features: formattedFeatures,
       roomRecommendations: formattedRoomRecommendations
     };
@@ -693,67 +665,74 @@ export async function PUT(
     }
 
     // Handle fabric data update if provided
-    if (fabric && typeof fabric === 'object') {
+    console.log('=== FABRIC PROCESSING ===');
+    console.log('fabric variable:', fabric);
+    console.log('fabric type:', typeof fabric);
+    console.log('fabric is object:', typeof fabric === 'object');
+    
+    if (fabric && typeof fabric === 'object' && fabric.fabrics && Array.isArray(fabric.fabrics)) {
       // Delete existing fabric data first
       await pool.query('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
+      console.log('Deleted existing fabric options for product:', productId);
       
-      // Save fabric options
-      const fabricCategories = ['coloredFabric', 'sheerFabric', 'blackoutFabric'];
+      console.log('Processing fabric.fabrics array, length:', fabric.fabrics.length);
       
-      for (const fabricType of fabricCategories) {
-        if (fabric[fabricType] && Array.isArray(fabric[fabricType])) {
-          for (const fabricOption of fabric[fabricType]) {
-            if (fabricOption.enabled && fabricOption.name) {
-              const [fabricResult] = await pool.query<ResultSetHeader>(
-                `INSERT INTO product_fabric_options 
-                 (product_id, vendor_id, fabric_type, fabric_name, is_enabled, description, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-                [productId, vendorId, fabricType, fabricOption.name, fabricOption.enabled, fabricOption.description || '']
-              );
-              
-              const fabricOptionId = fabricResult.insertId;
-              
-              // Save fabric images if any
-              if (fabricOption.images && Array.isArray(fabricOption.images)) {
-                for (let i = 0; i < fabricOption.images.length; i++) {
-                  const image = fabricOption.images[i];
-                  if (image.url) {
-                    await pool.query(
-                      `INSERT INTO product_fabric_images 
-                       (fabric_option_id, product_id, image_url, image_name, display_order, created_at)
-                       VALUES (?, ?, ?, ?, ?, NOW())`,
-                      [fabricOptionId, productId, image.url, image.name || '', i]
-                    );
-                  }
-                }
-              }
-              
-              // Save fabric pricing if any
-              if (fabricOption.priceMatrix && Array.isArray(fabricOption.priceMatrix)) {
-                for (let i = 0; i < fabricOption.priceMatrix.length; i++) {
-                  const priceRange = fabricOption.priceMatrix[i];
-                  if (priceRange.minWidth && priceRange.maxWidth) {
-                    await pool.query(
-                      `INSERT INTO product_fabric_pricing 
-                       (fabric_option_id, product_id, min_width, max_width, price_per_sqft, display_order, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-                      [
-                        fabricOptionId, 
-                        productId, 
-                        priceRange.minWidth, 
-                        priceRange.maxWidth, 
-                        priceRange.pricePerSqft || 0, 
-                        i
-                      ]
-                    );
-                  }
-                }
-              }
-            }
+      for (const fabricOption of fabric.fabrics) {
+        console.log('Processing fabric option:', fabricOption);
+        if (fabricOption.enabled && fabricOption.name && fabricOption.fabricType) {
+          console.log('Inserting fabric:', fabricOption.name, 'type:', fabricOption.fabricType);
+          
+          const [fabricResult] = await pool.query<ResultSetHeader>(
+            `INSERT INTO product_fabric_options 
+             (product_id, vendor_id, fabric_type, fabric_name, is_enabled, description, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+            [productId, vendorId, fabricOption.fabricType, fabricOption.name, fabricOption.enabled, '']
+          );
+          
+          const fabricOptionId = fabricResult.insertId;
+          console.log('Inserted fabric option with ID:', fabricOptionId);
+          
+          // Save fabric image if any
+          if (fabricOption.image && fabricOption.image.url) {
+            console.log('Saving fabric image:', fabricOption.image.url);
+            await pool.query(
+              `INSERT INTO product_fabric_images 
+               (fabric_option_id, product_id, image_url, image_name, display_order, created_at)
+               VALUES (?, ?, ?, ?, ?, NOW())`,
+              [fabricOptionId, productId, fabricOption.image.url, fabricOption.image.name || '', 0]
+            );
+            console.log('Saved fabric image successfully');
           }
+          
+          // Save fabric pricing (simple price per sqft)
+          if (fabricOption.price && fabricOption.price > 0) {
+            console.log('Saving fabric price:', fabricOption.price);
+            // Create a default pricing entry for the fabric
+            await pool.query(
+              `INSERT INTO product_fabric_pricing 
+               (fabric_option_id, product_id, min_width, max_width, price_per_sqft, display_order, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+              [
+                fabricOptionId, 
+                productId, 
+                1,  // min_width 
+                120, // max_width (default range)
+                fabricOption.price, 
+                0
+              ]
+            );
+            console.log('Saved fabric pricing successfully');
+          }
+        } else {
+          console.log('Skipping fabric option - missing required fields:', {
+            enabled: fabricOption.enabled,
+            name: fabricOption.name,
+            fabricType: fabricOption.fabricType
+          });
         }
       }
     }
+    console.log('==========================')
 
     // Handle features data update if provided
     console.log('=== FEATURES PROCESSING ===');
@@ -771,11 +750,15 @@ export async function PUT(
       for (const feature of features) {
         console.log('Processing feature:', feature);
         if (feature.title && feature.description) {
-          console.log('Inserting feature:', feature.title);
-          // Insert feature into features table
+          console.log('Inserting/updating feature:', feature.title);
+          // Insert feature into features table, or update if it already exists
           const [featureResult] = await pool.query<ResultSetHeader>(
             `INSERT INTO features (name, description, icon, category, is_active, display_order, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+             VALUES (?, ?, ?, ?, ?, ?, NOW())
+             ON DUPLICATE KEY UPDATE 
+               description = VALUES(description),
+               icon = VALUES(icon),
+               updated_at = NOW()`,
             [
               feature.title,
               feature.description,

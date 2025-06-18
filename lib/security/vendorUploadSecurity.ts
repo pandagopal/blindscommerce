@@ -8,7 +8,7 @@ export const VENDOR_UPLOAD_LIMITS = {
     maxFiles: 10, // Reduced from 20
     maxFileSize: 2 * 1024 * 1024, // Reduced to 2MB for web optimization
     allowedFormats: ['image/jpeg', 'image/png'], // Limited to 2 types only
-    maxDimensions: { width: 1920, height: 1080 }, // Standard web resolution
+    maxDimensions: { width: 2000, height: 2000 }, // Increased to accommodate various aspect ratios
     minDimensions: { width: 300, height: 300 } // Increased minimum for quality
   },
   productVideos: {
@@ -131,7 +131,19 @@ export class SecureVendorUpload {
           if ('maxDimensions' in limits) {
             const maxDims = limits.maxDimensions as { width: number; height: number };
             if (imageValidation.width > maxDims.width || imageValidation.height > maxDims.height) {
-              throw new Error(`Image dimensions ${imageValidation.width}x${imageValidation.height} exceed limit ${maxDims.width}x${maxDims.height}`);
+              const exceedsWidth = imageValidation.width > maxDims.width;
+              const exceedsHeight = imageValidation.height > maxDims.height;
+              let errorMsg = `Image dimensions ${imageValidation.width}x${imageValidation.height} exceed limit ${maxDims.width}x${maxDims.height}: `;
+              
+              if (exceedsWidth && exceedsHeight) {
+                errorMsg += 'both width and height exceed limits';
+              } else if (exceedsWidth) {
+                errorMsg += `width ${imageValidation.width} exceeds limit ${maxDims.width}`;
+              } else {
+                errorMsg += `height ${imageValidation.height} exceeds limit ${maxDims.height}`;
+              }
+              
+              throw new Error(errorMsg);
             }
           }
 
@@ -161,8 +173,27 @@ export class SecureVendorUpload {
       const fileId = this.generateSecureFileId();
       const hash = createHash('sha256').update(buffer).digest('hex');
 
-      // In a real implementation, upload to secure storage here
-      const secureUrl = `/api/secure-files/vendor/${this.vendorId}/${fileId}`;
+      // Save file to public uploads directory
+      const fs = require('fs');
+      const path = require('path');
+      
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'vendor', this.vendorId.toString());
+      
+      // Create directory if it doesn't exist
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      
+      // Determine file extension
+      const fileExtension = file.name.split('.').pop() || 'jpg';
+      const fileName = `${fileId}.${fileExtension}`;
+      const filePath = path.join(uploadDir, fileName);
+      
+      // Write file to disk
+      fs.writeFileSync(filePath, buffer);
+      
+      // Return public URL instead of secure API URL
+      const secureUrl = `/uploads/vendor/${this.vendorId}/${fileName}`;
 
       return {
         success: true,

@@ -67,7 +67,19 @@ export async function validateImage(
     // Check dimensions
     if (width && height) {
       if (width > options.maxWidth || height > options.maxHeight) {
-        errors.push(`Image dimensions ${width}x${height} exceed maximum ${options.maxWidth}x${options.maxHeight}`);
+        const exceedsWidth = width > options.maxWidth;
+        const exceedsHeight = height > options.maxHeight;
+        let errorMsg = `Image dimensions ${width}x${height} exceed maximum ${options.maxWidth}x${options.maxHeight}: `;
+        
+        if (exceedsWidth && exceedsHeight) {
+          errorMsg += 'both width and height exceed limits';
+        } else if (exceedsWidth) {
+          errorMsg += `width ${width} exceeds limit ${options.maxWidth}`;
+        } else {
+          errorMsg += `height ${height} exceeds limit ${options.maxHeight}`;
+        }
+        
+        errors.push(errorMsg);
       }
 
       // Web optimization warnings
@@ -135,7 +147,19 @@ export async function validateVideo(
     
     if (metadata.width && metadata.height) {
       if (metadata.width > options.maxWidth || metadata.height > options.maxHeight) {
-        errors.push(`Video dimensions ${metadata.width}x${metadata.height} exceed maximum ${options.maxWidth}x${options.maxHeight}`);
+        const exceedsWidth = metadata.width > options.maxWidth;
+        const exceedsHeight = metadata.height > options.maxHeight;
+        let errorMsg = `Video dimensions ${metadata.width}x${metadata.height} exceed maximum ${options.maxWidth}x${options.maxHeight}: `;
+        
+        if (exceedsWidth && exceedsHeight) {
+          errorMsg += 'both width and height exceed limits';
+        } else if (exceedsWidth) {
+          errorMsg += `width ${metadata.width} exceeds limit ${options.maxWidth}`;
+        } else {
+          errorMsg += `height ${metadata.height} exceeds limit ${options.maxHeight}`;
+        }
+        
+        errors.push(errorMsg);
       }
 
       // Mobile compatibility warnings

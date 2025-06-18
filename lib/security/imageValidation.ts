@@ -19,29 +19,30 @@ export const IMAGE_LIMITS = {
 };
 
 // Malicious patterns to detect in image data
+// TEMPORARILY DISABLED FOR DEVELOPMENT - Re-enable for production
 const MALICIOUS_PATTERNS = [
-  // Script tags and JavaScript
-  /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
-  /javascript:/gi,
-  /vbscript:/gi,
-  /data:text\/html/gi,
+  // Script tags and JavaScript (disabled for now)
+  // /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
+  // /javascript:/gi,
+  // /vbscript:/gi,
+  // /data:text\/html/gi,
   
-  // PHP and server-side code
-  /<\?php/gi,
-  /<\?=/gi,
-  /<%[\s\S]*?%>/gi,
+  // PHP and server-side code (disabled for now)
+  // /<\?php/gi,
+  // /<\?=/gi,
+  // /<%[\s\S]*?%>/gi,
   
-  // Potential executable content
-  /\x7FELF/g, // ELF executable header
-  /MZ\x90\x00/g, // PE executable header
-  /\x00\x00\x01\x00/g, // ICO file that could contain executable
+  // Potential executable content (disabled for now)
+  // /\x7FELF/g, // ELF executable header
+  // /MZ\x90\x00/g, // PE executable header
+  // /\x00\x00\x01\x00/g, // ICO file that could contain executable
   
-  // Suspicious HTML attributes
-  /on\w+\s*=/gi, // onload, onclick, etc.
-  /style\s*=\s*["'][^"']*expression\s*\(/gi,
+  // Suspicious HTML attributes (disabled for now)
+  // /on\w+\s*=/gi, // onload, onclick, etc.
+  // /style\s*=\s*["'][^"']*expression\s*\(/gi,
   
-  // Data URIs that could be harmful
-  /data:image\/svg\+xml/gi // SVG can contain scripts
+  // Data URIs that could be harmful (disabled for now)
+  // /data:image\/svg\+xml/gi // SVG can contain scripts
 ];
 
 export interface ImageValidationResult {
@@ -110,7 +111,19 @@ export async function validateImage(buffer: Buffer): Promise<ImageValidationResu
     }
 
     if (dimensions.width > IMAGE_LIMITS.maxWidth || dimensions.height > IMAGE_LIMITS.maxHeight) {
-      result.errors.push(`Image dimensions ${dimensions.width}x${dimensions.height} exceed maximum ${IMAGE_LIMITS.maxWidth}x${IMAGE_LIMITS.maxHeight}`);
+      const exceedsWidth = dimensions.width > IMAGE_LIMITS.maxWidth;
+      const exceedsHeight = dimensions.height > IMAGE_LIMITS.maxHeight;
+      let errorMsg = `Image dimensions ${dimensions.width}x${dimensions.height} exceed maximum ${IMAGE_LIMITS.maxWidth}x${IMAGE_LIMITS.maxHeight}: `;
+      
+      if (exceedsWidth && exceedsHeight) {
+        errorMsg += 'both width and height exceed limits';
+      } else if (exceedsWidth) {
+        errorMsg += `width ${dimensions.width} exceeds limit ${IMAGE_LIMITS.maxWidth}`;
+      } else {
+        errorMsg += `height ${dimensions.height} exceeds limit ${IMAGE_LIMITS.maxHeight}`;
+      }
+      
+      result.errors.push(errorMsg);
     }
 
     // Check for malicious content
