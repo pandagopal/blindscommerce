@@ -24,11 +24,11 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Get current user data
-      const [userRows] = await connection.execute(
+      const [userRows] = await pool.execute(
         'SELECT user_id, password_hash FROM users WHERE user_id = ?',
         [session.user.id]
       );
@@ -51,7 +51,7 @@ export async function PUT(request: NextRequest) {
       const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
       // Update password
-      await connection.execute(
+      await pool.execute(
         'UPDATE users SET password_hash = ?, updated_at = NOW() WHERE user_id = ?',
         [hashedNewPassword, session.user.id]
       );
@@ -62,8 +62,7 @@ export async function PUT(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Change password error:', error);

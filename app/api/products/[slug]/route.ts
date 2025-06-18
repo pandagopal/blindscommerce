@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProductBySlug, getProductsBySlugPattern } from '@/lib/db';
+import { getProductBySlug, getProductsBySlugPattern, getPool } from '@/lib/db';
 
 export async function GET(
   request: NextRequest,
@@ -7,8 +7,69 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    const url = new URL(request.url);
     
-    // Get all matching products using pattern matching
+    // Check if this is a configure request
+    const isConfigureRequest = url.searchParams.get('configure') === 'true';
+    
+    if (isConfigureRequest) {
+      // Get single product with all configuration data for configurator
+      const product = await getProductBySlug(slug);
+      
+      if (!product) {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        );
+      }
+      
+      // Get additional configuration data
+      const pool = await getPool();
+      
+      // Get fabric options
+      const [fabricRows] = await pool.execute(
+        `SELECT fabric_option_id, fabric_type, fabric_name, description, is_enabled
+         FROM product_fabric_options 
+         WHERE product_id = ? AND is_enabled = 1
+         ORDER BY fabric_type, fabric_name`,
+        [product.product_id]
+      );
+      
+      // Get pricing matrix
+      const [pricingRows] = await pool.execute(
+        `SELECT width_min, width_max, height_min, height_max, base_price, price_per_sqft
+         FROM product_pricing_matrix 
+         WHERE product_id = ?
+         ORDER BY width_min, height_min`,
+        [product.product_id]
+      );
+      
+      // Parse control types
+      const controlTypes = product.control_types ? parseControlTypes(product.control_types) : {};
+      
+      // Parse mount types
+      const mountTypes = product.mount_types ? product.mount_types.split(',').map((mt: string) => mt.trim()) : [];
+      
+      const configuredProduct = {
+        ...product,
+        fabricOptions: fabricRows,
+        pricingMatrix: pricingRows,
+        mountTypes: mountTypes,
+        controlTypes: controlTypes,
+        dimensions: {
+          minWidth: parseFloat(product.custom_width_min || 12),
+          maxWidth: parseFloat(product.custom_width_max || 120),
+          minHeight: parseFloat(product.custom_height_min || 12),
+          maxHeight: parseFloat(product.custom_height_max || 120),
+        }
+      };
+      
+      return NextResponse.json({ 
+        product: configuredProduct
+      }, { status: 200 });
+    }
+    
+    // For all other requests, use the existing logic
     const products = await getProductsBySlugPattern(slug);
     
     if (products.length === 0) {
@@ -41,4 +102,31 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+// Helper function to parse control types string
+function parseControlTypes(controlTypesStr: string) {
+  const controlTypes = {
+    liftSystems: [] as string[],
+    wandSystem: [] as string[],
+    stringSystem: [] as string[],
+    remoteControl: [] as string[]
+  };
+  
+  if (!controlTypesStr) return controlTypes;
+  
+  // Split by semicolon for different categories
+  const categories = controlTypesStr.split(';');
+  
+  categories.forEach(category => {
+    const types = category.split(',').map(t => t.trim());
+    types.forEach(type => {
+      const [system, value] = type.split(':');
+      if (system && value && controlTypes[system as keyof typeof controlTypes]) {
+        controlTypes[system as keyof typeof controlTypes].push(value);
+      }
+    });
+  });
+  
+  return controlTypes;
 }

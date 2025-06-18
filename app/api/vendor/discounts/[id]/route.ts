@@ -253,7 +253,7 @@ export async function PUT(
     `;
     updateParams.push(discountId, vendorValidation.vendorId);
 
-    await connection.execute(updateQuery, updateParams);
+    await pool.execute(updateQuery, updateParams);
 
     return NextResponse.json({ message: 'Discount updated successfully' });
 

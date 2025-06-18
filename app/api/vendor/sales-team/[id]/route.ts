@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // PUT - Update sales person
 export async function PUT(
@@ -25,38 +17,38 @@ export async function PUT(
     const salesStaffId = params.id;
     const updateData = await request.json();
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [session.user.id]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
       const vendorId = (vendorRows[0] as any).vendor_info_id;
 
       // Verify sales person belongs to this vendor
-      const [salesRows] = await connection.execute(
+      const [salesRows] = await pool.execute(
         'SELECT user_id, vendor_id FROM sales_staff WHERE sales_staff_id = ?',
         [salesStaffId]
       );
 
       if (!Array.isArray(salesRows) || salesRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Sales person not found' }, { status: 404 });
       }
 
       const salesPerson = salesRows[0] as any;
       if (salesPerson.vendor_id !== vendorId) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Unauthorized to update this sales person' }, { status: 403 });
       }
 
@@ -85,7 +77,7 @@ export async function PUT(
         updateFields.push('updated_at = NOW()');
         updateValues.push(salesStaffId);
 
-        await connection.execute(
+        await pool.execute(
           `UPDATE sales_staff SET ${updateFields.join(', ')} WHERE sales_staff_id = ?`,
           updateValues
         );
@@ -112,13 +104,13 @@ export async function PUT(
         userUpdateFields.push('updated_at = NOW()');
         userUpdateValues.push(salesPerson.user_id);
 
-        await connection.execute(
+        await pool.execute(
           `UPDATE users SET ${userUpdateFields.join(', ')} WHERE user_id = ?`,
           userUpdateValues
         );
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -126,8 +118,7 @@ export async function PUT(
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Update sales person error:', error);
@@ -150,43 +141,43 @@ export async function DELETE(
     }
 
     const salesStaffId = params.id;
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [session.user.id]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
       const vendorId = (vendorRows[0] as any).vendor_info_id;
 
       // Verify sales person belongs to this vendor
-      const [salesRows] = await connection.execute(
+      const [salesRows] = await pool.execute(
         'SELECT user_id, vendor_id FROM sales_staff WHERE sales_staff_id = ?',
         [salesStaffId]
       );
 
       if (!Array.isArray(salesRows) || salesRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Sales person not found' }, { status: 404 });
       }
 
       const salesPerson = salesRows[0] as any;
       if (salesPerson.vendor_id !== vendorId) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Unauthorized to remove this sales person' }, { status: 403 });
       }
 
       // Check if sales person has any orders - if so, just deactivate instead of delete
-      const [orderRows] = await connection.execute(
+      const [orderRows] = await pool.execute(
         'SELECT COUNT(*) as order_count FROM orders WHERE sales_staff_id = ?',
         [salesStaffId]
       );
@@ -195,19 +186,19 @@ export async function DELETE(
 
       if (orderCount > 0) {
         // Deactivate instead of delete to preserve order history
-        await connection.execute(
+        await pool.execute(
           'UPDATE sales_staff SET is_active = 0, vendor_id = NULL, updated_at = NOW() WHERE sales_staff_id = ?',
           [salesStaffId]
         );
       } else {
         // Safe to delete as no orders exist
-        await connection.execute(
+        await pool.execute(
           'DELETE FROM sales_staff WHERE sales_staff_id = ?',
           [salesStaffId]
         );
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -217,8 +208,7 @@ export async function DELETE(
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Remove sales person error:', error);

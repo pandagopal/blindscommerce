@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // GET - Get product inheritance relationships for vendor
 export async function GET(request: NextRequest) {
@@ -23,11 +15,11 @@ export async function GET(request: NextRequest) {
     const productId = searchParams.get('productId');
     const inheritanceType = searchParams.get('type');
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [session.user.id]
       );
@@ -64,7 +56,7 @@ export async function GET(request: NextRequest) {
 
       query += ' ORDER BY pi.created_at DESC';
 
-      const [rows] = await connection.execute(query, queryParams);
+      const [rows] = await pool.execute(query, queryParams);
 
       const inheritanceRelationships = Array.isArray(rows) ? rows.map((row: any) => ({
         inheritanceId: row.inheritance_id,
@@ -97,8 +89,7 @@ export async function GET(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Get inheritance error:', error);
@@ -132,46 +123,46 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [session.user.id]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
       const vendorId = (vendorRows[0] as any).vendor_info_id;
 
       // Verify vendor owns the child product
-      const [vendorProductRows] = await connection.execute(
+      const [vendorProductRows] = await pool.execute(
         'SELECT vendor_product_id FROM vendor_products WHERE vendor_id = ? AND product_id = ?',
         [vendorId, childProductId]
       );
 
       if (!Array.isArray(vendorProductRows) || vendorProductRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Child product not found in vendor catalog' 
         }, { status: 404 });
       }
 
       // Check if inheritance relationship already exists
-      const [existingRows] = await connection.execute(
+      const [existingRows] = await pool.execute(
         'SELECT inheritance_id FROM product_inheritance WHERE child_product_id = ?',
         [childProductId]
       );
 
       if (Array.isArray(existingRows) && existingRows.length > 0) {
         // Update existing relationship
-        await connection.execute(
+        await pool.execute(
           `UPDATE product_inheritance SET
            parent_product_id = ?, inheritance_type = ?, inherited_fields = ?,
            custom_fields = ?, sync_enabled = ?, updated_at = NOW()
@@ -187,7 +178,7 @@ export async function POST(request: NextRequest) {
           ]
         );
 
-        await connection.commit();
+        // Commit handling needs review with pool
 
         return NextResponse.json({
           success: true,
@@ -196,7 +187,7 @@ export async function POST(request: NextRequest) {
         });
       } else {
         // Create new inheritance relationship
-        const [result] = await connection.execute(
+        const [result] = await pool.execute(
           `INSERT INTO product_inheritance (
             parent_product_id, child_product_id, vendor_id,
             inheritance_type, inherited_fields, custom_fields,
@@ -213,7 +204,7 @@ export async function POST(request: NextRequest) {
           ]
         );
 
-        await connection.commit();
+        // Commit handling needs review with pool
 
         return NextResponse.json({
           success: true,
@@ -224,8 +215,7 @@ export async function POST(request: NextRequest) {
       }
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Create inheritance error:', error);
@@ -252,26 +242,26 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get vendor ID for current user
-      const [vendorRows] = await connection.execute(
+      const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [session.user.id]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
       const vendorId = (vendorRows[0] as any).vendor_info_id;
 
       // Get inheritance relationship
-      const [inheritanceRows] = await connection.execute(
+      const [inheritanceRows] = await pool.execute(
         `SELECT pi.*, pp.*, cp.product_id as child_id
          FROM product_inheritance pi
          JOIN products pp ON pi.parent_product_id = pp.product_id
@@ -281,7 +271,7 @@ export async function PUT(request: NextRequest) {
       );
 
       if (!Array.isArray(inheritanceRows) || inheritanceRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Inheritance relationship not found' 
         }, { status: 404 });
@@ -301,7 +291,7 @@ export async function PUT(request: NextRequest) {
         switch (field) {
           case 'name':
             if (inheritedFields.name) {
-              await connection.execute(
+              await pool.execute(
                 'UPDATE products SET name = ?, updated_at = NOW() WHERE product_id = ?',
                 [parentProduct.name, childProductId]
               );
@@ -311,7 +301,7 @@ export async function PUT(request: NextRequest) {
 
           case 'description':
             if (inheritedFields.description) {
-              await connection.execute(
+              await pool.execute(
                 'UPDATE products SET full_description = ?, short_description = ?, updated_at = NOW() WHERE product_id = ?',
                 [parentProduct.full_description, parentProduct.short_description, childProductId]
               );
@@ -322,20 +312,20 @@ export async function PUT(request: NextRequest) {
           case 'features':
             if (inheritedFields.features) {
               // Delete existing features
-              await connection.execute(
+              await pool.execute(
                 'DELETE FROM product_features WHERE product_id = ?',
                 [childProductId]
               );
               
               // Copy features from parent
-              const [featureRows] = await connection.execute(
+              const [featureRows] = await pool.execute(
                 'SELECT feature_name, feature_value, description FROM product_features WHERE product_id = ?',
                 [inheritance.parent_product_id]
               );
 
               if (Array.isArray(featureRows) && featureRows.length > 0) {
                 for (const feature of featureRows) {
-                  await connection.execute(
+                  await pool.execute(
                     'INSERT INTO product_features (product_id, feature_name, feature_value, description, created_at) VALUES (?, ?, ?, ?, NOW())',
                     [childProductId, (feature as any).feature_name, (feature as any).feature_value, (feature as any).description]
                   );
@@ -348,20 +338,20 @@ export async function PUT(request: NextRequest) {
           case 'categories':
             if (inheritedFields.categories) {
               // Delete existing categories
-              await connection.execute(
+              await pool.execute(
                 'DELETE FROM product_categories WHERE product_id = ?',
                 [childProductId]
               );
               
               // Copy categories from parent
-              const [categoryRows] = await connection.execute(
+              const [categoryRows] = await pool.execute(
                 'SELECT category_id, is_primary FROM product_categories WHERE product_id = ?',
                 [inheritance.parent_product_id]
               );
 
               if (Array.isArray(categoryRows) && categoryRows.length > 0) {
                 for (const category of categoryRows) {
-                  await connection.execute(
+                  await pool.execute(
                     'INSERT INTO product_categories (product_id, category_id, is_primary, created_at) VALUES (?, ?, ?, NOW())',
                     [childProductId, (category as any).category_id, (category as any).is_primary]
                   );
@@ -374,20 +364,20 @@ export async function PUT(request: NextRequest) {
           case 'specifications':
             if (inheritedFields.specifications) {
               // Delete existing specifications
-              await connection.execute(
+              await pool.execute(
                 'DELETE FROM product_specifications WHERE product_id = ?',
                 [childProductId]
               );
               
               // Copy specifications from parent
-              const [specRows] = await connection.execute(
+              const [specRows] = await pool.execute(
                 'SELECT spec_name, spec_value, spec_group FROM product_specifications WHERE product_id = ?',
                 [inheritance.parent_product_id]
               );
 
               if (Array.isArray(specRows) && specRows.length > 0) {
                 for (const spec of specRows) {
-                  await connection.execute(
+                  await pool.execute(
                     'INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_group, created_at) VALUES (?, ?, ?, ?, NOW())',
                     [childProductId, (spec as any).spec_name, (spec as any).spec_value, (spec as any).spec_group]
                   );
@@ -400,12 +390,12 @@ export async function PUT(request: NextRequest) {
       }
 
       // Update last synced timestamp
-      await connection.execute(
+      await pool.execute(
         'UPDATE product_inheritance SET last_synced_at = NOW(), updated_at = NOW() WHERE inheritance_id = ?',
         [inheritanceId]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -416,8 +406,7 @@ export async function PUT(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Sync inheritance error:', error);

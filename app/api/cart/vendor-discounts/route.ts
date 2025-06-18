@@ -284,7 +284,7 @@ export async function POST(request: NextRequest) {
         totalDiscountAmount += bestDiscountAmount;
 
         // Store discount application in database for tracking
-        await connection.execute(
+        await pool.execute(
           `INSERT INTO cart_vendor_discounts 
            (cart_id, vendor_id, discount_id, discount_type, discount_name, discount_amount, applied_to_items, subtotal_before, subtotal_after)
            VALUES (?, ?, ?, 'automatic', ?, ?, ?, ?, ?)

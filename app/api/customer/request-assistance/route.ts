@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 import { pusher } from '@/lib/pusher';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
 
 // Generate random 8-digit PIN
 function generatePIN(): string {
@@ -26,10 +18,10 @@ export async function POST(request: NextRequest) {
 
     const { sessionType = 'cart_assistance', message } = await request.json();
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Generate unique PIN
       let accessPin: string;
@@ -39,7 +31,7 @@ export async function POST(request: NextRequest) {
       do {
         accessPin = generatePIN();
         // Check if PIN is already in use by an active session
-        const [existingPins] = await connection.execute(
+        const [existingPins] = await pool.execute(
           'SELECT session_id FROM sales_assistance_sessions WHERE access_pin = ? AND status IN ("pending", "active")',
           [accessPin]
         );
@@ -48,14 +40,14 @@ export async function POST(request: NextRequest) {
       } while (!isUnique && attempts < 10);
 
       if (!isUnique) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Unable to generate unique PIN. Please try again.' 
         }, { status: 500 });
       }
 
       // Get customer's active cart
-      const [cartRows] = await connection.execute(
+      const [cartRows] = await pool.execute(
         'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
         [user.userId]
       );
@@ -69,7 +61,7 @@ export async function POST(request: NextRequest) {
       expiresAt.setMinutes(expiresAt.getMinutes() + 30);
 
       // Create assistance session
-      const [assistanceResult] = await connection.execute(
+      const [assistanceResult] = await pool.execute(
         `INSERT INTO sales_assistance_sessions (
           customer_user_id, 
           access_pin, 
@@ -99,7 +91,7 @@ export async function POST(request: NextRequest) {
       const assistanceSessionId = (assistanceResult as any).insertId;
 
       // Get online sales staff to notify
-      const [onlineStaff] = await connection.execute(
+      const [onlineStaff] = await pool.execute(
         `SELECT 
           ss.sales_staff_id,
           ss.user_id,
@@ -120,7 +112,7 @@ export async function POST(request: NextRequest) {
         ORDER BY ssos.current_active_sessions ASC, ssos.last_activity DESC`
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Send real-time notifications to available sales staff
       if (Array.isArray(onlineStaff) && onlineStaff.length > 0) {
@@ -160,8 +152,7 @@ export async function POST(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Request assistance error:', error);

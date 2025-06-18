@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Start transaction
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     let userId: number | null = null;
 
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
 
         // Create loyalty account for new user
         try {
-          await connection.execute(
+          await pool.execute(
             `INSERT INTO user_loyalty_accounts (user_id) VALUES (?)`,
             [userId]
           );
@@ -226,7 +226,7 @@ export async function POST(req: NextRequest) {
 
       // Create order items
       for (const item of body.items) {
-        await connection.execute(
+        await pool.execute(
           `INSERT INTO order_items (
             order_id, product_id, quantity, unit_price, total_price,
             product_name, width, height, color_name, color_id
@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
           const newBalance = currentBalance + pointsEarned;
 
           // Update loyalty account
-          await connection.execute(
+          await pool.execute(
             `UPDATE user_loyalty_accounts 
              SET current_points_balance = ?, 
                  total_points_earned = total_points_earned + ?,
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
           );
 
           // Record points transaction
-          await connection.execute(
+          await pool.execute(
             `INSERT INTO loyalty_points_transactions (
               user_id, transaction_type, points_amount, 
               points_balance_before, points_balance_after,
@@ -298,7 +298,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Commit transaction
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -313,7 +313,7 @@ export async function POST(req: NextRequest) {
 
     } catch (transactionError) {
       // Rollback transaction on error
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 

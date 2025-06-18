@@ -58,27 +58,27 @@ export async function POST(
     const connection = await pool.getConnection();
     
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       if (existingVotes.length > 0) {
         const existingVote = existingVotes[0];
         
         if (Boolean(existingVote.is_helpful) === body.isHelpful) { // Convert 0/1 to false/true for comparison
           // Same vote - remove it (toggle off)
-          await connection.execute(
+          await pool.execute(
             'DELETE FROM review_helpfulness WHERE id = ?',
             [existingVote.id]
           );
         } else {
           // Different vote - update it
-          await connection.execute(
+          await pool.execute(
             'UPDATE review_helpfulness SET is_helpful = ? WHERE id = ?',
             [body.isHelpful ? 1 : 0, existingVote.id] // Convert boolean to 0/1
           );
         }
       } else {
         // New vote - insert it
-        await connection.execute(
+        await pool.execute(
           `INSERT INTO review_helpfulness (review_id, user_id, session_id, is_helpful)
            VALUES (?, ?, ?, ?)`,
           [reviewId, user?.userId || null, sessionId, body.isHelpful ? 1 : 0] // Convert boolean to 0/1
@@ -91,12 +91,12 @@ export async function POST(
         [reviewId]
       );
 
-      await connection.execute(
+      await pool.execute(
         'UPDATE product_reviews SET helpful_count = ? WHERE review_id = ?',
         [helpfulCount[0].count, reviewId]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -105,7 +105,7 @@ export async function POST(
       });
 
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();

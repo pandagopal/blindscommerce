@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // GET - Get sales staff online status
 export async function GET(request: NextRequest) {
@@ -18,11 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Verify user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
@@ -36,7 +28,7 @@ export async function GET(request: NextRequest) {
       const salesStaffId = (salesStaffRows[0] as any).sales_staff_id;
 
       // Get current status
-      const [statusRows] = await connection.execute(
+      const [statusRows] = await pool.execute(
         `SELECT 
           is_online,
           is_available_for_assistance,
@@ -73,7 +65,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get current active assistance sessions
-      const [activeSessionsRows] = await connection.execute(
+      const [activeSessionsRows] = await pool.execute(
         `SELECT 
           sas.*,
           u.first_name as customer_first_name,
@@ -93,8 +85,7 @@ export async function GET(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Get sales status error:', error);
@@ -120,11 +111,11 @@ export async function PUT(request: NextRequest) {
       notificationPreferences 
     } = await request.json();
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Verify user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
@@ -138,7 +129,7 @@ export async function PUT(request: NextRequest) {
       const salesStaffId = (salesStaffRows[0] as any).sales_staff_id;
 
       // Update or create status
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO sales_staff_online_status (
           sales_staff_id,
           is_online,
@@ -165,7 +156,7 @@ export async function PUT(request: NextRequest) {
 
       // If going offline, mark all pending assistance requests as expired
       if (!isOnline || !isAvailableForAssistance) {
-        await connection.execute(
+        await pool.execute(
           `UPDATE sales_assistance_sessions 
           SET status = 'completed', completed_at = NOW()
           WHERE sales_staff_id = ? AND status = 'active'`,
@@ -179,8 +170,7 @@ export async function PUT(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Update sales status error:', error);

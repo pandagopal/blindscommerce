@@ -1,15 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import VendorStorefront from '@/components/storefront/VendorStorefront';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 interface VendorLayoutProps {
   children: React.ReactNode;
@@ -40,10 +32,10 @@ interface StorefrontData {
 }
 
 async function getStorefrontData(subdomain: string): Promise<StorefrontData | null> {
-  const connection = await mysql.createConnection(dbConfig);
+  const pool = await getPool();
 
   try {
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       `SELECT vs.*, vi.company_name
        FROM vendor_storefronts vs
        JOIN vendor_info vi ON vs.vendor_id = vi.vendor_info_id
@@ -79,8 +71,7 @@ async function getStorefrontData(subdomain: string): Promise<StorefrontData | nu
     };
 
   } finally {
-    await connection.end();
-  }
+    }
 }
 
 export async function generateMetadata({ params }: VendorLayoutProps): Promise<Metadata> {

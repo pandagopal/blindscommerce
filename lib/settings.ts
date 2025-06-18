@@ -1,14 +1,4 @@
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  ssl: false,
-  timezone: 'Z'
-};
+import { getPool } from '@/lib/db';
 
 // Settings cache
 let settingsCache: { [key: string]: any } = {};
@@ -78,13 +68,11 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
   }
 
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
     
-    const [rows] = await connection.execute(
+    const [rows] = await pool.execute(
       'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = TRUE'
     );
-    
-    await connection.end();
 
     // Default settings structure
     const settings: PlatformSettings = {

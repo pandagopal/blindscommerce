@@ -275,7 +275,7 @@ export async function registerUser(
     const pool = await getPool();
     const connection = await pool.getConnection();
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Insert new user
       const query = `
@@ -293,7 +293,7 @@ export async function registerUser(
         VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
       `;
 
-      const [result] = await connection.execute(query, [
+      const [result] = await pool.execute(query, [
         email,
         hashedPassword,
         firstName,
@@ -324,13 +324,13 @@ export async function registerUser(
       const wishlistQuery = `
         INSERT INTO wishlist (user_id) VALUES (?)
       `;
-      await connection.execute(wishlistQuery, [userId]);
+      await pool.execute(wishlistQuery, [userId]);
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return user;
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();

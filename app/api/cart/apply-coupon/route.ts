@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Store coupon application in database
-    await connection.execute(
+    await pool.execute(
       `INSERT INTO cart_vendor_discounts 
        (cart_id, vendor_id, coupon_id, discount_type, discount_code, discount_name, discount_amount, applied_to_items, subtotal_before, subtotal_after)
        VALUES (?, ?, ?, 'coupon', ?, ?, ?, ?, ?, ?)`,
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Record usage for analytics (but don't increment usage count until order is completed)
-    await connection.execute(
+    await pool.execute(
       `INSERT INTO vendor_discount_usage 
        (vendor_id, coupon_id, user_id, cart_id, usage_type, discount_code, original_amount, discount_amount, final_amount, quantity)
        VALUES (?, ?, ?, ?, 'coupon', ?, ?, ?, ?, ?)`,
@@ -217,7 +217,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Remove from usage tracking (for analytics)
-    await connection.execute(
+    await pool.execute(
       `DELETE FROM vendor_discount_usage 
        WHERE cart_id = ? AND usage_type = 'coupon' AND discount_code = ?`,
       [cart_id, coupon_code]

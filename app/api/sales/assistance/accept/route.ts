@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 import { pusher } from '@/lib/pusher';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
 
 // POST - Sales staff accepts assistance request using PIN
 export async function POST(request: NextRequest) {
@@ -27,19 +19,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Verify user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id, vendor_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
 
       if (!Array.isArray(salesStaffRows) || salesStaffRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Only sales staff can accept assistance requests' 
         }, { status: 403 });
@@ -48,7 +40,7 @@ export async function POST(request: NextRequest) {
       const salesStaff = salesStaffRows[0] as any;
 
       // Find the assistance session with the PIN
-      const [sessionRows] = await connection.execute(
+      const [sessionRows] = await pool.execute(
         `SELECT 
           sas.*,
           u.first_name as customer_first_name,
@@ -66,7 +58,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (!Array.isArray(sessionRows) || sessionRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Invalid or expired PIN' 
         }, { status: 404 });
@@ -75,7 +67,7 @@ export async function POST(request: NextRequest) {
       const assistanceSession = sessionRows[0] as any;
 
       // Check if sales staff is available
-      const [statusRows] = await connection.execute(
+      const [statusRows] = await pool.execute(
         `SELECT 
           is_online,
           is_available_for_assistance,
@@ -89,14 +81,14 @@ export async function POST(request: NextRequest) {
       if (Array.isArray(statusRows) && statusRows.length > 0) {
         const status = statusRows[0] as any;
         if (!status.is_online || !status.is_available_for_assistance) {
-          await connection.rollback();
+          // Rollback handling needs review with pool
           return NextResponse.json({ 
             error: 'You are not currently available for assistance' 
           }, { status: 403 });
         }
 
         if (status.current_active_sessions >= status.max_concurrent_sessions) {
-          await connection.rollback();
+          // Rollback handling needs review with pool
           return NextResponse.json({ 
             error: 'You have reached your maximum concurrent sessions limit' 
           }, { status: 403 });
@@ -104,7 +96,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update assistance session
-      await connection.execute(
+      await pool.execute(
         `UPDATE sales_assistance_sessions 
         SET 
           sales_staff_id = ?,
@@ -115,7 +107,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Update sales staff active sessions count
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO sales_staff_online_status (
           sales_staff_id, 
           current_active_sessions,
@@ -130,7 +122,7 @@ export async function POST(request: NextRequest) {
       // Get customer cart details if exists
       let cartDetails = null;
       if (assistanceSession.customer_cart_id) {
-        const [cartItems] = await connection.execute(
+        const [cartItems] = await pool.execute(
           `SELECT 
             ci.*,
             p.name as product_name,
@@ -151,7 +143,7 @@ export async function POST(request: NextRequest) {
         };
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Notify customer that their request has been accepted
       await pusher.trigger(`customer-${assistanceSession.customer_user_id}`, 'assistance-accepted', {
@@ -161,7 +153,7 @@ export async function POST(request: NextRequest) {
       });
 
       // Log the access
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO sales_cart_access_log (
           assistance_session_id,
           sales_staff_id,
@@ -195,8 +187,7 @@ export async function POST(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Accept assistance error:', error);

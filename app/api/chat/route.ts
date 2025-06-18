@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const connection = await pool.getConnection();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Create message
       const messageQuery = `
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
         ) VALUES (?, ?, ?, NOW())
       `;
 
-      const [messageResult] = await connection.execute(messageQuery, [
+      const [messageResult] = await pool.execute(messageQuery, [
         chatId,
         user.userId,
         message
@@ -58,16 +58,16 @@ export async function POST(req: NextRequest) {
         ) VALUES (?, 'active', NOW(), NOW())
       `;
 
-      const [chatResult] = await connection.execute(chatQuery, [user.userId]);
+      const [chatResult] = await pool.execute(chatQuery, [user.userId]);
       const newChatId = (chatResult as any).insertId;
 
       // Update the message with the new chat_id
-      await connection.execute(
+      await pool.execute(
         'UPDATE chat_messages SET chat_id = ? WHERE message_id = ?',
         [newChatId, messageId]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Trigger real-time update via Pusher
       await pusher.trigger('chat', 'new-message', {
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       });
 
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();

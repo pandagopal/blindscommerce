@@ -28,7 +28,7 @@ export default function ProductConfiguratorPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${slug}`, {
+        const res = await fetch(`/api/products/${slug}?configure=true`, {
           next: { revalidate: 60 } // Cache for 60 seconds
         });
 

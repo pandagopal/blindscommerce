@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
             FROM vendor_discounts WHERE discount_id = ?
           `;
 
-          return connection.execute(insertQuery, [newName, newCode, discount.discount_id]);
+          return pool.execute(insertQuery, [newName, newCode, discount.discount_id]);
         });
 
         await Promise.all(insertPromises);
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (updateQuery) {
-      await connection.execute(updateQuery, updateParams);
+      await pool.execute(updateQuery, updateParams);
     }
 
     return NextResponse.json({ 

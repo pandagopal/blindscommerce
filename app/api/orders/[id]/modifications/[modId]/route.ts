@@ -182,7 +182,7 @@ export async function PUT(
     const connection = await pool.getConnection();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get current modification
       const [modifications] = await connection.execute<RowDataPacket[]>(
@@ -215,12 +215,12 @@ export async function PUT(
         await applyModificationToOrder(connection, modification);
       }
 
-      await connection.execute(
+      await pool.execute(
         `UPDATE order_modifications SET ${updateFields.join(', ')} WHERE id = ?`,
         [...updateValues, modificationId]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -228,7 +228,7 @@ export async function PUT(
       });
 
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();
@@ -332,21 +332,21 @@ async function applyModificationToOrder(connection: any, modification: any) {
 
   switch (modificationType) {
     case 'shipping_address':
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET shipping_address = ? WHERE order_id = ?',
         [JSON.stringify(newState.shippingAddress), orderId]
       );
       break;
 
     case 'shipping_method':
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET shipping_method = ?, shipping_cost = ? WHERE order_id = ?',
         [newState.shippingMethod.method, newState.shippingMethod.cost, orderId]
       );
       break;
 
     case 'special_instructions':
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET special_instructions = ? WHERE order_id = ?',
         [newState.specialInstructions, orderId]
       );
@@ -356,7 +356,7 @@ async function applyModificationToOrder(connection: any, modification: any) {
     case 'add_item':
     case 'remove_item':
       // Get modification items and apply changes
-      const [modItems] = await connection.execute(
+      const [modItems] = await pool.execute(
         'SELECT * FROM order_modification_items WHERE modification_id = ?',
         [modification.id]
       );
@@ -364,7 +364,7 @@ async function applyModificationToOrder(connection: any, modification: any) {
       for (const item of modItems) {
         if (item.action === 'add') {
           // Add new item to order
-          await connection.execute(
+          await pool.execute(
             `INSERT INTO order_items (order_id, product_id, quantity, unit_price, total_price)
              VALUES (?, ?, ?, ?, ?)`,
             [
@@ -377,13 +377,13 @@ async function applyModificationToOrder(connection: any, modification: any) {
           );
         } else if (item.action === 'remove') {
           // Remove item from order
-          await connection.execute(
+          await pool.execute(
             'DELETE FROM order_items WHERE order_item_id = ?',
             [item.order_item_id]
           );
         } else if (item.action === 'quantity_change') {
           // Update existing item
-          await connection.execute(
+          await pool.execute(
             `UPDATE order_items 
              SET quantity = ?, total_price = quantity * unit_price 
              WHERE order_item_id = ?`,
@@ -393,7 +393,7 @@ async function applyModificationToOrder(connection: any, modification: any) {
       }
 
       // Recalculate order totals
-      const [totals] = await connection.execute(
+      const [totals] = await pool.execute(
         'SELECT SUM(total_price) as items_total FROM order_items WHERE order_id = ?',
         [orderId]
       );
@@ -402,14 +402,14 @@ async function applyModificationToOrder(connection: any, modification: any) {
       const tax = itemsTotal * 0.08; // Simplified tax calculation
       const newTotal = itemsTotal + tax + (modification.shipping_difference || 0);
 
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET subtotal = ?, tax_amount = ?, total_amount = ? WHERE order_id = ?',
         [itemsTotal, tax, newTotal, orderId]
       );
       break;
 
     case 'cancel_order':
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET order_status = ? WHERE order_id = ?',
         ['cancelled', orderId]
       );

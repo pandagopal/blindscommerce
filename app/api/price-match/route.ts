@@ -1,21 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 import { verifyJWT } from '@/lib/auth/jwt';
 
 // Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-};
-
 let pool: mysql.Pool | null = null;
 
 function getPool() {
@@ -99,7 +86,7 @@ export async function POST(request: NextRequest) {
     const db = getPool();
     
     // Insert price match request
-    const [result] = await db.execute(
+    const [result] = await pool.execute(
       `INSERT INTO price_match_requests (
         user_id,
         product_id,
@@ -203,7 +190,7 @@ export async function GET(request: NextRequest) {
     query += ' ORDER BY pmr.created_at DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const [requests] = await db.execute(query, params);
+    const [requests] = await pool.execute(query, params);
 
     // Get total count
     let countQuery = 'SELECT COUNT(*) as total FROM price_match_requests';
@@ -214,7 +201,7 @@ export async function GET(request: NextRequest) {
       countParams.push(status);
     }
     
-    const [countResult] = await db.execute(countQuery, countParams);
+    const [countResult] = await pool.execute(countQuery, countParams);
     const total = (countResult as any[])[0].total;
 
     return NextResponse.json({

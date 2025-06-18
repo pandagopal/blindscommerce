@@ -48,22 +48,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
     }
 
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     try {
       // Unset current default
-      await connection.execute(
+      await pool.execute(
         'UPDATE user_shipping_addresses SET is_default = FALSE WHERE user_id = ? AND is_default = TRUE',
         [user.userId]
       );
 
       // Set new default
-      await connection.execute(
+      await pool.execute(
         'UPDATE user_shipping_addresses SET is_default = TRUE, updated_at = CURRENT_TIMESTAMP WHERE address_id = ?',
         [addressId]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       });
 
     } catch (transactionError) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 

@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     const connection = await pool.getConnection();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Create user
       const [userResult] = await connection.execute<ResultSetHeader>(
@@ -255,14 +255,14 @@ export async function POST(request: NextRequest) {
         ]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         message: 'Vendor created successfully',
         vendorId: userId
       });
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();

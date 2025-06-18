@@ -1,20 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 
 // Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-};
-
 let pool: mysql.Pool | null = null;
 
 function getPool() {
@@ -51,7 +38,7 @@ export async function POST(request: NextRequest) {
     const db = getPool();
 
     // Check if already opted out
-    const [existing] = await db.execute(
+    const [existing] = await pool.execute(
       'SELECT id FROM sms_optouts WHERE phone_number = ?',
       [cleanPhone]
     );
@@ -64,7 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Add to opt-out list
-    await db.execute(
+    await pool.execute(
       `INSERT INTO sms_optouts (phone_number, email, opted_out_at, ip_address) 
        VALUES (?, ?, NOW(), ?)`,
       [
@@ -76,7 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Also update user preferences if user exists
     try {
-      await db.execute(
+      await pool.execute(
         'UPDATE users SET sms_notifications = FALSE WHERE phone = ?',
         [cleanPhone]
       );
@@ -125,14 +112,14 @@ export async function PUT(request: NextRequest) {
     const db = getPool();
 
     // Remove from opt-out list
-    await db.execute(
+    await pool.execute(
       'DELETE FROM sms_optouts WHERE phone_number = ?',
       [cleanPhone]
     );
 
     // Update user preferences if user exists
     try {
-      await db.execute(
+      await pool.execute(
         'UPDATE users SET sms_notifications = TRUE WHERE phone = ?',
         [cleanPhone]
       );
@@ -181,7 +168,7 @@ export async function GET(request: NextRequest) {
     const db = getPool();
 
     // Check opt-out status
-    const [optOutRecord] = await db.execute(
+    const [optOutRecord] = await pool.execute(
       'SELECT opted_out_at FROM sms_optouts WHERE phone_number = ?',
       [cleanPhone]
     );

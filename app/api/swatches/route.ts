@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
 
         try {
           // Insert with only the columns that exist in the schema
-          await connection.execute(
+          await pool.execute(
             `INSERT INTO sample_request_limits 
              (user_type, max_monthly_requests, max_total_requests, max_active_requests, 
               cool_down_days, max_samples_per_request, requires_approval, is_free, 

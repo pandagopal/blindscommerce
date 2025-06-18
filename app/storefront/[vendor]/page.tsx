@@ -1,14 +1,6 @@
 import { notFound } from 'next/navigation';
 import VendorHomepage from '@/components/storefront/VendorHomepage';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 interface VendorPageProps {
   params: Promise<{
@@ -45,11 +37,11 @@ async function getVendorPageData(subdomain: string): Promise<{
   featuredProducts: FeaturedProduct[];
   storefront: any;
 }> {
-  const connection = await mysql.createConnection(dbConfig);
+  const pool = await getPool();
 
   try {
     // Get storefront info
-    const [storefrontRows] = await connection.execute(
+    const [storefrontRows] = await pool.execute(
       `SELECT vs.*, vi.company_name
        FROM vendor_storefronts vs
        JOIN vendor_info vi ON vs.vendor_id = vi.vendor_info_id
@@ -64,7 +56,7 @@ async function getVendorPageData(subdomain: string): Promise<{
     const storefront = storefrontRows[0] as any;
 
     // Get homepage content
-    const [pageRows] = await connection.execute(
+    const [pageRows] = await pool.execute(
       `SELECT * FROM vendor_storefront_pages 
        WHERE storefront_id = ? AND page_type = 'home' AND is_published = 1
        ORDER BY display_order ASC
@@ -75,7 +67,7 @@ async function getVendorPageData(subdomain: string): Promise<{
     const homepage = Array.isArray(pageRows) && pageRows.length > 0 ? pageRows[0] as any : null;
 
     // Get featured products for this vendor
-    const [productRows] = await connection.execute(
+    const [productRows] = await pool.execute(
       `SELECT p.product_id, p.name, p.slug, p.short_description, p.base_price, 
               p.rating, p.review_count, vp.vendor_price,
               pi.image_url
@@ -127,8 +119,7 @@ async function getVendorPageData(subdomain: string): Promise<{
     };
 
   } finally {
-    await connection.end();
-  }
+    }
 }
 
 export default async function VendorPage({ params }: VendorPageProps) {

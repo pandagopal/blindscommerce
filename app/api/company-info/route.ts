@@ -1,13 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // Default company info if none is set in database
 const DEFAULT_COMPANY_INFO = {
@@ -31,11 +23,11 @@ const DEFAULT_COMPANY_INFO = {
 // GET - Get public company information
 export async function GET(request: NextRequest) {
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Get company info from existing settings table
-      const [rows] = await connection.execute(`
+      const [rows] = await pool.execute(`
         SELECT config_key, config_value, config_type 
         FROM upload_security_config 
         WHERE config_key LIKE "general_%" AND is_active = TRUE
@@ -99,8 +91,13 @@ export async function GET(request: NextRequest) {
         companyInfo
       });
 
-    } finally {
-      await connection.end();
+    } catch (dbError) {
+      console.error('Database query error:', dbError);
+      // Return default info if database query fails
+      return NextResponse.json({
+        success: true,
+        companyInfo: DEFAULT_COMPANY_INFO
+      });
     }
 
   } catch (error) {

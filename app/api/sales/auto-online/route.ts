@@ -1,14 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // POST - Automatically set sales staff online when they access the dashboard
 export async function POST(request: NextRequest) {
@@ -18,11 +10,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Check if user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
@@ -38,7 +30,7 @@ export async function POST(request: NextRequest) {
       const salesStaffId = (salesStaffRows[0] as any).sales_staff_id;
 
       // Set online status
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO sales_staff_online_status (
           sales_staff_id,
           is_online,
@@ -56,7 +48,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Get current status
-      const [statusRows] = await connection.execute(
+      const [statusRows] = await pool.execute(
         `SELECT 
           is_online,
           is_available_for_assistance,
@@ -87,8 +79,7 @@ export async function POST(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Auto online error:', error);

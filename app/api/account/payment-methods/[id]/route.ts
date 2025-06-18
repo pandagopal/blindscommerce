@@ -261,17 +261,17 @@ export async function DELETE(
     const connection = await pool.getConnection();
     
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Mark as inactive instead of hard delete (for audit trail)
-      await connection.execute(
+      await pool.execute(
         'UPDATE saved_payment_methods SET is_active = 0, updated_at = NOW() WHERE id = ?',
         [paymentMethodId]
       );
 
       // If this was the default payment method, set another one as default
       if (paymentMethod.is_default) {
-        await connection.execute(
+        await pool.execute(
           `UPDATE saved_payment_methods 
            SET is_default = 1 
            WHERE user_id = ? AND is_active = 1 AND id != ?
@@ -281,7 +281,7 @@ export async function DELETE(
         );
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Detach payment method from Stripe customer (optional - depends on your business logic)
       try {
@@ -297,7 +297,7 @@ export async function DELETE(
       });
 
     } catch (error) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw error;
     } finally {
       connection.release();

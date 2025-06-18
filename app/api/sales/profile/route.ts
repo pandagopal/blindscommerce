@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import mysql from 'mysql2/promise';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
+import { getPool } from '@/lib/db';
 
 // GET - Get sales person profile
 export async function GET(request: NextRequest) {
@@ -19,11 +11,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Get sales staff info with vendor details
-      const [profileRows] = await connection.execute(
+      const [profileRows] = await pool.execute(
         `SELECT 
           u.user_id,
           u.email,
@@ -77,8 +69,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ profile });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Get sales profile error:', error);
@@ -105,11 +96,11 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Update user record
-      await connection.execute(
+      await pool.execute(
         'UPDATE users SET first_name = ?, last_name = ?, phone = ?, updated_at = NOW() WHERE user_id = ? AND role = "sales"',
         [firstName, lastName, phone, session.user.id]
       );
@@ -120,8 +111,7 @@ export async function PUT(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Update sales profile error:', error);

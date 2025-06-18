@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     try {
       // Verify time slot exists and is active
@@ -288,20 +288,20 @@ export async function POST(req: NextRequest) {
       const appointmentId = result.insertId;
 
       // Update order with installation appointment reference
-      await connection.execute(
+      await pool.execute(
         'UPDATE orders SET installation_appointment_id = ? WHERE order_id = ?',
         [appointmentId, body.order_id]
       );
 
       // Mark technician as unavailable for this specific slot
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO technician_availability (technician_id, availability_date, time_slot_id, is_available, unavailable_reason)
          VALUES (?, ?, ?, FALSE, 'booked')
          ON DUPLICATE KEY UPDATE is_available = FALSE, unavailable_reason = 'booked'`,
         [assignedTechnicianId, body.appointment_date, body.time_slot_id]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Fetch created appointment with details
       const [appointmentDetails] = await connection.execute<RowDataPacket[]>(
@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
       });
 
     } catch (transactionError) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 

@@ -1,22 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyJWT } from '@/lib/auth/jwt';
 import { smsService } from '@/lib/sms/smsService';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 
 // Database connection configuration
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  acquireTimeout: 60000,
-  timeout: 60000,
-};
-
 let pool: mysql.Pool | null = null;
 
 function getPool() {
@@ -67,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user has opted out of SMS
     const db = getPool();
-    const [optOutCheck] = await db.execute(
+    const [optOutCheck] = await pool.execute(
       'SELECT id FROM sms_optouts WHERE phone_number = ?',
       [cleanPhone]
     );
@@ -264,7 +251,7 @@ export async function PUT(request: NextRequest) {
 
     // Filter out opted-out numbers
     const db = getPool();
-    const [optedOutNumbers] = await db.execute(
+    const [optedOutNumbers] = await pool.execute(
       'SELECT phone_number FROM sms_optouts WHERE phone_number IN (?)',
       [recipients]
     );

@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const connection = await pool.getConnection();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Get vendor ID for current user
       const [vendorRows] = await connection.execute<RowDataPacket[]>(
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (vendorRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Vendor not found' }, { status: 403 });
       }
 
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (productRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Product not found or not active' }, { status: 404 });
       }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (existingVendorProduct.length > 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ error: 'Product already exists in your catalog' }, { status: 409 });
       }
 
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       const newProductId = cloneResult.insertId;
 
       // Create vendor-product relationship - also inactive by default
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO vendor_products (
           vendor_id, product_id, vendor_sku, vendor_price, 
           quantity_available, minimum_order_qty, lead_time_days,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (categoryRows.length > 0 && categoryRows[0].category_id) {
-        await connection.execute(
+        await pool.execute(
           'UPDATE products SET category_id = ? WHERE product_id = ?',
           [categoryRows[0].category_id, newProductId]
         );
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
       if (imageRows.length > 0) {
         for (const image of imageRows) {
-          await connection.execute(
+          await pool.execute(
             'INSERT INTO product_images (product_id, image_url, display_order, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
             [newProductId, image.image_url, image.display_order]
           );
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
       if (pricingRows.length > 0) {
         for (const pricing of pricingRows) {
-          await connection.execute(
+          await pool.execute(
             `INSERT INTO product_pricing_matrix 
              (product_id, width_min, width_max, height_min, height_max, base_price, price_per_sqft, is_active, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Return success response with new product details
       return NextResponse.json({

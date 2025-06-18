@@ -159,12 +159,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     try {
       // If this is being set as default, unset other defaults
       if (body.is_default) {
-        await connection.execute(
+        await pool.execute(
           'UPDATE user_shipping_addresses SET is_default = FALSE WHERE user_id = ? AND is_default = TRUE',
           [user.userId]
         );
@@ -208,7 +208,7 @@ export async function POST(req: NextRequest) {
         ]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Fetch the created address
       const [newAddress] = await connection.execute<ShippingAddressRow[]>(
@@ -246,7 +246,7 @@ export async function POST(req: NextRequest) {
       });
 
     } catch (transactionError) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 

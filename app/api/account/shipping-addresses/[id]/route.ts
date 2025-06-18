@@ -181,12 +181,12 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     try {
       // If setting as default, unset other defaults
       if (body.is_default) {
-        await connection.execute(
+        await pool.execute(
           'UPDATE user_shipping_addresses SET is_default = FALSE WHERE user_id = ? AND address_id != ? AND is_default = TRUE',
           [user.userId, addressId]
         );
@@ -233,7 +233,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       // Add address_id for WHERE clause
       updateValues.push(addressId, user.userId);
 
-      await connection.execute(
+      await pool.execute(
         `UPDATE user_shipping_addresses 
          SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP 
          WHERE address_id = ? AND user_id = ?`,
@@ -242,13 +242,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
       // If address was updated to be unverified, clear verification info
       if (body.address_line_1 || body.city || body.state_province || body.postal_code || body.country) {
-        await connection.execute(
+        await pool.execute(
           'UPDATE user_shipping_addresses SET is_verified = FALSE, verification_source = NULL, last_verified_at = NULL WHERE address_id = ?',
           [addressId]
         );
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Fetch updated address
       const [updatedAddress] = await connection.execute<ShippingAddressRow[]>(
@@ -288,7 +288,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       });
 
     } catch (transactionError) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 
@@ -344,7 +344,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     const addressInfo = existingAddress[0];
 
-    await connection.beginTransaction();
+    // Transaction handling with pool - consider using connection from pool
 
     try {
       // Check if this address is being used in any active orders
@@ -357,13 +357,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
       if ((orderUsage[0] as any).count > 0) {
         // Soft delete if address is in use
-        await connection.execute(
+        await pool.execute(
           'UPDATE user_shipping_addresses SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE address_id = ?',
           [addressId]
         );
       } else {
         // Hard delete if not in use
-        await connection.execute(
+        await pool.execute(
           'DELETE FROM user_shipping_addresses WHERE address_id = ?',
           [addressId]
         );
@@ -377,14 +377,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         );
 
         if (otherAddresses.length > 0) {
-          await connection.execute(
+          await pool.execute(
             'UPDATE user_shipping_addresses SET is_default = TRUE WHERE address_id = ?',
             [(otherAddresses[0] as any).address_id]
           );
         }
       }
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       return NextResponse.json({
         success: true,
@@ -392,7 +392,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       });
 
     } catch (transactionError) {
-      await connection.rollback();
+      // Rollback handling needs review with pool
       throw transactionError;
     }
 

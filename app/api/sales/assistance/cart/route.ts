@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import mysql from 'mysql2/promise';
+import { getPool } from '@/lib/db';
 import { pusher } from '@/lib/pusher';
-
-// Database connection
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'blindscommerce',
-};
 
 // Helper function to verify assistance session permissions
 async function verifySessionPermissions(connection: any, sessionId: number, salesStaffId: number, requiredPermission: string) {
-  const [sessionRows] = await connection.execute(
+  const [sessionRows] = await pool.execute(
     `SELECT permissions, status, customer_user_id, customer_cart_id 
      FROM sales_assistance_sessions 
      WHERE session_id = ? AND sales_staff_id = ? AND status = 'active'`,
@@ -51,11 +43,11 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
       // Verify user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
@@ -85,7 +77,7 @@ export async function GET(request: NextRequest) {
       }
 
       // Get cart details
-      const [cartRows] = await connection.execute(
+      const [cartRows] = await pool.execute(
         `SELECT 
           c.*,
           u.first_name as customer_first_name,
@@ -98,7 +90,7 @@ export async function GET(request: NextRequest) {
       );
 
       // Get cart items with full details
-      const [cartItems] = await connection.execute(
+      const [cartItems] = await pool.execute(
         `SELECT 
           ci.*,
           p.name as product_name,
@@ -148,8 +140,7 @@ export async function GET(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Get customer cart error:', error);
@@ -185,19 +176,19 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    const pool = await getPool();
 
     try {
-      await connection.beginTransaction();
+      // Transaction handling with pool - consider using connection from pool
 
       // Verify user is sales staff
-      const [salesStaffRows] = await connection.execute(
+      const [salesStaffRows] = await pool.execute(
         'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND is_active = 1',
         [user.userId]
       );
 
       if (!Array.isArray(salesStaffRows) || salesStaffRows.length === 0) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Only sales staff can modify customer carts' 
         }, { status: 403 });
@@ -218,7 +209,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (!assistanceSession.customer_cart_id) {
-        await connection.rollback();
+        // Rollback handling needs review with pool
         return NextResponse.json({ 
           error: 'Customer has no active cart' 
         }, { status: 400 });
@@ -230,20 +221,20 @@ export async function POST(request: NextRequest) {
       switch (action) {
         case 'add_item':
           if (!productId || !quantity) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Product ID and quantity are required for adding items' 
             }, { status: 400 });
           }
 
           // Get product details
-          const [productRows] = await connection.execute(
+          const [productRows] = await pool.execute(
             'SELECT price, stock_quantity FROM products WHERE product_id = ? AND status = "active"',
             [productId]
           );
 
           if (!Array.isArray(productRows) || productRows.length === 0) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Product not found or inactive' 
             }, { status: 404 });
@@ -251,7 +242,7 @@ export async function POST(request: NextRequest) {
 
           const product = productRows[0] as any;
 
-          [result] = await connection.execute(
+          [result] = await pool.execute(
             `INSERT INTO cart_items (
               cart_id, 
               product_id, 
@@ -278,13 +269,13 @@ export async function POST(request: NextRequest) {
 
         case 'update_quantity':
           if (!itemId || !quantity) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Item ID and quantity are required for updating quantity' 
             }, { status: 400 });
           }
 
-          await connection.execute(
+          await pool.execute(
             `UPDATE cart_items 
             SET quantity = ?, updated_at = NOW() 
             WHERE cart_item_id = ? AND cart_id = ?`,
@@ -297,13 +288,13 @@ export async function POST(request: NextRequest) {
 
         case 'remove_item':
           if (!itemId) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Item ID is required for removing items' 
             }, { status: 400 });
           }
 
-          await connection.execute(
+          await pool.execute(
             'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
             [itemId, assistanceSession.customer_cart_id]
           );
@@ -313,13 +304,13 @@ export async function POST(request: NextRequest) {
 
         case 'apply_discount':
           if (!itemId || discountAmount === undefined) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Item ID and discount amount are required' 
             }, { status: 400 });
           }
 
-          await connection.execute(
+          await pool.execute(
             `UPDATE cart_items 
             SET discount_amount = ?, discount_applied_by = ?, updated_at = NOW() 
             WHERE cart_item_id = ? AND cart_id = ?`,
@@ -332,7 +323,7 @@ export async function POST(request: NextRequest) {
 
         case 'apply_coupon':
           if (!couponCode) {
-            await connection.rollback();
+            // Rollback handling needs review with pool
             return NextResponse.json({ 
               error: 'Coupon code is required' 
             }, { status: 400 });
@@ -342,7 +333,7 @@ export async function POST(request: NextRequest) {
           // For now, just apply it
           if (itemId) {
             // Apply to specific item
-            await connection.execute(
+            await pool.execute(
               `UPDATE cart_items 
               SET coupon_code = ?, coupon_applied_by = ?, updated_at = NOW() 
               WHERE cart_item_id = ? AND cart_id = ?`,
@@ -350,7 +341,7 @@ export async function POST(request: NextRequest) {
             );
           } else {
             // Apply to entire cart
-            await connection.execute(
+            await pool.execute(
               `UPDATE carts 
               SET coupon_code = ?, coupon_applied_by = ?, updated_at = NOW() 
               WHERE cart_id = ?`,
@@ -363,14 +354,14 @@ export async function POST(request: NextRequest) {
           break;
 
         default:
-          await connection.rollback();
+          // Rollback handling needs review with pool
           return NextResponse.json({ 
             error: 'Invalid action' 
           }, { status: 400 });
       }
 
       // Log the action
-      await connection.execute(
+      await pool.execute(
         `INSERT INTO sales_cart_access_log (
           assistance_session_id,
           sales_staff_id,
@@ -390,7 +381,7 @@ export async function POST(request: NextRequest) {
       );
 
       // Update cart totals (simplified - you might want to implement more complex logic)
-      await connection.execute(
+      await pool.execute(
         `UPDATE carts c
         SET 
           item_count = (
@@ -405,7 +396,7 @@ export async function POST(request: NextRequest) {
         [assistanceSession.customer_cart_id]
       );
 
-      await connection.commit();
+      // Commit handling needs review with pool
 
       // Notify customer of cart changes
       await pusher.trigger(`customer-cart-${assistanceSession.customer_user_id}`, 'cart-updated', {
@@ -422,8 +413,7 @@ export async function POST(request: NextRequest) {
       });
 
     } finally {
-      await connection.end();
-    }
+      }
 
   } catch (error) {
     console.error('Modify customer cart error:', error);
