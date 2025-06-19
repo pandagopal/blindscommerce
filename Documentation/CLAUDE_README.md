@@ -700,6 +700,136 @@ PRICING_MATRIX_CRITICAL_BUG_FIX_2025:
 }
 ```
 
+### ROOM_TYPES_MANAGEMENT_SYSTEM_2025:
+```json
+{
+  "feature_name": "room_types_management_system",
+  "implementation_date": "2025-01-19",
+  "purpose": "manage_shop_by_room_section_and_product_recommendations",
+  
+  "database_structure": {
+    "table": "room_types",
+    "columns": [
+      "room_type_id INT PRIMARY KEY AUTO_INCREMENT",
+      "name VARCHAR(100) UNIQUE NOT NULL",
+      "description TEXT",
+      "image_url VARCHAR(500)",
+      "typical_humidity VARCHAR(50)",
+      "light_exposure VARCHAR(50)",
+      "privacy_requirements VARCHAR(50)",
+      "recommended_products TEXT",
+      "is_active TINYINT(1) DEFAULT 1",
+      "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+      "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
+    ],
+    "initial_data": [
+      {"id": 1, "name": "Living Room", "is_active": 1},
+      {"id": 2, "name": "Bedroom", "is_active": 1},
+      {"id": 3, "name": "Kitchen", "is_active": 1},
+      {"id": 4, "name": "Bathroom", "is_active": 1},
+      {"id": 5, "name": "Dining Room", "is_active": 1},
+      {"id": 6, "name": "Home Office", "is_active": 1},
+      {"id": 7, "name": "Nursery", "is_active": 1},
+      {"id": 8, "name": "Media Room", "is_active": 1}
+    ]
+  },
+  
+  "admin_interface": {
+    "location": "/app/admin/rooms/page.tsx",
+    "features": [
+      "full_crud_operations",
+      "search_and_filter_by_status",
+      "toggle_active_inactive_with_toggle_icons",
+      "image_upload_support",
+      "room_characteristics_management"
+    ],
+    "ui_components": {
+      "table_view": "displays_all_rooms_with_status_and_actions",
+      "modal_form": "add_edit_room_with_all_attributes",
+      "status_toggle": "ToggleLeft/ToggleRight_icons_for_active_state",
+      "filters": "search_by_name_filter_by_status"
+    }
+  },
+  
+  "api_endpoints": {
+    "admin_rooms": {
+      "GET /api/admin/rooms": "fetch_all_rooms_for_admin",
+      "POST /api/admin/rooms": "create_new_room_type",
+      "PUT /api/admin/rooms/[id]": "update_existing_room",
+      "DELETE /api/admin/rooms/[id]": "delete_room_type"
+    },
+    "public_rooms": {
+      "GET /api/rooms": "fetch_active_rooms_for_homepage",
+      "filters": "WHERE is_active = 1"
+    },
+    "image_upload": {
+      "POST /api/upload/rooms": "upload_room_images"
+    }
+  },
+  
+  "frontend_integration": {
+    "homepage_shop_by_room": {
+      "component": "/app/components/home/HomeClient.tsx",
+      "data_flow": "fetch_from_api_rooms → display_active_rooms → link_to_products",
+      "fallback_removed": "no_hardcoded_rooms_only_database_data",
+      "conditional_rendering": "only_show_section_if_rooms_exist"
+    },
+    "vendor_product_recommendations": {
+      "component": "/components/products/shared/RoomRecommendations.tsx",
+      "dynamic_loading": "fetch_room_types_from_api_instead_of_hardcoded",
+      "loading_state": "shows_loading_while_fetching_rooms",
+      "api_endpoint": "/api/rooms"
+    }
+  },
+  
+  "key_changes_2025_01_19": {
+    "categories_api_fix": {
+      "issue": "is_active_column_not_in_categories_table",
+      "fix": "changed_to_featured_column_in_query",
+      "file": "/app/api/homepage/data/route.ts:17"
+    },
+    "homepage_rooms_dynamic": {
+      "removed": "hardcoded_defaultRooms_array",
+      "added": "conditional_rendering_only_if_rooms_exist",
+      "file": "/app/components/home/HomeClient.tsx:126-132"
+    },
+    "room_recommendations_dynamic": {
+      "removed": "hardcoded_ROOM_TYPES_array",
+      "added": "useEffect_to_fetch_from_api_rooms",
+      "state": "roomTypes_useState_with_loading",
+      "files": "/components/products/shared/RoomRecommendations.tsx"
+    },
+    "admin_toggle_icon_update": {
+      "old": "Eye/EyeOff_icons",
+      "new": "ToggleLeft/ToggleRight_icons",
+      "purpose": "clearer_toggle_switch_metaphor",
+      "file": "/app/admin/rooms/page.tsx:4,333"
+    }
+  },
+  
+  "usage_instructions": {
+    "admin_workflow": [
+      "navigate_to_/admin/rooms",
+      "click_add_new_room_button",
+      "fill_form_with_name_description_image",
+      "set_humidity_light_privacy_levels",
+      "toggle_active_status_as_needed",
+      "save_room_type"
+    ],
+    "visibility_rules": {
+      "active_rooms": "appear_in_homepage_and_vendor_dropdowns",
+      "inactive_rooms": "hidden_from_public_but_retained_in_admin"
+    }
+  },
+  
+  "testing_commands": {
+    "verify_rooms_exist": "SELECT * FROM room_types;",
+    "check_active_rooms": "SELECT * FROM room_types WHERE is_active = 1;",
+    "test_homepage_api": "curl http://localhost:3000/api/rooms",
+    "test_admin_api": "curl http://localhost:3000/api/admin/rooms"
+  }
+}
+
 ### Login System & Role Hierarchy Overhaul (December 2024)
 - **Challenge**: Implement secure role-based user creation system to compete with Amazon
 - **Implementation**: Complete authentication and authorization system with 7-tier role hierarchy

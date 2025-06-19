@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PlusIcon, X, GripVertical } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -27,24 +27,16 @@ interface RoomRecommendationsProps {
   isReadOnly?: boolean;
 }
 
-const ROOM_TYPES = [
-  'Living Room',
-  'Bedroom',
-  'Kitchen',
-  'Bathroom',
-  'Dining Room',
-  'Home Office',
-  'Media Room',
-  'Nursery',
-  'Sunroom',
-  'Basement',
-  'Garage',
-  'Patio/Outdoor',
-];
+interface RoomType {
+  room_type_id: number;
+  name: string;
+}
 
 export default function RoomRecommendations({ recommendations, onChange, isReadOnly = false }: RoomRecommendationsProps) {
   // Add null safety check
   const safeRecommendations = recommendations || [];
+  const [roomTypes, setRoomTypes] = useState<RoomType[]>([]);
+  const [loading, setLoading] = useState(true);
   
   const [newRecommendation, setNewRecommendation] = useState<RoomRecommendation>({
     id: '',
@@ -53,6 +45,24 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
     priority: safeRecommendations.length + 1
   });
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  // Fetch room types from API
+  useEffect(() => {
+    const fetchRoomTypes = async () => {
+      try {
+        const response = await fetch('/api/rooms');
+        if (response.ok) {
+          const data = await response.json();
+          setRoomTypes(data.rooms || []);
+        }
+      } catch (error) {
+        console.error('Error fetching room types:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoomTypes();
+  }, []);
 
   const handleAddRecommendation = () => {
     if (!newRecommendation.roomType || !newRecommendation.recommendation || isReadOnly) return;
@@ -141,14 +151,15 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
                 onValueChange={(value) =>
                   setNewRecommendation({ ...newRecommendation, roomType: value })
                 }
+                disabled={loading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select room type" />
+                  <SelectValue placeholder={loading ? "Loading rooms..." : "Select room type"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {ROOM_TYPES.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
+                  {roomTypes.map((room) => (
+                    <SelectItem key={room.room_type_id} value={room.name}>
+                      {room.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -203,9 +214,9 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {ROOM_TYPES.map((type) => (
-                          <SelectItem key={type} value={type}>
-                            {type}
+                        {roomTypes.map((room) => (
+                          <SelectItem key={room.room_type_id} value={room.name}>
+                            {room.name}
                           </SelectItem>
                         ))}
                       </SelectContent>

@@ -123,22 +123,13 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  // Transform database rooms to match display format, or use fallback
-  const defaultRooms = [
-    { id: 1, name: 'Living Room', image: '/images/rooms/living-room.jpg', link: '/rooms?type=living-room' },
-    { id: 2, name: 'Bedroom', image: '/images/rooms/bedroom.jpg', link: '/rooms?type=bedroom' },
-    { id: 3, name: 'Kitchen', image: '/images/rooms/kitchen.jpg', link: '/rooms?type=kitchen' },
-    { id: 4, name: 'Bathroom', image: '/images/rooms/bathroom.jpg', link: '/rooms?type=bathroom' }
-  ];
-
-  const dynamicRooms = Array.isArray(rooms) ? rooms.map(room => ({
+  // Transform database rooms to match display format
+  const displayRooms = Array.isArray(rooms) ? rooms.map(room => ({
     id: room.id,
     name: room.name,
     image: room.image || '/images/rooms/default-room.jpg',
     link: `/products?room=${room.name.toLowerCase().replace(/\s+/g, '-')}`
   })) : [];
-
-  const displayRooms = dynamicRooms.length > 0 ? dynamicRooms : defaultRooms;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -295,36 +286,38 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         </section>
 
 
-        {/* Shop By Room */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold mb-4">Shop By Room</h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">Find the perfect window treatments for every room in your home</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {Array.isArray(displayRooms) && displayRooms.map((room, index) => (
-                <Link href={room.link} key={index} className="group">
-                  <div className="relative h-72 rounded-xl overflow-hidden shadow-lg">
-                    <Image
-                      src={room.image}
-                      alt={room.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end justify-start p-6 group-hover:from-black/80 transition-all duration-300">
-                      <div>
-                        <h3 className="text-white text-2xl font-semibold mb-2">{room.name}</h3>
-                        <span className="text-white/90 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          Shop Now →
-                        </span>
+        {/* Shop By Room - Only show if rooms exist */}
+        {displayRooms.length > 0 && (
+          <section className="py-20 bg-white">
+            <div className="container mx-auto px-4">
+              <div className="text-center mb-16">
+                <h2 className="text-4xl font-bold mb-4">Shop By Room</h2>
+                <p className="text-gray-600 max-w-2xl mx-auto">Find the perfect window treatments for every room in your home</p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {displayRooms.map((room) => (
+                  <Link href={room.link} key={room.id} className="group">
+                    <div className="relative h-72 rounded-xl overflow-hidden shadow-lg">
+                      <Image
+                        src={room.image}
+                        alt={room.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end justify-start p-6 group-hover:from-black/80 transition-all duration-300">
+                        <div>
+                          <h3 className="text-white text-2xl font-semibold mb-2">{room.name}</h3>
+                          <span className="text-white/90 text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            Shop Now →
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
+        )}
 
       {/* Featured Categories */}
       <section className="py-16 bg-gradient-to-br from-blue-50 to-purple-50">

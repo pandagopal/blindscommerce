@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, X, Search, AlertTriangle, ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, X, Search, AlertTriangle, ArrowUp, ArrowDown, ToggleLeft, ToggleRight } from 'lucide-react';
 import Image from 'next/image';
 
 interface Room {
@@ -327,10 +327,10 @@ export default function AdminRoomsPage() {
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => toggleActive(room)}
-                          className={`${room.is_active ? 'text-gray-600 hover:text-gray-900' : 'text-green-600 hover:text-green-900'}`}
-                          title={room.is_active ? 'Deactivate' : 'Activate'}
+                          className={`${room.is_active ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+                          title={room.is_active ? 'Click to deactivate' : 'Click to activate'}
                         >
-                          {room.is_active ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                          {room.is_active ? <ToggleRight className="h-6 w-6" /> : <ToggleLeft className="h-6 w-6" />}
                         </button>
                         <button
                           onClick={() => handleEdit(room)}
