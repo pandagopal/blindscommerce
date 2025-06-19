@@ -88,6 +88,10 @@ export default function ProductConfiguratorPage() {
         mountType: config.mountType,
         width: `${config.width}${config.widthFraction !== '0' ? ` ${config.widthFraction}` : ''}"`,
         height: `${config.height}${config.heightFraction !== '0' ? ` ${config.heightFraction}` : ''}"`,
+        fabricType: config.fabricType,
+        controlOption: config.controlOption,
+        valanceOption: config.valanceOption,
+        bottomRailOption: config.bottomRailOption,
       }
     };
     

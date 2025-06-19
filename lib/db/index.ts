@@ -399,25 +399,10 @@ export const getProductBySlug = async (slug: string): Promise<any | null> => {
   const pool = await getPool();
   const [rows] = await pool.execute<RowDataPacket[]>(
     `SELECT 
-      p.product_id,
-      p.name,
-      p.slug,
-      p.sku,
-      p.short_description,
-      p.full_description,
-      p.base_price,
-      p.category_id,
+      p.*,
       c.name as category_name,
       c.slug as category_slug,
-      p.brand_id,
-      b.name as brand_name,
-      p.primary_image_url,
-      p.rating,
-      p.review_count,
-      p.is_active,
-      p.is_featured,
-      p.created_at,
-      p.updated_at
+      b.name as brand_name
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.category_id
     LEFT JOIN brands b ON p.brand_id = b.brand_id

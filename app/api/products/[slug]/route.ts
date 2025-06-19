@@ -43,6 +43,18 @@ export async function GET(
          ORDER BY width_min, height_min`,
         [product.product_id]
       );
+
+      // Get fabric pricing
+      const [fabricPricingRows] = await pool.execute(
+        `SELECT fabric_option_id, min_width, max_width, price_per_sqft
+         FROM product_fabric_pricing 
+         WHERE product_id = ? AND is_active = 1
+         ORDER BY fabric_option_id, min_width`,
+        [product.product_id]
+      );
+
+      // Dimensions are already in the product object from getProductBySlug
+      // No need for additional query since custom_width_min, custom_width_max, etc. are already fetched
       
       // Parse control types
       const controlTypes = product.control_types ? parseControlTypes(product.control_types) : {};
@@ -54,13 +66,14 @@ export async function GET(
         ...product,
         fabricOptions: fabricRows,
         pricingMatrix: pricingRows,
+        fabricPricing: fabricPricingRows,
         mountTypes: mountTypes,
         controlTypes: controlTypes,
         dimensions: {
-          minWidth: parseFloat(product.custom_width_min || 12),
-          maxWidth: parseFloat(product.custom_width_max || 120),
-          minHeight: parseFloat(product.custom_height_min || 12),
-          maxHeight: parseFloat(product.custom_height_max || 120),
+          minWidth: product.custom_width_min ? parseFloat(product.custom_width_min) : null,
+          maxWidth: product.custom_width_max ? parseFloat(product.custom_width_max) : null,
+          minHeight: product.custom_height_min ? parseFloat(product.custom_height_min) : null,
+          maxHeight: product.custom_height_max ? parseFloat(product.custom_height_max) : null,
         }
       };
       
@@ -107,13 +120,25 @@ export async function GET(
 // Helper function to parse control types string
 function parseControlTypes(controlTypesStr: string) {
   const controlTypes = {
-    liftSystems: [] as string[],
-    wandSystem: [] as string[],
-    stringSystem: [] as string[],
-    remoteControl: [] as string[]
+    liftSystems: [] as Array<{name: string, price_adjustment: number, enabled: boolean}>,
+    wandSystem: [] as Array<{name: string, price_adjustment: number, enabled: boolean}>,
+    stringSystem: [] as Array<{name: string, price_adjustment: number, enabled: boolean}>,
+    remoteControl: [] as Array<{name: string, price_adjustment: number, enabled: boolean}>
   };
   
   if (!controlTypesStr) return controlTypes;
+  
+  // Default pricing for control options (these should ideally come from database)
+  const defaultPrices = {
+    'Cordless': 0,
+    'Continuous Loop': 25,
+    'Standard Wand': 15,
+    'Extended Wand': 30,
+    'String Lift': 10,
+    'Chain System': 20,
+    'Basic Remote': 150,
+    'Smart Home Compatible': 250
+  };
   
   // Split by semicolon for different categories
   const categories = controlTypesStr.split(';');
@@ -123,7 +148,11 @@ function parseControlTypes(controlTypesStr: string) {
     types.forEach(type => {
       const [system, value] = type.split(':');
       if (system && value && controlTypes[system as keyof typeof controlTypes]) {
-        controlTypes[system as keyof typeof controlTypes].push(value);
+        controlTypes[system as keyof typeof controlTypes].push({
+          name: value,
+          price_adjustment: defaultPrices[value as keyof typeof defaultPrices] || 0,
+          enabled: true
+        });
       }
     });
   });
