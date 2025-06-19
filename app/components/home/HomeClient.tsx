@@ -123,7 +123,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     return () => clearInterval(interval);
   }, [slides.length]);
 
-  // Fallback rooms if none provided (only for graceful degradation)
+  // Transform database rooms to match display format, or use fallback
   const defaultRooms = [
     { id: 1, name: 'Living Room', image: '/images/rooms/living-room.jpg', link: '/rooms?type=living-room' },
     { id: 2, name: 'Bedroom', image: '/images/rooms/bedroom.jpg', link: '/rooms?type=bedroom' },
@@ -131,7 +131,14 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     { id: 4, name: 'Bathroom', image: '/images/rooms/bathroom.jpg', link: '/rooms?type=bathroom' }
   ];
 
-  const displayRooms = rooms.length > 0 ? rooms : defaultRooms;
+  const dynamicRooms = Array.isArray(rooms) ? rooms.map(room => ({
+    id: room.id,
+    name: room.name,
+    image: room.image || '/images/rooms/default-room.jpg',
+    link: `/products?room=${room.name.toLowerCase().replace(/\s+/g, '-')}`
+  })) : [];
+
+  const displayRooms = dynamicRooms.length > 0 ? dynamicRooms : defaultRooms;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">

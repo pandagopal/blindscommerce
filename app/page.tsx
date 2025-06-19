@@ -4,14 +4,16 @@ async function getHomePageData() {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
-    // Fetch homepage data and hero banners in parallel
-    const [homepageResponse, heroBannersResponse] = await Promise.all([
+    // Fetch homepage data, hero banners, and rooms in parallel
+    const [homepageResponse, heroBannersResponse, roomsResponse] = await Promise.all([
       fetch(`${baseUrl}/api/pages/homepage`, { cache: 'no-store' }),
-      fetch(`${baseUrl}/api/hero-banners`, { cache: 'no-store' })
+      fetch(`${baseUrl}/api/hero-banners`, { cache: 'no-store' }),
+      fetch(`${baseUrl}/api/rooms`, { cache: 'no-store' })
     ]);
 
     let homepageData = { categories: [], products: [], reviews: [] };
     let heroBanners = [];
+    let rooms = [];
 
     if (homepageResponse.ok) {
       const data = await homepageResponse.json();
@@ -29,9 +31,17 @@ async function getHomePageData() {
       console.error("Hero banners API request failed:", heroBannersResponse.status, heroBannersResponse.statusText);
     }
 
+    if (roomsResponse.ok) {
+      const data = await roomsResponse.json();
+      rooms = data.rooms || [];
+    } else {
+      console.error("Rooms API request failed:", roomsResponse.status, roomsResponse.statusText);
+    }
+
     return {
       ...homepageData,
-      heroBanners
+      heroBanners,
+      rooms
     };
   } catch (error) {
     console.error('Error fetching homepage data:', error);
@@ -39,14 +49,15 @@ async function getHomePageData() {
       categories: [],
       products: [],
       reviews: [],
-      heroBanners: []
+      heroBanners: [],
+      rooms: []
     };
   }
 }
 
 export default async function Home() {
-  const { categories, products, reviews, heroBanners } = await getHomePageData();
+  const { categories, products, reviews, heroBanners, rooms } = await getHomePageData();
   return (
-    <HomeClient categories={categories} products={products} reviews={reviews} heroBanners={heroBanners} />
+    <HomeClient categories={categories} products={products} reviews={reviews} heroBanners={heroBanners} rooms={rooms} />
   );
 }
