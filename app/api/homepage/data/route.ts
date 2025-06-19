@@ -15,8 +15,7 @@ export async function GET(request: NextRequest) {
         description 
       FROM categories 
       WHERE featured = 1 
-      ORDER BY display_order ASC 
-      LIMIT 10`
+      ORDER BY display_order ASC`
     );
     
     // Fetch featured products

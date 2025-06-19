@@ -3,19 +3,7 @@
 import React from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { Star, Package } from 'lucide-react';
-import SampleRequestWidget from '@/components/samples/SampleRequestWidget';
-import dynamic from 'next/dynamic';
-
-// Dynamically import Swiper to avoid SSR issues
-const Swiper = dynamic(() => import('swiper/react').then(mod => mod.Swiper), {
-  ssr: false,
-  loading: () => <div className="h-full bg-gray-200 animate-pulse" />
-});
-
-const SwiperSlide = dynamic(() => import('swiper/react').then(mod => mod.SwiperSlide), {
-  ssr: false
-});
+import { Star } from 'lucide-react';
 
 interface Category {
   id: number;
@@ -50,29 +38,90 @@ interface Review {
   date: string;
 }
 
+interface HeroBanner {
+  banner_id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  background_image: string;
+  right_side_image: string;
+  primary_cta_text: string;
+  primary_cta_link: string;
+  secondary_cta_text: string;
+  secondary_cta_link: string;
+  display_order: number;
+  is_active: boolean;
+}
+
 interface HomeClientProps {
   categories: Category[];
   products: Product[];
   rooms?: Room[];
   reviews?: Review[];
+  heroBanners?: HeroBanner[];
 }
 
-export default function HomeClient({ categories, products, rooms = [], reviews = [] }: HomeClientProps) {
-  const [swiperModules, setSwiperModules] = React.useState<any>(null);
+export default function HomeClient({ categories, products, rooms = [], reviews = [], heroBanners = [] }: HomeClientProps) {
+  const [currentSlide, setCurrentSlide] = React.useState(0);
 
-  // Import Swiper CSS and modules dynamically
+  // Use dynamic hero banners or fallback to default slides
+  const defaultSlides = [
+    {
+      id: 1,
+      image: '/images/hero/hero-1.jpg',
+      title: 'Custom Window Treatments',
+      subtitle: 'Made to Your Exact Specifications',
+      description: 'Free Shipping on Orders Over $100',
+      primaryCta: { text: 'Shop Now', href: '/products' },
+      secondaryCta: { text: 'Free Samples', href: '/customer/samples' }
+    },
+    {
+      id: 2,
+      image: '/images/hero/hero-2.jpg',
+      title: 'Smart Motorized Blinds',
+      subtitle: 'Control with Voice or App',
+      description: 'Professional Installation Available',
+      primaryCta: { text: 'Explore Smart Blinds', href: '/products?category=22' },
+      secondaryCta: { text: 'Book Consultation', href: '/measure-install' }
+    },
+    {
+      id: 3,
+      image: '/images/hero/hero-1.jpg',
+      title: 'End of Year Sale',
+      subtitle: 'Save Up to 40% Off',
+      description: 'Limited Time Offer - While Supplies Last',
+      primaryCta: { text: 'Shop Sale', href: '/sales' },
+      secondaryCta: { text: 'View All Deals', href: '/products?sale=true' }
+    }
+  ];
+
+  // Transform database hero banners to match slide format
+  const dynamicSlides = heroBanners.map(banner => ({
+    id: banner.banner_id,
+    image: banner.background_image || '/images/hero/hero-1.jpg',
+    title: banner.title,
+    subtitle: banner.subtitle || '',
+    description: banner.description || '',
+    primaryCta: { 
+      text: banner.primary_cta_text || 'Shop Now', 
+      href: banner.primary_cta_link || '/products' 
+    },
+    secondaryCta: { 
+      text: banner.secondary_cta_text || 'Learn More', 
+      href: banner.secondary_cta_link || '/about' 
+    },
+    rightSideImage: banner.right_side_image
+  }));
+
+  const slides = dynamicSlides.length > 0 ? dynamicSlides : defaultSlides;
+
+  // Auto-advance slides every 6 seconds
   React.useEffect(() => {
-    const loadSwiper = async () => {
-      await import('swiper/css');
-      await import('swiper/css/navigation');
-      await import('swiper/css/pagination');
-      
-      const { Autoplay, Navigation, Pagination } = await import('swiper/modules');
-      setSwiperModules([Autoplay, Navigation, Pagination]);
-    };
-    
-    loadSwiper();
-  }, []);
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [slides.length]);
 
   // Fallback rooms if none provided (only for graceful degradation)
   const defaultRooms = [
@@ -84,89 +133,141 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
 
   const displayRooms = rooms.length > 0 ? rooms : defaultRooms;
 
-  return (      <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Hero Section with Multiple Slides */}
-        <section className="relative h-[600px]">
+        <section className="relative h-[400px] md:h-[500px]">
           {/* Coming Soon Banner */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
-            <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-8 py-3 rounded-full shadow-lg animate-pulse">
-              <span className="font-bold text-2xl">Coming Soon!</span>
+            <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg animate-pulse">
+              <span className="font-semibold text-sm">Coming Soon!</span>
             </div>
           </div>
-          {swiperModules ? (
-            <Swiper
-              modules={swiperModules}
-              navigation
-              pagination={{ clickable: true }}
-              autoplay={{ delay: 5000 }}
-              loop={true}
-              className="h-full [&_.swiper-pagination-bullet-active]:bg-primary-red [&_.swiper-button-next]:!text-white [&_.swiper-button-prev]:!text-white [&_.swiper-button-next]:!bg-black/50 [&_.swiper-button-prev]:!bg-black/50 [&_.swiper-button-next:hover]:!bg-black/70 [&_.swiper-button-prev:hover]:!bg-black/70"
-            >
-              <SwiperSlide>
-                <div className="relative h-full">
-                  <Image
-                    src="/images/hero/hero-1.jpg"
-                    alt="Modern window treatments"
-                    fill
-                    className="object-cover"
-                    priority
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600/80 via-blue-600/70 to-cyan-600/60" />
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="container mx-auto px-4">
-                      <div className="max-w-lg text-white">
-                        <h1 className="text-5xl font-bold mb-4 drop-shadow-lg">Transform Your Windows</h1>
-                        <p className="text-xl mb-8 drop-shadow">Up to 40% off + Free Shipping</p>
-                        <div className="flex gap-4">
-                          <Link 
-                            href="/products" 
-                            className="bg-primary-red hover:bg-red-700 text-white px-8 py-3 rounded-full font-semibold transition-all shadow-lg hover:shadow-xl"
-                          >
-                            Shop Now
-                          </Link>
-                          <Link 
-                            href="/measure-install" 
-                            className="bg-white hover:bg-gray-100 text-gray-900 px-8 py-3 rounded-full font-semibold transition-colors shadow-lg hover:shadow-xl"
-                          >
-                            Get Professional Help
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
+          {/* Hero Slideshow */}
+          <div className="relative h-full">
+            <Image
+              src={slides[currentSlide].image}
+              alt={slides[currentSlide].title}
+              fill
+              className="object-cover transition-all duration-1000 ease-in-out"
+              priority
+              quality={90}
+            />
+            {/* Background Overlay - adjusted for right image */}
+            <div className={`absolute inset-0 ${slides[currentSlide].rightSideImage ? 'bg-gradient-to-r from-black/70 via-black/50 to-black/20' : 'bg-gradient-to-r from-black/60 via-black/40 to-transparent'}`} />
+            
+            {/* Right Side Image */}
+            {slides[currentSlide].rightSideImage && (
+              <div className="absolute right-0 top-0 w-1/2 h-full hidden lg:block">
+                <Image
+                  src={slides[currentSlide].rightSideImage}
+                  alt="Feature image"
+                  fill
+                  className="object-cover"
+                  quality={90}
+                />
+              </div>
+            )}
+            
+            {/* Text Content */}
+            <div className="absolute inset-0 flex items-center">
+              <div className="container mx-auto px-4">
+                <div className={`text-white ${slides[currentSlide].rightSideImage ? 'max-w-lg' : 'max-w-2xl'}`}>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+                    {slides[currentSlide].title}
+                  </h1>
+                  <p className="text-xl md:text-2xl mb-2 text-white/90">
+                    {slides[currentSlide].subtitle}
+                  </p>
+                  <p className="text-lg mb-8 text-white/80">
+                    {slides[currentSlide].description}
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <Link 
+                      href={slides[currentSlide].primaryCta.href} 
+                      className="bg-primary-red hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                    >
+                      {slides[currentSlide].primaryCta.text}
+                    </Link>
+                    <Link 
+                      href={slides[currentSlide].secondaryCta.href} 
+                      className="bg-white/90 backdrop-blur hover:bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                    >
+                      {slides[currentSlide].secondaryCta.text}
+                    </Link>
                   </div>
                 </div>
-              </SwiperSlide>
-              <SwiperSlide>
-                <div className="relative h-full">
-                  <Image
-                    src="/images/hero/hero-2.jpg"
-                    alt="Luxury window treatments"
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 via-cyan-600/70 to-emerald-600/60" />
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="container mx-auto px-4">
-                      <div className="max-w-lg text-white">
-                        <h1 className="text-5xl font-bold mb-4">Summer Sale</h1>
-                        <p className="text-xl mb-8">Get an Extra 15% Off All Shades</p>
-                        <Link href="/products/shades" className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white px-8 py-3 rounded-full font-semibold transition-all inline-block">
-                          Shop Shades
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-            </Swiper>
-          ) : (
-            <div className="h-full bg-gray-200 animate-pulse flex items-center justify-center">
-              <span className="text-gray-500">Loading...</span>
+              </div>
             </div>
-          )}
+            
+            {/* Manual Pagination Dots */}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
+              {slides.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-3 h-3 rounded-full transition-all ${
+                    index === currentSlide ? 'bg-primary-red' : 'bg-white/50'
+                  }`}
+                />
+              ))}
+            </div>
+            
+            {/* Manual Navigation Arrows */}
+            <button
+              onClick={() => setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-3 rounded-full backdrop-blur transition-all"
+            >
+              <span className="text-xl">←</span>
+            </button>
+            <button
+              onClick={() => setCurrentSlide((prev) => (prev + 1) % slides.length)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-3 rounded-full backdrop-blur transition-all"
+            >
+              <span className="text-xl">→</span>
+            </button>
+          </div>
       </section>
-      {/* Rest of the sections */}        {/* Promotion Banner Strip */}
-        <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4">
+
+      {/* Custom Hero Styles */}
+      <style jsx global>{`
+        .hero-swiper .swiper-pagination-bullet {
+          width: 12px;
+          height: 12px;
+          background: white;
+          opacity: 0.5;
+          transition: all 0.3s;
+        }
+        
+        .hero-swiper .swiper-pagination-bullet-active {
+          opacity: 1;
+          background: #CC2229;
+          transform: scale(1.2);
+        }
+        
+        .hero-swiper .swiper-button-next,
+        .hero-swiper .swiper-button-prev {
+          color: white;
+          background: rgba(0,0,0,0.3);
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          backdrop-filter: blur(4px);
+        }
+        
+        .hero-swiper .swiper-button-next:after,
+        .hero-swiper .swiper-button-prev:after {
+          font-size: 20px;
+        }
+        
+        .hero-swiper .swiper-button-next:hover,
+        .hero-swiper .swiper-button-prev:hover {
+          background: rgba(0,0,0,0.5);
+        }
+      `}</style>
+
+      {/* Promotion Banner Strip */}
+      <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-8">
               <div className="flex items-center gap-2">
@@ -186,64 +287,6 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
           <div className="absolute left-0 right-0 h-4 bg-gradient-to-b from-black/10 to-transparent"></div>
         </section>
 
-        {/* Free Samples Section */}
-        <section className="py-16 bg-gradient-to-r from-emerald-50 to-teal-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <div className="flex justify-center mb-4">
-                <div className="p-3 bg-emerald-100 rounded-full">
-                  <Package className="h-10 w-10 text-emerald-600" />
-                </div>
-              </div>
-              <h2 className="text-4xl font-bold mb-4 text-emerald-900">
-                Order Free Samples
-              </h2>
-              <p className="text-emerald-700 text-lg max-w-2xl mx-auto">
-                Feel the quality, see the colors, and ensure the perfect match before you buy. 
-                Free samples delivered to your door with no obligation.
-              </p>
-            </div>
-
-            <div className="max-w-4xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                <div className="text-center">
-                  <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">🏠</span>
-                  </div>
-                  <h3 className="font-semibold text-emerald-900 mb-2">See in Your Home</h3>
-                  <p className="text-emerald-700 text-sm">View colors and textures in your actual lighting conditions</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">✋</span>
-                  </div>
-                  <h3 className="font-semibold text-emerald-900 mb-2">Feel the Quality</h3>
-                  <p className="text-emerald-700 text-sm">Experience the texture and weight of premium materials</p>
-                </div>
-                
-                <div className="text-center">
-                  <div className="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-2xl">✅</span>
-                  </div>
-                  <h3 className="font-semibold text-emerald-900 mb-2">Perfect Match</h3>
-                  <p className="text-emerald-700 text-sm">Ensure your choice matches your decor before ordering</p>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <SampleRequestWidget showLimitsInfo={false} />
-              </div>
-
-              <div className="text-center mt-8">
-                <div className="inline-flex items-center bg-emerald-100 text-emerald-800 px-4 py-2 rounded-full text-sm font-medium">
-                  <span className="mr-2">🚚</span>
-                  Free shipping on all sample orders • 2-3 business day delivery
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* Shop By Room */}
         <section className="py-20 bg-white">

@@ -15,7 +15,9 @@ import {
   Settings,
   User,
   ChevronRight,
-  LogOut
+  LogOut,
+  FolderOpen,
+  Monitor
 } from 'lucide-react';
 
 interface UserData {
@@ -99,6 +101,8 @@ export default function AdminLayout({
 
   const menuItems = [
     { href: '/admin', label: 'Dashboard', icon: <Home size={18} /> },
+    { href: '/admin/categories', label: 'Categories', icon: <FolderOpen size={18} /> },
+    { href: '/admin/hero-banners', label: 'Hero Banners', icon: <Monitor size={18} /> },
     { href: '/admin/products', label: 'Products', icon: <ShoppingBag size={18} /> },
     { href: '/admin/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/admin/users', label: 'Users', icon: <Users size={18} /> },

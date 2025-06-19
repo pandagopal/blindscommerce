@@ -2,39 +2,51 @@ import HomeClient from './components/home/HomeClient';
 
 async function getHomePageData() {
   try {
-    const apiUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pages/homepage`;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
-    const response = await fetch(apiUrl, {
-      cache: 'no-store', // Ensure fresh data on each request
-    });
+    // Fetch homepage data and hero banners in parallel
+    const [homepageResponse, heroBannersResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/pages/homepage`, { cache: 'no-store' }),
+      fetch(`${baseUrl}/api/hero-banners`, { cache: 'no-store' })
+    ]);
 
-    if (response.ok) {
-      const data = await response.json();
+    let homepageData = { categories: [], products: [], reviews: [] };
+    let heroBanners = [];
+
+    if (homepageResponse.ok) {
+      const data = await homepageResponse.json();
       if (data.success) {
-        return data.data;
+        homepageData = data.data;
       }
     } else {
-      console.error("Homepage API request failed:", response.status, response.statusText);
+      console.error("Homepage API request failed:", homepageResponse.status, homepageResponse.statusText);
+    }
+
+    if (heroBannersResponse.ok) {
+      const data = await heroBannersResponse.json();
+      heroBanners = data.banners || [];
+    } else {
+      console.error("Hero banners API request failed:", heroBannersResponse.status, heroBannersResponse.statusText);
     }
 
     return {
-      categories: [],
-      products: [],
-      reviews: []
+      ...homepageData,
+      heroBanners
     };
   } catch (error) {
-    console.error('Error fetching homepage data from centralized API:', error);
+    console.error('Error fetching homepage data:', error);
     return {
       categories: [],
       products: [],
-      reviews: []
+      reviews: [],
+      heroBanners: []
     };
   }
 }
 
 export default async function Home() {
-  const { categories, products, reviews } = await getHomePageData();
+  const { categories, products, reviews, heroBanners } = await getHomePageData();
   return (
-    <HomeClient categories={categories} products={products} reviews={reviews} />
+    <HomeClient categories={categories} products={products} reviews={reviews} heroBanners={heroBanners} />
   );
 }
