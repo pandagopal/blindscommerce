@@ -12,6 +12,8 @@ export async function GET(request: NextRequest) {
     const sortByParam = searchParams.get('sortBy') || 'rating';
     const sortOrderParam = searchParams.get('sortOrder') || 'desc';
     const searchParam = searchParams.get('search');
+    const roomParam = searchParams.get('room');
+    const saleParam = searchParams.get('sale');
     const pageParam = searchParams.get('page') || '1';
     
     // Parse numeric parameters
@@ -44,13 +46,17 @@ export async function GET(request: NextRequest) {
         p.slug,
         p.short_description as description,
         p.base_price,
+        p.sale_price,
         p.primary_image_url as image,
         c.name as category_name,
         COALESCE(AVG(pr.rating), 0) as rating,
-        COUNT(DISTINCT pr.review_id) as review_count
+        COUNT(DISTINCT pr.review_id) as review_count,
+        CASE WHEN p.sale_price IS NOT NULL AND p.sale_price < p.base_price THEN 1 ELSE 0 END as on_sale
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+      LEFT JOIN product_room_types prt ON p.product_id = prt.product_id
+      LEFT JOIN room_types rt ON prt.room_type_id = rt.room_type_id
       WHERE p.status = 'active' AND p.is_active = 1
     `;
     
@@ -58,6 +64,8 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(DISTINCT p.product_id) as total
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN product_room_types prt ON p.product_id = prt.product_id
+      LEFT JOIN room_types rt ON prt.room_type_id = rt.room_type_id
       WHERE p.status = 'active' AND p.is_active = 1
     `;
     
@@ -83,6 +91,19 @@ export async function GET(request: NextRequest) {
       const escapedSearch = searchParam.replace(/'/g, "''");
       productQuery += ` AND (p.name LIKE '%${escapedSearch}%' OR p.short_description LIKE '%${escapedSearch}%')`;
       countQuery += ` AND (p.name LIKE '%${escapedSearch}%' OR p.short_description LIKE '%${escapedSearch}%')`;
+    }
+    
+    // Add room filter
+    if (roomParam) {
+      const roomSlug = roomParam.replace(/-/g, ' ');
+      productQuery += ` AND rt.name LIKE '%${roomSlug}%'`;
+      countQuery += ` AND rt.name LIKE '%${roomSlug}%'`;
+    }
+    
+    // Add sale filter
+    if (saleParam === 'true') {
+      productQuery += ` AND p.sale_price IS NOT NULL AND p.sale_price < p.base_price`;
+      countQuery += ` AND p.sale_price IS NOT NULL AND p.sale_price < p.base_price`;
     }
     
     // Get total count for pagination

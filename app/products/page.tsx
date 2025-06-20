@@ -3,14 +3,80 @@ import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
 import ProductSortHeader from "@/components/ProductSortHeader";
 
+// Generate dynamic metadata based on search parameters
+export async function generateMetadata({
+  searchParams
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const params = await searchParams;
+  
+  const categoryParam = typeof params.category === 'string' ? params.category : undefined;
+  const roomParam = typeof params.room === 'string' ? params.room : undefined;
+  const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
+  const searchParam = typeof params.search === 'string' ? params.search : undefined;
+  
+  // Category ID to name mapping for SEO
+  const categoryNames: Record<string, string> = {
+    '1': 'Venetian Blinds',
+    '2': 'Vertical Blinds', 
+    '3': 'Roller Blinds',
+    '4': 'Roman Blinds',
+    '5': 'Wooden Blinds',
+    '6': 'Faux Wood Blinds',
+    '7': 'Cellular Shades',
+    '8': 'Roller Shades',
+    '9': 'Solar Shades',
+    '10': 'Woven Wood Shades',
+    '11': 'Pleated Shades',
+    '12': 'Plantation Shutters',
+    '13': 'Vinyl Shutters',
+    '14': 'Wood Shutters',
+    '15': 'Composite Shutters',
+    '22': 'Motorized Window Treatments'
+  };
+  
+  let title = "Shop Custom Window Treatments | Smart Blinds Hub";
+  let description = "Browse our wide selection of custom blinds, shades, and shutters. Find the perfect window treatment for your home.";
+  
+  if (roomParam) {
+    const roomName = roomParam.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    title = `${roomName} Window Treatments | Smart Blinds Hub`;
+    description = `Perfect window treatments designed specifically for your ${roomName.toLowerCase()}. Custom blinds, shades, and shutters.`;
+  } else if (categoryParam && categoryNames[categoryParam]) {
+    const categoryName = categoryNames[categoryParam];
+    title = `${categoryName} | Custom Window Treatments | Smart Blinds Hub`;
+    description = `Shop premium ${categoryName.toLowerCase()} - custom made to fit your windows perfectly. Free shipping on orders over $100.`;
+  } else if (saleParam === 'true') {
+    title = "Sale - Up to 50% Off Window Treatments | Smart Blinds Hub";
+    description = "Limited time offers on premium blinds, shades, and shutters. Save big on custom window treatments for your home.";
+  } else if (searchParam) {
+    title = `Search Results: "${searchParam}" | Smart Blinds Hub`;
+    description = `Find window treatments matching "${searchParam}". Browse our selection of custom blinds, shades, and shutters.`;
+  }
+  
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      siteName: 'Smart Blinds Hub'
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description
+    }
+  };
+}
+
 // Enable dynamic rendering for API fetching
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export const metadata: Metadata = {
-  title: "Shop Custom Window Treatments | Smart Blinds Hub",
-  description: "Browse our wide selection of custom blinds, shades, and shutters. Find the perfect window treatment for your home.",
-};
+// Dynamic metadata will be generated in generateMetadata function
 
 // Function to parse category ID from URL
 const getCategoryIdFromParam = (categoryParam: string | undefined): number | null => {
@@ -45,12 +111,14 @@ export default async function ProductsPage({
   
   // Extract query parameters - handle potential arrays by taking the first value
   const categoryParam = typeof params.category === 'string' ? params.category : undefined;
+  const roomParam = typeof params.room === 'string' ? params.room : undefined;
   const minPriceParam = typeof params.minPrice === 'string' ? params.minPrice : undefined;
   const maxPriceParam = typeof params.maxPrice === 'string' ? params.maxPrice : undefined;
   const sortParam = typeof params.sort === 'string' ? params.sort : "recommended";
   const sortByParam = typeof params.sortBy === 'string' ? params.sortBy : "rating";
   const sortOrderParam = typeof params.sortOrder === 'string' ? params.sortOrder : "desc";
   const searchParam = typeof params.search === 'string' ? params.search : undefined;
+  const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
 
   // Parse the feature IDs if present
   const featureIds: number[] = [];
@@ -68,6 +136,16 @@ export default async function ProductsPage({
   const categoryId = getCategoryIdFromParam(categoryParam);
   const minPrice = getPriceFromParam(minPriceParam);
   const maxPrice = getPriceFromParam(maxPriceParam);
+  
+  // Determine page context for dynamic content
+  const pageContext = {
+    isRoomFiltered: !!roomParam,
+    isCategoryFiltered: !!categoryId,
+    isSaleFiltered: saleParam === 'true',
+    isSearchFiltered: !!searchParam,
+    roomName: roomParam?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    categoryName: '', // Will be populated from API data
+  };
 
   // Fetch data from API
   let categories = [];
@@ -79,11 +157,13 @@ export default async function ProductsPage({
     const apiUrl = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pages/products`);
     
     if (categoryId) apiUrl.searchParams.set('category', categoryId.toString());
+    if (roomParam) apiUrl.searchParams.set('room', roomParam);
     if (minPrice !== null) apiUrl.searchParams.set('minPrice', minPrice.toString());
     if (maxPrice !== null) apiUrl.searchParams.set('maxPrice', maxPrice.toString());
     if (sortByParam) apiUrl.searchParams.set('sortBy', sortByParam);
     if (sortOrderParam) apiUrl.searchParams.set('sortOrder', sortOrderParam);
     if (searchParam) apiUrl.searchParams.set('search', searchParam);
+    if (saleParam) apiUrl.searchParams.set('sale', saleParam);
     if (featureIds.length > 0) apiUrl.searchParams.set('features', featureIds.join(','));
 
     const response = await fetch(apiUrl.toString(), {
@@ -96,6 +176,14 @@ export default async function ProductsPage({
         categories = data.data.categories || [];
         products = data.data.products || [];
         features = data.data.features || [];
+        
+        // Update page context with category name
+        if (categoryId && categories.length > 0) {
+          const selectedCategory = categories.find(cat => cat.id === categoryId);
+          if (selectedCategory) {
+            pageContext.categoryName = selectedCategory.name;
+          }
+        }
       }
     } else {
       console.error("Centralized API request failed:", response.status, response.statusText);
@@ -110,9 +198,55 @@ export default async function ProductsPage({
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
+        {/* Dynamic Header Based on Filters */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shop Custom Window Treatments</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">Discover our premium collection of blinds, shades, and window treatments crafted for your home</p>
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            {pageContext.isRoomFiltered 
+              ? `${pageContext.roomName} Window Treatments`
+              : pageContext.isCategoryFiltered 
+              ? `${pageContext.categoryName} Collection`
+              : pageContext.isSaleFiltered
+              ? `Sale - Up to 50% Off Window Treatments`
+              : pageContext.isSearchFiltered
+              ? `Search Results: "${searchParam}"`
+              : `Shop Custom Window Treatments`}
+          </h1>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            {pageContext.isRoomFiltered 
+              ? `Perfect window treatments designed specifically for your ${pageContext.roomName?.toLowerCase()}`
+              : pageContext.isCategoryFiltered 
+              ? `Explore our premium ${pageContext.categoryName?.toLowerCase()} collection`
+              : pageContext.isSaleFiltered
+              ? `Limited time offers on premium blinds, shades, and shutters`
+              : pageContext.isSearchFiltered
+              ? `Found ${products.length} products matching your search`
+              : `Discover our premium collection of blinds, shades, and window treatments crafted for your home`}
+          </p>
+          
+          {/* Breadcrumb Navigation */}
+          <div className="mt-4 text-sm text-gray-500">
+            <span>Home</span>
+            <span className="mx-2">›</span>
+            <span>Products</span>
+            {pageContext.isRoomFiltered && (
+              <>
+                <span className="mx-2">›</span>
+                <span className="text-primary-red">{pageContext.roomName}</span>
+              </>
+            )}
+            {pageContext.isCategoryFiltered && (
+              <>
+                <span className="mx-2">›</span>
+                <span className="text-primary-red">{pageContext.categoryName}</span>
+              </>
+            )}
+            {pageContext.isSaleFiltered && (
+              <>
+                <span className="mx-2">›</span>
+                <span className="text-primary-red">Sale</span>
+              </>
+            )}
+          </div>
         </div>
 
       {/* Filters and products section */}
@@ -127,7 +261,10 @@ export default async function ProductsPage({
             initialMaxPrice={maxPrice}
             initialSort={sortParam}
             initialFeatures={featureIds}
+            initialRoom={roomParam}
+            initialSale={saleParam === 'true'}
             productCount={products.length}
+            pageContext={pageContext}
           />
         </div>
 

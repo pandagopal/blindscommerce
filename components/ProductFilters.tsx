@@ -39,6 +39,15 @@ interface PriceRange {
   avg_price: number;
 }
 
+interface PageContext {
+  isRoomFiltered: boolean;
+  isCategoryFiltered: boolean;
+  isSaleFiltered: boolean;
+  isSearchFiltered: boolean;
+  roomName?: string;
+  categoryName?: string;
+}
+
 interface ProductFiltersProps {
   categories: Category[];
   features: Feature[];
@@ -54,8 +63,11 @@ interface ProductFiltersProps {
   initialBrands?: string[];
   initialColors?: string[];
   initialMaterials?: string[];
+  initialRoom?: string;
+  initialSale?: boolean;
   productCount: number;
   showAdvancedFilters?: boolean;
+  pageContext?: PageContext;
 }
 
 export default function ProductFilters({
@@ -73,8 +85,11 @@ export default function ProductFilters({
   initialBrands = [],
   initialColors = [],
   initialMaterials = [],
+  initialRoom,
+  initialSale = false,
   productCount,
-  showAdvancedFilters = true
+  showAdvancedFilters = true,
+  pageContext
 }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,6 +103,8 @@ export default function ProductFilters({
   const [selectedBrands, setSelectedBrands] = useState<string[]>(initialBrands);
   const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(initialMaterials);
+  const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || '');
+  const [saleOnly, setSaleOnly] = useState<boolean>(initialSale);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState<boolean>(false);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
@@ -128,6 +145,14 @@ export default function ProductFilters({
         console.error('Invalid features parameter', e);
       }
     }
+
+    // Parse room
+    const roomParam = params.get('room');
+    if (roomParam) setSelectedRoom(roomParam);
+
+    // Parse sale
+    const saleParam = params.get('sale');
+    if (saleParam === 'true') setSaleOnly(true);
   }, [searchParams]);
 
   // Map sort values to API parameters
@@ -198,6 +223,16 @@ export default function ProductFilters({
       params.set('features', selectedFeatures.join(','));
     }
 
+    // Add room
+    if (selectedRoom.trim()) {
+      params.set('room', selectedRoom.trim());
+    }
+
+    // Add sale filter
+    if (saleOnly) {
+      params.set('sale', 'true');
+    }
+
     // Create the URL with the search parameters
     const url = `/products?${params.toString()}`;
     router.push(url);
@@ -238,6 +273,8 @@ export default function ProductFilters({
     setMaxPrice('');
     setSortBy('recommended');
     setSelectedFeatures([]);
+    setSelectedRoom('');
+    setSaleOnly(false);
     router.push('/products');
   };
 
@@ -245,7 +282,7 @@ export default function ProductFilters({
     <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium">Filters</h2>
-        {(selectedCategories.length > 0 || minPrice || maxPrice || selectedFeatures.length > 0) && (
+        {(selectedCategories.length > 0 || minPrice || maxPrice || selectedFeatures.length > 0 || selectedRoom || saleOnly) && (
           <button
             onClick={clearFilters}
             className="text-sm text-gray-500 hover:text-primary-red transition-colors"
@@ -255,30 +292,108 @@ export default function ProductFilters({
         )}
       </div>
 
-      {/* Categories */}
+      {/* Categories - Grouped by Type */}
       <div className="mb-6">
         <h3 className="text-sm font-medium mb-2">Categories</h3>
-        <div className="space-y-2">
-          {Array.isArray(categories) && categories.length > 0 ? (
-            categories.map((category) => (
-              <div key={category.id} className="flex items-center">
-                <input
-                  type="checkbox"
-                  id={`category-${category.id}`}
-                  className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                  checked={selectedCategories.includes(category.id)}
-                  onChange={() => handleCategoryChange(category.id)}
-                />
-                <label
-                  htmlFor={`category-${category.id}`}
-                  className="ml-2 text-sm text-gray-700"
-                >
-                  {category.name}
-                </label>
+        <div className="space-y-3">
+          {/* Blinds Group */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Blinds</h4>
+            <div className="space-y-1 pl-2">
+              {Array.isArray(categories) && categories.filter(cat => 
+                ['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds'].includes(cat.name)
+              ).map((category) => (
+                <div key={category.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`category-${category.id}`}
+                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+                    checked={selectedCategories.includes(category.id)}
+                    onChange={() => handleCategoryChange(category.id)}
+                  />
+                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                    {category.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Shades Group */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shades</h4>
+            <div className="space-y-1 pl-2">
+              {Array.isArray(categories) && categories.filter(cat => 
+                ['Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades'].includes(cat.name)
+              ).map((category) => (
+                <div key={category.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`category-${category.id}`}
+                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+                    checked={selectedCategories.includes(category.id)}
+                    onChange={() => handleCategoryChange(category.id)}
+                  />
+                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                    {category.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Shutters Group */}
+          <div>
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shutters</h4>
+            <div className="space-y-1 pl-2">
+              {Array.isArray(categories) && categories.filter(cat => 
+                ['Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
+              ).map((category) => (
+                <div key={category.id} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id={`category-${category.id}`}
+                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+                    checked={selectedCategories.includes(category.id)}
+                    onChange={() => handleCategoryChange(category.id)}
+                  />
+                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                    {category.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Other Categories */}
+          {Array.isArray(categories) && categories.filter(cat => 
+            !['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds',
+              'Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades',
+              'Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
+          ).length > 0 && (
+            <div>
+              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Other</h4>
+              <div className="space-y-1 pl-2">
+                {categories.filter(cat => 
+                  !['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds',
+                    'Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades',
+                    'Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
+                ).map((category) => (
+                  <div key={category.id} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id={`category-${category.id}`}
+                      className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={() => handleCategoryChange(category.id)}
+                    />
+                    <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                      {category.name}
+                    </label>
+                  </div>
+                ))}
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No categories found</p>
+            </div>
           )}
         </div>
       </div>
@@ -327,6 +442,41 @@ export default function ProductFilters({
         </div>
       </div>
 
+      {/* Room Filter */}
+      <div className="mb-6">
+        <h3 className="text-sm font-medium mb-2">Room Type</h3>
+        <select
+          value={selectedRoom}
+          onChange={(e) => setSelectedRoom(e.target.value)}
+          className="w-full rounded border-gray-300 text-sm p-2"
+        >
+          <option value="">All Rooms</option>
+          <option value="living-room">Living Room</option>
+          <option value="bedroom">Bedroom</option>
+          <option value="kitchen">Kitchen</option>
+          <option value="bathroom">Bathroom</option>
+          <option value="dining-room">Dining Room</option>
+          <option value="office">Office</option>
+          <option value="nursery">Nursery</option>
+        </select>
+      </div>
+
+      {/* Sale Filter */}
+      <div className="mb-6">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="sale-only"
+            className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+            checked={saleOnly}
+            onChange={(e) => setSaleOnly(e.target.checked)}
+          />
+          <label htmlFor="sale-only" className="ml-2 text-sm text-gray-700">
+            Sale Items Only
+          </label>
+        </div>
+      </div>
+
       {/* Features */}
       <div>
         <h3 className="text-sm font-medium mb-2">Features</h3>
@@ -350,13 +500,13 @@ export default function ProductFilters({
             </div>
           ))}
         </div>
-        {selectedFeatures.length > 0 && (
+        {(selectedFeatures.length > 0 || selectedRoom || saleOnly) && (
           <button
             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm py-1 px-3 rounded transition-colors mt-2"
             onClick={applyFilters}
             disabled={isApplyingFilters}
           >
-            {isApplyingFilters ? 'Applying...' : 'Apply Features'}
+            {isApplyingFilters ? 'Applying...' : 'Apply Filters'}
           </button>
         )}
       </div>

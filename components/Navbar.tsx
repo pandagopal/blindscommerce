@@ -230,12 +230,12 @@ const Navbar = () => {
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products/venetian-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Venetian Blinds</Link>
-                  <Link href="/products/vertical-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vertical Blinds</Link>
-                  <Link href="/products/roller-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Blinds</Link>
-                  <Link href="/products/roman-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roman Blinds</Link>
-                  <Link href="/products/wooden-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wooden Blinds</Link>
-                  <Link href="/products/faux-wood-blinds" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Faux Wood Blinds</Link>
+                  <Link href="/products?category=1" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Venetian Blinds</Link>
+                  <Link href="/products?category=2" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vertical Blinds</Link>
+                  <Link href="/products?category=3" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Blinds</Link>
+                  <Link href="/products?category=4" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roman Blinds</Link>
+                  <Link href="/products?category=5" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wooden Blinds</Link>
+                  <Link href="/products?category=6" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Faux Wood Blinds</Link>
                 </div>
               </div>
             </div>
@@ -250,11 +250,11 @@ const Navbar = () => {
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products/cellular-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cellular Shades</Link>
-                  <Link href="/products/roller-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Shades</Link>
-                  <Link href="/products/solar-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Solar Shades</Link>
-                  <Link href="/products/woven-wood-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Woven Wood Shades</Link>
-                  <Link href="/products/pleated-shades" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pleated Shades</Link>
+                  <Link href="/products?category=7" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cellular Shades</Link>
+                  <Link href="/products?category=8" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Shades</Link>
+                  <Link href="/products?category=9" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Solar Shades</Link>
+                  <Link href="/products?category=10" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Woven Wood Shades</Link>
+                  <Link href="/products?category=11" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pleated Shades</Link>
                 </div>
               </div>
             </div>
@@ -269,16 +269,16 @@ const Navbar = () => {
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products/plantation-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Plantation Shutters</Link>
-                  <Link href="/products/vinyl-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vinyl Shutters</Link>
-                  <Link href="/products/wood-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wood Shutters</Link>
-                  <Link href="/products/composite-shutters" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Composite Shutters</Link>
+                  <Link href="/products?category=12" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Plantation Shutters</Link>
+                  <Link href="/products?category=13" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vinyl Shutters</Link>
+                  <Link href="/products?category=14" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wood Shutters</Link>
+                  <Link href="/products?category=15" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Composite Shutters</Link>
                 </div>
               </div>
             </div>
 
             <Link
-              href="/motorized"
+              href="/products?category=22"
               className="text-gray-600 hover:text-primary-red font-medium"
             >
               Motorized
@@ -508,10 +508,10 @@ const Navbar = () => {
     <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center space-x-8 py-3 text-sm">
-          <Link href="/rooms" className="text-gray-600 hover:text-primary-red font-medium">
+          <Link href="/products" className="text-gray-600 hover:text-primary-red font-medium">
             Shop by Room
           </Link>
-          <Link href="/sale" className="text-red-600 hover:text-red-700 font-bold">
+          <Link href="/products?sale=true" className="text-red-600 hover:text-red-700 font-bold">
             Sale - Up to 50% Off
           </Link>
           <Link href="/samples" className="text-gray-600 hover:text-primary-red font-medium">
