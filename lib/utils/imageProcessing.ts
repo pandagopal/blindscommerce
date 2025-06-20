@@ -234,6 +234,7 @@ async function basicWindowDetection(
   } catch (error) {
     throw new Error(`Window detection failed: ${error}`);
   }
+}
 
 // Helper function to process model output
 function processDetections(detections: number[][], confidenceThreshold: number) {

@@ -250,7 +250,7 @@ export async function GET(req: NextRequest) {
     queryParams.push(filters.limit, offset);
 
     // Execute search query
-    const [searchResults] = await pool.execute<ProductSearchResult[]>(baseQuery, queryParams);
+    const [searchResults] = await pool.query<ProductSearchResult[]>(baseQuery, queryParams);
 
     // Get total count for pagination
     let countQuery = baseQuery.replace(
@@ -260,7 +260,7 @@ export async function GET(req: NextRequest) {
     countQuery = countQuery.replace(/GROUP BY[\s\S]*?ORDER BY[\s\S]*?LIMIT[\s\S]*$/, '');
 
     const countParams = queryParams.slice(0, -2); // Remove limit and offset
-    const [countResult] = await pool.execute<RowDataPacket[]>(countQuery, countParams);
+    const [countResult] = await pool.query<RowDataPacket[]>(countQuery, countParams);
     const totalResults = countResult[0]?.total || 0;
 
     // Get search facets for filtering

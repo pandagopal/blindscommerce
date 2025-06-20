@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
     values.push(limit, offset);
 
     // Execute the query
-    const [rows] = await pool.execute(query, values);
+    const [rows] = await pool.query(query, values);
 
     // Get total count
     let countQuery = `
@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
       countQuery += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const [countRows] = await pool.execute(countQuery, values.slice(0, -2));
+    const [countRows] = await pool.query(countQuery, values.slice(0, -2));
     const total = countRows[0]?.total || 0;
 
     return NextResponse.json({

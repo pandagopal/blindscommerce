@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     } = basicInfo;
 
     const pool = await getPool();
+    connection = await pool.getConnection();
+    await connection.query('START TRANSACTION');
 
+    try {
       // Use provided slug or generate from name as fallback
       let finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       
@@ -222,6 +225,10 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       await connection.query('ROLLBACK');
       throw error;
+    } finally {
+      if (connection) {
+        connection.release();
+      }
     }
   } catch (error) {
     console.error('Error creating product:', error);
@@ -229,9 +236,5 @@ export async function POST(request: NextRequest) {
       { error: 'Failed to create product' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

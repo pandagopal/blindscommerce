@@ -56,8 +56,8 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     // For vendors, we need to get their vendor_id first
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
-      const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+      const [vendorInfo] = await pool.query<RowDataPacket[]>(
+        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
       if (vendorInfo.length > 0) {
@@ -159,14 +159,21 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     const validSortOrders = ['asc', 'desc'];
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
     const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toUpperCase() : 'DESC';
-    query += ` ORDER BY ${finalSortBy} ${finalSortOrder}`;
+    
+    // Add table prefix for ambiguous columns
+    let orderByField = finalSortBy;
+    if (finalSortBy === 'created_at' || finalSortBy === 'name' || finalSortBy === 'base_price' || finalSortBy === 'stock_status') {
+      orderByField = `p.${finalSortBy}`;
+    }
+    
+    query += ` ORDER BY ${orderByField} ${finalSortOrder}`;
 
     // Add pagination
     query += ' LIMIT ? OFFSET ?';
     values.push(limit, offset);
 
-    // Execute query
-    const [rows] = await pool.execute(query, values);
+    // Execute query using query() instead of execute() to handle LIMIT/OFFSET properly
+    const [rows] = await pool.query(query, values);
 
     // Get total count
     let countQuery: string;
@@ -197,7 +204,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
       }
     }
 
-    const [countRows] = await pool.execute(countQuery, countValues);
+    const [countRows] = await pool.query(countQuery, countValues);
     const total = (countRows as any)[0]?.total || 0;
 
     // Format products
