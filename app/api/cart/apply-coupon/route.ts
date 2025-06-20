@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { RowDataPacket } from 'mysql2';
 
@@ -26,10 +26,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Get cart items with vendor information
-    const [cartItems] = await connection.execute<RowDataPacket[]>(
+    const [cartItems] = await pool.execute<RowDataPacket[]>(
       `SELECT 
         ci.cart_item_id,
         ci.product_id,
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const { coupon, discount_amount, applicable_items } = validationResult;
 
     // Check if this coupon is already applied to the cart
-    const [existingCoupon] = await connection.execute<RowDataPacket[]>(
+    const [existingCoupon] = await pool.execute<RowDataPacket[]>(
       `SELECT id FROM cart_vendor_discounts 
        WHERE cart_id = ? AND vendor_id = ? AND discount_type = 'coupon' AND discount_code = ?`,
       [cart_id, coupon.vendor_id, coupon_code]
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Check if another coupon from the same vendor is already applied (if not stackable)
     if (!coupon.stackable_with_other_coupons) {
-      const [existingVendorCoupon] = await connection.execute<RowDataPacket[]>(
+      const [existingVendorCoupon] = await pool.execute<RowDataPacket[]>(
         `SELECT discount_code FROM cart_vendor_discounts 
          WHERE cart_id = ? AND vendor_id = ? AND discount_type = 'coupon'`,
         [cart_id, coupon.vendor_id]
@@ -201,10 +201,10 @@ export async function DELETE(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Remove coupon from cart
-    const [result] = await connection.execute<any>(
+    const [result] = await pool.execute<any>(
       `DELETE FROM cart_vendor_discounts 
        WHERE cart_id = ? AND discount_type = 'coupon' AND discount_code = ?`,
       [cart_id, coupon_code]

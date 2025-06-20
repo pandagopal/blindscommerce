@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
     const sortByParam = searchParams.get('sortBy') || 'rating';
     const sortOrderParam = searchParams.get('sortOrder') || 'desc';
     const searchParam = searchParams.get('search');
-    const featuresParam = searchParams.get('features');
     const pageParam = searchParams.get('page') || '1';
     
     // Parse numeric parameters
@@ -22,21 +21,6 @@ export async function GET(request: NextRequest) {
     const page = parseInt(pageParam, 10);
     const itemsPerPage = 24;
     const offset = (page - 1) * itemsPerPage;
-    
-    // Parse feature IDs
-    const featureIds: number[] = [];
-    if (featuresParam) {
-      try {
-        featuresParam.split(',').forEach(id => {
-          const parsedId = parseInt(id, 10);
-          if (!isNaN(parsedId)) {
-            featureIds.push(parsedId);
-          }
-        });
-      } catch (error) {
-        console.error("Error parsing feature IDs:", error);
-      }
-    }
 
     const pool = await getPool();
     
@@ -52,7 +36,7 @@ export async function GET(request: NextRequest) {
       ORDER BY display_order ASC, name ASC`
     );
 
-    // Build product query with filters
+    // Build product query with filters (no parameters)
     let productQuery = `
       SELECT 
         p.product_id,
@@ -77,40 +61,35 @@ export async function GET(request: NextRequest) {
       WHERE p.status = 'active' AND p.is_active = 1
     `;
     
-    const queryParams: any[] = [];
-    
     // Add category filter
     if (categoryId && !isNaN(categoryId)) {
-      productQuery += ` AND p.category_id = ?`;
-      countQuery += ` AND p.category_id = ?`;
-      queryParams.push(categoryId);
+      productQuery += ` AND p.category_id = ${categoryId}`;
+      countQuery += ` AND p.category_id = ${categoryId}`;
     }
     
     // Add price filters
     if (minPrice !== null && !isNaN(minPrice)) {
-      productQuery += ` AND p.base_price >= ?`;
-      countQuery += ` AND p.base_price >= ?`;
-      queryParams.push(minPrice);
+      productQuery += ` AND p.base_price >= ${minPrice}`;
+      countQuery += ` AND p.base_price >= ${minPrice}`;
     }
     
     if (maxPrice !== null && !isNaN(maxPrice)) {
-      productQuery += ` AND p.base_price <= ?`;
-      countQuery += ` AND p.base_price <= ?`;
-      queryParams.push(maxPrice);
+      productQuery += ` AND p.base_price <= ${maxPrice}`;
+      countQuery += ` AND p.base_price <= ${maxPrice}`;
     }
     
-    // Add search filter
+    // Add search filter (with proper escaping)
     if (searchParam) {
-      productQuery += ` AND (p.name LIKE ? OR p.short_description LIKE ?)`;
-      countQuery += ` AND (p.name LIKE ? OR p.short_description LIKE ?)`;
-      queryParams.push(`%${searchParam}%`, `%${searchParam}%`);
+      const escapedSearch = searchParam.replace(/'/g, "''");
+      productQuery += ` AND (p.name LIKE '%${escapedSearch}%' OR p.short_description LIKE '%${escapedSearch}%')`;
+      countQuery += ` AND (p.name LIKE '%${escapedSearch}%' OR p.short_description LIKE '%${escapedSearch}%')`;
     }
     
     // Get total count for pagination
-    const [countRows] = await pool.execute(countQuery, queryParams);
+    const [countRows] = await pool.execute(countQuery);
     const totalItems = Array.isArray(countRows) && countRows.length > 0 ? (countRows[0] as any).total : 0;
     const totalPages = Math.ceil(totalItems / itemsPerPage);
-    
+
     // Group by product for main query
     productQuery += ` GROUP BY p.product_id`;
     
@@ -127,10 +106,9 @@ export async function GET(request: NextRequest) {
     }
     
     // Add pagination
-    productQuery += ` LIMIT ? OFFSET ?`;
-    queryParams.push(itemsPerPage, offset);
+    productQuery += ` LIMIT ${itemsPerPage} OFFSET ${offset}`;
     
-    const [productRows] = await pool.execute(productQuery, queryParams);
+    const [productRows] = await pool.execute(productQuery);
 
     // Fetch product features
     const [featureRows] = await pool.execute(
@@ -163,7 +141,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching products data:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products data' },
+      { 
+        error: 'Failed to fetch products data',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+      },
       { status: 500 }
     );
   }

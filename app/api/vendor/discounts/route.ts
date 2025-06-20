@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 403 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
     const offset = Math.max(0, (page - 1) * limit);
 
     // Build WHERE clause
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM vendor_discounts WHERE ${whereClause}`;
-    const [countResult] = await connection.execute<RowDataPacket[]>(countQuery, queryParams);
+    const [countResult] = await pool.execute<RowDataPacket[]>(countQuery, queryParams);
     const total = countResult[0].total;
 
     // Get discounts with pagination
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
     `;
     // Don't push limit and offset to queryParams
 
-    const [discounts] = await connection.execute<VendorDiscount[]>(query, queryParams);
+    const [discounts] = await pool.execute<VendorDiscount[]>(query, queryParams);
 
     // Parse JSON fields safely
     const formattedDiscounts = discounts.map(discount => parseVendorDiscount(discount));
@@ -197,11 +197,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Check for duplicate discount code within vendor
     if (discount_code) {
-      const [existing] = await connection.execute<RowDataPacket[]>(
+      const [existing] = await pool.execute<RowDataPacket[]>(
         'SELECT discount_id FROM vendor_discounts WHERE vendor_id = ? AND discount_code = ?',
         [vendorValidation.vendorId, discount_code]
       );
@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
       terms_conditions
     ];
 
-    const [result] = await connection.execute<any>(insertQuery, insertParams);
+    const [result] = await pool.execute<any>(insertQuery, insertParams);
 
     return NextResponse.json({
       message: 'Discount created successfully',

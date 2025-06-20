@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Verify all discounts belong to the vendor
     const placeholders = discount_ids.map(() => '?').join(',');
-    const [discounts] = await connection.execute<RowDataPacket[]>(
+    const [discounts] = await pool.execute<RowDataPacket[]>(
       `SELECT discount_id FROM vendor_discounts WHERE discount_id IN (${placeholders}) AND vendor_id = ?`,
       [...discount_ids, vendorValidation.vendorId]
     );
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
 
       case 'delete':
         // Check if any discounts have recent usage
-        const [recentUsage] = await connection.execute<RowDataPacket[]>(
+        const [recentUsage] = await pool.execute<RowDataPacket[]>(
           `SELECT DISTINCT discount_id FROM vendor_discount_usage 
            WHERE discount_id IN (${placeholders}) AND applied_at > DATE_SUB(NOW(), INTERVAL 30 DAY)`,
           discount_ids
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
       case 'duplicate':
         // Duplicate selected discounts
-        const [originalDiscounts] = await connection.execute<RowDataPacket[]>(
+        const [originalDiscounts] = await pool.execute<RowDataPacket[]>(
           `SELECT * FROM vendor_discounts WHERE discount_id IN (${placeholders}) AND vendor_id = ?`,
           [...discount_ids, vendorValidation.vendorId]
         );

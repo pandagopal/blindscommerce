@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { RowDataPacket } from 'mysql2';
 
@@ -35,10 +35,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Find the coupon
-    const [coupons] = await connection.execute<RowDataPacket[]>(
+    const [coupons] = await pool.execute<RowDataPacket[]>(
       `SELECT vc.*, vi.business_name as vendor_name 
        FROM vendor_coupons vc
        JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
     // Check per-customer usage limit
     if (user_id && coupon.usage_limit_per_customer > 0) {
-      const [userUsage] = await connection.execute<RowDataPacket[]>(
+      const [userUsage] = await pool.execute<RowDataPacket[]>(
         'SELECT COUNT(*) as count FROM vendor_discount_usage WHERE coupon_id = ? AND user_id = ?',
         [coupon.coupon_id, user_id]
       );
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     // Check customer type restrictions
     if (user_id && (coupon.first_time_customers_only || coupon.existing_customers_only)) {
-      const [customerOrders] = await connection.execute<RowDataPacket[]>(
+      const [customerOrders] = await pool.execute<RowDataPacket[]>(
         'SELECT COUNT(*) as count FROM orders WHERE user_id = ?',
         [user_id]
       );
@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       const productIds = vendorItems.map((item: CartItem) => item.product_id);
       if (productIds.length > 0) {
         const placeholders = productIds.map(() => '?').join(',');
-        const [productCategories] = await connection.execute<RowDataPacket[]>(
+        const [productCategories] = await pool.execute<RowDataPacket[]>(
           `SELECT product_id FROM products WHERE product_id IN (${placeholders}) AND category_id IN (${target_ids.map(() => '?').join(',')})`,
           [...productIds, ...target_ids]
         );

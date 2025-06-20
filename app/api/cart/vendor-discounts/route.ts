@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { RowDataPacket } from 'mysql2';
 import { 
@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cart ID is required' }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Get cart items with vendor information
-    const [cartItems] = await connection.execute<RowDataPacket[]>(
+    const [cartItems] = await pool.execute<RowDataPacket[]>(
       `SELECT 
         ci.cart_item_id,
         ci.product_id,
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       const vendorItems = items as CartItem[];
 
       // Get active automatic discounts for this vendor
-      const [vendorDiscounts] = await connection.execute<RowDataPacket[]>(
+      const [vendorDiscounts] = await pool.execute<RowDataPacket[]>(
         `SELECT * FROM vendor_discounts 
          WHERE vendor_id = ? 
          AND is_active = 1 
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
           // Get product categories for vendor items
           const productIds = vendorItems.map(item => item.product_id);
           const placeholders = productIds.map(() => '?').join(',');
-          const [productCategories] = await connection.execute<RowDataPacket[]>(
+          const [productCategories] = await pool.execute<RowDataPacket[]>(
             `SELECT product_id FROM products WHERE product_id IN (${placeholders}) AND category_id IN (${targetIds.map(() => '?').join(',')})`,
             [...productIds, ...targetIds]
           );
@@ -235,7 +235,7 @@ export async function POST(request: NextRequest) {
         } else if (discount.applies_to === 'specific_categories' && targetIds) {
           const productIds = vendorItems.map(item => item.product_id);
           const placeholders = productIds.map(() => '?').join(',');
-          const [productCategories] = await connection.execute<RowDataPacket[]>(
+          const [productCategories] = await pool.execute<RowDataPacket[]>(
             `SELECT product_id FROM products WHERE product_id IN (${placeholders}) AND category_id IN (${targetIds.map(() => '?').join(',')})`,
             [...productIds, ...targetIds]
           );

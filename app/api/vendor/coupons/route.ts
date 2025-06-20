@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 403 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
     const offset = Math.max(0, (page - 1) * limit);
 
     // Build WHERE clause
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
 
     // Get total count
     const countQuery = `SELECT COUNT(*) as total FROM vendor_coupons WHERE ${whereClause}`;
-    const [countResult] = await connection.execute<RowDataPacket[]>(countQuery, queryParams);
+    const [countResult] = await pool.execute<RowDataPacket[]>(countQuery, queryParams);
     const total = countResult[0].total;
 
     // Get coupons with pagination
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
     `;
     // Don't push limit and offset to queryParams
 
-    const [coupons] = await connection.execute<VendorCoupon[]>(query, queryParams);
+    const [coupons] = await pool.execute<VendorCoupon[]>(query, queryParams);
 
     // Parse JSON fields safely
     const formattedCoupons = coupons.map(coupon => parseVendorCoupon(coupon));
@@ -202,10 +202,10 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Check for duplicate coupon code globally
-    const [existingGlobal] = await connection.execute<RowDataPacket[]>(
+    const [existingGlobal] = await pool.execute<RowDataPacket[]>(
       'SELECT coupon_id FROM vendor_coupons WHERE coupon_code = ?',
       [coupon_code]
     );
@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check vendor's coupon limits (optional business rule)
-    const [vendorCoupons] = await connection.execute<RowDataPacket[]>(
+    const [vendorCoupons] = await pool.execute<RowDataPacket[]>(
       'SELECT COUNT(*) as count FROM vendor_coupons WHERE vendor_id = ? AND is_active = 1',
       [vendorValidation.vendorId]
     );
@@ -275,7 +275,7 @@ export async function POST(request: NextRequest) {
       user.userId
     ];
 
-    const [result] = await connection.execute<any>(insertQuery, insertParams);
+    const [result] = await pool.execute<any>(insertQuery, insertParams);
 
     return NextResponse.json({
       message: 'Coupon created successfully',

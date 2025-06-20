@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getConnection } from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
@@ -26,9 +26,9 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid discount ID' }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
-    const [discounts] = await connection.execute<RowDataPacket[]>(
+    const [discounts] = await pool.execute<RowDataPacket[]>(
       'SELECT * FROM vendor_discounts WHERE discount_id = ? AND vendor_id = ?',
       [discountId, vendorValidation.vendorId]
     );
@@ -109,10 +109,10 @@ export async function PUT(
       terms_conditions
     } = body;
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Verify discount exists and belongs to vendor
-    const [existing] = await connection.execute<RowDataPacket[]>(
+    const [existing] = await pool.execute<RowDataPacket[]>(
       'SELECT discount_id FROM vendor_discounts WHERE discount_id = ? AND vendor_id = ?',
       [discountId, vendorValidation.vendorId]
     );
@@ -123,7 +123,7 @@ export async function PUT(
 
     // Check for duplicate discount code within vendor (excluding current discount)
     if (discount_code) {
-      const [duplicates] = await connection.execute<RowDataPacket[]>(
+      const [duplicates] = await pool.execute<RowDataPacket[]>(
         'SELECT discount_id FROM vendor_discounts WHERE vendor_id = ? AND discount_code = ? AND discount_id != ?',
         [vendorValidation.vendorId, discount_code, discountId]
       );
@@ -285,10 +285,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Invalid discount ID' }, { status: 400 });
     }
 
-    const connection = await getConnection();
+    const pool = await getPool();
 
     // Check if discount is being used in active carts or recent orders
-    const [activeUsage] = await connection.execute<RowDataPacket[]>(
+    const [activeUsage] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as count FROM vendor_discount_usage 
        WHERE discount_id = ? AND applied_at > DATE_SUB(NOW(), INTERVAL 30 DAY)`,
       [discountId]
@@ -301,7 +301,7 @@ export async function DELETE(
     }
 
     // Delete the discount
-    const [result] = await connection.execute<any>(
+    const [result] = await pool.execute<any>(
       'DELETE FROM vendor_discounts WHERE discount_id = ? AND vendor_id = ?',
       [discountId, vendorValidation.vendorId]
     );
