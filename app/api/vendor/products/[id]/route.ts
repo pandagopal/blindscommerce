@@ -372,7 +372,7 @@ export async function GET(
     let roomRows = [];
     try {
       const [rows] = await pool.query<RowDataPacket[]>(
-        `SELECT room_type, suitability_score, special_considerations 
+        `SELECT id, room_type, suitability_score, special_considerations 
          FROM product_rooms 
          WHERE product_id = ? 
          ORDER BY suitability_score DESC`,
@@ -399,8 +399,8 @@ export async function GET(
     
 
     // Format room recommendations data
-    const formattedRoomRecommendations = roomRows.map((room, index) => ({
-      id: `room_${room.room_type}_${index}`,
+    const formattedRoomRecommendations = roomRows.map((room) => ({
+      id: room.id.toString(),
       roomType: room.room_type,
       recommendation: room.special_considerations || '',
       priority: room.suitability_score || 5

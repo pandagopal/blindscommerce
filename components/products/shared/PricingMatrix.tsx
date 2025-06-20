@@ -175,24 +175,30 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                   <TableCell className="font-medium whitespace-nowrap">
                     Height<br />{heightRange.label}
                   </TableCell>
-                  {WIDTH_RANGES.map((widthRange) => (
-                    <TableCell key={`${widthRange.label}-${heightRange.label}`} className="p-0">
-                      <Input
-                        type="number"
-                        value={getPrice(widthRange.label, heightRange.label)}
-                        onChange={(e) => handlePriceChange(widthRange.label, heightRange.label, e.target.value)}
-                        onFocus={(e) => {
-                          if (e.target.value === '0' || e.target.value === '0.00') {
-                            e.target.select();
-                          }
-                        }}
-                        className="text-center border-0 h-12"
-                        min="0"
-                        disabled={isReadOnly}
-                        placeholder="0.00"
-                      />
-                    </TableCell>
-                  ))}
+                  {WIDTH_RANGES.map((widthRange) => {
+                    const currentPrice = getPrice(widthRange.label, heightRange.label);
+                    const priceValue = parseFloat(currentPrice) || 0;
+                    const isPositiveValue = priceValue > 0;
+                    
+                    return (
+                      <TableCell key={`${widthRange.label}-${heightRange.label}`} className="p-0">
+                        <Input
+                          type="number"
+                          value={currentPrice}
+                          onChange={(e) => handlePriceChange(widthRange.label, heightRange.label, e.target.value)}
+                          onFocus={(e) => {
+                            if (e.target.value === '0' || e.target.value === '0.00') {
+                              e.target.select();
+                            }
+                          }}
+                          className={`text-center border-0 h-12 ${isPositiveValue ? 'text-blue-600 font-medium' : ''}`}
+                          min="0"
+                          disabled={isReadOnly}
+                          placeholder="0.00"
+                        />
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableBody>
@@ -200,23 +206,49 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
         </div>
 
         {/* Pagination Controls */}
-        {!showAllRanges && (
+        {!showAllRanges && totalPages > 1 && (
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-muted-foreground">
               Page {currentPage} of {totalPages} (Height ranges: {visibleHeightRanges[0]?.label} to {visibleHeightRanges[visibleHeightRanges.length - 1]?.label})
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  currentPage === 1 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-primary text-white hover:bg-primary/90'
+                }`}
               >
                 Previous
               </button>
+              
+              {/* Page numbers */}
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                      currentPage === page
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+              
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 bg-primary text-white rounded disabled:opacity-50"
+                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                  currentPage === totalPages 
+                    ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                    : 'bg-primary text-white hover:bg-primary/90'
+                }`}
               >
                 Next
               </button>

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 
     queryParams.push(limit, offset);
 
-    const [jobs] = await pool.execute<BulkJobRow[]>(
+    const [jobs] = await pool.query<BulkJobRow[]>(
       `SELECT 
         job_id,
         operation_type,

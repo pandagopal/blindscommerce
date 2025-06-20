@@ -28,7 +28,7 @@ interface RoomRecommendationsProps {
 }
 
 interface RoomType {
-  room_type_id: number;
+  id: number;
   name: string;
 }
 
@@ -69,7 +69,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
 
     const recommendation = {
       ...newRecommendation,
-      id: Math.random().toString(36).substring(7)
+      id: `room-${Date.now()}-${Math.random().toString(36).substring(7)}`
     };
 
     onChange([...safeRecommendations, recommendation]);
@@ -158,7 +158,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
                 </SelectTrigger>
                 <SelectContent>
                   {roomTypes.map((room) => (
-                    <SelectItem key={room.room_type_id} value={room.name}>
+                    <SelectItem key={`new-room-${room.id}`} value={room.name}>
                       {room.name}
                     </SelectItem>
                   ))}
@@ -215,7 +215,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
                       </SelectTrigger>
                       <SelectContent>
                         {roomTypes.map((room) => (
-                          <SelectItem key={room.room_type_id} value={room.name}>
+                          <SelectItem key={`edit-room-${room.id}-${index}`} value={room.name}>
                             {room.name}
                           </SelectItem>
                         ))}
