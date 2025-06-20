@@ -120,8 +120,6 @@ export async function GET(req: NextRequest) {
 
 // POST /api/account/shipping-addresses - Create new shipping address
 export async function POST(req: NextRequest) {
-  let connection;
-  
   try {
     const user = await verifyToken(req);
     if (!user) {
@@ -145,9 +143,8 @@ export async function POST(req: NextRequest) {
 
     // Validate address name uniqueness for user
     const pool = await getPool();
-    connection = await pool.getConnection();
 
-    const [existingAddress] = await connection.execute<RowDataPacket[]>(
+    const [existingAddress] = await pool.execute<RowDataPacket[]>(
       'SELECT address_id FROM user_shipping_addresses WHERE user_id = ? AND address_name = ? AND is_active = TRUE',
       [user.userId, body.address_name]
     );
@@ -159,96 +156,86 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Transaction handling with pool - consider using connection from pool
-
-    try {
-      // If this is being set as default, unset other defaults
-      if (body.is_default) {
-        await pool.execute(
-          'UPDATE user_shipping_addresses SET is_default = FALSE WHERE user_id = ? AND is_default = TRUE',
-          [user.userId]
-        );
-      }
-
-      // If user has no addresses yet, make this the default
-      const [addressCount] = await connection.execute<RowDataPacket[]>(
-        'SELECT COUNT(*) as count FROM user_shipping_addresses WHERE user_id = ? AND is_active = TRUE',
+    // If this is being set as default, unset other defaults
+    if (body.is_default) {
+      await pool.execute(
+        'UPDATE user_shipping_addresses SET is_default = FALSE WHERE user_id = ? AND is_default = TRUE',
         [user.userId]
       );
-
-      const isFirstAddress = (addressCount[0] as any).count === 0;
-
-      // Create the address
-      const [result] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO user_shipping_addresses (
-          user_id, address_name, first_name, last_name, company,
-          address_line_1, address_line_2, city, state_province, postal_code, country,
-          phone, email, is_default, is_billing_address, delivery_instructions,
-          delivery_preference, access_code
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          user.userId,
-          body.address_name,
-          body.first_name,
-          body.last_name,
-          body.company || null,
-          body.address_line_1,
-          body.address_line_2 || null,
-          body.city,
-          body.state_province,
-          body.postal_code,
-          body.country,
-          body.phone || null,
-          body.email || null,
-          body.is_default || isFirstAddress,
-          body.is_billing_address || false,
-          body.delivery_instructions || null,
-          body.delivery_preference || 'standard',
-          body.access_code || null
-        ]
-      );
-
-      // Commit handling needs review with pool
-
-      // Fetch the created address
-      const [newAddress] = await connection.execute<ShippingAddressRow[]>(
-        'SELECT * FROM user_shipping_addresses WHERE address_id = ?',
-        [result.insertId]
-      );
-
-      const address = newAddress[0];
-      return NextResponse.json({
-        success: true,
-        message: 'Shipping address created successfully',
-        address: {
-          id: address.address_id,
-          addressName: address.address_name,
-          firstName: address.first_name,
-          lastName: address.last_name,
-          company: address.company,
-          addressLine1: address.address_line_1,
-          addressLine2: address.address_line_2,
-          city: address.city,
-          stateProvince: address.state_province,
-          postalCode: address.postal_code,
-          country: address.country,
-          phone: address.phone,
-          email: address.email,
-          isDefault: address.is_default,
-          isBillingAddress: address.is_billing_address,
-          deliveryInstructions: address.delivery_instructions,
-          deliveryPreference: address.delivery_preference,
-          accessCode: address.access_code,
-          isVerified: address.is_verified,
-          createdAt: address.created_at,
-          updatedAt: address.updated_at
-        }
-      });
-
-    } catch (transactionError) {
-      // Rollback handling needs review with pool
-      throw transactionError;
     }
+
+    // If user has no addresses yet, make this the default
+    const [addressCount] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM user_shipping_addresses WHERE user_id = ? AND is_active = TRUE',
+      [user.userId]
+    );
+
+    const isFirstAddress = (addressCount[0] as any).count === 0;
+
+    // Create the address
+    const [result] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO user_shipping_addresses (
+        user_id, address_name, first_name, last_name, company,
+        address_line_1, address_line_2, city, state_province, postal_code, country,
+        phone, email, is_default, is_billing_address, delivery_instructions,
+        delivery_preference, access_code
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        user.userId,
+        body.address_name,
+        body.first_name,
+        body.last_name,
+        body.company || null,
+        body.address_line_1,
+        body.address_line_2 || null,
+        body.city,
+        body.state_province,
+        body.postal_code,
+        body.country,
+        body.phone || null,
+        body.email || null,
+        body.is_default || isFirstAddress,
+        body.is_billing_address || false,
+        body.delivery_instructions || null,
+        body.delivery_preference || 'standard',
+        body.access_code || null
+      ]
+    );
+
+    // Fetch the created address
+    const [newAddress] = await pool.execute<ShippingAddressRow[]>(
+      'SELECT * FROM user_shipping_addresses WHERE address_id = ?',
+      [result.insertId]
+    );
+
+    const address = newAddress[0];
+    return NextResponse.json({
+      success: true,
+      message: 'Shipping address created successfully',
+      address: {
+        id: address.address_id,
+        addressName: address.address_name,
+        firstName: address.first_name,
+        lastName: address.last_name,
+        company: address.company,
+        addressLine1: address.address_line_1,
+        addressLine2: address.address_line_2,
+        city: address.city,
+        stateProvince: address.state_province,
+        postalCode: address.postal_code,
+        country: address.country,
+        phone: address.phone,
+        email: address.email,
+        isDefault: address.is_default,
+        isBillingAddress: address.is_billing_address,
+        deliveryInstructions: address.delivery_instructions,
+        deliveryPreference: address.delivery_preference,
+        accessCode: address.access_code,
+        isVerified: address.is_verified,
+        createdAt: address.created_at,
+        updatedAt: address.updated_at
+      }
+    });
 
   } catch (error) {
     console.error('Error creating shipping address:', error);
@@ -266,9 +253,5 @@ export async function POST(req: NextRequest) {
       { error: 'Failed to create shipping address' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

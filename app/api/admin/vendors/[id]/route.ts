@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const pool = await getPool();
-    const [result] = await pool.query(
+    const [result] = await pool.execute(
       `SELECT 
         u.user_id,
         u.email,
@@ -108,61 +108,49 @@ export async function PUT(
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+    // Update vendor info
+    await pool.execute(
+      `UPDATE vendor_info
+       SET 
+        business_name = ?,
+        business_email = ?,
+        business_phone = ?,
+        business_description = ?,
+        updated_at = NOW()
+       WHERE vendor_info_id = ?`,
+      [
+        companyName,
+        contactEmail,
+        contactPhone,
+        businessDescription,
+        vendorId
+      ]
+    );
 
-      // Update vendor info
-      await client.query(
-        `UPDATE blinds.vendor_info
-         SET 
-          business_name = $1,
-          business_email = $2,
-          business_phone = $3,
-          business_description = $4,
-          updated_at = NOW()
-         WHERE vendor_info_id = $5`,
-        [
-          companyName,
-          contactEmail,
-          contactPhone,
-          businessDescription,
-          vendorId
-        ]
-      );
+    // Get user_id for the vendor
+    const [vendorResult] = await pool.execute(
+      'SELECT user_id FROM vendor_info WHERE vendor_info_id = ?',
+      [vendorId]
+    );
 
-      // Get user_id for the vendor
-      const vendorResult = await client.query(
-        'SELECT user_id FROM blinds.vendor_info WHERE vendor_info_id = $1',
-        [vendorId]
-      );
-
-      if (vendorResult.rows.length === 0) {
-        throw new Error('Vendor not found');
-      }
-
-      // Update user info
-      await client.query(
-        `UPDATE blinds.users
-         SET 
-          email = $1,
-          first_name = $2,
-          last_name = $3,
-          updated_at = NOW()
-         WHERE user_id = $4`,
-        [email, firstName, lastName, vendorResult.rows[0].user_id]
-      );
-
-      await client.query('COMMIT');
-
-      return NextResponse.json({ message: 'Vendor updated successfully' });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
+    if (!vendorResult || (vendorResult as any[]).length === 0) {
+      throw new Error('Vendor not found');
     }
+
+    // Update user info
+    await pool.execute(
+      `UPDATE users
+       SET 
+        email = ?,
+        first_name = ?,
+        last_name = ?,
+        updated_at = NOW()
+       WHERE user_id = ?`,
+      [email, firstName, lastName, (vendorResult as any[])[0].user_id]
+    );
+
+    return NextResponse.json({ message: 'Vendor updated successfully' });
   } catch (error) {
     console.error('Error updating vendor:', error);
     return NextResponse.json(
@@ -198,34 +186,22 @@ export async function PATCH(
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      await connection.beginTransaction();
+    // Update user status
+    await pool.execute(
+      'UPDATE users SET is_active = ? WHERE user_id = ? AND role = ?',
+      [isActive, vendorId, 'vendor']
+    );
 
-      // Update user status
-      await connection.execute(
-        'UPDATE users SET is_active = ? WHERE user_id = ? AND role = ?',
-        [isActive, vendorId, 'vendor']
-      );
+    // Update vendor_info status if it exists
+    await pool.execute(
+      'UPDATE vendor_info SET is_active = ? WHERE user_id = ?',
+      [isActive, vendorId]
+    );
 
-      // Update vendor_info status if it exists
-      await connection.execute(
-        'UPDATE vendor_info SET is_active = ? WHERE user_id = ?',
-        [isActive, vendorId]
-      );
-
-      await connection.commit();
-
-      return NextResponse.json({ 
-        message: `Vendor ${isActive ? 'activated' : 'deactivated'} successfully` 
-      });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return NextResponse.json({ 
+      message: `Vendor ${isActive ? 'activated' : 'deactivated'} successfully` 
+    });
   } catch (error) {
     console.error('Error updating vendor status:', error);
     return NextResponse.json(

@@ -193,146 +193,133 @@ export async function POST(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      // Transaction handling with pool - consider using connection from pool
+    // Get reward details with availability check
+    const [rewards] = await pool.execute<RowDataPacket[]>(
+      `SELECT lr.*, 
+              ula.available_points,
+              lt.tier_level,
+              COALESCE(user_redemptions.redemption_count, 0) as user_redemptions
+       FROM loyalty_rewards lr
+       JOIN user_loyalty_accounts ula ON ula.user_id = ?
+       JOIN loyalty_tiers lt ON ula.current_tier_id = lt.id
+       LEFT JOIN (
+         SELECT reward_id, COUNT(*) as redemption_count
+         FROM loyalty_reward_redemptions
+         WHERE user_id = ? AND redemption_status NOT IN ('cancelled', 'expired')
+         GROUP BY reward_id
+       ) user_redemptions ON lr.id = user_redemptions.reward_id
+       WHERE lr.id = ? AND lr.is_active = 1`,
+      [user.userId, user.userId, rewardId]
+    );
 
-      // Get reward details with availability check
-      const [rewards] = await connection.execute<RowDataPacket[]>(
-        `SELECT lr.*, 
-                ula.available_points,
-                lt.tier_level,
-                COALESCE(user_redemptions.redemption_count, 0) as user_redemptions
-         FROM loyalty_rewards lr
-         JOIN user_loyalty_accounts ula ON ula.user_id = ?
-         JOIN loyalty_tiers lt ON ula.current_tier_id = lt.id
-         LEFT JOIN (
-           SELECT reward_id, COUNT(*) as redemption_count
-           FROM loyalty_reward_redemptions
-           WHERE user_id = ? AND redemption_status NOT IN ('cancelled', 'expired')
-           GROUP BY reward_id
-         ) user_redemptions ON lr.id = user_redemptions.reward_id
-         WHERE lr.id = ? AND lr.is_active = 1`,
-        [user.userId, user.userId, rewardId]
-      );
-
-      if (rewards.length === 0) {
-        throw new Error('Reward not found or inactive');
-      }
-
-      const reward = rewards[0];
-
-      // Validation checks
-      if (reward.available_points < reward.points_cost) {
-        throw new Error('Insufficient points');
-      }
-
-      if (reward.tier_level < reward.min_tier_level) {
-        throw new Error('Tier level too low for this reward');
-      }
-
-      if (reward.max_uses_per_user && reward.user_redemptions >= reward.max_uses_per_user) {
-        throw new Error('Maximum uses per user exceeded');
-      }
-
-      if (reward.total_available && reward.total_redeemed >= reward.total_available) {
-        throw new Error('Reward no longer available');
-      }
-
-      // Check validity dates
-      const now = new Date();
-      if (reward.valid_from && new Date(reward.valid_from) > now) {
-        throw new Error('Reward not yet available');
-      }
-      if (reward.valid_until && new Date(reward.valid_until) < now) {
-        throw new Error('Reward has expired');
-      }
-
-      // Generate coupon code for applicable reward types
-      let couponCode = null;
-      if (['discount_percentage', 'discount_fixed', 'free_shipping'].includes(reward.reward_type)) {
-        couponCode = `LOYALTY${Date.now()}${Math.floor(Math.random() * 1000)}`;
-      }
-
-      // Calculate expiry date (30 days from redemption)
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 30);
-
-      // Create redemption record
-      const [redemptionResult] = await connection.execute<ResultSetHeader>(
-        `INSERT INTO loyalty_reward_redemptions (
-          user_id,
-          reward_id,
-          points_used,
-          reward_value,
-          coupon_code,
-          expires_at
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
-        [
-          user.userId,
-          rewardId,
-          reward.points_cost,
-          reward.discount_value || reward.discount_percentage || 0,
-          couponCode,
-          expiryDate
-        ]
-      );
-
-      // Deduct points from user account
-      await pool.execute(
-        `UPDATE user_loyalty_accounts 
-         SET available_points = available_points - ?,
-             points_redeemed = points_redeemed + ?,
-             last_activity_date = NOW()
-         WHERE user_id = ?`,
-        [reward.points_cost, reward.points_cost, user.userId]
-      );
-
-      // Record points transaction
-      await pool.execute(
-        `INSERT INTO loyalty_points_transactions (
-          user_id,
-          transaction_type,
-          points_amount,
-          description,
-          reference_type,
-          reference_id
-        ) VALUES (?, 'redeemed', ?, ?, 'reward_redemption', ?)`,
-        [
-          user.userId,
-          -reward.points_cost,
-          `Redeemed: ${reward.reward_name}`,
-          redemptionResult.insertId.toString()
-        ]
-      );
-
-      // Update reward redemption count
-      await pool.execute(
-        'UPDATE loyalty_rewards SET total_redeemed = total_redeemed + 1 WHERE id = ?',
-        [rewardId]
-      );
-
-      // Commit handling needs review with pool
-
-      return NextResponse.json({
-        success: true,
-        message: 'Reward redeemed successfully',
-        redemption: {
-          id: redemptionResult.insertId,
-          couponCode,
-          expiresAt: expiryDate,
-          pointsUsed: reward.points_cost,
-          rewardValue: reward.discount_value || reward.discount_percentage || 0
-        }
-      });
-
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
+    if (rewards.length === 0) {
+      throw new Error('Reward not found or inactive');
     }
+
+    const reward = rewards[0];
+
+    // Validation checks
+    if (reward.available_points < reward.points_cost) {
+      throw new Error('Insufficient points');
+    }
+
+    if (reward.tier_level < reward.min_tier_level) {
+      throw new Error('Tier level too low for this reward');
+    }
+
+    if (reward.max_uses_per_user && reward.user_redemptions >= reward.max_uses_per_user) {
+      throw new Error('Maximum uses per user exceeded');
+    }
+
+    if (reward.total_available && reward.total_redeemed >= reward.total_available) {
+      throw new Error('Reward no longer available');
+    }
+
+    // Check validity dates
+    const now = new Date();
+    if (reward.valid_from && new Date(reward.valid_from) > now) {
+      throw new Error('Reward not yet available');
+    }
+    if (reward.valid_until && new Date(reward.valid_until) < now) {
+      throw new Error('Reward has expired');
+    }
+
+    // Generate coupon code for applicable reward types
+    let couponCode = null;
+    if (['discount_percentage', 'discount_fixed', 'free_shipping'].includes(reward.reward_type)) {
+      couponCode = `LOYALTY${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    }
+
+    // Calculate expiry date (30 days from redemption)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+
+    // Create redemption record
+    const [redemptionResult] = await pool.execute<ResultSetHeader>(
+      `INSERT INTO loyalty_reward_redemptions (
+        user_id,
+        reward_id,
+        points_used,
+        reward_value,
+        coupon_code,
+        expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        user.userId,
+        rewardId,
+        reward.points_cost,
+        reward.discount_value || reward.discount_percentage || 0,
+        couponCode,
+        expiryDate
+      ]
+    );
+
+    // Deduct points from user account
+    await pool.execute(
+      `UPDATE user_loyalty_accounts 
+       SET available_points = available_points - ?,
+           points_redeemed = points_redeemed + ?,
+           last_activity_date = NOW()
+       WHERE user_id = ?`,
+      [reward.points_cost, reward.points_cost, user.userId]
+    );
+
+    // Record points transaction
+    await pool.execute(
+      `INSERT INTO loyalty_points_transactions (
+        user_id,
+        transaction_type,
+        points_amount,
+        description,
+        reference_type,
+        reference_id
+      ) VALUES (?, 'redeemed', ?, ?, 'reward_redemption', ?)`,
+      [
+        user.userId,
+        -reward.points_cost,
+        `Redeemed: ${reward.reward_name}`,
+        redemptionResult.insertId.toString()
+      ]
+    );
+
+    // Update reward redemption count
+    await pool.execute(
+      'UPDATE loyalty_rewards SET total_redeemed = total_redeemed + 1 WHERE id = ?',
+      [rewardId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reward redeemed successfully',
+      redemption: {
+        id: redemptionResult.insertId,
+        couponCode,
+        expiresAt: expiryDate,
+        pointsUsed: reward.points_cost,
+        rewardValue: reward.discount_value || reward.discount_percentage || 0
+      }
+    });
 
   } catch (error) {
     console.error('Error redeeming loyalty reward:', error);

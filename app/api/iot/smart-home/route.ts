@@ -68,7 +68,6 @@ export async function GET(request: NextRequest) {
     const platform = searchParams.get('platform');
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
     try {
       switch (action) {
@@ -100,7 +99,6 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ overview });
       }
     } finally {
-      connection.release();
     }
 
   } catch (error) {
@@ -123,7 +121,6 @@ export async function POST(request: NextRequest) {
     const { action, deviceData, automationRule, platform, deviceId } = body;
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
     try {
       switch (action) {
@@ -151,7 +148,6 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
       }
     } finally {
-      connection.release();
     }
 
   } catch (error) {
@@ -174,7 +170,6 @@ export async function PUT(request: NextRequest) {
     const { action, automationId, deviceId, settings } = body;
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
     try {
       switch (action) {
@@ -190,7 +185,6 @@ export async function PUT(request: NextRequest) {
           return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
       }
     } finally {
-      connection.release();
     }
 
   } catch (error) {
@@ -227,7 +221,7 @@ async function getSmartHomeDevices(connection: any, userId: number, platform?: s
   
   query += ' ORDER BY d.device_name, d.created_at';
   
-  const [rows] = await connection.query(query, params);
+  const [rows] = await pool.execute(query, params);
   
   return rows.map((row: any) => ({
     id: row.device_id,
@@ -246,7 +240,7 @@ async function getSmartHomeDevices(connection: any, userId: number, platform?: s
 
 // Get automation rules for a user
 async function getAutomationRules(connection: any, userId: number): Promise<AutomationRule[]> {
-  const [rows] = await connection.query(`
+  const [rows] = await pool.execute(`
     SELECT 
       ar.*,
       COUNT(al.log_id) as execution_count,
@@ -273,7 +267,7 @@ async function getAutomationRules(connection: any, userId: number): Promise<Auto
 // Generate energy optimization report
 async function getEnergyOptimizationReport(connection: any, userId: number): Promise<EnergyOptimization> {
   // Get current energy usage data
-  const [energyData] = await connection.query(`
+  const [energyData] = await pool.execute(`
     SELECT 
       SUM(sdc.energy_usage) as total_usage,
       AVG(sdc.energy_usage) as avg_usage,
@@ -301,7 +295,7 @@ async function getEnergyOptimizationReport(connection: any, userId: number): Pro
 // Generate AI-powered energy optimization recommendations
 async function generateEnergyRecommendations(connection: any, userId: number) {
   // Analyze usage patterns and generate recommendations
-  const [usagePatterns] = await connection.query(`
+  const [usagePatterns] = await pool.execute(`
     SELECT 
       shd.device_type,
       shd.location,
@@ -354,7 +348,7 @@ async function registerSmartHomeDevice(connection: any, userId: number, deviceDa
     productId
   } = deviceData;
 
-  const [result] = await connection.query(`
+  const [result] = await pool.execute(`
     INSERT INTO smart_home_devices (
       user_id,
       device_name,
@@ -381,7 +375,7 @@ async function registerSmartHomeDevice(connection: any, userId: number, deviceDa
   const deviceId = result.insertId;
 
   // Initialize device control settings
-  await connection.query(`
+  await pool.execute(`
     INSERT INTO smart_device_controls (
       device_id,
       position,
@@ -411,7 +405,7 @@ async function createAutomationRule(connection: any, userId: number, ruleData: a
     isActive = true
   } = ruleData;
 
-  const [result] = await connection.query(`
+  const [result] = await pool.execute(`
     INSERT INTO automation_rules (
       user_id,
       rule_name,
@@ -443,7 +437,7 @@ async function createAutomationRule(connection: any, userId: number, ruleData: a
 // Control smart home device
 async function controlDevice(connection: any, userId: number, deviceId: string, command: string, parameters: any) {
   // Verify user owns the device
-  const [deviceCheck] = await connection.query(`
+  const [deviceCheck] = await pool.execute(`
     SELECT device_id FROM smart_home_devices 
     WHERE device_id = ? AND user_id = ?
   `, [deviceId, userId]);
@@ -453,7 +447,7 @@ async function controlDevice(connection: any, userId: number, deviceId: string, 
   }
 
   // Log the command
-  await connection.query(`
+  await pool.execute(`
     INSERT INTO device_command_logs (
       device_id,
       command,
@@ -465,7 +459,7 @@ async function controlDevice(connection: any, userId: number, deviceId: string, 
 
   // Update device control state
   if (command === 'set_position') {
-    await connection.query(`
+    await pool.execute(`
       UPDATE smart_device_controls 
       SET position = ?, last_command = ?, recorded_at = NOW()
       WHERE device_id = ?
@@ -530,7 +524,7 @@ async function getSupportedPlatforms() {
 
 // Get smart home overview
 async function getSmartHomeOverview(connection: any, userId: number) {
-  const [deviceStats] = await connection.query(`
+  const [deviceStats] = await pool.execute(`
     SELECT 
       COUNT(*) as total_devices,
       SUM(CASE WHEN status = 'online' THEN 1 ELSE 0 END) as online_devices,
@@ -540,7 +534,7 @@ async function getSmartHomeOverview(connection: any, userId: number) {
     WHERE user_id = ?
   `, [userId]);
 
-  const [automationStats] = await connection.query(`
+  const [automationStats] = await pool.execute(`
     SELECT 
       COUNT(*) as total_rules,
       SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_rules
@@ -548,7 +542,7 @@ async function getSmartHomeOverview(connection: any, userId: number) {
     WHERE user_id = ?
   `, [userId]);
 
-  const [recentActivity] = await connection.query(`
+  const [recentActivity] = await pool.execute(`
     SELECT 
       dcl.command,
       dcl.executed_at,
@@ -573,7 +567,7 @@ async function getSmartHomeOverview(connection: any, userId: number) {
 
 // Additional helper functions for device status, platform sync, etc.
 async function getDeviceStatus(connection: any, deviceId: string, userId: number) {
-  const [device] = await connection.query(`
+  const [device] = await pool.execute(`
     SELECT 
       shd.*,
       sdc.position,
@@ -617,7 +611,7 @@ async function createEnergyOptimization(connection: any, userId: number, prefere
 }
 
 async function updateAutomationRule(connection: any, userId: number, automationId: string, settings: any) {
-  await connection.query(`
+  await pool.execute(`
     UPDATE automation_rules 
     SET 
       rule_name = COALESCE(?, rule_name),
@@ -639,7 +633,7 @@ async function updateAutomationRule(connection: any, userId: number, automationI
 }
 
 async function updateDeviceSettings(connection: any, userId: number, deviceId: string, settings: any) {
-  await connection.query(`
+  await pool.execute(`
     UPDATE smart_home_devices 
     SET 
       device_name = COALESCE(?, device_name),

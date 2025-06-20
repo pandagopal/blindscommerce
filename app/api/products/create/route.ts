@@ -28,10 +28,6 @@ export async function POST(request: NextRequest) {
     } = basicInfo;
 
     const pool = await getPool();
-    connection = await pool.getConnection();
-
-    try {
-      await connection.query('BEGIN');
 
       // Use provided slug or generate from name as fallback
       let finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

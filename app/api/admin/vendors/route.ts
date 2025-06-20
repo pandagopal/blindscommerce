@@ -213,13 +213,10 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
     try {
-      // Transaction handling with pool - consider using connection from pool
-
       // Create user
-      const [userResult] = await connection.execute<ResultSetHeader>(
+      const [userResult] = await pool.execute<ResultSetHeader>(
         `INSERT INTO users (
           email,
           password_hash,
@@ -235,7 +232,7 @@ export async function POST(request: NextRequest) {
       const userId = userResult.insertId;
 
       // Create vendor info
-      await connection.execute<ResultSetHeader>(
+      await pool.execute<ResultSetHeader>(
         `INSERT INTO vendor_info (
           user_id,
           business_name,
@@ -255,17 +252,12 @@ export async function POST(request: NextRequest) {
         ]
       );
 
-      // Commit handling needs review with pool
-
       return NextResponse.json({
         message: 'Vendor created successfully',
         vendorId: userId
       });
     } catch (error) {
-      // Rollback handling needs review with pool
       throw error;
-    } finally {
-      connection.release();
     }
   } catch (error) {
     console.error('Error creating vendor:', error);

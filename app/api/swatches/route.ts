@@ -44,10 +44,8 @@ interface RequestHistoryRow extends RowDataPacket {
 }
 
 export async function GET(request: NextRequest) {
-  let connection;
   try {
     const pool = await getPool();
-    connection = await pool.getConnection();
     
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search');
@@ -100,10 +98,10 @@ export async function GET(request: NextRequest) {
 
     swatchQuery += ' ORDER BY ms.name ASC';
 
-    const [swatchRows] = await connection.execute<SwatchRow[]>(swatchQuery, queryParams);
+    const [swatchRows] = await pool.execute<SwatchRow[]>(swatchQuery, queryParams);
 
     // Get categories - using actual schema (no is_active column)
-    const [categoryRows] = await connection.execute<CategoryRow[]>(
+    const [categoryRows] = await pool.execute<CategoryRow[]>(
       'SELECT category_id, name as category_name, slug FROM categories ORDER BY name'
     );
 
@@ -117,7 +115,7 @@ export async function GET(request: NextRequest) {
                       user ? 'registered' : 'guest';
 
       // Check if we have limits defined for this user type
-      const [limitsRows] = await connection.execute<LimitsRow[]>(
+      const [limitsRows] = await pool.execute<LimitsRow[]>(
         `SELECT * FROM sample_request_limits WHERE user_type = ? LIMIT 1`,
         [userType]
       );
@@ -158,7 +156,7 @@ export async function GET(request: NextRequest) {
           );
 
           // Re-fetch the inserted limits
-          const [newLimitsRows] = await connection.execute<LimitsRow[]>(
+          const [newLimitsRows] = await pool.execute<LimitsRow[]>(
             `SELECT * FROM sample_request_limits WHERE user_type = ? LIMIT 1`,
             [userType]
           );
@@ -212,7 +210,7 @@ export async function GET(request: NextRequest) {
           `;
         }
 
-        const [historyRows] = await connection.execute<RequestHistoryRow[]>(historyQuery, historyParams);
+        const [historyRows] = await pool.execute<RequestHistoryRow[]>(historyQuery, historyParams);
         const history = historyRows[0];
         
         // Check cooldown period
@@ -312,9 +310,5 @@ export async function GET(request: NextRequest) {
       { error: 'Failed to fetch swatches' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

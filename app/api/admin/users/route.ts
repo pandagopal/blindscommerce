@@ -59,95 +59,90 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role');
 
     const pool = await getPool();
-    const client = await pool.getConnection();
 
-    try {
-      let query = `
-        SELECT DISTINCT
-          u.user_id,
-          u.email,
-          u.first_name,
-          u.last_name,
-          u.phone,
-          u.role,
-          u.is_active,
-          u.is_verified,
-          u.created_at,
-          u.last_login
-        FROM users u
-        WHERE 1=1
-      `;
+    let query = `
+      SELECT DISTINCT
+        u.user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.phone,
+        u.role,
+        u.is_active,
+        u.is_verified,
+        u.created_at,
+        u.last_login
+      FROM users u
+      WHERE 1=1
+    `;
 
-      const values: any[] = [];
+    const values: any[] = [];
 
-      if (search) {
-        query += ` AND (
-          u.email LIKE ? OR 
-          u.first_name LIKE ? OR 
-          u.last_name LIKE ? OR 
-          u.phone LIKE ?
-        )`;
-        const searchPattern = `%${search}%`;
-        values.push(searchPattern, searchPattern, searchPattern, searchPattern);
-      }
-
-      if (role && role !== 'all') {
-        query += ` AND u.role = ?`;
-        values.push(role);
-      }
-
-      // Add sorting
-      const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'last_login'];
-      const validSortOrders = ['asc', 'desc'];
-
-      const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
-      const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
-
-      query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
-
-      // Add pagination
-      query += ` LIMIT ? OFFSET ?`;
-      values.push(limit, offset);
-
-      console.log('Query:', query);
-      console.log('Values:', values);
-
-      const [result] = await client.query(query, values);
-
-      // Get total count using the same conditions
-      let countQuery = `
-        SELECT COUNT(DISTINCT u.user_id) as count
-        FROM users u
-        WHERE 1=1
-      `;
-
-      const countValues: any[] = [];
-
-      if (search) {
-        countQuery += ` AND (
-          u.email LIKE ? OR
-          u.first_name LIKE ? OR
-          u.last_name LIKE ? OR
-          u.phone LIKE ?
-        )`;
-        const searchPattern = `%${search}%`;
-        countValues.push(searchPattern, searchPattern, searchPattern, searchPattern);
-      }
-
-      if (role && role !== 'all') {
-        countQuery += ` AND u.role = ?`;
-        countValues.push(role);
-      }
-
-      const [countResult] = await client.query(countQuery, countValues);
-
-      return NextResponse.json({
-        users: result,
-        total: parseInt((countResult as any[])[0].count)
-      });
-    } finally {
-      client.release();
+    if (search) {
+      query += ` AND (
+        u.email LIKE ? OR 
+        u.first_name LIKE ? OR 
+        u.last_name LIKE ? OR 
+        u.phone LIKE ?
+      )`;
+      const searchPattern = `%${search}%`;
+      values.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
+
+    if (role && role !== 'all') {
+      query += ` AND u.role = ?`;
+      values.push(role);
+    }
+
+    // Add sorting
+    const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'last_login'];
+    const validSortOrders = ['asc', 'desc'];
+
+    const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
+
+    query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
+
+    // Add pagination
+    query += ` LIMIT ? OFFSET ?`;
+    values.push(limit, offset);
+
+    console.log('Query:', query);
+    console.log('Values:', values);
+
+    const [result] = await pool.execute(query, values);
+
+    // Get total count using the same conditions
+    let countQuery = `
+      SELECT COUNT(DISTINCT u.user_id) as count
+      FROM users u
+      WHERE 1=1
+    `;
+
+    const countValues: any[] = [];
+
+    if (search) {
+      countQuery += ` AND (
+        u.email LIKE ? OR
+        u.first_name LIKE ? OR
+        u.last_name LIKE ? OR
+        u.phone LIKE ?
+      )`;
+      const searchPattern = `%${search}%`;
+      countValues.push(searchPattern, searchPattern, searchPattern, searchPattern);
+    }
+
+    if (role && role !== 'all') {
+      countQuery += ` AND u.role = ?`;
+      countValues.push(role);
+    }
+
+    const [countResult] = await pool.execute(countQuery, countValues);
+
+    return NextResponse.json({
+      users: result,
+      total: parseInt((countResult as any[])[0].count)
+    });
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
@@ -200,138 +195,126 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.getConnection();
 
-    try {
-      await client.beginTransaction();
+    // Check if email already exists
+    const [existingUser] = await pool.execute(
+      'SELECT user_id FROM users WHERE email = ?',
+      [email]
+    );
 
-      // Check if email already exists
-      const [existingUser] = await client.execute(
-        'SELECT user_id FROM users WHERE email = ?',
-        [email]
+    if ((existingUser as any[]).length > 0) {
+      return NextResponse.json(
+        { error: 'Email already exists' },
+        { status: 400 }
       );
+    }
 
-      if ((existingUser as any[]).length > 0) {
-        return NextResponse.json(
-          { error: 'Email already exists' },
-          { status: 400 }
-        );
-      }
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Insert new user
-      const userQuery = `
-        INSERT INTO users (
-          email,
-          password_hash,
-          first_name,
-          last_name,
-          phone,
-          role,
-          is_active,
-          created_at,
-          updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-      `;
-
-      const [userResult] = await client.execute(userQuery, [
+    // Insert new user
+    const userQuery = `
+      INSERT INTO users (
         email,
-        hashedPassword,
-        firstName,
-        lastName,
+        password_hash,
+        first_name,
+        last_name,
         phone,
         role,
-        isActive ? 1 : 0 // Convert boolean to 0/1
-      ]);
+        is_active,
+        created_at,
+        updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `;
 
-      const userId = (userResult as any).insertId;
+    const [userResult] = await pool.execute(userQuery, [
+      email,
+      hashedPassword,
+      firstName,
+      lastName,
+      phone,
+      role,
+      isActive ? 1 : 0 // Convert boolean to 0/1
+    ]);
 
-      // Add role-specific entry
-      if (role === 'vendor') {
-        await client.execute(
-          `INSERT INTO vendor_info (
-            user_id,
-            business_name,
-            business_email,
-            business_phone,
-            is_active,
-            is_verified,
-            approval_status,
-            created_at,
-            updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-          [
-            userId,
-            `${firstName || ''} ${lastName || ''}'s Business`.trim(),
-            email,
-            phone,
-            isActive ? 1 : 0, // Convert boolean to 0/1
-            0, // Convert boolean to 0/1
-            'pending'
-          ]
-        );
-      } else if (role === 'sales') {
-        await client.execute(
-          `INSERT INTO sales_staff (
-            user_id, hire_date, created_at, updated_at
-          ) VALUES (?, NOW(), NOW(), NOW())`,
-          [userId]
-        );
-      } else if (role === 'installer') {
-        await client.execute(
-          `INSERT INTO installers (
-            user_id, created_at, updated_at
-          ) VALUES (?, NOW(), NOW())`,
-          [userId]
-        );
-      }
+    const userId = (userResult as any).insertId;
 
-      // Create user preferences
-      const preferencesQuery = `
-        INSERT INTO user_preferences (
+    // Add role-specific entry
+    if (role === 'vendor') {
+      await pool.execute(
+        `INSERT INTO vendor_info (
           user_id,
+          business_name,
+          business_email,
+          business_phone,
+          is_active,
+          is_verified,
+          approval_status,
           created_at,
           updated_at
-        ) VALUES (?, NOW(), NOW())
-      `;
-
-      await client.execute(preferencesQuery, [userId]);
-
-      // Create user notifications
-      const notificationsQuery = `
-        INSERT INTO user_notifications (
-          user_id,
-          created_at,
-          updated_at
-        ) VALUES (?, NOW(), NOW())
-      `;
-
-      await client.execute(notificationsQuery, [userId]);
-
-      // Create user wishlist
-      const wishlistQuery = `
-        INSERT INTO wishlist (
-          user_id,
-          created_at
-        ) VALUES (?, NOW())
-      `;
-
-      await client.execute(wishlistQuery, [userId]);
-
-      await client.commit();
-
-      return NextResponse.json({ 
-        success: true,
-        user_id: userId
-      });
-    } catch (error) {
-      await client.rollback();
-      throw error;
-    } finally {
-      client.release();
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+        [
+          userId,
+          `${firstName || ''} ${lastName || ''}'s Business`.trim(),
+          email,
+          phone,
+          isActive ? 1 : 0, // Convert boolean to 0/1
+          0, // Convert boolean to 0/1
+          'pending'
+        ]
+      );
+    } else if (role === 'sales') {
+      await pool.execute(
+        `INSERT INTO sales_staff (
+          user_id, hire_date, created_at, updated_at
+        ) VALUES (?, NOW(), NOW(), NOW())`,
+        [userId]
+      );
+    } else if (role === 'installer') {
+      await pool.execute(
+        `INSERT INTO installers (
+          user_id, created_at, updated_at
+        ) VALUES (?, NOW(), NOW())`,
+        [userId]
+      );
     }
+
+    // Create user preferences
+    const preferencesQuery = `
+      INSERT INTO user_preferences (
+        user_id,
+        created_at,
+        updated_at
+      ) VALUES (?, NOW(), NOW())
+    `;
+
+    await pool.execute(preferencesQuery, [userId]);
+
+    // Create user notifications
+    const notificationsQuery = `
+      INSERT INTO user_notifications (
+        user_id,
+        created_at,
+        updated_at
+      ) VALUES (?, NOW(), NOW())
+    `;
+
+    await pool.execute(notificationsQuery, [userId]);
+
+    // Create user wishlist
+    const wishlistQuery = `
+      INSERT INTO wishlist (
+        user_id,
+        created_at
+      ) VALUES (?, NOW())
+    `;
+
+    await pool.execute(wishlistQuery, [userId]);
+
+    return NextResponse.json({ 
+      success: true,
+      user_id: userId
+    });
   } catch (error) {
     console.error('Error creating user:', error);
     return NextResponse.json(

@@ -102,9 +102,7 @@ export const getPool = async (): Promise<mysql.Pool> => {
       waitForConnections: true,
       connectionLimit: 5, // Reduced from 10 to 5 to prevent overwhelming MySQL
       queueLimit: 0,
-      acquireTimeout: 60000, // 60 seconds timeout
-      timeout: 60000, // 60 seconds query timeout
-      reconnect: true,
+      connectTimeout: 60000, // 60 seconds connection timeout
       multipleStatements: false
     });
 

@@ -10,11 +10,10 @@ export async function GET(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
     try {
       // Get total revenue and orders
-      const [[revenue]] = await connection.execute(`
+      const [[revenue]] = await pool.execute(`
         SELECT 
           COALESCE(SUM(total_amount), 0) as total_revenue,
           COUNT(*) as total_orders,
@@ -24,7 +23,7 @@ export async function GET(req: NextRequest) {
       `);
 
       // Get customer stats
-      const [[customerStats]] = await connection.execute(`
+      const [[customerStats]] = await pool.execute(`
         SELECT 
           COUNT(DISTINCT user_id) as total_customers,
           SUM(CASE WHEN last_login >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN 1 ELSE 0 END) as active_customers
@@ -33,21 +32,21 @@ export async function GET(req: NextRequest) {
       `);
 
       // Get pending orders
-      const [[{ pending_orders }]] = await connection.execute(`
+      const [[{ pending_orders }]] = await pool.execute(`
         SELECT COUNT(*) as pending_orders
         FROM orders
         WHERE status IN ('pending', 'processing')
       `);
 
       // Get stock alerts
-      const [[{ stock_alerts }]] = await connection.execute(`
+      const [[{ stock_alerts }]] = await pool.execute(`
         SELECT COUNT(*) as stock_alerts
         FROM products
         WHERE stock_quantity <= reorder_point
       `);
 
       // Get daily sales for the past 30 days
-      const [recentSales] = await connection.execute(`
+      const [recentSales] = await pool.execute(`
         SELECT 
           DATE(created_at) as date,
           SUM(total_amount) as amount
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
       `);
 
       // Get customer growth
-      const [customerGrowth] = await connection.execute(`
+      const [customerGrowth] = await pool.execute(`
         SELECT 
           DATE(created_at) as date,
           COUNT(*) as new_customers,
@@ -83,8 +82,8 @@ export async function GET(req: NextRequest) {
         customerGrowth
       });
 
-    } finally {
-      connection.release();
+    } catch (error) {
+      throw error;
     }
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

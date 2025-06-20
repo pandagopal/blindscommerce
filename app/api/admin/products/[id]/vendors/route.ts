@@ -9,7 +9,6 @@ interface VendorParams {
 }
 
 export async function GET(request: NextRequest, { params }: VendorParams) {
-  let connection;
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
@@ -19,10 +18,9 @@ export async function GET(request: NextRequest, { params }: VendorParams) {
     const productId = params.id;
 
     const pool = await getPool();
-    connection = await pool.getConnection();
 
     // Get vendors assigned to this product
-    const [vendorRows] = await connection.query(
+    const [vendorRows] = await pool.execute(
       `SELECT vi.vendor_info_id as vendorId, vi.company_name as companyName, 
               vi.status, vp.vendor_price, vp.status as vendorProductStatus,
               vp.created_at as assignedAt
@@ -53,9 +51,5 @@ export async function GET(request: NextRequest, { params }: VendorParams) {
       { error: 'Failed to fetch product vendors' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

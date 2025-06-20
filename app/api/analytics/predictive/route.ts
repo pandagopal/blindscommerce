@@ -46,59 +46,53 @@ export async function GET(request: NextRequest) {
     const timeframe = searchParams.get('timeframe') || '30d';
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      let result: any = {};
+    let result: any = {};
 
-      switch (analysisType) {
-        case 'customer-behavior':
-          if (userId) {
-            result = await getCustomerBehaviorAnalysis(connection, parseInt(userId));
-          } else {
-            result = await getCustomerSegmentAnalysis(connection, timeframe);
-          }
-          break;
+    switch (analysisType) {
+      case 'customer-behavior':
+        if (userId) {
+          result = await getCustomerBehaviorAnalysis(pool, parseInt(userId));
+        } else {
+          result = await getCustomerSegmentAnalysis(pool, timeframe);
+        }
+        break;
 
-        case 'market-trends':
-          result = await getMarketTrendAnalysis(connection, timeframe);
-          break;
+      case 'market-trends':
+        result = await getMarketTrendAnalysis(pool, timeframe);
+        break;
 
-        case 'churn-prediction':
-          result = await getChurnPredictionAnalysis(connection);
-          break;
+      case 'churn-prediction':
+        result = await getChurnPredictionAnalysis(pool);
+        break;
 
-        case 'demand-forecasting':
-          result = await getDemandForecastingAnalysis(connection, timeframe);
-          break;
+      case 'demand-forecasting':
+        result = await getDemandForecastingAnalysis(pool, timeframe);
+        break;
 
-        case 'pricing-optimization':
-          result = await getPricingOptimizationAnalysis(connection);
-          break;
+      case 'pricing-optimization':
+        result = await getPricingOptimizationAnalysis(pool);
+        break;
 
-        case 'inventory-prediction':
-          result = await getInventoryPredictionAnalysis(connection, timeframe);
-          break;
+      case 'inventory-prediction':
+        result = await getInventoryPredictionAnalysis(pool, timeframe);
+        break;
 
-        case 'predictive-insights':
-          result = await getPredictiveInsights(connection);
-          break;
+      case 'predictive-insights':
+        result = await getPredictiveInsights(pool);
+        break;
 
-        default:
-          result = await getAnalyticsDashboard(connection, timeframe);
-      }
-
-      return NextResponse.json({
-        success: true,
-        data: result,
-        analysisType,
-        timeframe,
-        generatedAt: new Date().toISOString()
-      });
-
-    } finally {
-      connection.release();
+      default:
+        result = await getAnalyticsDashboard(pool, timeframe);
     }
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+      analysisType,
+      timeframe,
+      generatedAt: new Date().toISOString()
+    });
 
   } catch (error) {
     console.error('Error in predictive analytics API:', error);
@@ -120,41 +114,35 @@ export async function POST(request: NextRequest) {
     const { action, parameters } = body;
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      let result: any = {};
+    let result: any = {};
 
-      switch (action) {
-        case 'retrain-models':
-          result = await retrainPredictiveModels(connection);
-          break;
+    switch (action) {
+      case 'retrain-models':
+        result = await retrainPredictiveModels(pool);
+        break;
 
-        case 'generate-custom-report':
-          result = await generateCustomReport(connection, parameters);
-          break;
+      case 'generate-custom-report':
+        result = await generateCustomReport(pool, parameters);
+        break;
 
-        case 'update-customer-score':
-          result = await updateCustomerScore(connection, parameters.userId, parameters.factors);
-          break;
+      case 'update-customer-score':
+        result = await updateCustomerScore(pool, parameters.userId, parameters.factors);
+        break;
 
-        case 'create-prediction-alert':
-          result = await createPredictionAlert(connection, parameters);
-          break;
+      case 'create-prediction-alert':
+        result = await createPredictionAlert(pool, parameters);
+        break;
 
-        default:
-          return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
-      }
-
-      return NextResponse.json({
-        success: true,
-        result,
-        action
-      });
-
-    } finally {
-      connection.release();
+      default:
+        return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
+
+    return NextResponse.json({
+      success: true,
+      result,
+      action
+    });
 
   } catch (error) {
     console.error('Error in predictive analytics POST API:', error);
@@ -166,9 +154,9 @@ export async function POST(request: NextRequest) {
 }
 
 // Individual customer behavior analysis
-async function getCustomerBehaviorAnalysis(connection: any, userId: number): Promise<CustomerBehaviorPattern> {
+async function getCustomerBehaviorAnalysis(pool: any, userId: number): Promise<CustomerBehaviorPattern> {
   // Get customer's purchase history
-  const [purchaseHistory] = await connection.query(`
+  const [purchaseHistory] = await pool.execute(`
     SELECT 
       COUNT(DISTINCT o.order_id) as order_count,
       AVG(o.total_amount) as avg_order_value,
@@ -181,7 +169,7 @@ async function getCustomerBehaviorAnalysis(connection: any, userId: number): Pro
   `, [userId]);
 
   // Get category preferences
-  const [categoryPrefs] = await connection.query(`
+  const [categoryPrefs] = await pool.execute(`
     SELECT 
       c.name as category_name,
       COUNT(*) as purchase_count,
@@ -198,7 +186,7 @@ async function getCustomerBehaviorAnalysis(connection: any, userId: number): Pro
   `, [userId]);
 
   // Get seasonal purchasing patterns
-  const [seasonalData] = await connection.query(`
+  const [seasonalData] = await pool.execute(`
     SELECT 
       MONTH(o.created_at) as month,
       COUNT(*) as order_count,
@@ -236,7 +224,7 @@ async function getCustomerBehaviorAnalysis(connection: any, userId: number): Pro
   else if (avgOrderValue < 150) pricesensitivity = 'high';
   
   // Get recommended products
-  const recommendedProducts = await getPersonalizedRecommendations(connection, userId);
+  const recommendedProducts = await getPersonalizedRecommendations(pool, userId);
   
   return {
     userId,
@@ -253,10 +241,10 @@ async function getCustomerBehaviorAnalysis(connection: any, userId: number): Pro
 }
 
 // Customer segment analysis
-async function getCustomerSegmentAnalysis(connection: any, timeframe: string) {
+async function getCustomerSegmentAnalysis(pool: any, timeframe: string) {
   const daysBack = getTimeframeDays(timeframe);
   
-  const [segments] = await connection.query(`
+  const [segments] = await pool.execute(`
     SELECT 
       CASE 
         WHEN total_spent > 1000 THEN 'High Value'
@@ -290,10 +278,10 @@ async function getCustomerSegmentAnalysis(connection: any, timeframe: string) {
 }
 
 // Market trend analysis
-async function getMarketTrendAnalysis(connection: any, timeframe: string): Promise<MarketTrend[]> {
+async function getMarketTrendAnalysis(pool: any, timeframe: string): Promise<MarketTrend[]> {
   const daysBack = getTimeframeDays(timeframe);
   
-  const [categoryTrends] = await connection.query(`
+  const [categoryTrends] = await pool.execute(`
     SELECT 
       c.name as category,
       COUNT(oi.order_item_id) as order_volume,
@@ -338,8 +326,8 @@ async function getMarketTrendAnalysis(connection: any, timeframe: string): Promi
 }
 
 // Churn prediction analysis
-async function getChurnPredictionAnalysis(connection: any) {
-  const [churnRisks] = await connection.query(`
+async function getChurnPredictionAnalysis(pool: any) {
+  const [churnRisks] = await pool.execute(`
     SELECT 
       u.user_id,
       u.email,
@@ -376,10 +364,10 @@ async function getChurnPredictionAnalysis(connection: any) {
 }
 
 // Demand forecasting
-async function getDemandForecastingAnalysis(connection: any, timeframe: string) {
+async function getDemandForecastingAnalysis(pool: any, timeframe: string) {
   const daysBack = getTimeframeDays(timeframe);
   
-  const [demandData] = await connection.query(`
+  const [demandData] = await pool.execute(`
     SELECT 
       p.product_id,
       p.name as product_name,
@@ -427,8 +415,8 @@ async function getDemandForecastingAnalysis(connection: any, timeframe: string) 
 }
 
 // Pricing optimization analysis
-async function getPricingOptimizationAnalysis(connection: any) {
-  const [priceAnalysis] = await connection.query(`
+async function getPricingOptimizationAnalysis(pool: any) {
+  const [priceAnalysis] = await pool.execute(`
     SELECT 
       p.product_id,
       p.name as product_name,
@@ -484,7 +472,7 @@ async function getPricingOptimizationAnalysis(connection: any) {
 }
 
 // Get predictive insights
-async function getPredictiveInsights(connection: any): Promise<PredictiveInsight[]> {
+async function getPredictiveInsights(pool: any): Promise<PredictiveInsight[]> {
   // This would use ML models in production
   // For now, we'll generate insights based on data patterns
   
@@ -537,9 +525,9 @@ function getTimeframeDays(timeframe: string): number {
   }
 }
 
-async function getPersonalizedRecommendations(connection: any, userId: number) {
+async function getPersonalizedRecommendations(pool: any, userId: number) {
   // Simplified recommendation logic
-  const [recommendations] = await connection.query(`
+  const [recommendations] = await pool.execute(`
     SELECT DISTINCT
       p.product_id,
       p.name,
@@ -572,10 +560,10 @@ async function getPersonalizedRecommendations(connection: any, userId: number) {
 }
 
 // Analytics dashboard overview
-async function getAnalyticsDashboard(connection: any, timeframe: string) {
+async function getAnalyticsDashboard(pool: any, timeframe: string) {
   const daysBack = getTimeframeDays(timeframe);
   
-  const [overview] = await connection.query(`
+  const [overview] = await pool.execute(`
     SELECT 
       COUNT(DISTINCT o.user_id) as total_customers,
       COUNT(DISTINCT o.order_id) as total_orders,
@@ -589,12 +577,58 @@ async function getAnalyticsDashboard(connection: any, timeframe: string) {
   return {
     overview: overview[0],
     timeframe,
-    insights: await getPredictiveInsights(connection)
+    insights: await getPredictiveInsights(pool)
+  };
+}
+
+// Inventory prediction analysis
+async function getInventoryPredictionAnalysis(pool: any, timeframe: string) {
+  const daysBack = getTimeframeDays(timeframe);
+  
+  const [inventoryData] = await pool.execute(`
+    SELECT 
+      p.product_id,
+      p.name as product_name,
+      p.stock_quantity as current_stock,
+      SUM(oi.quantity) as units_sold,
+      AVG(oi.quantity) as avg_order_quantity,
+      COUNT(DISTINCT o.order_id) as order_count
+    FROM products p
+    LEFT JOIN order_items oi ON p.product_id = oi.product_id
+    LEFT JOIN orders o ON oi.order_id = o.order_id AND o.created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+    WHERE p.is_active = 1
+    GROUP BY p.product_id, p.name, p.stock_quantity
+    ORDER BY units_sold DESC
+    LIMIT 50
+  `, [daysBack]);
+  
+  const predictions = inventoryData.map((item: any) => {
+    const unitsSold = item.units_sold || 0;
+    const currentStock = item.current_stock || 0;
+    const daysOfStock = unitsSold > 0 ? (currentStock / (unitsSold / daysBack)) : 999;
+    
+    let restockRecommendation = 'sufficient';
+    if (daysOfStock < 7) restockRecommendation = 'urgent';
+    else if (daysOfStock < 14) restockRecommendation = 'soon';
+    else if (daysOfStock < 30) restockRecommendation = 'planned';
+    
+    return {
+      ...item,
+      daysOfStock: Math.round(daysOfStock),
+      restockRecommendation,
+      suggestedReorderQuantity: Math.max(unitsSold, item.avg_order_quantity * 10)
+    };
+  });
+  
+  return {
+    predictions,
+    totalProducts: predictions.length,
+    timeframe
   };
 }
 
 // Additional helper functions for POST operations
-async function retrainPredictiveModels(connection: any) {
+async function retrainPredictiveModels(pool: any) {
   // Simulate model retraining
   return {
     modelsRetrained: [
@@ -613,7 +647,7 @@ async function retrainPredictiveModels(connection: any) {
   };
 }
 
-async function generateCustomReport(connection: any, parameters: any) {
+async function generateCustomReport(pool: any, parameters: any) {
   // Generate custom analytical report based on parameters
   return {
     reportId: `custom_${Date.now()}`,
@@ -623,7 +657,7 @@ async function generateCustomReport(connection: any, parameters: any) {
   };
 }
 
-async function updateCustomerScore(connection: any, userId: number, factors: any) {
+async function updateCustomerScore(pool: any, userId: number, factors: any) {
   // Update customer scoring based on new factors
   return {
     userId,
@@ -633,7 +667,7 @@ async function updateCustomerScore(connection: any, userId: number, factors: any
   };
 }
 
-async function createPredictionAlert(connection: any, parameters: any) {
+async function createPredictionAlert(pool: any, parameters: any) {
   // Create prediction-based alert
   return {
     alertId: `alert_${Date.now()}`,

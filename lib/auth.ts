@@ -271,70 +271,59 @@ export async function registerUser(
     // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Start a transaction
+    // Use pool directly without manual connection management
     const pool = await getPool();
-    const connection = await pool.getConnection();
-    try {
-      // Transaction handling with pool - consider using connection from pool
 
-      // Insert new user
-      const query = `
-        INSERT INTO users (
-          email,
-          password_hash,
-          first_name,
-          last_name,
-          phone,
-          role,
-          is_admin,
-          is_active,
-          is_verified
-        )
-        VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
-      `;
-
-      const [result] = await pool.execute(query, [
+    // Insert new user
+    const query = `
+      INSERT INTO users (
         email,
-        hashedPassword,
-        firstName,
-        lastName,
-        phone || null,
-        role || 'customer'
-      ]);
+        password_hash,
+        first_name,
+        last_name,
+        phone,
+        role,
+        is_admin,
+        is_active,
+        is_verified
+      )
+      VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
+    `;
 
-      const userId = (result as any).insertId;
+    const [result] = await pool.execute(query, [
+      email,
+      hashedPassword,
+      firstName,
+      lastName,
+      phone || null,
+      role || 'customer'
+    ]);
 
-      // Get the inserted user
-      const [userRows] = await connection.execute<RowDataPacket[]>(
-        `SELECT 
-          user_id as userId,
-          email,
-          first_name as firstName,
-          last_name as lastName,
-          role,
-          is_admin as isAdmin
-        FROM users 
-        WHERE user_id = ?`,
-        [userId]
-      );
+    const userId = (result as any).insertId;
 
-      const user = userRows[0] as User;
+    // Get the inserted user
+    const [userRows] = await pool.execute<RowDataPacket[]>(
+      `SELECT 
+        user_id as userId,
+        email,
+        first_name as firstName,
+        last_name as lastName,
+        role,
+        is_admin as isAdmin
+      FROM users 
+      WHERE user_id = ?`,
+      [userId]
+    );
 
-      // Create empty wishlist for user
-      const wishlistQuery = `
-        INSERT INTO wishlist (user_id) VALUES (?)
-      `;
-      await pool.execute(wishlistQuery, [userId]);
+    const user = userRows[0] as User;
 
-      // Commit handling needs review with pool
+    // Create empty wishlist for user
+    const wishlistQuery = `
+      INSERT INTO wishlist (user_id) VALUES (?)
+    `;
+    await pool.execute(wishlistQuery, [userId]);
 
-      return user;
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return user;
   } catch (error) {
     console.error('Error registering user:', error);
     return null;

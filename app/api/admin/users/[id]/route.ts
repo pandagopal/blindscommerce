@@ -47,7 +47,7 @@ export async function GET(
     }
 
     const pool = await getPool();
-    const [rows] = await pool.query<UserRow[]>(
+    const [rows] = await pool.execute<UserRow[]>(
       `SELECT 
         u.user_id,
         u.email,
@@ -156,83 +156,71 @@ export async function PUT(
     } = body;
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      // Transaction handling with pool - consider using connection from pool
+    // Update user table
+    const updateFields = [
+      'email = ?',
+      'first_name = ?',
+      'last_name = ?',
+      'phone = ?',
+      'role = ?',
+      'is_active = ?',
+      'updated_at = NOW()'
+    ];
+    const updateValues = [email, firstName, lastName, phone, role, isActive];
 
-      // Update user table
-      const updateFields = [
-        'email = ?',
-        'first_name = ?',
-        'last_name = ?',
-        'phone = ?',
-        'role = ?',
-        'is_active = ?',
-        'updated_at = NOW()'
-      ];
-      const updateValues = [email, firstName, lastName, phone, role, isActive];
-
-      // Add password update if provided
-      if (password) {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        updateFields.push('password_hash = ?');
-        updateValues.push(hashedPassword);
-      }
-
-      // Update user
-      updateValues.push(userId);
-      await pool.execute(
-        `UPDATE users 
-         SET ${updateFields.join(', ')} 
-         WHERE user_id = ?`,
-        updateValues
-      );
-
-      // Handle role-specific updates
-      if (role === 'vendor') {
-        await pool.execute(
-          `INSERT INTO vendor_info (
-            user_id, business_name, business_email, is_active, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, NOW(), NOW())
-          ON DUPLICATE KEY UPDATE
-            business_name = VALUES(business_name),
-            business_email = VALUES(business_email),
-            is_active = VALUES(is_active),
-            updated_at = NOW()`,
-          [userId, `${firstName} ${lastName}'s Business`, email, isActive]
-        );
-      } else if (role === 'sales') {
-        await pool.execute(
-          `INSERT INTO sales_staff (
-            user_id, hire_date, is_active, created_at, updated_at
-          ) VALUES (?, NOW(), ?, NOW(), NOW())
-          ON DUPLICATE KEY UPDATE
-            is_active = VALUES(is_active),
-            updated_at = NOW()`,
-          [userId, isActive]
-        );
-      } else if (role === 'installer') {
-        await pool.execute(
-          `INSERT INTO installers (
-            user_id, is_active, created_at, updated_at
-          ) VALUES (?, ?, NOW(), NOW())
-          ON DUPLICATE KEY UPDATE
-            is_active = VALUES(is_active),
-            updated_at = NOW()`,
-          [userId, isActive]
-        );
-      }
-
-      // Commit handling needs review with pool
-
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
+    // Add password update if provided
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateFields.push('password_hash = ?');
+      updateValues.push(hashedPassword);
     }
+
+    // Update user
+    updateValues.push(userId);
+    await pool.execute(
+      `UPDATE users 
+       SET ${updateFields.join(', ')} 
+       WHERE user_id = ?`,
+      updateValues
+    );
+
+    // Handle role-specific updates
+    if (role === 'vendor') {
+      await pool.execute(
+        `INSERT INTO vendor_info (
+          user_id, business_name, business_email, is_active, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+          business_name = VALUES(business_name),
+          business_email = VALUES(business_email),
+          is_active = VALUES(is_active),
+          updated_at = NOW()`,
+        [userId, `${firstName} ${lastName}'s Business`, email, isActive]
+      );
+    } else if (role === 'sales') {
+      await pool.execute(
+        `INSERT INTO sales_staff (
+          user_id, hire_date, is_active, created_at, updated_at
+        ) VALUES (?, NOW(), ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+          is_active = VALUES(is_active),
+          updated_at = NOW()`,
+        [userId, isActive]
+      );
+    } else if (role === 'installer') {
+      await pool.execute(
+        `INSERT INTO installers (
+          user_id, is_active, created_at, updated_at
+        ) VALUES (?, ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+          is_active = VALUES(is_active),
+          updated_at = NOW()`,
+        [userId, isActive]
+      );
+    }
+
+    return NextResponse.json({ success: true });
   } catch (error) {
     // Safe error logging
     if (process.env.NODE_ENV !== 'production') {
@@ -282,42 +270,30 @@ export async function PATCH(
     }
 
     const pool = await getPool();
-    const client = await pool.connect();
 
-    try {
-      await client.query('BEGIN');
+    // Update user status
+    await pool.execute(
+      'UPDATE users SET is_active = ?, updated_at = NOW() WHERE user_id = ?',
+      [is_active, userId]
+    );
 
-      // Update user status
-      await client.query(
-        'UPDATE users SET is_active = ?, updated_at = NOW() WHERE user_id = ?',
-        [is_active, userId]
-      );
+    // Update related records
+    await pool.execute(
+      'UPDATE vendor_info SET is_active = ? WHERE user_id = ?',
+      [is_active, userId]
+    );
+    await pool.execute(
+      'UPDATE sales_staff SET is_active = ? WHERE user_id = ?',
+      [is_active, userId]
+    );
+    await pool.execute(
+      'UPDATE installers SET is_active = ? WHERE user_id = ?',
+      [is_active, userId]
+    );
 
-      // Update related records
-      await client.query(
-        'UPDATE vendor_info SET is_active = ? WHERE user_id = ?',
-        [is_active, userId]
-      );
-      await client.query(
-        'UPDATE sales_staff SET is_active = ? WHERE user_id = ?',
-        [is_active, userId]
-      );
-      await client.query(
-        'UPDATE installers SET is_active = ? WHERE user_id = ?',
-        [is_active, userId]
-      );
-
-      await client.query('COMMIT');
-
-      return NextResponse.json({ 
-        message: `User ${is_active ? 'activated' : 'deactivated'} successfully` 
-      });
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    return NextResponse.json({ 
+      message: `User ${is_active ? 'activated' : 'deactivated'} successfully` 
+    });
   } catch (error) {
     console.error('Error updating user status:', error);
     return NextResponse.json(

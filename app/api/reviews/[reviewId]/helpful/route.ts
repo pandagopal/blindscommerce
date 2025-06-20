@@ -55,61 +55,47 @@ export async function POST(
 
     const [existingVotes] = await pool.execute<RowDataPacket[]>(existingVoteQuery, existingVoteParams);
 
-    const connection = await pool.getConnection();
-    
-    try {
-      // Transaction handling with pool - consider using connection from pool
-
-      if (existingVotes.length > 0) {
-        const existingVote = existingVotes[0];
-        
-        if (Boolean(existingVote.is_helpful) === body.isHelpful) { // Convert 0/1 to false/true for comparison
-          // Same vote - remove it (toggle off)
-          await pool.execute(
-            'DELETE FROM review_helpfulness WHERE id = ?',
-            [existingVote.id]
-          );
-        } else {
-          // Different vote - update it
-          await pool.execute(
-            'UPDATE review_helpfulness SET is_helpful = ? WHERE id = ?',
-            [body.isHelpful ? 1 : 0, existingVote.id] // Convert boolean to 0/1
-          );
-        }
-      } else {
-        // New vote - insert it
+    if (existingVotes.length > 0) {
+      const existingVote = existingVotes[0];
+      
+      if (Boolean(existingVote.is_helpful) === body.isHelpful) { // Convert 0/1 to false/true for comparison
+        // Same vote - remove it (toggle off)
         await pool.execute(
-          `INSERT INTO review_helpfulness (review_id, user_id, session_id, is_helpful)
-           VALUES (?, ?, ?, ?)`,
-          [reviewId, user?.userId || null, sessionId, body.isHelpful ? 1 : 0] // Convert boolean to 0/1
+          'DELETE FROM review_helpfulness WHERE id = ?',
+          [existingVote.id]
+        );
+      } else {
+        // Different vote - update it
+        await pool.execute(
+          'UPDATE review_helpfulness SET is_helpful = ? WHERE id = ?',
+          [body.isHelpful ? 1 : 0, existingVote.id] // Convert boolean to 0/1
         );
       }
-
-      // Update helpful count on the review
-      const [helpfulCount] = await connection.execute<RowDataPacket[]>(
-        'SELECT COUNT(*) as count FROM review_helpfulness WHERE review_id = ? AND is_helpful = 1',
-        [reviewId]
-      );
-
+    } else {
+      // New vote - insert it
       await pool.execute(
-        'UPDATE product_reviews SET helpful_count = ? WHERE review_id = ?',
-        [helpfulCount[0].count, reviewId]
+        `INSERT INTO review_helpfulness (review_id, user_id, session_id, is_helpful)
+         VALUES (?, ?, ?, ?)`,
+        [reviewId, user?.userId || null, sessionId, body.isHelpful ? 1 : 0] // Convert boolean to 0/1
       );
-
-      // Commit handling needs review with pool
-
-      return NextResponse.json({
-        success: true,
-        helpfulCount: helpfulCount[0].count,
-        userVote: existingVotes.length > 0 && existingVotes[0].is_helpful === body.isHelpful ? null : body.isHelpful
-      });
-
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
     }
+
+    // Update helpful count on the review
+    const [helpfulCount] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM review_helpfulness WHERE review_id = ? AND is_helpful = 1',
+      [reviewId]
+    );
+
+    await pool.execute(
+      'UPDATE product_reviews SET helpful_count = ? WHERE review_id = ?',
+      [helpfulCount[0].count, reviewId]
+    );
+
+    return NextResponse.json({
+      success: true,
+      helpfulCount: helpfulCount[0].count,
+      userVote: existingVotes.length > 0 && existingVotes[0].is_helpful === body.isHelpful ? null : body.isHelpful
+    });
 
   } catch (error) {
     console.error('Error updating review helpfulness:', error);

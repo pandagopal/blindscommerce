@@ -257,51 +257,36 @@ export async function DELETE(
 
     const paymentMethod = paymentMethods[0];
 
-    // Start transaction
-    const connection = await pool.getConnection();
-    
-    try {
-      // Transaction handling with pool - consider using connection from pool
+    // Mark as inactive instead of hard delete (for audit trail)
+    await pool.execute(
+      'UPDATE saved_payment_methods SET is_active = 0, updated_at = NOW() WHERE id = ?',
+      [paymentMethodId]
+    );
 
-      // Mark as inactive instead of hard delete (for audit trail)
+    // If this was the default payment method, set another one as default
+    if (paymentMethod.is_default) {
       await pool.execute(
-        'UPDATE saved_payment_methods SET is_active = 0, updated_at = NOW() WHERE id = ?',
-        [paymentMethodId]
+        `UPDATE saved_payment_methods 
+         SET is_default = 1 
+         WHERE user_id = ? AND is_active = 1 AND id != ?
+         ORDER BY created_at DESC 
+         LIMIT 1`,
+        [user.userId, paymentMethodId]
       );
-
-      // If this was the default payment method, set another one as default
-      if (paymentMethod.is_default) {
-        await pool.execute(
-          `UPDATE saved_payment_methods 
-           SET is_default = 1 
-           WHERE user_id = ? AND is_active = 1 AND id != ?
-           ORDER BY created_at DESC 
-           LIMIT 1`,
-          [user.userId, paymentMethodId]
-        );
-      }
-
-      // Commit handling needs review with pool
-
-      // Detach payment method from Stripe customer (optional - depends on your business logic)
-      try {
-        await stripe.paymentMethods.detach(paymentMethod.stripe_payment_method_id);
-      } catch (stripeError) {
-        // Log error but don't fail the request - payment method might already be detached
-        console.warn('Failed to detach payment method from Stripe:', stripeError);
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: 'Payment method deleted successfully'
-      });
-
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
     }
+
+    // Detach payment method from Stripe customer (optional - depends on your business logic)
+    try {
+      await stripe.paymentMethods.detach(paymentMethod.stripe_payment_method_id);
+    } catch (stripeError) {
+      // Log error but don't fail the request - payment method might already be detached
+      console.warn('Failed to detach payment method from Stripe:', stripeError);
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Payment method deleted successfully'
+    });
 
   } catch (error) {
     console.error('Error deleting payment method:', error);

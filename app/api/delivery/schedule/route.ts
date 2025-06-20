@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
     const isReschedule = existingSchedule.length > 0;
     let previousScheduleId = null;
 
-    // Transaction handling with pool - consider using connection from pool
+    await connection.beginTransaction();
 
     try {
       // Verify time slot exists and is active
@@ -189,13 +189,13 @@ export async function POST(req: NextRequest) {
         previousScheduleId = existingData.schedule_id;
 
         // Update existing schedule to rescheduled status
-        await pool.execute(
+        await connection.execute(
           'UPDATE order_delivery_schedules SET status = ? WHERE schedule_id = ?',
           ['rescheduled', previousScheduleId]
         );
 
         // Record reschedule history
-        await pool.execute(
+        await connection.execute(
           `INSERT INTO delivery_reschedule_history (
             order_id, schedule_id, old_delivery_date, old_time_slot_id,
             new_delivery_date, new_time_slot_id, reschedule_reason,
@@ -246,12 +246,12 @@ export async function POST(req: NextRequest) {
       );
 
       // Update order with preferred delivery info
-      await pool.execute(
+      await connection.execute(
         'UPDATE orders SET preferred_delivery_date = ?, preferred_time_slot_id = ? WHERE order_id = ?',
         [body.delivery_date, body.time_slot_id, body.order_id]
       );
 
-      // Commit handling needs review with pool
+      await connection.commit();
 
       // Fetch the created schedule with slot details
       const [newSchedule] = await connection.execute<RowDataPacket[]>(
@@ -294,7 +294,7 @@ export async function POST(req: NextRequest) {
       });
 
     } catch (transactionError) {
-      // Rollback handling needs review with pool
+      await connection.rollback();
       throw transactionError;
     }
 

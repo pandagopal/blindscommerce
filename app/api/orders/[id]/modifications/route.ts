@@ -214,7 +214,7 @@ export async function POST(
     const connection = await pool.getConnection();
 
     try {
-      // Transaction handling with pool - consider using connection from pool
+      await connection.beginTransaction();
 
       // Verify order can be modified
       const [orderCheck] = await connection.execute<RowDataPacket[]>(
@@ -332,7 +332,7 @@ export async function POST(
       // Insert modification items if applicable
       if (items.length > 0) {
         for (const item of items) {
-          await pool.execute(
+          await connection.execute(
             `INSERT INTO order_modification_items (
               modification_id,
               order_item_id,
@@ -359,7 +359,7 @@ export async function POST(
         }
       }
 
-      // Commit handling needs review with pool
+      await connection.commit();
 
       return NextResponse.json({
         success: true,
@@ -371,7 +371,7 @@ export async function POST(
       });
 
     } catch (error) {
-      // Rollback handling needs review with pool
+      await connection.rollback();
       throw error;
     } finally {
       connection.release();
@@ -388,7 +388,7 @@ export async function POST(
 
 // Helper functions
 async function getCurrentShippingAddress(connection: any, orderId: number) {
-  const [result] = await pool.execute(
+  const [result] = await connection.execute(
     'SELECT shipping_address FROM orders WHERE order_id = ?',
     [orderId]
   );
@@ -396,7 +396,7 @@ async function getCurrentShippingAddress(connection: any, orderId: number) {
 }
 
 async function getCurrentShippingMethod(connection: any, orderId: number) {
-  const [result] = await pool.execute(
+  const [result] = await connection.execute(
     'SELECT shipping_method, shipping_cost FROM orders WHERE order_id = ?',
     [orderId]
   );
@@ -407,7 +407,7 @@ async function getCurrentShippingMethod(connection: any, orderId: number) {
 }
 
 async function getCurrentSpecialInstructions(connection: any, orderId: number) {
-  const [result] = await pool.execute(
+  const [result] = await connection.execute(
     'SELECT special_instructions FROM orders WHERE order_id = ?',
     [orderId]
   );

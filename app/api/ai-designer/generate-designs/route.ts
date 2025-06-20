@@ -445,35 +445,29 @@ async function getProductRecommendations(
 ): Promise<ProductRecommendation[]> {
   
   const pool = await getPool();
-  const connection = await pool.getConnection();
   
-  try {
-    // Get products that match the design style
-    const [products] = await connection.query(`
-      SELECT p.*, c.name as category_name, pi.image_url
-      FROM products p
-      JOIN product_categories pc ON p.product_id = pc.product_id
-      JOIN categories c ON pc.category_id = c.category_id
-      LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
-      WHERE p.is_active = 1 
-      AND p.base_price <= ?
-      ORDER BY p.rating DESC, p.base_price ASC
-      LIMIT 10
-    `, [budget * 0.3]); // Individual products shouldn't exceed 30% of budget
-    
-    return products.map((product: any) => ({
-      productId: product.product_id,
-      name: product.name,
-      category: product.category_name,
-      price: product.base_price,
-      emotionalAlignment: calculateEmotionalAlignment(product, design),
-      functionalityScore: calculateFunctionalityScore(product, design),
-      customOptions: generateCustomOptions(product, design)
-    }));
-    
-  } finally {
-    connection.release();
-  }
+  // Get products that match the design style
+  const [products] = await pool.execute(`
+    SELECT p.*, c.name as category_name, pi.image_url
+    FROM products p
+    JOIN product_categories pc ON p.product_id = pc.product_id
+    JOIN categories c ON pc.category_id = c.category_id
+    LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
+    WHERE p.is_active = 1 
+    AND p.base_price <= ?
+    ORDER BY p.rating DESC, p.base_price ASC
+    LIMIT 10
+  `, [budget * 0.3]); // Individual products shouldn't exceed 30% of budget
+  
+  return (products as any[]).map((product: any) => ({
+    productId: product.product_id,
+    name: product.name,
+    category: product.category_name,
+    price: product.base_price,
+    emotionalAlignment: calculateEmotionalAlignment(product, design),
+    functionalityScore: calculateFunctionalityScore(product, design),
+    customOptions: generateCustomOptions(product, design)
+  }));
 }
 
 // Calculate design confidence score

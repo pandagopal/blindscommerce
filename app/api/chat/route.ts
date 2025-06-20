@@ -19,77 +19,64 @@ export async function POST(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      // Transaction handling with pool - consider using connection from pool
-
-      // Create message
-      const messageQuery = `
-        INSERT INTO chat_messages (
-          chat_id,
-          sender_id,
-          message,
-          created_at
-        ) VALUES (?, ?, ?, NOW())
-      `;
-
-      const [messageResult] = await pool.execute(messageQuery, [
-        chatId,
-        user.userId,
-        message
-      ]);
-
-      const messageId = (messageResult as any).insertId;
-
-      // Get message with timestamp
-      const [messageRows] = await connection.execute<RowDataPacket[]>(
-        'SELECT message_id, created_at FROM chat_messages WHERE message_id = ?',
-        [messageId]
-      );
-
-      // Create chat if it doesn't exist
-      const chatQuery = `
-        INSERT INTO chats (
-          user_id,
-          status,
-          created_at,
-          updated_at
-        ) VALUES (?, 'active', NOW(), NOW())
-      `;
-
-      const [chatResult] = await pool.execute(chatQuery, [user.userId]);
-      const newChatId = (chatResult as any).insertId;
-
-      // Update the message with the new chat_id
-      await pool.execute(
-        'UPDATE chat_messages SET chat_id = ? WHERE message_id = ?',
-        [newChatId, messageId]
-      );
-
-      // Commit handling needs review with pool
-
-      // Trigger real-time update via Pusher
-      await pusher.trigger('chat', 'new-message', {
-        messageId,
-        chatId: newChatId,
-        userId: user.userId,
+    // Create message
+    const messageQuery = `
+      INSERT INTO chat_messages (
+        chat_id,
+        sender_id,
         message,
-        createdAt: (messageRows[0] as any).created_at
-      });
+        created_at
+      ) VALUES (?, ?, ?, NOW())
+    `;
 
-      return NextResponse.json({
-        message: 'Message sent successfully',
-        messageId,
-        createdAt: (messageRows[0] as any).created_at
-      });
+    const [messageResult] = await pool.execute(messageQuery, [
+      chatId,
+      user.userId,
+      message
+    ]);
 
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
-    }
+    const messageId = (messageResult as any).insertId;
+
+    // Get message with timestamp
+    const [messageRows] = await pool.execute<RowDataPacket[]>(
+      'SELECT message_id, created_at FROM chat_messages WHERE message_id = ?',
+      [messageId]
+    );
+
+    // Create chat if it doesn't exist
+    const chatQuery = `
+      INSERT INTO chats (
+        user_id,
+        status,
+        created_at,
+        updated_at
+      ) VALUES (?, 'active', NOW(), NOW())
+    `;
+
+    const [chatResult] = await pool.execute(chatQuery, [user.userId]);
+    const newChatId = (chatResult as any).insertId;
+
+    // Update the message with the new chat_id
+    await pool.execute(
+      'UPDATE chat_messages SET chat_id = ? WHERE message_id = ?',
+      [newChatId, messageId]
+    );
+
+    // Trigger real-time update via Pusher
+    await pusher.trigger('chat', 'new-message', {
+      messageId,
+      chatId: newChatId,
+      userId: user.userId,
+      message,
+      createdAt: (messageRows[0] as any).created_at
+    });
+
+    return NextResponse.json({
+      message: 'Message sent successfully',
+      messageId,
+      createdAt: (messageRows[0] as any).created_at
+    });
   } catch (error) {
     console.error('Error sending message:', error);
     return NextResponse.json(
@@ -140,10 +127,10 @@ export async function GET(req: NextRequest) {
 
     query += ' ORDER BY cm.created_at DESC LIMIT 50';
 
-    const result = await pool.query(query, params);
+    const [result] = await pool.execute(query, params);
 
     return NextResponse.json({
-      messages: result.rows
+      messages: result
     });
 
   } catch (error) {

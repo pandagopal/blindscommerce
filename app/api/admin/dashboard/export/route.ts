@@ -11,48 +11,46 @@ export async function GET(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      // Fetch all relevant dashboard data
-      const [orders] = await connection.execute(`
-        SELECT 
-          o.*,
-          u.email as customer_email,
-          p.name as product_name,
-          op.quantity,
-          op.price
-        FROM orders o
-        JOIN users u ON o.user_id = u.user_id
-        JOIN order_products op ON o.order_id = op.order_id
-        JOIN products p ON op.product_id = p.product_id
-        WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-        ORDER BY o.created_at DESC
-      `);
+    // Fetch all relevant dashboard data
+    const [orders] = await pool.execute(`
+      SELECT 
+        o.*,
+        u.email as customer_email,
+        p.name as product_name,
+        op.quantity,
+        op.price
+      FROM orders o
+      JOIN users u ON o.user_id = u.user_id
+      JOIN order_products op ON o.order_id = op.order_id
+      JOIN products p ON op.product_id = p.product_id
+      WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+      ORDER BY o.created_at DESC
+    `);
 
-      const [products] = await connection.execute(`
-        SELECT 
-          p.*,
-          c.name as category_name,
-          (
-            SELECT COUNT(*) 
-            FROM order_products op 
-            WHERE op.product_id = p.product_id
-          ) as total_orders
-        FROM products p
-        JOIN categories c ON p.category_id = c.category_id
-      `);
+    const [products] = await pool.execute(`
+      SELECT 
+        p.*,
+        c.name as category_name,
+        (
+          SELECT COUNT(*) 
+          FROM order_products op 
+          WHERE op.product_id = p.product_id
+        ) as total_orders
+      FROM products p
+      JOIN categories c ON p.category_id = c.category_id
+    `);
 
-      const [customers] = await connection.execute(`
-        SELECT 
-          u.*,
-          COUNT(o.order_id) as total_orders,
-          SUM(o.total_amount) as total_spent
-        FROM users u
-        LEFT JOIN orders o ON u.user_id = o.user_id
-        WHERE u.role = 'CUSTOMER'
-        GROUP BY u.user_id
-      `);
+    const [customers] = await pool.execute(`
+      SELECT 
+        u.*,
+        COUNT(o.order_id) as total_orders,
+        SUM(o.total_amount) as total_spent
+      FROM users u
+      LEFT JOIN orders o ON u.user_id = o.user_id
+      WHERE u.role = 'CUSTOMER'
+      GROUP BY u.user_id
+    `);
 
       // Create workbook with multiple sheets
       const workbook = XLSX.utils.book_new();
@@ -95,16 +93,12 @@ export async function GET(req: NextRequest) {
       // Write to buffer
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
-      return new NextResponse(buffer, {
-        headers: {
-          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Content-Disposition': `attachment; filename="dashboard-report-${new Date().toISOString().split('T')[0]}.xlsx"`
-        }
-      });
-
-    } finally {
-      connection.release();
-    }
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': `attachment; filename="dashboard-report-${new Date().toISOString().split('T')[0]}.xlsx"`
+      }
+    });
   } catch (error) {
     console.error('Error generating export:', error);
     return NextResponse.json(

@@ -260,10 +260,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
-
-    // Begin transaction
-    await connection.beginTransaction();
 
     try {
       // Update or insert settings for the specified category
@@ -288,7 +284,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // Use INSERT ... ON DUPLICATE KEY UPDATE
-        await connection.execute(`
+        await pool.execute(`
           INSERT INTO upload_security_config (config_key, config_value, config_type, updated_by, description) 
           VALUES (?, ?, ?, ?, ?)
           ON DUPLICATE KEY UPDATE 
@@ -305,9 +301,6 @@ export async function PUT(request: NextRequest) {
         ]);
       }
 
-      await connection.commit();
-      connection.release();
-
       // Clear settings cache to force reload
       clearSettingsCache();
 
@@ -316,8 +309,6 @@ export async function PUT(request: NextRequest) {
         message: `${category.charAt(0).toUpperCase() + category.slice(1)} settings updated successfully` 
       });
     } catch (error) {
-      await connection.rollback();
-      connection.release();
       throw error;
     }
   } catch (error) {
@@ -342,8 +333,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
 
     try {
       // Process all categories
@@ -368,7 +357,7 @@ export async function PATCH(request: NextRequest) {
               dbValue = String(value);
             }
 
-            await connection.execute(`
+            await pool.execute(`
               INSERT INTO upload_security_config (config_key, config_value, config_type, updated_by, description) 
               VALUES (?, ?, ?, ?, ?)
               ON DUPLICATE KEY UPDATE 
@@ -387,9 +376,6 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
-      await connection.commit();
-      connection.release();
-
       // Clear settings cache to force reload
       clearSettingsCache();
 
@@ -398,8 +384,6 @@ export async function PATCH(request: NextRequest) {
         message: 'All settings updated successfully' 
       });
     } catch (error) {
-      await connection.rollback();
-      connection.release();
       throw error;
     }
   } catch (error) {

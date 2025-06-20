@@ -10,41 +10,39 @@ export async function GET(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const client = await pool.getConnection();
 
-    try {
-      // Get total users
-      const [usersResult] = await client.execute('SELECT COUNT(*) as count FROM users WHERE is_active = 1');
-      const totalUsers = (usersResult as any[])[0].count;
+    // Get total users
+    const [usersResult] = await pool.execute('SELECT COUNT(*) as count FROM users WHERE is_active = 1');
+    const totalUsers = (usersResult as any[])[0].count;
 
-      // Get total vendors
-      const [vendorsResult] = await client.execute(`
-        SELECT COUNT(*) as count 
-        FROM users u 
-        WHERE u.role = 'vendor' AND u.is_active = 1
-      `);
-      const totalVendors = (vendorsResult as any[])[0].count;
+    // Get total vendors
+    const [vendorsResult] = await pool.execute(`
+      SELECT COUNT(*) as count 
+      FROM users u 
+      WHERE u.role = 'vendor' AND u.is_active = 1
+    `);
+    const totalVendors = (vendorsResult as any[])[0].count;
 
-      // Get total orders
-      const [ordersResult] = await client.execute('SELECT COUNT(*) as count FROM orders');
-      const totalOrders = (ordersResult as any[])[0].count || 0;
+    // Get total orders
+    const [ordersResult] = await pool.execute('SELECT COUNT(*) as count FROM orders');
+    const totalOrders = (ordersResult as any[])[0].count || 0;
 
-      // Get total revenue
-      const [revenueResult] = await client.execute(`
-        SELECT SUM(final_total) as revenue 
-        FROM orders 
-        WHERE status NOT IN ('cancelled', 'refunded')
-      `);
-      const totalRevenue = (revenueResult as any[])[0].revenue || 0;
+    // Get total revenue
+    const [revenueResult] = await pool.execute(`
+      SELECT SUM(final_total) as revenue 
+      FROM orders 
+      WHERE status NOT IN ('cancelled', 'refunded')
+    `);
+    const totalRevenue = (revenueResult as any[])[0].revenue || 0;
 
-      // Get database size (approximate)
-      const [dbSizeResult] = await client.execute(`
-        SELECT 
-          ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS db_size_mb
-        FROM information_schema.tables 
-        WHERE table_schema = DATABASE()
-      `);
-      const dbSizeMB = (dbSizeResult as any[])[0].db_size_mb || 0;
+    // Get database size (approximate)
+    const [dbSizeResult] = await pool.execute(`
+      SELECT 
+        ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS db_size_mb
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE()
+    `);
+    const dbSizeMB = (dbSizeResult as any[])[0].db_size_mb || 0;
 
       // Mock some system stats (in a real system, these would come from system monitoring)
       const stats = {
@@ -60,11 +58,7 @@ export async function GET(request: NextRequest) {
         apiRequests24h: 45623 // Mock data
       };
 
-      return NextResponse.json(stats);
-
-    } finally {
-      client.release();
-    }
+    return NextResponse.json(stats);
   } catch (error) {
     console.error('Error fetching super admin stats:', error);
     return NextResponse.json(

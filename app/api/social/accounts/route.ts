@@ -219,34 +219,21 @@ export async function PUT(req: NextRequest) {
     }
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      // Transaction handling with pool - consider using connection from pool
-
-      // Update display order for each account
-      for (const account of accounts) {
-        if (account.id && typeof account.displayOrder === 'number') {
-          await pool.execute(
-            'UPDATE social_media_accounts SET display_order = ? WHERE id = ?',
-            [account.displayOrder, account.id]
-          );
-        }
+    // Update display order for each account
+    for (const account of accounts) {
+      if (account.id && typeof account.displayOrder === 'number') {
+        await pool.execute(
+          'UPDATE social_media_accounts SET display_order = ? WHERE id = ?',
+          [account.displayOrder, account.id]
+        );
       }
-
-      // Commit handling needs review with pool
-
-      return NextResponse.json({
-        success: true,
-        message: 'Account order updated successfully'
-      });
-
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Account order updated successfully'
+    });
 
   } catch (error) {
     console.error('Error updating account order:', error);

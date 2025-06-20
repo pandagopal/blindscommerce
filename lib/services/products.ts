@@ -37,11 +37,8 @@ interface ProductData {
  */
 export async function getProducts(filters: ProductFilters, userId?: number, role?: string) {
   const pool = await getPool();
-  let connection;
   
   try {
-    connection = await pool.getConnection();
-    
     const {
       search = '',
       category = '',
@@ -59,7 +56,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     // For vendors, we need to get their vendor_id first
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
-      const [vendorInfo] = await connection.query<RowDataPacket[]>(
+      const [vendorInfo] = await pool.execute<RowDataPacket[]>(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [userId]
       );
@@ -169,7 +166,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     values.push(limit, offset);
 
     // Execute query
-    const [rows] = await pool.query(query, values);
+    const [rows] = await pool.execute(query, values);
 
     // Get total count
     let countQuery: string;
@@ -200,7 +197,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
       }
     }
 
-    const [countRows] = await pool.query(countQuery, countValues);
+    const [countRows] = await pool.execute(countQuery, countValues);
     const total = (countRows as any)[0]?.total || 0;
 
     // Format products
@@ -216,10 +213,8 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
       page: Math.floor(offset / limit) + 1,
       totalPages: Math.ceil(total / limit)
     };
-  } finally {
-    if (connection) {
-      connection.release();
-    }
+  } catch (error) {
+    throw error;
   }
 }
 
@@ -231,11 +226,8 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
  */
 export async function createProduct(data: ProductData, userId: number, role: string) {
   const pool = await getPool();
-  let connection;
   
   try {
-    connection = await pool.getConnection();
-    // Transaction handling with pool - consider using connection from pool
 
     const { basicInfo, options, images = [], features = [] } = data;
     const {
@@ -259,7 +251,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     let slugCounter = 0;
     let originalSlug = finalSlug;
     while (true) {
-      const [existingProduct] = await connection.query<RowDataPacket[]>(
+      const [existingProduct] = await pool.execute<RowDataPacket[]>(
         'SELECT product_id FROM products WHERE slug = ? LIMIT 1',
         [finalSlug]
       );
@@ -276,7 +268,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     let brandId: number | null = null;
     if (brand && brand.trim()) {
       // Check if brand exists
-      const [existingBrands] = await connection.query<RowDataPacket[]>(
+      const [existingBrands] = await pool.execute<RowDataPacket[]>(
         'SELECT brand_id FROM brands WHERE name = ?',
         [brand.trim()]
       );
@@ -286,7 +278,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
       } else {
         // Create new brand
         const brandSlug = brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const [brandResult] = await connection.query<ResultSetHeader>(
+        const [brandResult] = await pool.execute<ResultSetHeader>(
           'INSERT INTO brands (name, slug, is_active, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
           [brand.trim(), brandSlug]
         );
@@ -295,7 +287,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     } else {
       // Create default brand for vendor products if no brand specified
       const defaultBrandName = role === 'vendor' ? 'Vendor Products' : 'General';
-      const [existingDefaultBrand] = await connection.query<RowDataPacket[]>(
+      const [existingDefaultBrand] = await pool.execute<RowDataPacket[]>(
         'SELECT brand_id FROM brands WHERE name = ?',
         [defaultBrandName]
       );
@@ -305,7 +297,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
       } else {
         // Create default brand
         const defaultSlug = defaultBrandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const [defaultBrandResult] = await connection.query<ResultSetHeader>(
+        const [defaultBrandResult] = await pool.execute<ResultSetHeader>(
           'INSERT INTO brands (name, slug, is_active, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
           [defaultBrandName, defaultSlug]
         );
@@ -314,7 +306,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     }
 
     // Insert the product
-    const [productResult] = await connection.query<ResultSetHeader>(
+    const [productResult] = await pool.execute<ResultSetHeader>(
       `INSERT INTO products (
         name,
         slug,
@@ -337,12 +329,12 @@ export async function createProduct(data: ProductData, userId: number, role: str
 
     // Find and insert category
     if (category) {
-      const [categoryRows] = await connection.query<RowDataPacket[]>(
+      const [categoryRows] = await pool.execute<RowDataPacket[]>(
         'SELECT category_id FROM categories WHERE name = ?',
         [category]
       );
       if (categoryRows.length > 0) {
-        await pool.query(
+        await pool.execute(
           `INSERT INTO product_categories (
             product_id,
             category_id,
@@ -384,13 +376,13 @@ export async function createProduct(data: ProductData, userId: number, role: str
       console.log('Product created by admin but no vendor specified - product will be unassigned');
     } else if (role === 'vendor') {
       // Vendor creating their own product
-      const [vendorInfo] = await connection.query<RowDataPacket[]>(
+      const [vendorInfo] = await pool.execute<RowDataPacket[]>(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [userId]
       );
       
       if (vendorInfo.length > 0) {
-        await pool.query(
+        await pool.execute(
           `INSERT INTO vendor_products (
             vendor_id,
             product_id,
@@ -416,7 +408,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     // Insert images
     if (images.length > 0) {
       for (const image of images) {
-        await pool.query(
+        await pool.execute(
           `INSERT INTO product_images (
             product_id,
             image_url,
@@ -431,7 +423,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     // Insert features
     if (features.length > 0) {
       for (const feature of features) {
-        await pool.query(
+        await pool.execute(
           `INSERT INTO product_features (
             product_id,
             feature_name,
@@ -449,21 +441,12 @@ export async function createProduct(data: ProductData, userId: number, role: str
       }
     }
 
-    // Commit handling needs review with pool
-
     return {
       success: true,
       productId,
       message: 'Product created successfully'
     };
   } catch (error) {
-    if (connection) {
-      // Rollback handling needs review with pool
-    }
     throw error;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

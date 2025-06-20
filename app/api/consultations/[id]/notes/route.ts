@@ -17,36 +17,24 @@ export async function POST(
     const consultationId = params.id;
 
     const pool = await getPool();
-    const connection = await pool.getConnection();
 
-    try {
-      await connection.beginTransaction();
+    // Update consultation notes
+    await pool.execute(
+      `UPDATE consultations 
+       SET notes = ?, updated_at = NOW() 
+       WHERE consultation_id = ? AND (user_id = ? OR expert_id = ?)`,
+      [notes, consultationId, user.userId, user.userId]
+    );
 
-      // Update consultation notes
-      await connection.execute(
-        `UPDATE consultations 
-         SET notes = ?, updated_at = NOW() 
-         WHERE consultation_id = ? AND (user_id = ? OR expert_id = ?)`,
-        [notes, consultationId, user.userId, user.userId]
-      );
+    // Add note to consultation history
+    await pool.execute(
+      `INSERT INTO consultation_history 
+       (consultation_id, user_id, action_type, notes, created_at) 
+       VALUES (?, ?, 'note_added', ?, NOW())`,
+      [consultationId, user.userId, notes]
+    );
 
-      // Add note to consultation history
-      await connection.execute(
-        `INSERT INTO consultation_history 
-         (consultation_id, user_id, action_type, notes, created_at) 
-         VALUES (?, ?, 'note_added', ?, NOW())`,
-        [consultationId, user.userId, notes]
-      );
-
-      await connection.commit();
-
-      return NextResponse.json({ success: true });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating consultation notes:', error);
     return NextResponse.json(

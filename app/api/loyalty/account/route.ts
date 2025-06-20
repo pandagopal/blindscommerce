@@ -229,58 +229,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const connection = await pool.getConnection();
+    // Create loyalty account
+    await pool.execute(
+      `INSERT INTO user_loyalty_accounts (
+        user_id,
+        current_tier_id,
+        tier_anniversary_date
+      ) VALUES (?, ?, DATE_ADD(CURDATE(), INTERVAL 1 YEAR))`,
+      [user.userId, bronzeTier[0].id]
+    );
 
-    try {
-      // Transaction handling with pool - consider using connection from pool
+    // Give signup bonus points
+    await pool.execute(
+      `INSERT INTO loyalty_points_transactions (
+        user_id,
+        transaction_type,
+        points_amount,
+        description,
+        reference_type,
+        expiry_date
+      ) VALUES (?, 'bonus', 100, 'Welcome bonus for joining our loyalty program', 'signup', DATE_ADD(NOW(), INTERVAL 2 YEAR))`,
+      [user.userId]
+    );
 
-      // Create loyalty account
-      await pool.execute(
-        `INSERT INTO user_loyalty_accounts (
-          user_id,
-          current_tier_id,
-          tier_anniversary_date
-        ) VALUES (?, ?, DATE_ADD(CURDATE(), INTERVAL 1 YEAR))`,
-        [user.userId, bronzeTier[0].id]
-      );
+    // Update available points
+    await pool.execute(
+      `UPDATE user_loyalty_accounts 
+       SET total_points_earned = 100,
+           available_points = 100,
+           last_activity_date = NOW()
+       WHERE user_id = ?`,
+      [user.userId]
+    );
 
-      // Give signup bonus points
-      await pool.execute(
-        `INSERT INTO loyalty_points_transactions (
-          user_id,
-          transaction_type,
-          points_amount,
-          description,
-          reference_type,
-          expiry_date
-        ) VALUES (?, 'bonus', 100, 'Welcome bonus for joining our loyalty program', 'signup', DATE_ADD(NOW(), INTERVAL 2 YEAR))`,
-        [user.userId]
-      );
-
-      // Update available points
-      await pool.execute(
-        `UPDATE user_loyalty_accounts 
-         SET total_points_earned = 100,
-             available_points = 100,
-             last_activity_date = NOW()
-         WHERE user_id = ?`,
-        [user.userId]
-      );
-
-      // Commit handling needs review with pool
-
-      return NextResponse.json({
-        success: true,
-        message: 'Successfully enrolled in loyalty program',
-        bonusPoints: 100
-      });
-
-    } catch (error) {
-      // Rollback handling needs review with pool
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return NextResponse.json({
+      success: true,
+      message: 'Successfully enrolled in loyalty program',
+      bonusPoints: 100
+    });
 
   } catch (error) {
     console.error('Error enrolling in loyalty program:', error);

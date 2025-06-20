@@ -3,7 +3,6 @@ import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
-  let connection;
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
@@ -19,7 +18,6 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
 
     const pool = await getPool();
-    connection = await pool.getConnection();
 
     // Build the base query
     let query = `
@@ -90,7 +88,7 @@ export async function GET(request: NextRequest) {
     values.push(limit, offset);
 
     // Execute the query
-    const [rows] = await connection.query(query, values);
+    const [rows] = await pool.execute(query, values);
 
     // Get total count
     let countQuery = `
@@ -103,7 +101,7 @@ export async function GET(request: NextRequest) {
       countQuery += ' WHERE ' + conditions.join(' AND ');
     }
 
-    const [countRows] = await connection.query(countQuery, values.slice(0, -2));
+    const [countRows] = await pool.execute(countQuery, values.slice(0, -2));
     const total = countRows[0]?.total || 0;
 
     return NextResponse.json({
@@ -121,15 +119,10 @@ export async function GET(request: NextRequest) {
       totalPages: 0,
       error: 'Failed to fetch orders'
     }, { status: 500 });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }
 
 export async function POST(request: NextRequest) {
-  let connection;
   try {
     const user = await getCurrentUser();
     if (!user || user.role !== 'admin') {
@@ -162,105 +155,91 @@ export async function POST(request: NextRequest) {
     }
 
     const pool = await getPool();
-    connection = await pool.getConnection();
 
-    try {
-      await connection.query('BEGIN');
+    // Validate status (direct ENUM value)
+    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Invalid status: ${status}`);
+    }
 
-      // Validate status (direct ENUM value)
-      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
-      if (!validStatuses.includes(status)) {
-        throw new Error(`Invalid status: ${status}`);
-      }
+    // Generate order number
+    const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Generate order number
-      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Create order
+    const [orderResult] = await pool.execute(
+      `INSERT INTO orders (
+        user_id,
+        order_number,
+        status,
+        subtotal,
+        shipping_amount,
+        tax_amount,
+        total_amount,
+        shipping_address_id,
+        billing_address_id,
+        payment_method,
+        payment_status,
+        notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        orderNumber,
+        status,
+        subtotal,
+        shippingCost,
+        taxAmount,
+        totalAmount,
+        shippingAddressId,
+        billingAddressId,
+        paymentMethod,
+        paymentStatus,
+        notes
+      ]
+    );
 
-      // Create order
-      const [orderResult] = await connection.query(
-        `INSERT INTO orders (
-          user_id,
-          order_number,
-          status,
+    const orderId = orderResult.insertId;
+
+    // Create order items
+    for (const item of items) {
+      await pool.execute(
+        `INSERT INTO order_items (
+          order_id,
+          product_id,
+          product_name,
+          quantity,
+          unit_price,
           subtotal,
-          shipping_amount,
-          tax_amount,
-          total_amount,
-          shipping_address_id,
-          billing_address_id,
-          payment_method,
-          payment_status,
-          notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          width,
+          height,
+          color_name,
+          material_name,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
-          userId,
-          orderNumber,
-          status,
-          subtotal,
-          shippingCost,
-          taxAmount,
-          totalAmount,
-          shippingAddressId,
-          billingAddressId,
-          paymentMethod,
-          paymentStatus,
-          notes
+          orderId,
+          item.productId,
+          item.productName,
+          item.quantity,
+          item.unitPrice,
+          item.subtotal,
+          item.width,
+          item.height,
+          item.colorName,
+          item.materialName
         ]
       );
-
-      const orderId = orderResult.insertId;
-
-      // Create order items
-      for (const item of items) {
-        await connection.query(
-          `INSERT INTO order_items (
-            order_id,
-            product_id,
-            product_name,
-            quantity,
-            unit_price,
-            subtotal,
-            width,
-            height,
-            color_name,
-            material_name,
-            created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-          [
-            orderId,
-            item.productId,
-            item.productName,
-            item.quantity,
-            item.unitPrice,
-            item.subtotal,
-            item.width,
-            item.height,
-            item.colorName,
-            item.materialName
-          ]
-        );
-      }
-
-      await connection.query('COMMIT');
-
-      return NextResponse.json({
-        message: 'Order created successfully',
-        order_id: orderId,
-        order_number: orderNumber
-      });
-    } catch (error) {
-      await connection.query('ROLLBACK');
-      throw error;
     }
+
+    return NextResponse.json({
+      message: 'Order created successfully',
+      order_id: orderId,
+      order_number: orderNumber
+    });
   } catch (error) {
     console.error('Error creating order:', error);
     return NextResponse.json(
       { error: 'Failed to create order' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 } 

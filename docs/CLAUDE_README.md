@@ -406,9 +406,24 @@ TUYA_API_SECRET=...
 ## 🚨 Common Issues & Solutions
 
 ### Database Connection
-- **Connection pooling** configured (max 10 connections)
+- **Connection pooling** configured (max 5 connections - reduced from 10)
 - **Retry logic** for failed connections (5 retries in production)
 - **Environment validation** for required credentials
+- **Pool configuration** in `/lib/db/index.ts`:
+  ```typescript
+  {
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    waitForConnections: true,
+    connectionLimit: 5,
+    queueLimit: 0,
+    connectTimeout: 60000,
+    multipleStatements: false
+  }
+  ```
 
 ### Authentication Issues
 - **JWT expiration** handled with automatic refresh
@@ -898,6 +913,193 @@ PRICING_MATRIX_CRITICAL_BUG_FIX_2025:
 - **Webhook support** for real-time updates
 - **Bulk import** capabilities for large catalogs
 - **Commission calculation** automation
+
+---
+
+## 🚨 CRITICAL: Database Connection Leak Prevention (January 2025)
+
+### The Connection Leak Crisis
+- **Problem**: Database connections reached 38 (from 5 limit), causing complete site failure
+- **Root Cause**: Improper use of `pool.getConnection()` without `connection.release()`
+- **Impact**: Website became unresponsive, server crashes
+
+### Connection Management Rules
+
+#### ✅ CORRECT Pattern (for non-transactional queries):
+```typescript
+const pool = await getPool();
+const [results] = await pool.execute('SELECT * FROM table WHERE id = ?', [id]);
+```
+
+#### ❌ INCORRECT Pattern (causes leaks):
+```typescript
+const pool = await getPool();
+const connection = await pool.getConnection();
+const [results] = await connection.execute('SELECT * FROM table WHERE id = ?', [id]);
+// Missing connection.release() - LEAK!
+```
+
+#### ✅ CORRECT Pattern (for transactions only):
+```typescript
+const pool = await getPool();
+const connection = await pool.getConnection();
+try {
+  await connection.beginTransaction();
+  await connection.execute('INSERT INTO ...');
+  await connection.execute('UPDATE ...');
+  await connection.commit();
+} catch (error) {
+  await connection.rollback();
+  throw error;
+} finally {
+  connection.release(); // CRITICAL!
+}
+```
+
+### Fixed Connection Leaks (25+ files):
+1. `/lib/auth.ts` - registerUser function
+2. `/app/api/account/dashboard/route.ts`
+3. `/app/api/orders/create/route.ts`
+4. `/app/api/products/create/route.ts`
+5. `/app/api/admin/*` - Multiple admin routes
+6. `/app/api/vendor/*` - Vendor management routes
+7. `/lib/services/products.ts`
+8. `/lib/email/emailService.ts`
+9. All other API routes using improper patterns
+
+### Transaction-Required Files (Correctly use getConnection):
+- `/app/api/delivery/schedule/route.ts`
+- `/app/api/orders/[id]/modifications/route.ts`
+- `/app/api/account/shipping-addresses/[id]/route.ts`
+- These files MUST use `getConnection()` for transaction support
+
+### Database Configuration Updates:
+- Removed invalid MySQL2 options: `acquireTimeout`, `timeout`, `reconnect`
+- Use only valid options: `connectTimeout`, `connectionLimit`, etc.
+
+### IMPORTANT RULES FOR PRODUCTION:
+1. **ALWAYS CHECK DATABASE FIRST** - Never assume table/column existence
+2. **Use `pool.execute()` directly** for 99% of queries
+3. **Only use `getConnection()`** when you need transactions
+4. **ALWAYS release connections** in finally blocks
+5. **Test with `SHOW PROCESSLIST`** to monitor connection count
+
+### Database Credentials (.env):
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=blindscommerce_test
+DB_USER=root
+DB_PASSWORD=Test@1234
+```
+
+---
+
+## 📊 Database Tables Reference (Actual Schema)
+
+### 🏢 VENDOR-CENTRIC ARCHITECTURE (CRITICAL)
+**IMPORTANT**: Products, discounts, coupons, and sales people all belong to vendors. Always start with vendor tables for quick information gathering!
+
+### Vendor Core Tables:
+- `vendor_info` - Main vendor profiles (vendor_info_id is key)
+- `vendor_products` - Links vendors to products with vendor-specific pricing
+- `vendor_discounts` - Vendor-specific discount rules (percentage, fixed, tiered)
+- `vendor_coupons` - Vendor-managed coupon codes
+- `vendor_inventory` - Stock levels per vendor
+- `sales_staff` - Sales representatives belonging to vendors
+
+### Key Vendor Relationships:
+```sql
+-- vendor_info (main vendor table)
+vendor_info_id INT PRIMARY KEY
+user_id INT -- Links to users table
+business_name VARCHAR(255)
+commission_rate DECIMAL(5,2) DEFAULT 15.00
+
+-- vendor_products (vendor-specific product data)
+vendor_id INT -- Links to vendor_info.vendor_info_id
+product_id INT -- Links to products.product_id
+vendor_price DECIMAL(10,2) -- Vendor's selling price
+quantity_available INT
+
+-- vendor_discounts (sale pricing)
+vendor_id INT
+discount_type ENUM('percentage','fixed_amount','tiered','bulk_pricing')
+discount_value DECIMAL(8,2)
+applies_to ENUM('all_vendor_products','specific_products','specific_categories')
+```
+
+### Product-Related Tables:
+- `products` - Base product catalog (no sale_price column!)
+- `product_categories` - Product to category mapping
+- `product_features` - Product feature assignments
+- `product_rooms` - Product room recommendations (NOT product_room_types)
+- `product_pricing_matrix` - Dimension-based pricing
+- `product_fabric_options` - Fabric configurations
+- `product_fabric_pricing` - Fabric-specific pricing
+- `product_images` - Product image gallery
+- `categories` - Product categories
+- `room_types` - Available room types for recommendations
+
+### Important Notes:
+- **NO sale_price in products table** - Use vendor_discounts instead
+- **Prices**: base_price (MSRP), cost_price (vendor cost), vendor_price (selling price)
+- **Discounts**: Applied through vendor_discounts table with rules
+- **Multi-vendor**: Same product can have different prices per vendor
+
+### 🛒 Multi-Vendor Cart & Checkout (CRITICAL)
+**IMPORTANT**: Customers can add products from multiple vendors to a single cart. At checkout:
+
+1. **Cart contains products from different vendors**
+   - Each cart item tracks its vendor_id
+   - Prices are vendor-specific (vendor_products.vendor_price)
+
+2. **Vendor-specific discounts apply individually**
+   - Vendor A's discount only applies to Vendor A's products
+   - Vendor B's discount only applies to Vendor B's products
+   - Each vendor's discount rules are evaluated separately
+
+3. **Checkout process splits by vendor**:
+   ```sql
+   -- Example checkout flow
+   Cart Items:
+   - Product X from Vendor A: $100 (Vendor A has 20% discount = $80)
+   - Product Y from Vendor A: $50 (Vendor A has 20% discount = $40)
+   - Product Z from Vendor B: $75 (Vendor B has 10% discount = $67.50)
+   
+   Total: $80 + $40 + $67.50 = $187.50
+   ```
+
+4. **Order splitting**:
+   - Single customer order creates multiple vendor sub-orders
+   - Each vendor only sees their portion of the order
+   - Commission calculated per vendor based on their items
+
+5. **Discount application tables**:
+   - `cart_vendor_discounts` - Tracks which vendor discounts apply to cart
+   - `vendor_discount_usage` - Records discount usage per vendor
+
+### Key Database Relationships for Checkout:
+```sql
+-- cart_items
+cart_item_id INT
+cart_id INT
+product_id INT
+vendor_id INT -- Critical: tracks which vendor for this item
+price DECIMAL -- Vendor-specific price at time of adding
+quantity INT
+
+-- cart_vendor_discounts
+cart_id INT
+vendor_id INT
+discount_id INT
+discount_amount DECIMAL -- Calculated discount for this vendor's items
+
+-- orders (after checkout)
+order_id INT -- Customer's main order
+vendor_id INT -- NULL for main order, set for vendor sub-orders
+parent_order_id INT -- Links vendor orders to main order
+```
 
 ---
 
