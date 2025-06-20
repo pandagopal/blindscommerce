@@ -119,6 +119,7 @@ export default async function ProductsPage({
   const sortOrderParam = typeof params.sortOrder === 'string' ? params.sortOrder : "desc";
   const searchParam = typeof params.search === 'string' ? params.search : undefined;
   const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
+  const messageParam = typeof params.message === 'string' ? params.message : undefined;
 
   // Parse the feature IDs if present
   const featureIds: number[] = [];
@@ -248,6 +249,27 @@ export default async function ProductsPage({
             )}
           </div>
         </div>
+
+        {/* Message Alert */}
+        {messageParam === 'category-not-found' && (
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start">
+              <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-blue-800">
+                  We couldn't find that specific category
+                </h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  {searchParam 
+                    ? `We're showing results for "${searchParam}" instead. Browse all our products below or use the filters to find what you need.`
+                    : "Browse all our window treatments below or use the filters to find exactly what you're looking for."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Filters and products section */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
