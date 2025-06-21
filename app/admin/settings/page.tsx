@@ -22,6 +22,8 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState('notifications');
   const [errors, setErrors] = useState<{[key: string]: string[]}>({});
   const [successMessage, setSuccessMessage] = useState('');
+  const [testingTaxJar, setTestingTaxJar] = useState(false);
+  const [taxJarTestResult, setTaxJarTestResult] = useState<{success: boolean; message: string} | null>(null);
 
   const [settings, setSettings] = useState({
     notifications: {
@@ -61,7 +63,10 @@ export default function AdminSettingsPage() {
       aws_s3_bucket: '',
       smtp_server: 'smtp.smartblindshub.com',
       smtp_port: '587',
-      smtp_username: 'notifications@smartblindshub.com'
+      smtp_username: 'notifications@smartblindshub.com',
+      taxjar_api_key: '',
+      taxjar_environment: 'production',
+      use_taxjar_api: false
     }
   });
 
@@ -184,6 +189,35 @@ export default function AdminSettingsPage() {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const testTaxJarConnection = async () => {
+    setTestingTaxJar(true);
+    setTaxJarTestResult(null);
+    
+    try {
+      // Test with current form values instead of database values
+      const response = await fetch('/api/admin/settings/test-taxjar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          taxjar_api_key: settings.integrations.taxjar_api_key,
+          taxjar_environment: settings.integrations.taxjar_environment
+        }),
+      });
+      
+      const result = await response.json();
+      setTaxJarTestResult(result);
+    } catch (error) {
+      setTaxJarTestResult({
+        success: false,
+        message: 'Failed to test connection'
+      });
+    } finally {
+      setTestingTaxJar(false);
     }
   };
 
@@ -607,6 +641,96 @@ export default function AdminSettingsPage() {
                           onChange={(e) => handleSettingChange('integrations', 'smtp_username', e.target.value)}
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-4">Tax Calculation Service</h4>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start">
+                        <Key className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                        <div>
+                          <h4 className="font-medium text-blue-800">TaxJar Integration</h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Enable TaxJar API for accurate, real-time tax calculations based on ZIP code and product type.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                          <h4 className="font-medium">Use TaxJar API</h4>
+                          <p className="text-sm text-gray-600">
+                            Enable TaxJar for tax calculations (overrides local tax rates)
+                          </p>
+                        </div>
+                        <Switch
+                          checked={settings.integrations.use_taxjar_api}
+                          onCheckedChange={(checked) => handleSettingChange('integrations', 'use_taxjar_api', checked)}
+                        />
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            TaxJar API Key
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.integrations.taxjar_api_key}
+                            onChange={(e) => handleSettingChange('integrations', 'taxjar_api_key', e.target.value)}
+                            placeholder="Enter TaxJar API key"
+                            disabled={!settings.integrations.use_taxjar_api}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Get your API key from <a href="https://www.taxjar.com/api/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">TaxJar Dashboard</a>
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Environment
+                          </label>
+                          <Select
+                            value={settings.integrations.taxjar_environment}
+                            onValueChange={(value) => handleSettingChange('integrations', 'taxjar_environment', value)}
+                            disabled={!settings.integrations.use_taxjar_api}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sandbox">Sandbox (Testing)</SelectItem>
+                              <SelectItem value="production">Production (Live)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      {/* TaxJar Test Button */}
+                      {settings.integrations.taxjar_api_key && (
+                        <div className="mt-4">
+                          <Button
+                            onClick={testTaxJarConnection}
+                            disabled={testingTaxJar}
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          >
+                            {testingTaxJar ? 'Testing...' : 'Test TaxJar Connection'}
+                          </Button>
+                          
+                          {taxJarTestResult && (
+                            <div className={`mt-2 p-3 rounded-lg ${
+                              taxJarTestResult.success 
+                                ? 'bg-green-50 border border-green-200 text-green-800' 
+                                : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                              {taxJarTestResult.message}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

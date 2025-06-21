@@ -983,6 +983,7 @@ try {
 3. **Only use `getConnection()`** when you need transactions
 4. **ALWAYS release connections** in finally blocks
 5. **Test with `SHOW PROCESSLIST`** to monitor connection count
+6. **Avoid parameterized LIMIT/OFFSET** - Use string interpolation with validated integers
 
 ### Database Credentials (.env):
 ```
@@ -992,6 +993,115 @@ DB_NAME=blindscommerce_test
 DB_USER=root
 DB_PASSWORD=Test@1234
 ```
+
+---
+
+## 🔥 CRITICAL: MySQL Parameter Binding Issues (June 2025)
+
+### The "Incorrect arguments to mysqld_stmt_execute" Crisis
+- **Problem**: APIs failing with `Error: Incorrect arguments to mysqld_stmt_execute`
+- **Root Cause**: MySQL2 parameter binding has issues with `LIMIT ? OFFSET ?` syntax
+- **Symptoms**: 500 Internal Server Error on pagination queries
+- **Impact**: Admin tax rates page and other paginated APIs failing
+
+### Parameter Binding Issue Analysis
+```typescript
+// ❌ PROBLEMATIC Pattern (causes MySQL binding errors):
+const [rows] = await pool.execute(
+  'SELECT * FROM table WHERE active = ? LIMIT ? OFFSET ?',
+  [true, 10, 0]  // MySQL2 struggles with LIMIT/OFFSET parameters
+);
+
+// ✅ WORKING Solution (hybrid approach):
+const limit = 10; // Validated integer
+const offset = 0; // Validated integer
+const [rows] = await pool.execute(
+  `SELECT * FROM table WHERE active = ? LIMIT ${limit} OFFSET ${offset}`,
+  [true]  // Only search parameters, not pagination
+);
+```
+
+### Safe String Interpolation Rules
+**ONLY use string interpolation for:**
+1. **Validated integers** (page numbers, limits, offsets)
+2. **Predefined column names** from allowlist
+3. **ORDER BY directions** ('ASC'/'DESC' after validation)
+
+**NEVER use string interpolation for:**
+1. **User input strings** (search terms, names, etc.)
+2. **Untrusted data** of any kind
+3. **Dynamic table/column names** from user input
+
+### Correct Pagination Pattern
+```typescript
+// ✅ RECOMMENDED Pattern for paginated queries:
+export async function getPaginatedData(page: number, limit: number, search?: string) {
+  const pool = await getPool();
+  
+  // Build WHERE clause with parameters for search
+  let whereClause = 'WHERE is_active = TRUE';
+  let params = [];
+  
+  if (search) {
+    whereClause += ' AND (name LIKE ? OR description LIKE ?)';
+    const searchPattern = `%${search}%`;
+    params = [searchPattern, searchPattern];
+  }
+  
+  // Get count with search parameters only
+  const [countRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM table ${whereClause}`,
+    params
+  );
+  
+  // Get data with safe pagination (validated integers)
+  const offset = (page - 1) * limit;
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT * FROM table ${whereClause} 
+     ORDER BY created_at DESC 
+     LIMIT ${limit} OFFSET ${offset}`,
+    params  // Same search parameters, no pagination params
+  );
+  
+  return { rows, total: countRows[0].total };
+}
+```
+
+### Real-World Fix Example (Tax Rates API)
+**Problem**: `/app/api/admin/tax-rates/route.ts` failing with MySQL binding error
+
+**Before** (Broken):
+```typescript
+const queryParams = [...searchParams, limit, offset];
+const [rows] = await pool.execute(
+  'SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ? OFFSET ?',
+  queryParams  // ❌ MySQL2 can't handle LIMIT/OFFSET parameters properly
+);
+```
+
+**After** (Fixed):
+```typescript
+const [rows] = await pool.execute(
+  `SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ${limit} OFFSET ${offset}`,
+  searchParams  // ✅ Only search parameters, pagination interpolated safely
+);
+```
+
+### Debugging Parameter Binding Issues
+1. **Check connection count**: `SHOW PROCESSLIST;` - should be ~5-10, not 100+
+2. **Test without parameters**: Start with hardcoded query, add parameters incrementally
+3. **Isolate LIMIT/OFFSET**: Remove pagination first, then add back with interpolation
+4. **Validate parameter arrays**: Log parameter array contents and types
+5. **Check for connection leaks**: If 100+ connections, restart dev server
+
+### Files Fixed in June 2025:
+- `/app/api/admin/tax-rates/route.ts` - Parameter binding issue with pagination
+- Connection leak cleanup (dropped from 110+ to 5 connections)
+
+### Production Monitoring:
+- Monitor connection count with `SHOW PROCESSLIST;`
+- Set up alerts for >20 database connections
+- Log parameter binding errors for investigation
 
 ---
 
@@ -1103,4 +1213,364 @@ parent_order_id INT -- Links vendor orders to main order
 
 ---
 
-This README serves as a comprehensive reference for understanding the BlindsCommerce application architecture, business logic, and development patterns. Update this document as the application evolves and new features are added.
+## 💰 COMPREHENSIVE PRICING SYSTEM ARCHITECTURE (2025)
+
+### 🎯 Multi-Layered Pricing Engine Overview
+The BlindsCommerce platform features a sophisticated pricing system that handles complex B2B/B2C scenarios with multiple pricing strategies, discounts, and dynamic calculations.
+
+### 📊 Database Pricing Architecture
+
+#### **Core Pricing Tables:**
+```json
+{
+  "main_pricing_systems": {
+    "products": {
+      "base_price": "MSRP starting price",
+      "cost_price": "vendor wholesale cost", 
+      "purpose": "foundation pricing for all calculations"
+    },
+    "product_pricing_matrix": {
+      "structure": "width_min, width_max, height_min, height_max, base_price, price_per_sqft",
+      "purpose": "dimensional pricing based on width/height ranges (11-300 inches)",
+      "component": "PricingMatrix.tsx",
+      "grid_format": "width_x_height_ranges with '_' separator",
+      "example": "11-20_21-30 = 11-20 inch width, 21-30 inch height",
+      "critical_fix_2025": "key separator changed from '-' to '_' to prevent parsing conflicts"
+    },
+    "product_fabric_pricing": {
+      "structure": "fabric_option_id, min_width, max_width, price_per_sqft",
+      "purpose": "fabric-specific pricing per square foot",
+      "component": "Fabric.tsx price matrix section",
+      "calculation": "(width × height) / 144 × price_per_sqft"
+    },
+    "vendor_products": {
+      "vendor_price": "vendor-specific selling price",
+      "quantity_available": "vendor inventory levels",
+      "purpose": "multi-vendor marketplace pricing"
+    }
+  }
+}
+```
+
+### 🧮 Pricing Calculation Flow
+
+#### **Step-by-Step Price Calculation:**
+```javascript
+// Complete pricing engine flow
+function calculateFinalPrice(productConfig) {
+  // 1. Base Price Foundation
+  let basePrice = getBasePrice(productConfig);
+  
+  // 2. Dimensional Pricing (if applicable)
+  if (hasDimensions(productConfig)) {
+    basePrice = getPricingMatrixPrice(width, height) || basePrice;
+  }
+  
+  // 3. Fabric/Material Costs
+  if (hasFabricSelection(productConfig)) {
+    const fabricCost = calculateFabricCost(fabric, width, height);
+    basePrice += fabricCost;
+  }
+  
+  // 4. Configuration Option Modifiers
+  const optionModifiers = calculateOptionModifiers(selectedOptions);
+  let configuredPrice = basePrice + optionModifiers;
+  
+  // 5. Customer-Specific Pricing
+  if (hasCustomerPricing(customer)) {
+    configuredPrice = applyCustomerPricing(configuredPrice, customer);
+  }
+  
+  // 6. Dynamic Pricing Rules (time-based, inventory-based)
+  configuredPrice = applyDynamicPricing(configuredPrice, rules);
+  
+  // 7. Item Total (price × quantity)
+  let itemTotal = configuredPrice * quantity;
+  
+  // 8. Volume Discounts
+  itemTotal = applyVolumeDiscounts(itemTotal, quantity);
+  
+  // 9. Vendor-Specific Discounts
+  itemTotal = applyVendorDiscounts(itemTotal, vendorId);
+  
+  // 10. Coupon/Campaign Discounts
+  itemTotal = applyCoupons(itemTotal, coupons);
+  
+  // 11. Shipping Calculation
+  const shipping = calculateShipping(itemTotal, customer);
+  
+  // 12. Tax Calculation
+  const tax = calculateTax(itemTotal + shipping, taxRate);
+  
+  // 13. Final Total
+  return {
+    basePrice,
+    configuredPrice,
+    itemTotal,
+    shipping,
+    tax,
+    finalTotal: itemTotal + shipping + tax,
+    discountBreakdown: getDiscountBreakdown()
+  };
+}
+```
+
+### 💡 Pricing Components & Files
+
+#### **Key Pricing Files:**
+```json
+{
+  "pricing_components": {
+    "PricingMatrix.tsx": {
+      "location": "/components/products/shared/",
+      "purpose": "interactive dimensional pricing grid",
+      "features": "width×height ranges, paginated view, real-time updates",
+      "grid_size": "11 width ranges × 29 height ranges",
+      "ranges": "11-20\" to 291-300\" in 10-inch increments"
+    },
+    "UnifiedProductPage.tsx": {
+      "pricing_integration": "formatPricingMatrix() function",
+      "key_format": "widthRange + '_' + heightRange",
+      "database_conversion": "range labels to min/max values"
+    },
+    "Fabric.tsx": {
+      "fabric_pricing": "per square foot calculations",
+      "width_tiers": "different pricing for width ranges",
+      "area_calculation": "(width × height) / 144 square feet"
+    }
+  },
+  "api_endpoints": {
+    "/api/pricing/calculate": "main pricing engine with all discounts",
+    "/api/products/[slug]/pricing": "product-specific pricing",
+    "/api/products/[slug]/fabric-pricing": "fabric pricing calculations",
+    "/api/cart/vendor-discounts": "cart-level discount application",
+    "/api/admin/pricing/*": "admin pricing management"
+  }
+}
+```
+
+### 🏷️ Discount & Commission System
+
+#### **Discount Types & Applications:**
+```json
+{
+  "discount_hierarchy": {
+    "1_customer_specific": {
+      "types": ["fixed_price", "discount_percent", "discount_amount", "markup_percent"],
+      "application": "override or modify base pricing",
+      "table": "customer_specific_pricing"
+    },
+    "2_volume_discounts": {
+      "structure": "quantity tiers with percentage discounts",
+      "example": "5-10 items: 5%, 11-25 items: 10%, 26+: 15%",
+      "table": "volume_discounts"
+    },
+    "3_vendor_discounts": {
+      "types": ["percentage", "fixed_amount", "tiered", "bulk_pricing"],
+      "scope": ["all_products", "specific_categories", "individual_products"],
+      "table": "vendor_discounts"
+    },
+    "4_coupon_codes": {
+      "features": ["usage_limits", "expiration_dates", "customer_restrictions"],
+      "stacking": "configurable with other promotions",
+      "table": "coupon_codes"
+    },
+    "5_promotional_campaigns": {
+      "types": ["seasonal", "clearance", "new_customer", "category_specific"],
+      "scheduling": "start/end dates with automatic activation",
+      "table": "promotional_campaigns"
+    }
+  },
+  "commission_structure": {
+    "vendor_commissions": {
+      "calculation_methods": ["percentage", "fixed_amount", "tiered"],
+      "scope": ["vendor_specific", "category_based", "product_specific", "global"],
+      "table": "commission_rules"
+    },
+    "sales_staff_commissions": {
+      "individual_rates": "per salesperson commission tracking",
+      "override_capability": "can override vendor default rates",
+      "tracking": "tied to order attribution"
+    }
+  }
+}
+```
+
+### 🔧 Dynamic Pricing Engine
+
+#### **Real-Time Pricing Adjustments:**
+```json
+{
+  "dynamic_pricing_rules": {
+    "time_based_pricing": {
+      "hour_of_day": "different rates for peak/off-peak hours",
+      "day_of_week": "weekend vs weekday pricing",
+      "seasonal": "month-based price adjustments"
+    },
+    "inventory_based_pricing": {
+      "low_stock": "increase prices when inventory drops below threshold",
+      "overstock": "discount pricing to move excess inventory",
+      "out_of_stock": "hide pricing or show backorder pricing"
+    },
+    "demand_based_pricing": {
+      "high_demand": "increase prices for popular items",
+      "conversion_optimization": "A/B test different price points",
+      "geographic": "regional pricing variations"
+    },
+    "rule_constraints": {
+      "min_max_prices": "prevent prices from going below/above limits",
+      "percentage_limits": "cap maximum discount percentages",
+      "customer_type_rules": "different rules for B2B vs B2C"
+    }
+  }
+}
+```
+
+### 🛒 Multi-Vendor Cart Pricing
+
+#### **Complex Cart Calculations:**
+```json
+{
+  "multi_vendor_cart_logic": {
+    "vendor_separation": {
+      "cart_grouping": "items grouped by vendor for discount application",
+      "individual_calculations": "each vendor's discounts apply only to their items",
+      "shipping_per_vendor": "separate shipping calculations per vendor"
+    },
+    "discount_stacking": {
+      "application_order": [
+        "customer_specific_pricing",
+        "volume_discounts",
+        "vendor_discounts", 
+        "coupon_codes",
+        "promotional_campaigns"
+      ],
+      "maximum_discount_caps": "prevent over-discounting",
+      "conflict_resolution": "highest discount wins vs stackable rules"
+    },
+    "cart_level_features": {
+      "price_alerts": "notify when items go on sale",
+      "save_for_later": "price tracking for saved items",
+      "bulk_pricing": "automatic volume discount application",
+      "free_shipping_calculation": "threshold per vendor vs combined"
+    }
+  }
+}
+```
+
+### ⚙️ Administrative Controls
+
+#### **Admin Pricing Management:**
+```json
+{
+  "admin_pricing_controls": {
+    "global_settings": {
+      "tax_rate": "platform-wide tax percentage (default 8.25%)",
+      "minimum_order_amount": "minimum purchase requirement",
+      "free_shipping_threshold": "free shipping cutoff ($100 default)",
+      "default_commission_rate": "standard vendor commission (15%)",
+      "payment_processing_fee": "credit card processing costs"
+    },
+    "pricing_rule_management": {
+      "commission_rules": "create/modify vendor and sales staff rates",
+      "volume_discounts": "configure quantity-based pricing tiers",
+      "promotional_campaigns": "setup platform-wide sales events",
+      "dynamic_pricing": "configure time/inventory-based rules"
+    },
+    "vendor_oversight": {
+      "discount_approval": "review and approve vendor discount requests",
+      "pricing_audits": "monitor vendor pricing compliance",
+      "commission_reports": "track commission payments and calculations"
+    }
+  }
+}
+```
+
+### 🧪 Testing & Validation
+
+#### **Pricing System Testing:**
+```json
+{
+  "testing_scenarios": {
+    "basic_pricing": {
+      "single_product": "verify base price + options calculations",
+      "fabric_pricing": "test per-sqft calculations with different dimensions",
+      "matrix_pricing": "validate dimensional pricing grid accuracy"
+    },
+    "discount_testing": {
+      "volume_discounts": "test quantity tier breakpoints",
+      "coupon_stacking": "verify discount combination rules",
+      "vendor_specific": "ensure vendor discounts don't cross-apply"
+    },
+    "edge_cases": {
+      "zero_pricing": "handle free items and promotional giveaways",
+      "negative_discounts": "prevent negative final prices",
+      "extreme_dimensions": "test very large window configurations"
+    },
+    "performance_testing": {
+      "cart_calculations": "bulk pricing calculations with many items",
+      "real_time_updates": "pricing updates during configuration",
+      "concurrent_users": "multiple users calculating prices simultaneously"
+    }
+  }
+}
+```
+
+### 📈 Business Intelligence & Reporting
+
+#### **Pricing Analytics:**
+```json
+{
+  "pricing_analytics": {
+    "revenue_optimization": {
+      "price_elasticity": "track sales volume vs price point changes",
+      "discount_effectiveness": "measure ROI of different discount types",
+      "conversion_rates": "pricing impact on purchase decisions"
+    },
+    "vendor_performance": {
+      "commission_tracking": "vendor earnings and payment schedules",
+      "pricing_competitiveness": "compare vendor prices for same products",
+      "discount_usage": "track vendor discount strategy effectiveness"
+    },
+    "customer_insights": {
+      "price_sensitivity": "customer response to pricing changes", 
+      "average_order_value": "impact of pricing on purchase amounts",
+      "customer_lifetime_value": "pricing strategy effect on retention"
+    }
+  }
+}
+```
+
+### 🚀 Production Deployment Considerations
+
+#### **Pricing System Performance:**
+```json
+{
+  "performance_optimization": {
+    "caching_strategy": {
+      "pricing_matrix_cache": "cache dimensional pricing for faster lookups",
+      "discount_rule_cache": "cache active discount rules",
+      "tax_calculation_cache": "cache tax rates by location"
+    },
+    "database_optimization": {
+      "pricing_indexes": "optimize queries on price-related tables",
+      "discount_indexes": "fast lookups for applicable discounts",
+      "vendor_pricing_indexes": "multi-vendor price comparisons"
+    },
+    "api_optimization": {
+      "bulk_pricing_endpoints": "calculate multiple items efficiently",
+      "real_time_calculations": "fast response for interactive pricing",
+      "concurrent_processing": "handle multiple pricing requests"
+    }
+  },
+  "monitoring_alerts": {
+    "pricing_errors": "alert on calculation failures",
+    "discount_abuse": "monitor excessive discount usage",
+    "commission_discrepancies": "validate commission calculations"
+  }
+}
+```
+
+---
+
+This README serves as a comprehensive reference for understanding the BlindsCommerce application architecture, business logic, pricing systems, and development patterns. Update this document as the application evolves and new features are added.

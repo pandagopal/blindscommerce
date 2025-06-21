@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { RowDataPacket } from 'mysql2';
-import { getTaxRate, getFreeShippingThreshold, getMinimumOrderAmount } from '@/lib/settings';
+import { getFreeShippingThreshold, getMinimumOrderAmount } from '@/lib/settings';
+import { calculateTax } from '@/lib/services/taxCalculation';
 
 interface PricingCalculationRequest {
   items: Array<{
@@ -14,6 +15,7 @@ interface PricingCalculationRequest {
   coupon_code?: string;
   campaign_code?: string;
   shipping_state?: string;
+  zip_code?: string;
 }
 
 interface ProductRow extends RowDataPacket {
@@ -365,8 +367,7 @@ export async function POST(req: NextRequest) {
     const totalDiscountAmount = volumeDiscountAmount + couponDiscountAmount + campaignDiscountAmount;
     const discountedSubtotal = Math.max(0, subtotal - totalDiscountAmount);
 
-    // Get admin settings for tax and shipping
-    const taxRate = await getTaxRate();
+    // Get admin settings for shipping
     const freeShippingThreshold = await getFreeShippingThreshold();
     const minimumOrderAmount = await getMinimumOrderAmount();
 
@@ -386,7 +387,6 @@ export async function POST(req: NextRequest) {
           },
           discounted_subtotal: discountedSubtotal,
           minimum_order_required: minimumOrderAmount,
-          tax_rate: taxRate,
           shipping: 0,
           tax: 0,
           total: 0
@@ -420,11 +420,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Calculate tax on discounted subtotal + shipping
-    const taxableAmount = discountedSubtotal + shippingCost;
-    const taxAmount = taxableAmount * (taxRate / 100);
+    // Calculate tax using ZIP code-based rates
+    const zipCode = body.zip_code || '78701'; // Default to Austin, TX
+    const taxCalculation = await calculateTax(discountedSubtotal + shippingCost, zipCode);
     
-    const finalTotal = discountedSubtotal + shippingCost + taxAmount;
+    const finalTotal = discountedSubtotal + shippingCost + taxCalculation.tax_amount;
 
     return NextResponse.json({
       success: true,
@@ -441,8 +441,11 @@ export async function POST(req: NextRequest) {
         shipping: shippingCost,
         is_free_shipping: isFreeShipping,
         free_shipping_threshold: freeShippingThreshold,
-        tax_rate: taxRate,
-        tax: taxAmount,
+        tax_rate: taxCalculation.tax_rate,
+        tax: taxCalculation.tax_amount,
+        tax_breakdown: taxCalculation.tax_breakdown,
+        tax_jurisdiction: taxCalculation.tax_jurisdiction,
+        zip_code: taxCalculation.zip_code,
         total: finalTotal,
         applied_promotions: {
           ...(body.coupon_code && !couponError && { coupon_code: body.coupon_code }),

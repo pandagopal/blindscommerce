@@ -259,7 +259,7 @@ const PaymentForm = ({
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, clearCart, pricing } = useCart();
+  const { items, subtotal, clearCart, pricing, updateZipCode } = useCart();
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
@@ -338,6 +338,11 @@ export default function CheckoutPage() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+
+    // Update cart ZIP code for tax calculation when ZIP code changes
+    if (name === 'zipCode' && value) {
+      updateZipCode(value);
+    }
 
     // If "same as shipping" is checked, copy shipping info to billing
     if (name === 'sameAsShipping' && checked) {
@@ -1028,7 +1033,14 @@ export default function CheckoutPage() {
                 )}
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax</span>
+                <span className="text-gray-600">
+                  Tax
+                  {pricing.tax_jurisdiction && (
+                    <span className="text-xs text-gray-400 block">
+                      {pricing.tax_jurisdiction} ({pricing.tax_rate?.toFixed(2)}%)
+                    </span>
+                  )}
+                </span>
                 <span>${pricing.tax.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 mt-2">

@@ -51,8 +51,8 @@ export async function GET(request: NextRequest) {
     }
 
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '10')));
+    const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const search = searchParams.get('search') || '';
@@ -94,14 +94,15 @@ export async function GET(request: NextRequest) {
       values.push(role);
     }
 
-    // Add sorting
+    // Add sorting (validate and sanitize to prevent SQL injection)
     const validSortFields = ['email', 'first_name', 'last_name', 'created_at', 'last_login'];
     const validSortOrders = ['asc', 'desc'];
 
     const finalSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at';
     const finalSortOrder = validSortOrders.includes(sortOrder.toLowerCase()) ? sortOrder.toLowerCase() : 'desc';
 
-    query += ` ORDER BY u.${finalSortBy} ${finalSortOrder}`;
+    // Use string concatenation for ORDER BY (safe since we validated the values)
+    query += ` ORDER BY u.${finalSortBy} ${finalSortOrder.toUpperCase()}`;
 
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     console.log('Query:', query);
     console.log('Values:', values);
 
-    const [result] = await pool.execute(query, values);
+    const [result] = await pool.query(query, values);
 
     // Get total count using the same conditions
     let countQuery = `
@@ -137,7 +138,7 @@ export async function GET(request: NextRequest) {
       countValues.push(role);
     }
 
-    const [countResult] = await pool.execute(countQuery, countValues);
+    const [countResult] = await pool.query(countQuery, countValues);
 
     return NextResponse.json({
       users: result,
