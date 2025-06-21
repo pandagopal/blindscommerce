@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
           oi.quantity,
           oi.unit_price,
           oi.total_price,
-          oi.configuration,
+          oi.product_options as configuration,
           p.name as product_name
         FROM order_items oi
         JOIN vendor_products vp ON oi.product_id = vp.product_id

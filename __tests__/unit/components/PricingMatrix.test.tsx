@@ -7,7 +7,7 @@
 
 const TEST_CONFIG = {
   componentName: 'PricingMatrix',
-  componentPath: '@/components/PricingMatrix',
+  componentPath: '@/components/products/shared/PricingMatrix',
   displayName: 'Pricing Matrix Component',
   description: 'Component for displaying and calculating pricing based on window dimensions',
   requiredDependencies: []

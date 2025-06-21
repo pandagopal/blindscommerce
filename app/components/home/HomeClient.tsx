@@ -64,8 +64,8 @@ interface HomeClientProps {
 export default function HomeClient({ categories, products, rooms = [], reviews = [], heroBanners = [] }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
 
-  // Use dynamic hero banners or fallback to default slides
-  const defaultSlides = [
+  // State for dynamic content
+  const [heroSlides, setHeroSlides] = React.useState([
     {
       id: 1,
       image: '/images/hero/hero-1.jpg',
@@ -93,7 +93,56 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
       primaryCta: { text: 'Shop Sale', href: '/sales' },
       secondaryCta: { text: 'View All Deals', href: '/products?sale=true' }
     }
-  ];
+  ]);
+  
+  const [promoBanners, setPromoBanners] = React.useState([
+    'Free Shipping on orders over $100',
+    'Extra 20% off Cellular Shades',
+    'Free Cordless Upgrade'
+  ]);
+
+  // Fetch dynamic content on component mount
+  React.useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const res = await fetch('/api/homepage/content');
+        if (res.ok) {
+          const data = await res.json();
+          
+          // Update hero slides with API data while keeping structure
+          if (data.heroSlides && data.heroSlides.length > 0) {
+            const updatedSlides = heroSlides.map((slide, index) => {
+              const apiSlide = data.heroSlides[index];
+              if (apiSlide) {
+                return {
+                  ...slide,
+                  title: apiSlide.title || slide.title,
+                  subtitle: apiSlide.subtitle || slide.subtitle,
+                  description: apiSlide.description || slide.description,
+                  primaryCta: {
+                    ...slide.primaryCta,
+                    text: apiSlide.cta || slide.primaryCta.text
+                  }
+                };
+              }
+              return slide;
+            });
+            setHeroSlides(updatedSlides);
+          }
+          
+          // Update promo banners
+          if (data.promoBanners && data.promoBanners.length > 0) {
+            setPromoBanners(data.promoBanners);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching homepage content:', error);
+        // Keep default content if API fails
+      }
+    };
+
+    fetchContent();
+  }, []);
 
   // Transform database hero banners to match slide format
   const dynamicSlides = heroBanners.map(banner => ({
@@ -113,7 +162,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     rightSideImage: banner.right_side_image
   }));
 
-  const slides = dynamicSlides.length > 0 ? dynamicSlides : defaultSlides;
+  const slides = dynamicSlides.length > 0 ? dynamicSlides : heroSlides;
 
   // Auto-advance slides every 6 seconds
   React.useEffect(() => {
@@ -268,18 +317,14 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
       <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-8">
-              <div className="flex items-center gap-2">
-                <span className="font-semibold text-lg">🚚 Free Shipping</span>
-                <span>on orders over $100</span>
-              </div>
-              <div className="hidden md:flex items-center gap-2">
-                <span className="font-semibold text-lg">⚡️ Flash Sale</span>
-                <span>Extra 20% off Cellular Shades</span>
-              </div>
-              <div className="hidden lg:flex items-center gap-2">
-                <span className="font-semibold text-lg">🎉 Limited Time</span>
-                <span>Free Cordless Upgrade</span>
-              </div>
+              {promoBanners.map((banner, index) => (
+                <div key={index} className={`flex items-center gap-2 ${index === 0 ? '' : index === 1 ? 'hidden md:flex' : 'hidden lg:flex'}`}>
+                  <span className="font-semibold text-lg">
+                    {index === 0 ? '🚚' : index === 1 ? '⚡️' : '🎉'}
+                  </span>
+                  <span>{banner}</span>
+                </div>
+              ))}
             </div>
           </div>
           <div className="absolute left-0 right-0 h-4 bg-gradient-to-b from-black/10 to-transparent"></div>

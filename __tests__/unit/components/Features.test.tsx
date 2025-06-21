@@ -7,7 +7,7 @@
 
 const TEST_CONFIG = {
   componentName: 'Features',
-  componentPath: '@/components/Features',
+  componentPath: '@/components/products/shared/Features',
   displayName: 'Features Component',
   description: 'Component for displaying product features and specifications',
   requiredDependencies: []

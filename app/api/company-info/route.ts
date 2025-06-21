@@ -26,11 +26,11 @@ export async function GET(request: NextRequest) {
     const pool = await getPool();
 
     try {
-      // Get company info from existing settings table
+      // Get company info from new company_settings table
       const [rows] = await pool.execute(`
-        SELECT config_key, config_value, config_type 
-        FROM upload_security_config 
-        WHERE config_key LIKE "general_%" AND is_active = TRUE
+        SELECT setting_key, setting_value, setting_type 
+        FROM company_settings 
+        WHERE is_public = TRUE
       `).catch(() => [[]]);
 
       let companyInfo = { ...DEFAULT_COMPANY_INFO };
@@ -38,49 +38,55 @@ export async function GET(request: NextRequest) {
       if (Array.isArray(rows) && rows.length > 0) {
         // Convert flat settings to company info structure
         rows.forEach((row: any) => {
-          const { config_key, config_value, config_type } = row;
-          const key = config_key.replace('general_', '');
+          const { setting_key, setting_value, setting_type } = row;
           
           let parsedValue;
-          switch (config_type) {
+          switch (setting_type) {
             case 'boolean':
-              parsedValue = config_value === 'true';
+              parsedValue = setting_value === 'true';
               break;
-            case 'integer':
-              parsedValue = parseInt(config_value);
+            case 'number':
+              parsedValue = parseFloat(setting_value);
               break;
             case 'json':
               try {
-                parsedValue = JSON.parse(config_value);
+                parsedValue = JSON.parse(setting_value);
               } catch {
-                parsedValue = config_value;
+                parsedValue = setting_value;
               }
               break;
             default:
-              parsedValue = config_value;
+              parsedValue = setting_value;
           }
           
           // Only override defaults with non-null, non-empty values
           if (parsedValue !== null && parsedValue !== undefined && parsedValue !== '') {
             // Map database keys to company info structure
-            switch (key) {
-              case 'site_name':
+            switch (setting_key) {
+              case 'company_name':
                 companyInfo.companyName = parsedValue;
                 break;
-              case 'phone':
+              case 'emergency_hotline':
                 companyInfo.emergencyHotline = parsedValue;
                 break;
+              case 'contact_phone':
+                companyInfo.customerService = parsedValue;
+                break;
               case 'contact_email':
+                companyInfo.supportEmail = parsedValue;
+                break;
+              case 'sales_email':
+                companyInfo.salesEmail = parsedValue;
+                break;
+              case 'info_email':
                 companyInfo.mainEmail = parsedValue;
                 break;
-              case 'site_description':
-                companyInfo.tagline = parsedValue;
+              case 'website_url':
+                companyInfo.website = parsedValue;
                 break;
-              default:
-                // Keep any other fields that might match
-                if (companyInfo.hasOwnProperty(key)) {
-                  companyInfo[key as keyof typeof companyInfo] = parsedValue;
-                }
+              case 'business_hours':
+                companyInfo.businessHours = parsedValue;
+                break;
             }
           }
         });

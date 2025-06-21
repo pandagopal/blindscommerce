@@ -7,7 +7,7 @@
 
 const TEST_CONFIG = {
   componentName: 'RoomRecommendations',
-  componentPath: '@/components/RoomRecommendations',
+  componentPath: '@/components/products/shared/RoomRecommendations',
   displayName: 'Room Recommendations Component',
   description: 'Component for suggesting blinds based on room characteristics',
   requiredDependencies: []

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 
 // PUT - Update sales person
@@ -9,8 +8,8 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -25,7 +24,7 @@ export async function PUT(
       // Get vendor ID for current user
       const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
-        [session.user.id]
+        [user.userId]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {
@@ -135,8 +134,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -149,7 +148,7 @@ export async function DELETE(
       // Get vendor ID for current user
       const [vendorRows] = await pool.execute(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
-        [session.user.id]
+        [user.userId]
       );
 
       if (!Array.isArray(vendorRows) || vendorRows.length === 0) {

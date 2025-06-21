@@ -15,6 +15,7 @@ module.exports = {
     // Mock Next.js server components that don't work in Jest
     '^next/server$': '<rootDir>/setup/mocks/next-server.js'
   },
+  setupFiles: ['<rootDir>/setup/test-env.js'],
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', {
       useESM: false,
@@ -31,7 +32,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   transformIgnorePatterns: [
-    'node_modules/(?!(.*\\.mjs$|@testing-library))'
+    'node_modules/(?!(.*\\.mjs$|@testing-library|lucide-react|jose|uuid|openid-client))'
   ],
   collectCoverageFrom: [
     '../components/**/*.{ts,tsx}',

@@ -62,54 +62,37 @@ export default function VendorDashboard() {
   }, [router]);
 
   useEffect(() => {
-    // In a real application, this would fetch data from an API
     const fetchDashboardData = async () => {
       try {
-        // Mock data for demonstration
-        setStats({
-          totalSales: 12680.45,
-          totalOrders: 53,
-          totalProducts: 17,
-          pendingOrders: 8,
-        });
-
-        // Mock recent orders
-        setRecentOrders([
-          {
-            id: 'SBH-102948',
-            date: '2023-10-15',
-            customer: 'John Smith',
-            total: 349.99,
-            status: 'Processing',
-            items: 2
-          },
-          {
-            id: 'SBH-102936',
-            date: '2023-10-12',
-            customer: 'Jane Cooper',
-            total: 628.50,
-            status: 'Shipped',
-            items: 3
-          },
-          {
-            id: 'SBH-102925',
-            date: '2023-10-10',
-            customer: 'Robert Johnson',
-            total: 179.99,
-            status: 'Delivered',
-            items: 1
-          },
-          {
-            id: 'SBH-102919',
-            date: '2023-10-08',
-            customer: 'Emily Davis',
-            total: 432.75,
-            status: 'Delivered',
-            items: 2
-          },
-        ]);
+        setLoading(true);
+        const res = await fetch('/api/vendor/dashboard');
+        if (res.ok) {
+          const data = await res.json();
+          setStats(data.stats);
+          setRecentOrders(data.recentOrders);
+        } else {
+          console.error('Failed to fetch dashboard data:', res.status);
+          // Set empty state instead of mock data
+          setStats({
+            totalSales: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            pendingOrders: 0,
+          });
+          setRecentOrders([]);
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Set empty state instead of mock data
+        setStats({
+          totalSales: 0,
+          totalOrders: 0,
+          totalProducts: 0,
+          pendingOrders: 0,
+        });
+        setRecentOrders([]);
+      } finally {
+        setLoading(false);
       }
     };
 

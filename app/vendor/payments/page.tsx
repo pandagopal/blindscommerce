@@ -94,89 +94,12 @@ export default function VendorPaymentsPage() {
         const data = await res.json();
         setPaymentData(data);
       } else {
-        // Mock data for demonstration
-        setPaymentData({
-          overview: {
-            total_earnings: 18750.45,
-            pending_payments: 2456.78,
-            paid_this_month: 12680.45,
-            commission_rate: 15.0,
-            next_payout_date: '2023-11-15',
-            last_payout_amount: 8945.23
-          },
-          recent_payments: [
-            {
-              id: 'PAY-001',
-              amount: 1245.67,
-              status: 'paid',
-              date: '2023-10-15',
-              payout_date: '2023-10-15',
-              method: 'Bank Transfer',
-              reference: 'TXN-45891',
-              orders_count: 8
-            },
-            {
-              id: 'PAY-002',
-              amount: 987.34,
-              status: 'processing',
-              date: '2023-10-12',
-              method: 'PayPal',
-              reference: 'PP-78934',
-              orders_count: 6
-            },
-            {
-              id: 'PAY-003',
-              amount: 2156.89,
-              status: 'pending',
-              date: '2023-10-10',
-              method: 'Bank Transfer',
-              reference: 'TXN-45678',
-              orders_count: 14
-            }
-          ],
-          payment_history: [],
-          commission_breakdown: [
-            {
-              id: 'COM-001',
-              order_id: 'ORD-12345',
-              customer_name: 'John Smith',
-              product_name: 'Premium Wood Blinds',
-              order_amount: 349.99,
-              commission_rate: 15.0,
-              commission_amount: 52.50,
-              date: '2023-10-14',
-              status: 'paid'
-            },
-            {
-              id: 'COM-002',
-              order_id: 'ORD-12346',
-              customer_name: 'Jane Cooper',
-              product_name: 'Cellular Shades',
-              order_amount: 289.99,
-              commission_rate: 15.0,
-              commission_amount: 43.50,
-              date: '2023-10-13',
-              status: 'pending'
-            }
-          ]
-        });
+        console.error('Failed to fetch payment data:', res.status);
+        setPaymentData(null);
       }
     } catch (error) {
       console.error('Error fetching payment data:', error);
-      // Fallback to mock data
-      setPaymentData({
-        overview: {
-          total_earnings: 18750.45,
-          pending_payments: 2456.78,
-          paid_this_month: 12680.45,
-          commission_rate: 15.0,
-          next_payout_date: '2023-11-15',
-          last_payout_amount: 8945.23
-        },
-        recent_payments: [],
-        payment_history: [],
-        commission_breakdown: []
-      });
+      setPaymentData(null);
     } finally {
       setLoading(false);
     }
@@ -201,11 +124,12 @@ export default function VendorPaymentsPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string | undefined) => {
+    const numAmount = Number(amount) || 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
-    }).format(amount);
+    }).format(numAmount);
   };
 
   const formatDate = (dateString: string) => {
@@ -237,6 +161,21 @@ export default function VendorPaymentsPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading payment data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!paymentData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Payment Data</h2>
+          <p className="text-gray-600 mb-4">Please check your connection and try again.</p>
+          <Button onClick={() => fetchPaymentData()} className="bg-purple-600 hover:bg-purple-700">
+            Retry
+          </Button>
         </div>
       </div>
     );
@@ -333,7 +272,7 @@ export default function VendorPaymentsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {(paymentData?.overview?.commission_rate || 0).toFixed(1)}%
+                {(Number(paymentData?.overview?.commission_rate) || 0).toFixed(1)}%
               </div>
               <p className="text-sm text-gray-600 mt-1">Per sale</p>
             </CardContent>
@@ -398,31 +337,38 @@ export default function VendorPaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {paymentData?.recent_payments?.map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{payment.reference}</h4>
-                          {getStatusBadge(payment.status)}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Payment Date: {formatDate(payment.date)} • {payment.orders_count} orders
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Method: {payment.method}
-                        </div>
-                        {payment.payout_date && (
-                          <div className="text-sm text-green-600">
-                            Paid: {formatDate(payment.payout_date)}
+                  {paymentData?.recent_payments?.length > 0 ? (
+                    paymentData.recent_payments.map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium">{payment.reference}</h4>
+                            {getStatusBadge(payment.status)}
                           </div>
-                        )}
+                          <div className="text-sm text-gray-600">
+                            Payment Date: {formatDate(payment.date)} • {payment.orders_count} orders
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Method: {payment.method}
+                          </div>
+                          {payment.payout_date && (
+                            <div className="text-sm text-green-600">
+                              Paid: {formatDate(payment.payout_date)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{formatCurrency(payment.amount)}</div>
+                          <div className="text-sm text-gray-600">Commission</div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">{formatCurrency(payment.amount)}</div>
-                        <div className="text-sm text-gray-600">Commission</div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Wallet className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No payment records found</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -447,31 +393,38 @@ export default function VendorPaymentsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {paymentData?.commission_breakdown?.map((commission) => (
-                    <div key={commission.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{commission.order_id}</h4>
-                          {getStatusBadge(commission.status)}
+                  {paymentData?.commission_breakdown?.length > 0 ? (
+                    paymentData.commission_breakdown.map((commission) => (
+                      <div key={commission.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium">Order #{commission.order_id}</h4>
+                            {getStatusBadge(commission.status)}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Customer: {commission.customer_name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Product: {commission.product_name}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            Date: {formatDate(commission.date)}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          Customer: {commission.customer_name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Product: {commission.product_name}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          Date: {formatDate(commission.date)}
+                        <div className="text-right space-y-1">
+                          <div className="text-lg font-bold">{formatCurrency(commission.commission_amount)}</div>
+                          <div className="text-sm text-gray-600">
+                            {commission.commission_rate}% of {formatCurrency(commission.order_amount)}
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right space-y-1">
-                        <div className="text-lg font-bold">{formatCurrency(commission.commission_amount)}</div>
-                        <div className="text-sm text-gray-600">
-                          {commission.commission_rate}% of {formatCurrency(commission.order_amount)}
-                        </div>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No commission records found for the selected period</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </CardContent>
             </Card>
