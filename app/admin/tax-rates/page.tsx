@@ -55,30 +55,19 @@ export default function TaxRatesPage() {
   const itemsPerPage = 50;
 
   useEffect(() => {
-    const checkAuth = async () => {
+    // Admin layout already handles auth, so just load tax rates
+    const initializePage = async () => {
       try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/admin/tax-rates');
-          return;
-        }
-        const data = await res.json();
-        if (data.user.role !== 'admin') {
-          router.push('/');
-          return;
-        }
-        setUser(data.user);
         await loadTaxRates();
       } catch (error) {
-        console.error('Auth check failed:', error);
-        router.push('/login?redirect=/admin/tax-rates');
+        console.error('Error loading page:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
-  }, [router, currentPage, searchTerm]);
+    initializePage();
+  }, [currentPage, searchTerm]);
 
   const loadTaxRates = async () => {
     try {
@@ -88,9 +77,12 @@ export default function TaxRatesPage() {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const res = await fetch(`/api/admin/tax-rates?${params}`);
+      const res = await fetch(`/api/admin/tax-rates?${params}`, {
+        credentials: 'include'
+      });
       if (!res.ok) {
-        throw new Error('Failed to load tax rates');
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(`Failed to load tax rates: ${errorData.error || res.statusText}`);
       }
       const data = await res.json();
       setTaxRates(data.taxRates || []);

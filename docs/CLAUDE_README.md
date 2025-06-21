@@ -983,6 +983,7 @@ try {
 3. **Only use `getConnection()`** when you need transactions
 4. **ALWAYS release connections** in finally blocks
 5. **Test with `SHOW PROCESSLIST`** to monitor connection count
+6. **Avoid parameterized LIMIT/OFFSET** - Use string interpolation with validated integers
 
 ### Database Credentials (.env):
 ```
@@ -992,6 +993,115 @@ DB_NAME=blindscommerce_test
 DB_USER=root
 DB_PASSWORD=Test@1234
 ```
+
+---
+
+## 🔥 CRITICAL: MySQL Parameter Binding Issues (June 2025)
+
+### The "Incorrect arguments to mysqld_stmt_execute" Crisis
+- **Problem**: APIs failing with `Error: Incorrect arguments to mysqld_stmt_execute`
+- **Root Cause**: MySQL2 parameter binding has issues with `LIMIT ? OFFSET ?` syntax
+- **Symptoms**: 500 Internal Server Error on pagination queries
+- **Impact**: Admin tax rates page and other paginated APIs failing
+
+### Parameter Binding Issue Analysis
+```typescript
+// ❌ PROBLEMATIC Pattern (causes MySQL binding errors):
+const [rows] = await pool.execute(
+  'SELECT * FROM table WHERE active = ? LIMIT ? OFFSET ?',
+  [true, 10, 0]  // MySQL2 struggles with LIMIT/OFFSET parameters
+);
+
+// ✅ WORKING Solution (hybrid approach):
+const limit = 10; // Validated integer
+const offset = 0; // Validated integer
+const [rows] = await pool.execute(
+  `SELECT * FROM table WHERE active = ? LIMIT ${limit} OFFSET ${offset}`,
+  [true]  // Only search parameters, not pagination
+);
+```
+
+### Safe String Interpolation Rules
+**ONLY use string interpolation for:**
+1. **Validated integers** (page numbers, limits, offsets)
+2. **Predefined column names** from allowlist
+3. **ORDER BY directions** ('ASC'/'DESC' after validation)
+
+**NEVER use string interpolation for:**
+1. **User input strings** (search terms, names, etc.)
+2. **Untrusted data** of any kind
+3. **Dynamic table/column names** from user input
+
+### Correct Pagination Pattern
+```typescript
+// ✅ RECOMMENDED Pattern for paginated queries:
+export async function getPaginatedData(page: number, limit: number, search?: string) {
+  const pool = await getPool();
+  
+  // Build WHERE clause with parameters for search
+  let whereClause = 'WHERE is_active = TRUE';
+  let params = [];
+  
+  if (search) {
+    whereClause += ' AND (name LIKE ? OR description LIKE ?)';
+    const searchPattern = `%${search}%`;
+    params = [searchPattern, searchPattern];
+  }
+  
+  // Get count with search parameters only
+  const [countRows] = await pool.execute<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM table ${whereClause}`,
+    params
+  );
+  
+  // Get data with safe pagination (validated integers)
+  const offset = (page - 1) * limit;
+  const [rows] = await pool.execute<RowDataPacket[]>(
+    `SELECT * FROM table ${whereClause} 
+     ORDER BY created_at DESC 
+     LIMIT ${limit} OFFSET ${offset}`,
+    params  // Same search parameters, no pagination params
+  );
+  
+  return { rows, total: countRows[0].total };
+}
+```
+
+### Real-World Fix Example (Tax Rates API)
+**Problem**: `/app/api/admin/tax-rates/route.ts` failing with MySQL binding error
+
+**Before** (Broken):
+```typescript
+const queryParams = [...searchParams, limit, offset];
+const [rows] = await pool.execute(
+  'SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ? OFFSET ?',
+  queryParams  // ❌ MySQL2 can't handle LIMIT/OFFSET parameters properly
+);
+```
+
+**After** (Fixed):
+```typescript
+const [rows] = await pool.execute(
+  `SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ${limit} OFFSET ${offset}`,
+  searchParams  // ✅ Only search parameters, pagination interpolated safely
+);
+```
+
+### Debugging Parameter Binding Issues
+1. **Check connection count**: `SHOW PROCESSLIST;` - should be ~5-10, not 100+
+2. **Test without parameters**: Start with hardcoded query, add parameters incrementally
+3. **Isolate LIMIT/OFFSET**: Remove pagination first, then add back with interpolation
+4. **Validate parameter arrays**: Log parameter array contents and types
+5. **Check for connection leaks**: If 100+ connections, restart dev server
+
+### Files Fixed in June 2025:
+- `/app/api/admin/tax-rates/route.ts` - Parameter binding issue with pagination
+- Connection leak cleanup (dropped from 110+ to 5 connections)
+
+### Production Monitoring:
+- Monitor connection count with `SHOW PROCESSLIST;`
+- Set up alerts for >20 database connections
+- Log parameter binding errors for investigation
 
 ---
 

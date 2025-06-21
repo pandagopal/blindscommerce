@@ -36,14 +36,14 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     
-    // Build search condition
+    // Build WHERE clause and parameters for search
     let whereClause = 'WHERE is_active = TRUE';
-    let params: any[] = [];
+    let params = [];
     
     if (search) {
       whereClause += ' AND (zip_code LIKE ? OR city LIKE ? OR state_name LIKE ? OR state_code LIKE ?)';
       const searchPattern = `%${search}%`;
-      params.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      params = [searchPattern, searchPattern, searchPattern, searchPattern];
     }
     
     // Get total count
@@ -53,13 +53,13 @@ export async function GET(request: NextRequest) {
     );
     const total = countRows[0].total;
     
-    // Get paginated results
+    // Get paginated results - use string interpolation for LIMIT/OFFSET (safe with validated integers)
     const offset = (page - 1) * limit;
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT * FROM tax_rates ${whereClause} 
        ORDER BY state_code, city, zip_code 
-       LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
     );
     
     return NextResponse.json({
@@ -72,7 +72,12 @@ export async function GET(request: NextRequest) {
     
   } catch (error) {
     console.error('Error fetching tax rates:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 

@@ -68,7 +68,10 @@ export async function GET(request: NextRequest) {
         aws_s3_bucket: '',
         smtp_server: 'smtp.smartblindshub.com',
         smtp_port: '587',
-        smtp_username: 'notifications@smartblindshub.com'
+        smtp_username: 'notifications@smartblindshub.com',
+        taxjar_api_key: '',
+        taxjar_environment: 'production',
+        use_taxjar_api: false
       }
     };
 
@@ -105,8 +108,8 @@ export async function GET(request: NextRequest) {
           settings.payments[config_key.replace('payment_', '') as keyof typeof settings.payments] = parsedValue;
         } else if (config_key.startsWith('security_')) {
           settings.security[config_key.replace('security_', '') as keyof typeof settings.security] = parsedValue;
-        } else if (config_key.startsWith('integration_')) {
-          settings.integrations[config_key.replace('integration_', '') as keyof typeof settings.integrations] = parsedValue;
+        } else if (config_key.startsWith('integrations_')) {
+          settings.integrations[config_key.replace('integrations_', '') as keyof typeof settings.integrations] = parsedValue;
         }
       });
     }

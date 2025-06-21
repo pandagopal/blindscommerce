@@ -65,7 +65,7 @@ export default function AdminSettingsPage() {
       smtp_port: '587',
       smtp_username: 'notifications@smartblindshub.com',
       taxjar_api_key: '',
-      taxjar_environment: 'sandbox',
+      taxjar_environment: 'production',
       use_taxjar_api: false
     }
   });
@@ -197,11 +197,16 @@ export default function AdminSettingsPage() {
     setTaxJarTestResult(null);
     
     try {
+      // Test with current form values instead of database values
       const response = await fetch('/api/admin/settings/test-taxjar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          taxjar_api_key: settings.integrations.taxjar_api_key,
+          taxjar_environment: settings.integrations.taxjar_environment
+        }),
       });
       
       const result = await response.json();
@@ -702,6 +707,30 @@ export default function AdminSettingsPage() {
                           </Select>
                         </div>
                       </div>
+                      
+                      {/* TaxJar Test Button */}
+                      {settings.integrations.taxjar_api_key && (
+                        <div className="mt-4">
+                          <Button
+                            onClick={testTaxJarConnection}
+                            disabled={testingTaxJar}
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                          >
+                            {testingTaxJar ? 'Testing...' : 'Test TaxJar Connection'}
+                          </Button>
+                          
+                          {taxJarTestResult && (
+                            <div className={`mt-2 p-3 rounded-lg ${
+                              taxJarTestResult.success 
+                                ? 'bg-green-50 border border-green-200 text-green-800' 
+                                : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                              {taxJarTestResult.message}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
