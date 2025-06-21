@@ -9,7 +9,7 @@ const nextConfig = {
     optimizePackageImports: ['react-icons'],
   },
 
-  // Webpack configuration to handle native modules
+  // Webpack configuration to handle native modules and TensorFlow.js
   webpack: (config, { isServer }) => {
     // Exclude problematic modules from webpack processing
     config.module.rules.push({
@@ -17,24 +17,31 @@ const nextConfig = {
       use: 'ignore-loader',
     });
 
+    // Handle WASM files for TensorFlow.js
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+
     // Ignore native modules that cause build issues
     config.externals = config.externals || [];
     config.externals.push({
       '@mapbox/node-pre-gyp': 'commonjs @mapbox/node-pre-gyp',
     });
 
-    // Handle other native binaries
+    // Handle other native binaries  
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
-        crypto: false,
         path: false,
         os: false,
         stream: false,
         util: false,
+        // Keep crypto for TensorFlow.js
+        crypto: require.resolve('crypto-browserify'),
       };
     }
 
@@ -77,6 +84,21 @@ const nextConfig = {
   // Skip ESLint checks during build
   eslint: {
     ignoreDuringBuilds: true,
+  },
+
+  // Headers for WASM support only
+  async headers() {
+    return [
+      {
+        source: '/(.*)\\.wasm$',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/wasm',
+          },
+        ],
+      },
+    ];
   },
 
   // Route configuration

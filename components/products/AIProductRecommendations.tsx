@@ -292,12 +292,12 @@ export default function AIProductRecommendations({
 
               <div className="flex items-center gap-1 mb-2">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{product.rating?.toFixed(1) || 'N/A'}</span>
+                <span className="text-sm font-medium">{(Number(product.rating) || 0).toFixed(1)}</span>
               </div>
 
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xl font-bold text-primary-red">
-                  ${product.base_price?.toFixed(2)}
+                  ${(Number(product.base_price) || 0).toFixed(2)}
                 </span>
                 <Badge variant="outline" className="text-xs">
                   {Math.round(product.score)}% match

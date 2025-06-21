@@ -13,7 +13,9 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from 'sonner';
 
 declare global {
-  // Empty - using built-in DOM types
+  interface Window {
+    LocalDetectionModel: any;
+  }
 }
 
 interface DetectedWindow {
@@ -78,17 +80,79 @@ const MLRoomVisualizer = ({
 
   // Load the model on component mount
   useEffect(() => {
-    loadModel();
+    // Only load on client side
+    if (typeof window !== 'undefined') {
+      loadModel();
+    }
   }, []);
 
   const loadModel = async () => {
     try {
-      const loadedModel = await cocoSsd.load();
-      setModel(loadedModel);
+      console.log('Loading AI detection model...');
+      
+      // First try TensorFlow.js models
+      if (typeof cocoSsd !== 'undefined') {
+        try {
+          // Try default model first
+          const loadedModel = await cocoSsd.load();
+          setModel(loadedModel);
+          console.log('TensorFlow.js model loaded successfully');
+          toast.success('Advanced AI model loaded successfully');
+          return;
+        } catch (tfError) {
+          console.log('TensorFlow.js model failed:', tfError);
+        }
+      }
+      
+      // Load local detection model as fallback
+      console.log('Loading local detection model...');
+      await loadLocalDetectionModel();
+      
+      // Create a wrapper that mimics the TensorFlow.js interface
+      const localModel = {
+        detect: async (imageElement: HTMLImageElement) => {
+          if (window.LocalDetectionModel) {
+            const detector = new window.LocalDetectionModel();
+            return await detector.detect(imageElement);
+          }
+          return [];
+        }
+      };
+      
+      setModel(localModel as any);
+      console.log('Local detection model loaded successfully');
+      toast.success('Local AI detection ready');
+      
     } catch (error) {
-      console.error('Error loading model:', error);
-      toast.error('Failed to load object detection model');
+      console.error('All model loading attempts failed:', error);
+      toast.error('AI detection unavailable. Manual window selection only.');
     }
+  };
+
+  const loadLocalDetectionModel = async () => {
+    return new Promise<void>((resolve, reject) => {
+      // Check if already loaded
+      if (window.LocalDetectionModel) {
+        resolve();
+        return;
+      }
+      
+      // Check if script is already in the DOM
+      const existingScript = document.querySelector('script[src="/models/local-detection.js"]');
+      if (existingScript) {
+        // Wait for existing script to load
+        existingScript.addEventListener('load', () => resolve());
+        existingScript.addEventListener('error', () => reject(new Error('Failed to load local detection model')));
+        return;
+      }
+      
+      // Load the local detection script
+      const script = document.createElement('script');
+      script.src = '/models/local-detection.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load local detection model'));
+      document.head.appendChild(script);
+    });
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,9 +173,37 @@ const MLRoomVisualizer = ({
   };
 
   const detectWindows = async (imageDataUrl: string) => {
-    if (!model) return;
-
     setIsLoading(true);
+    
+    // If no AI model is available, provide manual selection option
+    if (!model) {
+      console.log('No AI model available - enabling manual window selection');
+      
+      // Load the image and provide a default window area for manual adjustment
+      const img = new Image();
+      img.src = imageDataUrl;
+      await new Promise<void>(resolve => { img.onload = () => resolve(); });
+      
+      // Create a default window in the center of the image
+      const defaultWindow: DetectedWindow = {
+        x: Math.round(img.width * 0.25),
+        y: Math.round(img.height * 0.25), 
+        width: Math.round(img.width * 0.5),
+        height: Math.round(img.height * 0.5),
+        confidence: 50, // Manual selection
+        lightingCondition: 'normal',
+        measurements: estimateWindowMeasurements(
+          [img.width * 0.25, img.height * 0.25, img.width * 0.5, img.height * 0.5],
+          img.width,
+          img.height
+        )
+      };
+      
+      setDetectedWindows([defaultWindow]);
+      setIsLoading(false);
+      toast.info('AI detection unavailable. Click and drag to adjust the window area.');
+      return;
+    }
     try {
       // Load image
       const img = new Image();
