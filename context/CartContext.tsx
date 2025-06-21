@@ -36,6 +36,15 @@ interface PricingDetails {
   total_discount: number;
   shipping: number;
   tax: number;
+  tax_rate: number;
+  tax_breakdown?: {
+    state_tax: number;
+    county_tax: number;
+    city_tax: number;
+    special_district_tax: number;
+  };
+  tax_jurisdiction?: string;
+  zip_code?: string;
   total: number;
   applied_promotions?: {
     coupon_code?: string;
@@ -54,6 +63,7 @@ interface CartContextType {
   pricing: PricingDetails;
   applyCoupon: (code: string) => Promise<{ success: boolean; message?: string }>;
   removeCoupon: () => void;
+  updateZipCode: (zipCode: string) => void;
   isLoading: boolean;
   pricingError: string | null;
 }
@@ -66,6 +76,7 @@ const defaultPricing: PricingDetails = {
   total_discount: 0,
   shipping: 0,
   tax: 0,
+  tax_rate: 0,
   total: 0
 };
 
@@ -80,6 +91,7 @@ const CartContext = createContext<CartContextType>({
   pricing: defaultPricing,
   applyCoupon: async () => ({ success: false }),
   removeCoupon: () => {},
+  updateZipCode: () => {},
   isLoading: false,
   pricingError: null,
 });
@@ -97,6 +109,7 @@ export function CartProvider({ children }: CartProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [customerData, setCustomerData] = useState<{ id?: number; type?: string } | null>(null);
+  const [zipCode, setZipCode] = useState<string>('78701'); // Default to Austin, TX
 
   // Helper function to save cart to localStorage
   const saveGuestCart = (cartItems: CartItem[]) => {
@@ -145,7 +158,8 @@ export function CartProvider({ children }: CartProviderProps) {
         customer_id: customerData?.id,
         customer_type: customerData?.type,
         coupon_code: couponCode || appliedCoupon,
-        shipping_state: 'TX' // TODO: Get from user address
+        shipping_state: 'TX', // TODO: Get from user address
+        zip_code: zipCode
       };
 
       const response = await fetch('/api/pricing/calculate', {
@@ -161,22 +175,19 @@ export function CartProvider({ children }: CartProviderProps) {
 
       const data = await response.json();
       
-      // Calculate shipping based on subtotal after discounts
-      const discountedSubtotal = data.pricing.subtotal - data.pricing.discounts.total_discount;
-      const shipping = discountedSubtotal > 100 ? 0 : 15.99;
-      
-      // Calculate tax on discounted subtotal
-      const tax = discountedSubtotal * 0.0825; // 8.25% tax rate
-
       setPricing({
         subtotal: data.pricing.subtotal,
         volume_discount: data.pricing.discounts.volume_discount,
         coupon_discount: data.pricing.discounts.coupon_discount,
         campaign_discount: data.pricing.discounts.campaign_discount,
         total_discount: data.pricing.discounts.total_discount,
-        shipping,
-        tax,
-        total: discountedSubtotal + shipping + tax,
+        shipping: data.pricing.shipping,
+        tax: data.pricing.tax,
+        tax_rate: data.pricing.tax_rate,
+        tax_breakdown: data.pricing.tax_breakdown,
+        tax_jurisdiction: data.pricing.tax_jurisdiction,
+        zip_code: data.pricing.zip_code,
+        total: data.pricing.total,
         applied_promotions: data.pricing.applied_promotions
       });
 
@@ -189,16 +200,17 @@ export function CartProvider({ children }: CartProviderProps) {
       console.error('Error calculating pricing:', error);
       setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
       
-      // Fallback to basic calculation
+      // Fallback to basic calculation with default Austin, TX tax rate
       const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
       const shipping = subtotal > 100 ? 0 : 15.99;
-      const tax = subtotal * 0.0825;
+      const tax = subtotal * 0.0825; // Default Austin, TX rate
       
       setPricing({
         ...defaultPricing,
         subtotal,
         shipping,
         tax,
+        tax_rate: 8.25,
         total: subtotal + shipping + tax
       });
     } finally {
@@ -232,10 +244,10 @@ export function CartProvider({ children }: CartProviderProps) {
     loadCart();
   }, []);
 
-  // Recalculate pricing when items change
+  // Recalculate pricing when items or ZIP code changes
   useEffect(() => {
     calculatePricing(items);
-  }, [items, customerData]);
+  }, [items, customerData, zipCode]);
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
@@ -391,6 +403,11 @@ export function CartProvider({ children }: CartProviderProps) {
     calculatePricing(items, null);
   };
 
+  // Update ZIP code for tax calculation
+  const updateZipCode = (newZipCode: string) => {
+    setZipCode(newZipCode);
+  };
+
   // Calculate total number of items
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -410,6 +427,7 @@ export function CartProvider({ children }: CartProviderProps) {
         pricing,
         applyCoupon,
         removeCoupon,
+        updateZipCode,
         isLoading,
         pricingError
       }}

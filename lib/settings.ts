@@ -124,7 +124,10 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         aws_s3_bucket: '',
         smtp_server: 'smtp.smartblindshub.com',
         smtp_port: '587',
-        smtp_username: 'notifications@smartblindshub.com'
+        smtp_username: 'notifications@smartblindshub.com',
+        taxjar_api_key: '',
+        taxjar_environment: 'sandbox',
+        use_taxjar_api: false
       }
     };
 
@@ -229,7 +232,10 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         aws_s3_bucket: '',
         smtp_server: 'smtp.smartblindshub.com',
         smtp_port: '587',
-        smtp_username: 'notifications@smartblindshub.com'
+        smtp_username: 'notifications@smartblindshub.com',
+        taxjar_api_key: '',
+        taxjar_environment: 'sandbox',
+        use_taxjar_api: false
       }
     };
   }

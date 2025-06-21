@@ -18,7 +18,8 @@ import {
   LogOut,
   FolderOpen,
   Monitor,
-  Building
+  Building,
+  Calculator
 } from 'lucide-react';
 
 interface UserData {
@@ -109,6 +110,7 @@ export default function AdminLayout({
     { href: '/admin/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/admin/users', label: 'Users', icon: <Users size={18} /> },
     { href: '/admin/vendors', label: 'Vendors', icon: <Package size={18} /> },
+    { href: '/admin/tax-rates', label: 'Tax Rates', icon: <Calculator size={18} /> },
     { href: '/admin/database', label: 'Database', icon: <Database size={18} /> },
     { href: '/admin/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },
     { href: '/admin/logs', label: 'System Logs', icon: <AlertTriangle size={18} /> },
@@ -124,25 +126,25 @@ export default function AdminLayout({
           <aside className="w-full md:w-64 shrink-0">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-4 py-4 border-b border-gray-200">
-                <Link href="/admin" className="text-xl font-bold text-primary-red">
+                <Link href="/admin" className="text-xl font-bold text-red-600">
                   Admin Portal
                 </Link>
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                       {user?.firstName && user?.lastName ? (
-                        <span className="text-primary-red font-medium text-xs">
+                        <span className="text-red-600 font-medium text-xs">
                           {user.firstName.charAt(0)}{user.lastName.charAt(0)}
                         </span>
                       ) : (
-                        <User size={16} className="text-primary-red" />
+                        <User size={16} className="text-red-600" />
                       )}
                     </div>
-                    <span className="text-sm text-primary">
+                    <span className="text-sm text-gray-700">
                       {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
                     </span>
                   </div>
-                  <Link href="/" className="text-xs text-secondary hover:text-primary">
+                  <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">
                     Store →
                   </Link>
                 </div>
@@ -154,8 +156,8 @@ export default function AdminLayout({
                     href={item.href}
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
-                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
-                        : 'text-secondary hover:bg-default'
+                        ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
@@ -168,7 +170,7 @@ export default function AdminLayout({
 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
+                  className="flex items-center w-full px-4 py-3 text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <span className="mr-3"><LogOut size={18} /></span>
                   <span>Logout</span>
@@ -177,26 +179,31 @@ export default function AdminLayout({
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
-              <h3 className="font-medium text-primary mb-2">Quick Access</h3>
+              <h3 className="font-medium text-gray-800 mb-2">Quick Access</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/admin/products/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/admin/products/new" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">➕</span> Add New Product
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/vendors/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/admin/vendors/new" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">➕</span> Add New Vendor
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/orders?status=pending" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/admin/orders?status=pending" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">⏱️</span> View Pending Orders
                   </Link>
                 </li>
                 <li>
-                  <Link href="/admin/users/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/admin/users/new" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">➕</span> Add New User
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/tax-rates" className="text-red-600 hover:text-red-700 flex items-center">
+                    <span className="mr-2">📊</span> Upload Tax Rates
                   </Link>
                 </li>
               </ul>

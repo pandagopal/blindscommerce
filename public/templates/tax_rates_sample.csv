@@ -1,0 +1,9 @@
+zip_code,city,county,state_code,state_name,state_tax_rate,county_tax_rate,city_tax_rate,special_district_tax_rate,total_tax_rate,tax_jurisdiction
+78701,Austin,Travis County,TX,Texas,6.2500,2.0000,0.0000,0.0000,8.2500,Austin
+10001,New York,New York County,NY,New York,4.0000,4.2500,0.0000,0.0000,8.2500,New York City
+90210,Beverly Hills,Los Angeles County,CA,California,7.2500,2.2500,0.0000,0.0000,9.5000,Los Angeles County
+60601,Chicago,Cook County,IL,Illinois,6.2500,1.7500,2.2500,0.0000,10.2500,Chicago
+33101,Miami,Miami-Dade County,FL,Florida,6.0000,1.0000,0.0000,0.0000,7.0000,Miami-Dade County
+98101,Seattle,King County,WA,Washington,6.5000,3.1000,0.0000,0.0000,9.6000,Seattle
+97201,Portland,Multnomah County,OR,Oregon,0.0000,0.0000,0.0000,0.0000,0.0000,Oregon - No Sales Tax
+19901,Dover,Kent County,DE,Delaware,0.0000,0.0000,0.0000,0.0000,0.0000,Delaware - No Sales Tax
