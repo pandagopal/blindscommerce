@@ -42,7 +42,7 @@ const generateId = () => uuidv4();
 let pool: mysql.Pool | null = null;
 let isConnecting = false;
 let connectionRetries = 0;
-const MAX_RETRIES = 5;
+const MAX_RETRIES = 3;
 const RETRY_INTERVAL = 2000;
 let dbConnectionFailed = false;
 
@@ -100,9 +100,9 @@ export const getPool = async (): Promise<mysql.Pool> => {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'blindscommerce',
       waitForConnections: true,
-      connectionLimit: 5, // Reduced from 10 to 5 to prevent overwhelming MySQL
+      connectionLimit: 10,
       queueLimit: 0,
-      connectTimeout: 60000, // 60 seconds connection timeout
+      connectTimeout: 20000, // 20 seconds connection timeout
       multipleStatements: false
     });
 

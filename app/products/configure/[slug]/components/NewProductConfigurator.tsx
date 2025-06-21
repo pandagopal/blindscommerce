@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ZoomIn, ArrowLeft, Check, Info, Sparkles, Shield, Truck, Calendar } from 'lucide-react';
+import { ZoomIn, ArrowLeft, Check, Info, Sparkles, Shield, Truck, Calendar, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
 
 // Room types from vendor configuration
 const ROOM_TYPES = [
@@ -27,6 +28,7 @@ interface ProductConfiguratorProps {
 }
 
 export default function NewProductConfigurator({ product, slug, onAddToCart }: ProductConfiguratorProps) {
+  const { itemCount } = useCart();
   const [config, setConfig] = useState({
     roomType: '',
     mountType: '',
@@ -978,22 +980,36 @@ export default function NewProductConfigurator({ product, slug, onAddToCart }: P
               </div>
             </div>
 
-            {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!areMandatoryFieldsComplete()}
-              className={`w-full font-semibold py-4 px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center ${
-                areMandatoryFieldsComplete()
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-[1.02] hover:shadow-xl cursor-pointer'
-                  : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-              }`}
-            >
-              <Sparkles size={20} className="mr-2" />
-              {areMandatoryFieldsComplete() 
-                ? `Add to Cart - $${calculatePrice().toFixed(2)}` 
-                : 'Complete Required Fields to Continue'
-              }
-            </button>
+            {/* Action Buttons - Mobile Responsive */}
+            <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
+              {/* Add to Cart Button */}
+              <button
+                onClick={() => onAddToCart(config)}
+                disabled={!areMandatoryFieldsComplete()}
+                className={`w-full md:flex-1 font-semibold py-4 px-4 md:px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
+                  areMandatoryFieldsComplete()
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-[1.02] hover:shadow-xl cursor-pointer'
+                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                }`}
+              >
+                <Sparkles size={18} className="mr-1 md:mr-2 flex-shrink-0" />
+                <span className="truncate">
+                  {areMandatoryFieldsComplete() 
+                    ? `Add to Cart - $${calculatePrice().toFixed(2)}` 
+                    : 'Complete Required Fields'
+                  }
+                </span>
+              </button>
+
+              {/* View Cart Button */}
+              <Link href="/cart" className="block w-full md:w-auto">
+                <button className="w-full md:w-auto font-semibold py-4 px-4 md:px-6 rounded-xl transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
+                  <ShoppingCart size={16} className="mr-1 md:mr-2 flex-shrink-0" />
+                  <span>View Cart</span>
+                  {itemCount > 0 && <span className="ml-1 md:ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-1 flex-shrink-0">({itemCount})</span>}
+                </button>
+              </Link>
+            </div>
 
             {/* Mandatory Fields Notice */}
             {!areMandatoryFieldsComplete() && (

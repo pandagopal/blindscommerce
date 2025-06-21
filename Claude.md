@@ -406,8 +406,8 @@ TUYA_API_SECRET=...
 ## 🚨 Common Issues & Solutions
 
 ### Database Connection
-- **Connection pooling** configured (max 5 connections - reduced from 10)
-- **Retry logic** for failed connections (5 retries in production)
+- **Connection pooling** configured (max 10)
+- **Retry logic** for failed connections (3 retries in production)
 - **Environment validation** for required credentials
 - **Pool configuration** in `/lib/db/index.ts`:
   ```typescript
@@ -418,9 +418,9 @@ TUYA_API_SECRET=...
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,
-    connectionLimit: 5,
+    connectionLimit: 10,
     queueLimit: 0,
-    connectTimeout: 60000,
+    connectTimeout: 20000,
     multipleStatements: false
   }
   ```

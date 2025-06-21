@@ -9,6 +9,7 @@ import NewProductConfigurator from "./components/NewProductConfigurator";
 import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
 import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
 import NoDrillHighlight from "@/components/ui/NoDrillHighlight";
+import { toast } from "sonner";
 
 export default function ProductConfiguratorPage() {
   const params = useParams();
@@ -78,24 +79,25 @@ export default function ProductConfiguratorPage() {
   const handleAddToCart = (config: any) => {
     // Convert configuration to cart item format
     const cartItem = {
-      id: product.id,
-      name: product.name,
-      price: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
+      cart_item_id: Date.now(), // Temporary ID until saved to database
+      cart_id: 0, // Will be set by cart context
+      product_id: product.product_id,
       quantity: 1,
+      width: parseFloat(config.width || 0),
+      height: parseFloat(config.height || 0),
+      unit_price: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
+      // UI fields
+      name: product.name,
+      slug: product.slug,
       image: product.images?.[0]?.image_url || '',
-      options: {
-        roomType: config.roomType,
-        mountType: config.mountType,
-        width: `${config.width}${config.widthFraction !== '0' ? ` ${config.widthFraction}` : ''}"`,
-        height: `${config.height}${config.heightFraction !== '0' ? ` ${config.heightFraction}` : ''}"`,
-        fabricType: config.fabricType,
-        controlOption: config.controlOption,
-        valanceOption: config.valanceOption,
-        bottomRailOption: config.bottomRailOption,
-      }
+      totalPrice: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
+      // Configuration options
+      mountType: config.mountType,
+      controlType: config.controlOption,
     };
     
     addItem(cartItem);
+    toast.success('Item added to cart!');
   };
 
   return (

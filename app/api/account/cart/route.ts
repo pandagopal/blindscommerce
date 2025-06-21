@@ -20,26 +20,139 @@ async function getOrCreateCart(pool: any) {
 }
 
 export async function GET(req: NextRequest) {
-  const pool = await getPool();
-  const cart = await getOrCreateCart(pool);
-  const [items] = await pool.execute(
-    'SELECT * FROM cart_items WHERE cart_id = ?',
-    [cart.cart_id]
-  );
-  return NextResponse.json({ cart, items });
+  try {
+    const pool = await getPool();
+    const cart = await getOrCreateCart(pool);
+    const [items] = await pool.execute(
+      `SELECT cart_item_id, cart_id, product_id, quantity, configuration, price_at_add as unit_price, 
+              created_at, updated_at, saved_for_later, notes, is_gift, gift_message, 
+              scheduled_delivery_date, installation_requested, sample_requested
+       FROM cart_items WHERE cart_id = ?`,
+      [cart.cart_id]
+    );
+    
+    // Parse configuration JSON for each item
+    const formattedItems = items.map(item => {
+      // Handle configuration - it might already be parsed by MySQL or be a string
+      let config = {};
+      if (item.configuration) {
+        if (typeof item.configuration === 'string') {
+          try {
+            config = JSON.parse(item.configuration);
+          } catch (e) {
+            console.error('Error parsing configuration JSON:', e);
+            config = {};
+          }
+        } else if (typeof item.configuration === 'object') {
+          config = item.configuration;
+        }
+      }
+      
+      return {
+        ...item,
+        configuration: config,
+        // Flatten some configuration fields for backward compatibility
+        width: config.width || null,
+        height: config.height || null,
+        name: config.name || null,
+        image: config.image || null,
+        totalPrice: item.unit_price * item.quantity
+      };
+    });
+    
+    return NextResponse.json({ cart, items: formattedItems });
+  } catch (error) {
+    console.error('Cart GET error:', error);
+    return NextResponse.json({ error: 'Failed to load cart' }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
-  const pool = await getPool();
-  const cart = await getOrCreateCart(pool);
-  const body = await req.json();
-  const [result] = await pool.execute(
-    `INSERT INTO cart_items (cart_id, product_id, quantity, width, height, color_id, material_id, unit_price)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [cart.cart_id, body.product_id, body.quantity, body.width, body.height, body.color_id, body.material_id, body.unit_price]
-  );
-  const [rows] = await pool.execute('SELECT * FROM cart_items WHERE cart_item_id = ?', [result.insertId]);
-  return NextResponse.json({ success: true, item: rows[0] });
+  try {
+    const pool = await getPool();
+    const cart = await getOrCreateCart(pool);
+    const body = await req.json();
+    
+    console.log('Cart API received:', body);
+    
+    // Prepare configuration object for JSON storage
+    const configuration = {
+      width: body.width,
+      height: body.height,
+      widthFraction: body.widthFraction,
+      heightFraction: body.heightFraction,
+      color_id: body.color_id,
+      material_id: body.material_id,
+      mountType: body.mountType,
+      controlType: body.controlType,
+      fabricType: body.fabricType,
+      fabricOption: body.fabricOption,
+      colorOption: body.colorOption,
+      liftSystem: body.liftSystem,
+      valanceOption: body.valanceOption,
+      bottomRailOption: body.bottomRailOption,
+      // UI fields for display
+      name: body.name,
+      slug: body.slug,
+      image: body.image,
+      colorName: body.colorName,
+      materialName: body.materialName,
+      mountTypeName: body.mountTypeName,
+      headrailName: body.headrailName,
+      bottomRailName: body.bottomRailName
+    };
+    
+    const [result] = await pool.execute(
+      `INSERT INTO cart_items (cart_id, product_id, quantity, configuration, price_at_add)
+       VALUES (?, ?, ?, ?, ?)`,
+      [cart.cart_id, body.product_id, body.quantity, JSON.stringify(configuration), body.unit_price]
+    );
+    
+    // Get all cart items for the cart with proper formatting
+    const [items] = await pool.execute(
+      `SELECT cart_item_id, cart_id, product_id, quantity, configuration, price_at_add as unit_price, 
+              created_at, updated_at, saved_for_later, notes, is_gift, gift_message, 
+              scheduled_delivery_date, installation_requested, sample_requested
+       FROM cart_items WHERE cart_id = ?`,
+      [cart.cart_id]
+    );
+    
+    // Parse configuration JSON for each item
+    const formattedItems = items.map(item => {
+      // Handle configuration - it might already be parsed by MySQL or be a string
+      let config = {};
+      if (item.configuration) {
+        if (typeof item.configuration === 'string') {
+          try {
+            config = JSON.parse(item.configuration);
+          } catch (e) {
+            console.error('Error parsing configuration JSON:', e);
+            config = {};
+          }
+        } else if (typeof item.configuration === 'object') {
+          config = item.configuration;
+        }
+      }
+      
+      return {
+        ...item,
+        configuration: config,
+        // Flatten some configuration fields for backward compatibility
+        width: config.width || null,
+        height: config.height || null,
+        name: config.name || null,
+        image: config.image || null,
+        totalPrice: item.unit_price * item.quantity
+      };
+    });
+    
+    console.log('Cart items after adding:', formattedItems);
+    
+    return NextResponse.json({ success: true, items: formattedItems });
+  } catch (error) {
+    console.error('Cart API error:', error);
+    return NextResponse.json({ error: 'Failed to add item to cart', details: error.message }, { status: 500 });
+  }
 }
 
 export async function PUT(req: NextRequest) {
