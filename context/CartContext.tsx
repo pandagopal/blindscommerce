@@ -26,6 +26,11 @@ export interface CartItem {
   bottomRailName?: string;
   image?: string;
   totalPrice?: number;
+  // Room and configuration fields
+  roomType?: string;
+  configuration?: any;
+  // Allow any additional fields for configurator data
+  [key: string]: any;
 }
 
 interface PricingDetails {
@@ -273,18 +278,28 @@ export function CartProvider({ children }: CartProviderProps) {
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
+    console.log('CartContext addItem received:', newItem);
+    console.log('CartContext newItem.roomType:', newItem.roomType);
+    
     try {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
+        console.log('Sending to API:', newItem);
         const response = await fetch('/api/account/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
+        console.log('API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log('API response data:', data);
+          console.log('Cart items after API response:', data.items);
           setItems(data.items);
+        } else {
+          const errorText = await response.text();
+          console.error('API error:', response.status, errorText);
         }
       } else {
         // Handle guest cart with localStorage

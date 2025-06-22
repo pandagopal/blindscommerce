@@ -7,14 +7,17 @@ export async function GET(
 ) {
   try {
     const { slug } = await params;
+    console.log('API: Received slug:', slug);
     const url = new URL(request.url);
     
     // Check if this is a configure request
     const isConfigureRequest = url.searchParams.get('configure') === 'true';
+    console.log('API: Is configure request:', isConfigureRequest);
     
     if (isConfigureRequest) {
       // Get single product with all configuration data for configurator
       const product = await getProductBySlug(slug);
+      console.log('API: Product found:', !!product);
       
       if (!product) {
         return NextResponse.json(

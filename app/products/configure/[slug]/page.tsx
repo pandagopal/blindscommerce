@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import { Product } from "./components/ConfigurationContext";
@@ -13,8 +13,10 @@ import { toast } from "sonner";
 
 export default function ProductConfiguratorPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const { addItem } = useCart();
+  const { addItem, updateQuantity, removeItem, items } = useCart();
+  const editCartItemId = searchParams.get('edit');
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -28,19 +30,20 @@ export default function ProductConfiguratorPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await fetch(`/api/products/${slug}?configure=true`, {
-          next: { revalidate: 60 } // Cache for 60 seconds
-        });
+        console.log('Fetching product with slug:', slug);
+        const res = await fetch(`/api/products/${slug}?configure=true`);
 
         if (!res.ok) {
-          throw new Error('Failed to fetch product');
+          const errorData = await res.text();
+          console.error('Product fetch failed:', res.status, errorData);
+          throw new Error(`Failed to fetch product: ${res.status}`);
         }
 
         const data = await res.json();
         setProduct(data.product);
       } catch (error) {
         console.error('Error fetching product:', error);
-        setError('There was an error loading the product. Please try again later.');
+        setError(`There was an error loading the product: ${error.message}`);
       } finally {
         setLoading(false);
       }
@@ -77,6 +80,21 @@ export default function ProductConfiguratorPage() {
   }
 
   const handleAddToCart = (config: any) => {
+    console.log('handleAddToCart received config:', config);
+    console.log('config.roomType:', config.roomType);
+    
+    // Find fabric name from product data if fabricType is an ID
+    let fabricName = config.fabricOption || '';
+    if (config.fabricType && product.fabricOptions) {
+      const selectedFabric = product.fabricOptions.find((f: any) => 
+        f.fabric_option_id?.toString() === config.fabricType || 
+        f.id?.toString() === config.fabricType
+      );
+      if (selectedFabric) {
+        fabricName = selectedFabric.fabric_name || selectedFabric.name || fabricName;
+      }
+    }
+
     // Convert configuration to cart item format
     const cartItem = {
       cart_item_id: Date.now(), // Temporary ID until saved to database
@@ -91,13 +109,36 @@ export default function ProductConfiguratorPage() {
       slug: product.slug,
       image: product.images?.[0]?.image_url || '',
       totalPrice: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
-      // Configuration options
-      mountType: config.mountType,
-      controlType: config.controlOption,
+      // Pass ALL configuration options
+      ...config, // This includes all fields from the configurator
+      controlType: config.controlOption, // Map controlOption to controlType for consistency
+      fabricName: fabricName, // Add the fabric name for display
     };
     
-    addItem(cartItem);
-    toast.success('Item added to cart!');
+    if (editCartItemId) {
+      // If editing, remove old item and add new one
+      const oldItem = items.find(item => item.cart_item_id === parseInt(editCartItemId));
+      if (oldItem) {
+        removeItem(oldItem.cart_item_id);
+      }
+      addItem(cartItem);
+      toast.success('Item updated in cart!');
+    } else {
+      addItem(cartItem);
+      toast.success('Item added to cart!');
+    }
+  };
+
+  // Get initial configuration from URL params
+  const getInitialConfig = () => {
+    const config: any = {};
+    searchParams.forEach((value, key) => {
+      if (key !== 'edit') {
+        config[key] = value;
+      }
+    });
+    console.log('Initial config from URL params:', config);
+    return config;
   };
 
   return (
@@ -106,6 +147,8 @@ export default function ProductConfiguratorPage() {
         product={product} 
         slug={slug} 
         onAddToCart={handleAddToCart}
+        initialConfig={getInitialConfig()}
+        isEditMode={!!editCartItemId}
       />
       
       {/* Guarantees and Features */}

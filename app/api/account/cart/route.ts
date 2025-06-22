@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
         width: config.width || null,
         height: config.height || null,
         name: config.name || null,
+        slug: config.slug || null,
         image: config.image || null,
         totalPrice: item.unit_price * item.quantity
       };
@@ -74,32 +75,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     console.log('Cart API received:', body);
+    console.log('Cart API roomType:', body.roomType);
     
-    // Prepare configuration object for JSON storage
+    // Prepare configuration object for JSON storage - include ALL body fields
     const configuration = {
-      width: body.width,
-      height: body.height,
-      widthFraction: body.widthFraction,
-      heightFraction: body.heightFraction,
-      color_id: body.color_id,
-      material_id: body.material_id,
-      mountType: body.mountType,
-      controlType: body.controlType,
-      fabricType: body.fabricType,
-      fabricOption: body.fabricOption,
-      colorOption: body.colorOption,
-      liftSystem: body.liftSystem,
-      valanceOption: body.valanceOption,
-      bottomRailOption: body.bottomRailOption,
-      // UI fields for display
-      name: body.name,
+      ...body, // Include all fields from the request
+      // Ensure critical fields are explicitly set
       slug: body.slug,
-      image: body.image,
-      colorName: body.colorName,
-      materialName: body.materialName,
-      mountTypeName: body.mountTypeName,
-      headrailName: body.headrailName,
-      bottomRailName: body.bottomRailName
+      name: body.name,
+      image: body.image
     };
     
     const [result] = await pool.execute(
@@ -141,6 +125,7 @@ export async function POST(req: NextRequest) {
         width: config.width || null,
         height: config.height || null,
         name: config.name || null,
+        slug: config.slug || null,
         image: config.image || null,
         totalPrice: item.unit_price * item.quantity
       };

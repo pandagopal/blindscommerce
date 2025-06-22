@@ -2,7 +2,7 @@
 
 import { useCart, CartItem } from "@/context/CartContext";
 import { useState } from "react";
-import { Trash2, Plus, Minus, ShoppingBag, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Trash2, Plus, Minus, ShoppingBag, ChevronDown, ChevronUp, Info, Edit3 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HelpButton from "@/components/customer/HelpButton";
@@ -12,6 +12,7 @@ export default function CartPage() {
   const [promoCode, setPromoCode] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [editingItems, setEditingItems] = useState<Set<number>>(new Set());
   const router = useRouter();
 
   const applyPromoCode = async () => {
@@ -38,6 +39,45 @@ export default function CartPage() {
       newExpanded.add(cart_item_id);
     }
     setExpandedItems(newExpanded);
+  };
+
+  const toggleEdit = (cart_item_id: number) => {
+    const newEditing = new Set(editingItems);
+    if (newEditing.has(cart_item_id)) {
+      newEditing.delete(cart_item_id);
+    } else {
+      newEditing.add(cart_item_id);
+    }
+    setEditingItems(newEditing);
+  };
+
+  const handleEditItem = (item: CartItem) => {
+    // Navigate to product configurator with current configuration
+    // Get slug from configuration if not directly on item
+    const slug = item.slug || item.configuration?.slug;
+    const configParams = new URLSearchParams();
+    
+    if (item.configuration) {
+      // Add current configuration as URL params
+      Object.entries(item.configuration).forEach(([key, value]) => {
+        if (value && (typeof value === 'string' || typeof value === 'number') && key !== 'slug' && key !== 'name' && key !== 'image') {
+          configParams.set(key, String(value));
+        }
+      });
+      console.log('Configuration being passed to edit:', item.configuration);
+      console.log('roomType in configuration:', item.configuration.roomType);
+      console.log('URL params:', configParams.toString());
+    }
+    
+    if (!slug) {
+      console.error('No slug found for cart item:', item);
+      alert('Unable to edit this item: product information missing');
+      return;
+    }
+    
+    console.log('Navigating to edit with slug:', slug);
+    const url = `/products/configure/${slug}?edit=${item.cart_item_id}&${configParams.toString()}`;
+    router.push(url);
   };
 
   if (items.length === 0) {
@@ -108,7 +148,14 @@ export default function CartPage() {
                                 <p>Control: {item.configuration.controlType.replace(/-/g, ' ')}</p>
                               )}
                             </div>
-                            <div className="flex items-center gap-3 mt-2">
+                            <div className="flex items-center gap-3 mt-2 flex-wrap">
+                              <button
+                                onClick={() => handleEditItem(item)}
+                                className="flex items-center text-sm text-green-600 hover:text-green-800"
+                              >
+                                <Edit3 className="h-3.5 w-3.5 mr-1" />
+                                Edit
+                              </button>
                               <button
                                 onClick={() => removeItem(item.cart_item_id)}
                                 className="flex items-center text-sm text-red-600 hover:text-red-800"
@@ -180,80 +227,138 @@ export default function CartPage() {
                     {expandedItems.has(item.cart_item_id) && (
                       <div className="px-4 pb-4 bg-gray-50 mt-4 rounded-lg">
                         <div className="bg-white rounded-lg p-4 border border-gray-200">
-                          <h4 className="font-medium text-gray-900 mb-3">Configuration Details</h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            {item.configuration?.roomType && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Room Type:</span>
-                                <span className="font-medium">{item.configuration.roomType}</span>
-                              </div>
-                            )}
-                            {item.configuration?.mountType && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Mount Type:</span>
-                                <span className="font-medium capitalize">{item.configuration.mountType.replace(/-/g, ' ')}</span>
-                              </div>
-                            )}
-                            {(item.width || item.height) && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Dimensions:</span>
-                                <span className="font-medium">{item.width}" × {item.height}"</span>
-                              </div>
-                            )}
-                            {item.configuration?.fabricType && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Fabric Type:</span>
-                                <span className="font-medium">{item.configuration.fabricType}</span>
-                              </div>
-                            )}
-                            {item.configuration?.fabricOption && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Fabric Option:</span>
-                                <span className="font-medium">{item.configuration.fabricOption}</span>
-                              </div>
-                            )}
-                            {item.configuration?.colorOption && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Color:</span>
-                                <span className="font-medium">{item.configuration.colorOption}</span>
-                              </div>
-                            )}
-                            {item.configuration?.controlType && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Control Type:</span>
-                                <span className="font-medium capitalize">{item.configuration.controlType.replace(/-/g, ' ')}</span>
-                              </div>
-                            )}
-                            {item.configuration?.liftSystem && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Lift System:</span>
-                                <span className="font-medium">{item.configuration.liftSystem}</span>
-                              </div>
-                            )}
-                            {item.configuration?.valanceOption && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Valance:</span>
-                                <span className="font-medium capitalize">{item.configuration.valanceOption.replace(/-/g, ' ')}</span>
-                              </div>
-                            )}
-                            {item.configuration?.bottomRailOption && (
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Bottom Rail:</span>
-                                <span className="font-medium capitalize">{item.configuration.bottomRailOption.replace(/-/g, ' ')}</span>
-                              </div>
-                            )}
-                            <div className="flex justify-between border-t pt-2 mt-2 col-span-1 md:col-span-2">
-                              <span className="text-gray-600">Unit Price:</span>
-                              <span className="font-medium">${Number(item.unit_price ?? 0).toFixed(2)}</span>
+                          <div className="flex items-center justify-between mb-3">
+                            <h4 className="font-medium text-gray-900">Complete Configuration Details</h4>
+                            <button
+                              onClick={() => handleEditItem(item)}
+                              className="flex items-center text-xs text-green-600 hover:text-green-800 bg-green-50 hover:bg-green-100 px-2 py-1 rounded"
+                            >
+                              <Edit3 className="h-3 w-3 mr-1" />
+                              Edit Item
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+                            {/* Basic Configuration */}
+                            <div className="bg-blue-50 p-2 rounded">
+                              <h5 className="font-medium text-blue-800 mb-1">Basic Details</h5>
+                              {item.configuration?.roomType && (
+                                <div className="flex justify-between text-blue-700">
+                                  <span>room:</span>
+                                  <span className="font-medium">{item.configuration.roomType.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.mountType && (
+                                <div className="flex justify-between text-blue-700">
+                                  <span>mount:</span>
+                                  <span className="font-medium">{item.configuration.mountType.replace(/-/g, ' ').toLowerCase()}</span>
+                                </div>
+                              )}
+                              {(item.width || item.height) && (
+                                <div className="flex justify-between text-blue-700">
+                                  <span>size:</span>
+                                  <span className="font-medium">{item.width}" × {item.height}"</span>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex justify-between col-span-1 md:col-span-2">
-                              <span className="text-gray-600">Quantity:</span>
-                              <span className="font-medium">×{item.quantity}</span>
+
+                            {/* Fabric & Materials */}
+                            <div className="bg-purple-50 p-2 rounded">
+                              <h5 className="font-medium text-purple-800 mb-1">Materials</h5>
+                              {(item.configuration?.fabricName || item.configuration?.fabricType) && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span>fabric:</span>
+                                  <span className="font-medium">
+                                    {(item.configuration.fabricName || 
+                                     item.configuration.fabricOption || 
+                                     `fabric #${item.configuration.fabricType}`).toLowerCase()}
+                                  </span>
+                                </div>
+                              )}
+                              {item.configuration?.fabricOption && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span>fabric option:</span>
+                                  <span className="font-medium">{item.configuration.fabricOption.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.colorOption && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span>color:</span>
+                                  <span className="font-medium">{item.configuration.colorOption.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.colorName && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span>color name:</span>
+                                  <span className="font-medium">{item.configuration.colorName.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.materialName && (
+                                <div className="flex justify-between text-purple-700">
+                                  <span>material:</span>
+                                  <span className="font-medium">{item.configuration.materialName.toLowerCase()}</span>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex justify-between font-semibold text-lg col-span-1 md:col-span-2 border-t pt-2 mt-1">
-                              <span className="text-gray-900">Item Total:</span>
-                              <span className="text-blue-600">${Number(item.totalPrice ?? 0).toFixed(2)}</span>
+
+                            {/* Controls & Hardware */}
+                            <div className="bg-green-50 p-2 rounded">
+                              <h5 className="font-medium text-green-800 mb-1">Controls</h5>
+                              {item.configuration?.controlType && (
+                                <div className="flex justify-between text-green-700">
+                                  <span>control:</span>
+                                  <span className="font-medium">{item.configuration.controlType.replace(/-/g, ' ').toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.liftSystem && (
+                                <div className="flex justify-between text-green-700">
+                                  <span>lift:</span>
+                                  <span className="font-medium">{item.configuration.liftSystem.toLowerCase()}</span>
+                                </div>
+                              )}
                             </div>
+
+                            {/* Rail Options */}
+                            <div className="bg-orange-50 p-2 rounded">
+                              <h5 className="font-medium text-orange-800 mb-1">Rail Options</h5>
+                              {item.configuration?.valanceOption && (
+                                <div className="flex justify-between text-orange-700">
+                                  <span>valance:</span>
+                                  <span className="font-medium">{item.configuration.valanceOption.replace(/-/g, ' ').toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.bottomRailOption && (
+                                <div className="flex justify-between text-orange-700">
+                                  <span>bottom rail:</span>
+                                  <span className="font-medium">{item.configuration.bottomRailOption.replace(/-/g, ' ').toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.headrailName && (
+                                <div className="flex justify-between text-orange-700">
+                                  <span>headrail:</span>
+                                  <span className="font-medium">{item.configuration.headrailName.toLowerCase()}</span>
+                                </div>
+                              )}
+                              {item.configuration?.bottomRailName && (
+                                <div className="flex justify-between text-orange-700">
+                                  <span>bottom rail type:</span>
+                                  <span className="font-medium">{item.configuration.bottomRailName.toLowerCase()}</span>
+                                </div>
+                              )}
+                            </div>
+
+                          </div>
+
+                          <div className="mt-3 pt-2 border-t border-gray-200 text-center">
+                            <p className="text-xs text-gray-500">
+                              all features displayed in lowercase for compact viewing • 
+                              <button 
+                                onClick={() => handleEditItem(item)}
+                                className="text-green-600 hover:text-green-800 ml-1 underline"
+                              >
+                                click edit to modify any option
+                              </button>
+                            </p>
                           </div>
                         </div>
                       </div>

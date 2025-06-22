@@ -25,24 +25,30 @@ interface ProductConfiguratorProps {
   product: any;
   slug: string;
   onAddToCart: (config: any) => void;
+  initialConfig?: any;
+  isEditMode?: boolean;
 }
 
-export default function NewProductConfigurator({ product, slug, onAddToCart }: ProductConfiguratorProps) {
+export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false }: ProductConfiguratorProps) {
   const { itemCount } = useCart();
+  
+  console.log('NewProductConfigurator received initialConfig:', initialConfig);
+  console.log('isEditMode:', isEditMode);
+  
   const [config, setConfig] = useState({
-    roomType: '',
-    mountType: '',
-    width: '',
-    height: '',
-    widthFraction: '0',
-    heightFraction: '0',
-    fabricType: '',
-    fabricOption: '',
-    colorOption: '',
-    liftSystem: '',
-    controlOption: '', // Single control option selection
-    valanceOption: '',
-    bottomRailOption: '',
+    roomType: initialConfig.roomType || '',
+    mountType: initialConfig.mountType || '',
+    width: initialConfig.width || '',
+    height: initialConfig.height || '',
+    widthFraction: initialConfig.widthFraction || '0',
+    heightFraction: initialConfig.heightFraction || '0',
+    fabricType: initialConfig.fabricType || '',
+    fabricOption: initialConfig.fabricOption || '',
+    colorOption: initialConfig.colorOption || '',
+    liftSystem: initialConfig.liftSystem || '',
+    controlOption: initialConfig.controlOption || initialConfig.controlType || '', // Handle both field names
+    valanceOption: initialConfig.valanceOption || '',
+    bottomRailOption: initialConfig.bottomRailOption || '',
   });
 
   const [errors, setErrors] = useState({
@@ -82,9 +88,26 @@ export default function NewProductConfigurator({ product, slug, onAddToCart }: P
   // Initialize active fabric type when fabric types are available
   React.useEffect(() => {
     if (fabricTypes.length > 0 && !activeFabricType) {
-      setActiveFabricType(fabricTypes[0].type);
+      // If editing mode and initial fabric is selected, find the correct tab
+      if (initialConfig.fabricType) {
+        const selectedFabric = product?.fabricOptions?.find(
+          f => f.fabric_option_id?.toString() === initialConfig.fabricType ||
+               f.id?.toString() === initialConfig.fabricType
+        );
+        
+        if (selectedFabric) {
+          console.log('Setting fabric tab based on selected fabric:', selectedFabric.fabric_type);
+          setActiveFabricType(selectedFabric.fabric_type);
+        } else {
+          // Fallback to first tab if fabric not found
+          setActiveFabricType(fabricTypes[0].type);
+        }
+      } else {
+        // Default behavior: show first tab
+        setActiveFabricType(fabricTypes[0].type);
+      }
     }
-  }, [fabricTypes, activeFabricType]);
+  }, [fabricTypes, activeFabricType, initialConfig.fabricType, product?.fabricOptions]);
 
   const handleRoomTypeChange = (roomType: string) => {
     setConfig(prev => ({ ...prev, roomType }));
@@ -995,7 +1018,9 @@ export default function NewProductConfigurator({ product, slug, onAddToCart }: P
                 <Sparkles size={18} className="mr-1 md:mr-2 flex-shrink-0" />
                 <span className="truncate">
                   {areMandatoryFieldsComplete() 
-                    ? `Add to Cart - $${calculatePrice().toFixed(2)}` 
+                    ? isEditMode 
+                      ? `Update Cart - $${calculatePrice().toFixed(2)}`
+                      : `Add to Cart - $${calculatePrice().toFixed(2)}` 
                     : 'Complete Required Fields'
                   }
                 </span>

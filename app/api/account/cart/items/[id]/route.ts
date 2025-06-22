@@ -51,12 +51,13 @@ function formatCartItems(items: any[]) {
 }
 
 // PATCH /api/account/cart/items/[id] - Update cart item quantity
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const pool = await getPool();
     const cart = await getOrCreateCart(pool);
     const body = await req.json();
-    const cart_item_id = parseInt(params.id);
+    const { id } = await params;
+    const cart_item_id = parseInt(id);
     
     console.log('Updating cart item:', cart_item_id, 'to quantity:', body.quantity);
     
@@ -92,11 +93,12 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 // DELETE /api/account/cart/items/[id] - Remove cart item
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const pool = await getPool();
     const cart = await getOrCreateCart(pool);
-    const cart_item_id = parseInt(params.id);
+    const { id } = await params;
+    const cart_item_id = parseInt(id);
     
     console.log('Removing cart item:', cart_item_id);
     
