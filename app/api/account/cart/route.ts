@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
-const userId = 1; // Demo user
-
-async function getOrCreateCart(pool: any) {
-  // Try to find an existing cart for the user
+async function getOrCreateCart(pool: any, userId: number) {
+  // Try to find an existing cart for the specific user
   const [carts] = await pool.execute(
     'SELECT * FROM carts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
     [userId]
   );
   if (carts.length > 0) return carts[0];
-  // Create a new cart
+  // Create a new cart for this specific user
   const [result] = await pool.execute(
     'INSERT INTO carts (user_id) VALUES (?)',
     [userId]
@@ -21,8 +20,14 @@ async function getOrCreateCart(pool: any) {
 
 export async function GET(req: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const [items] = await pool.execute(
       `SELECT cart_item_id, cart_id, product_id, quantity, configuration, price_at_add as unit_price, 
               created_at, updated_at, saved_for_later, notes, is_gift, gift_message, 
@@ -68,8 +73,14 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const body = await req.json();
     
     // Prepare configuration object for JSON storage - include ALL body fields
@@ -132,28 +143,53 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const pool = await getPool();
-  const cart = await getOrCreateCart(pool);
-  const body = await req.json();
-  const [result] = await pool.execute(
-    `UPDATE cart_items SET quantity = ?, width = ?, height = ?, color_id = ?, material_id = ?, unit_price = ?, updated_at = NOW()
-     WHERE cart_item_id = ? AND cart_id = ?`,
-    [body.quantity, body.width, body.height, body.color_id, body.material_id, body.unit_price, body.cart_item_id, cart.cart_id]
-  );
-  if (result.affectedRows === 0) {
-    return NextResponse.json({ success: false, error: 'Item not found' }, { status: 404 });
+  try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
+    const pool = await getPool();
+    const cart = await getOrCreateCart(pool, user.userId);
+    const body = await req.json();
+    
+    const [result] = await pool.execute(
+      `UPDATE cart_items SET quantity = ?, width = ?, height = ?, color_id = ?, material_id = ?, unit_price = ?, updated_at = NOW()
+       WHERE cart_item_id = ? AND cart_id = ?`,
+      [body.quantity, body.width, body.height, body.color_id, body.material_id, body.unit_price, body.cart_item_id, cart.cart_id]
+    );
+    
+    if (result.affectedRows === 0) {
+      return NextResponse.json({ success: false, error: 'Item not found' }, { status: 404 });
+    }
+    
+    const [rows] = await pool.execute('SELECT * FROM cart_items WHERE cart_item_id = ?', [body.cart_item_id]);
+    return NextResponse.json({ success: true, item: rows[0] });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to update cart item' }, { status: 500 });
   }
-  const [rows] = await pool.execute('SELECT * FROM cart_items WHERE cart_item_id = ?', [body.cart_item_id]);
-  return NextResponse.json({ success: true, item: rows[0] });
 }
 
 export async function DELETE(req: NextRequest) {
-  const pool = await getPool();
-  const cart = await getOrCreateCart(pool);
-  const { cart_item_id } = await req.json();
-  await pool.execute(
-    'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
-    [cart_item_id, cart.cart_id]
-  );
-  return NextResponse.json({ success: true });
+  try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
+    const pool = await getPool();
+    const cart = await getOrCreateCart(pool, user.userId);
+    const { cart_item_id } = await req.json();
+    
+    await pool.execute(
+      'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
+      [cart_item_id, cart.cart_id]
+    );
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to delete cart item' }, { status: 500 });
+  }
 } 

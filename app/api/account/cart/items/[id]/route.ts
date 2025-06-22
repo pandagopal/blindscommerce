@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
-const userId = 1; // Demo user
-
-async function getOrCreateCart(pool: any) {
-  // Try to find an existing cart for the user
+async function getOrCreateCart(pool: any, userId: number) {
+  // Try to find an existing cart for the specific user
   const [carts] = await pool.execute(
     'SELECT * FROM carts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
     [userId]
   );
   if (carts.length > 0) return carts[0];
-  // Create a new cart
+  // Create a new cart for this specific user
   const [result] = await pool.execute(
     'INSERT INTO carts (user_id) VALUES (?)',
     [userId]
@@ -52,8 +51,14 @@ function formatCartItems(items: any[]) {
 // PATCH /api/account/cart/items/[id] - Update cart item quantity
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const body = await req.json();
     const { id } = await params;
     const cart_item_id = parseInt(id);
@@ -88,8 +93,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // DELETE /api/account/cart/items/[id] - Remove cart item
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const { id } = await params;
     const cart_item_id = parseInt(id);
     // Delete the cart item

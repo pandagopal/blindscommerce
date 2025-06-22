@@ -126,17 +126,23 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   };
 
-  // Helper function to check if user is authenticated
+  // Helper function to check if user is authenticated and is a customer
   const isAuthenticated = async (): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         const data = await response.json();
-        setCustomerData({ 
-          id: data.user?.user_id, 
-          type: data.user?.role === 'customer' ? 'retail' : data.user?.role 
-        });
-        return true;
+        // Only allow customers to use the cart
+        if (data.user?.role === 'customer') {
+          setCustomerData({ 
+            id: data.user?.user_id, 
+            type: 'retail'
+          });
+          return true;
+        }
+        // For non-customers, clear customer data and return false
+        setCustomerData(null);
+        return false;
       }
       return false;
     } catch {

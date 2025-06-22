@@ -110,7 +110,7 @@ export default function AccountLayout({
                 </Link>
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                       {user?.firstName && user?.lastName ? (
                         <span className="text-primary-red font-medium text-xs">
                           {user.firstName.charAt(0)}{user.lastName.charAt(0)}
@@ -119,11 +119,11 @@ export default function AccountLayout({
                         <User size={16} className="text-primary-red" />
                       )}
                     </div>
-                    <span className="text-sm text-primary">
+                    <span className="text-sm text-gray-700">
                       {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
                     </span>
                   </div>
-                  <Link href="/" className="text-xs text-secondary hover:text-primary">
+                  <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">
                     Store →
                   </Link>
                 </div>
@@ -135,8 +135,8 @@ export default function AccountLayout({
                     href={item.href}
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
-                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
-                        : 'text-secondary hover:bg-default'
+                        ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
@@ -149,7 +149,7 @@ export default function AccountLayout({
 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
+                  className="flex items-center w-full px-4 py-3 text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <span className="mr-3"><LogOut size={18} /></span>
                   <span>Logout</span>
@@ -158,15 +158,15 @@ export default function AccountLayout({
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
-              <h3 className="font-medium text-primary mb-2">Quick Access</h3>
+              <h3 className="font-medium text-gray-800 mb-2">Quick Access</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/account/measurements/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/account/measurements/new" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">📏</span> Add New Measurement
                   </Link>
                 </li>
                 <li>
-                  <Link href="/account/orders" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/account/orders" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">📦</span> Track Orders
                   </Link>
                 </li>
@@ -175,13 +175,13 @@ export default function AccountLayout({
 
             {user?.role === 'admin' && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
-                <h3 className="font-medium text-primary mb-2">Admin Access</h3>
-                <p className="text-sm text-secondary mb-3">
+                <h3 className="font-medium text-gray-800 mb-2">Admin Access</h3>
+                <p className="text-sm text-gray-600 mb-3">
                   Manage your site, users, and products in the admin dashboard.
                 </p>
                 <Link
                   href="/admin"
-                  className="text-primary-red hover:text-primary-dark text-sm font-medium flex items-center"
+                  className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
                 >
                   Go to Admin Dashboard
                   <ChevronRight size={16} className="ml-1" />
@@ -191,13 +191,13 @@ export default function AccountLayout({
 
             {user?.role === 'vendor' && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
-                <h3 className="font-medium text-primary mb-2">Vendor Access</h3>
-                <p className="text-sm text-secondary mb-3">
+                <h3 className="font-medium text-gray-800 mb-2">Vendor Access</h3>
+                <p className="text-sm text-gray-600 mb-3">
                   Manage your products and orders in the vendor dashboard.
                 </p>
                 <Link
                   href="/vendor"
-                  className="text-primary-red hover:text-primary-dark text-sm font-medium flex items-center"
+                  className="text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
                 >
                   Go to Vendor Dashboard
                   <ChevronRight size={16} className="ml-1" />
