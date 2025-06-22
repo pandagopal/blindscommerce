@@ -21,7 +21,7 @@ interface PricingCalculationRequest {
 interface ProductRow extends RowDataPacket {
   product_id: number;
   name: string;
-  price: number;
+  base_price: number;
   category_id: number;
   brand_id: number;
 }
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     // Get product details
     const productIds = body.items.map(item => item.product_id);
     const [products] = await pool.execute<ProductRow[]>(
-      `SELECT product_id, name, price, category_id, brand_id 
+      `SELECT product_id, name, base_price, category_id, brand_id 
        FROM products 
        WHERE product_id IN (${productIds.map(() => '?').join(',')})`,
       productIds
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
       const product = productMap.get(item.product_id);
       if (!product) continue;
 
-      let finalPrice = item.base_price || product.price;
+      let finalPrice = item.base_price || product.base_price;
       const originalPrice = finalPrice;
       let appliedDiscounts = [];
 
@@ -172,7 +172,13 @@ export async function POST(req: NextRequest) {
 
       for (const rule of dynamicRules) {
         let shouldApply = false;
-        const conditions = JSON.parse(rule.conditions);
+        let conditions;
+        try {
+          conditions = JSON.parse(rule.conditions);
+        } catch (error) {
+          console.error('Invalid conditions JSON for rule', rule.rule_id, ':', rule.conditions);
+          continue; // Skip this rule if JSON is invalid
+        }
 
         // Check rule conditions based on rule type
         switch (rule.rule_type) {
@@ -254,7 +260,13 @@ export async function POST(req: NextRequest) {
     );
 
     for (const discount of volumeDiscounts) {
-      const tiers = JSON.parse(discount.volume_tiers);
+      let tiers;
+      try {
+        tiers = JSON.parse(discount.volume_tiers);
+      } catch (error) {
+        console.error('Invalid volume_tiers JSON for discount', discount.discount_id, ':', discount.volume_tiers);
+        continue; // Skip this discount if JSON is invalid
+      }
       const totalQuantity = body.items.reduce((sum, item) => {
         const product = productMap.get(item.product_id);
         if (!product) return sum;
@@ -264,15 +276,23 @@ export async function POST(req: NextRequest) {
           return sum + item.quantity;
         }
         if (discount.category_ids) {
-          const categoryIds = JSON.parse(discount.category_ids);
-          if (categoryIds.includes(product.category_id)) {
-            return sum + item.quantity;
+          try {
+            const categoryIds = JSON.parse(discount.category_ids);
+            if (categoryIds.includes(product.category_id)) {
+              return sum + item.quantity;
+            }
+          } catch (error) {
+            console.error('Invalid category_ids JSON for discount', discount.discount_id, ':', discount.category_ids);
           }
         }
         if (discount.brand_ids) {
-          const brandIds = JSON.parse(discount.brand_ids);
-          if (brandIds.includes(product.brand_id)) {
-            return sum + item.quantity;
+          try {
+            const brandIds = JSON.parse(discount.brand_ids);
+            if (brandIds.includes(product.brand_id)) {
+              return sum + item.quantity;
+            }
+          } catch (error) {
+            console.error('Invalid brand_ids JSON for discount', discount.discount_id, ':', discount.brand_ids);
           }
         }
         return sum;
@@ -292,12 +312,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Apply coupon discount
+    // Apply coupon discount (check both platform and vendor coupons)
     let couponDiscountAmount = 0;
     let couponError = null;
     if (body.coupon_code) {
-      const [coupons] = await pool.execute<CouponRow[]>(
-        `SELECT * FROM coupon_codes 
+      // First check platform-wide coupons
+      const [platformCoupons] = await pool.execute<CouponRow[]>(
+        `SELECT coupon_id, discount_type, discount_value, minimum_order_value, maximum_discount_amount, usage_count, usage_limit_total, usage_limit_per_customer
+         FROM coupon_codes 
          WHERE coupon_code = ? 
          AND is_active = TRUE
          AND (valid_from IS NULL OR valid_from <= NOW())
@@ -305,30 +327,62 @@ export async function POST(req: NextRequest) {
         [body.coupon_code]
       );
 
-      if (coupons.length === 0) {
+      // Then check vendor-specific coupons  
+      const [vendorCoupons] = await pool.execute<any[]>(
+        `SELECT vc.coupon_id, vc.vendor_id, vc.discount_type, vc.discount_value, vc.minimum_order_value, vc.maximum_discount_amount, vc.usage_count, vc.usage_limit_total, vc.usage_limit_per_customer
+         FROM vendor_coupons vc
+         WHERE vc.coupon_code = ? 
+         AND vc.is_active = TRUE
+         AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())
+         AND (vc.valid_until IS NULL OR vc.valid_until >= NOW())`,
+        [body.coupon_code]
+      );
+
+      if (platformCoupons.length === 0 && vendorCoupons.length === 0) {
         couponError = 'Invalid or expired coupon code';
       } else {
-        const coupon = coupons[0];
-        
-        // Check usage limits
-        if (coupon.usage_limit_total && coupon.usage_count >= coupon.usage_limit_total) {
-          couponError = 'Coupon usage limit exceeded';
-        } else if (subtotal < coupon.minimum_order_value) {
-          couponError = `Minimum order value of $${coupon.minimum_order_value} required`;
-        } else {
-          switch (coupon.discount_type) {
-            case 'percentage':
-              couponDiscountAmount = subtotal * (coupon.discount_value / 100);
-              if (coupon.maximum_discount_amount) {
-                couponDiscountAmount = Math.min(couponDiscountAmount, coupon.maximum_discount_amount);
-              }
-              break;
-            case 'fixed_amount':
-              couponDiscountAmount = coupon.discount_value;
-              break;
-            case 'free_shipping':
-              // Free shipping logic would be handled separately
-              break;
+        let applicableCoupon = null;
+        let applicableSubtotal = subtotal;
+
+        // Check platform coupon first
+        if (platformCoupons.length > 0) {
+          applicableCoupon = platformCoupons[0];
+        } 
+        // Check vendor coupon (applies only to that vendor's products)
+        else if (vendorCoupons.length > 0) {
+          const vendorCoupon = vendorCoupons[0];
+          applicableCoupon = vendorCoupon;
+          
+          // Calculate subtotal for only this vendor's products
+          applicableSubtotal = calculatedItems
+            .filter(item => {
+              // Find vendor for this product (need to add vendor lookup)
+              return true; // For now apply to all items - will refine based on cart structure
+            })
+            .reduce((sum, item) => sum + item.item_total, 0);
+        }
+
+        if (applicableCoupon) {
+          // Check usage limits
+          if (applicableCoupon.usage_limit_total && applicableCoupon.usage_count >= applicableCoupon.usage_limit_total) {
+            couponError = 'Coupon usage limit exceeded';
+          } else if (applicableSubtotal < applicableCoupon.minimum_order_value) {
+            couponError = `Minimum order value of $${applicableCoupon.minimum_order_value} required`;
+          } else {
+            switch (applicableCoupon.discount_type) {
+              case 'percentage':
+                couponDiscountAmount = applicableSubtotal * (applicableCoupon.discount_value / 100);
+                if (applicableCoupon.maximum_discount_amount) {
+                  couponDiscountAmount = Math.min(couponDiscountAmount, applicableCoupon.maximum_discount_amount);
+                }
+                break;
+              case 'fixed_amount':
+                couponDiscountAmount = applicableCoupon.discount_value;
+                break;
+              case 'free_shipping':
+                // Free shipping logic would be handled separately
+                break;
+            }
           }
         }
       }

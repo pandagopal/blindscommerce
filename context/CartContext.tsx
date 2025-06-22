@@ -161,23 +161,6 @@ export function CartProvider({ children }: CartProviderProps) {
       setIsLoading(true);
       setPricingError(null);
 
-      // Use fallback calculation for now to avoid pricing API issues
-      // Fallback to basic calculation with default Austin, TX tax rate
-      const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
-      const shipping = subtotal > 100 ? 0 : 15.99;
-      const tax = subtotal * 0.0825; // Default Austin, TX rate
-      
-      setPricing({
-        ...defaultPricing,
-        subtotal,
-        shipping,
-        tax,
-        tax_rate: 8.25,
-        total: subtotal + shipping + tax,
-        applied_promotions: {}
-      });
-
-      /* Temporarily disabled complex pricing calculation
       const pricingRequest = {
         items: cartItems.map(item => ({
           product_id: item.product_id,
@@ -224,25 +207,11 @@ export function CartProvider({ children }: CartProviderProps) {
         setPricingError(data.coupon_error);
         setAppliedCoupon(null);
       }
-      */
 
     } catch (error) {
       setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
-      
-      // Fallback to basic calculation with default Austin, TX tax rate
-      const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
-      const shipping = subtotal > 100 ? 0 : 15.99;
-      const tax = subtotal * 0.0825; // Default Austin, TX rate
-      
-      setPricing({
-        ...defaultPricing,
-        subtotal,
-        shipping,
-        tax,
-        tax_rate: 8.25,
-        total: subtotal + shipping + tax,
-        applied_promotions: {}
-      });
+      // No fallback - pricing calculation must succeed through the API
+      setPricing(defaultPricing);
     } finally {
       setIsLoading(false);
     }

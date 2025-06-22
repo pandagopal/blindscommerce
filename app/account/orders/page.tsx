@@ -41,6 +41,9 @@ export default function OrdersPage() {
       setTotalOrders(data.total || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      // Set empty state on error
+      setOrders([]);
+      setTotalOrders(0);
     } finally {
       setLoading(false);
     }

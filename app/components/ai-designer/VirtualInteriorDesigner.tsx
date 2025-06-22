@@ -287,7 +287,7 @@ const VirtualInteriorDesigner: React.FC = () => {
       }
     } catch (error) {
       console.error('Error starting VR session:', error);
-      setup3DViewer(); // Fallback
+      //setup3DViewer(); // Fallback
     }
   };
 
