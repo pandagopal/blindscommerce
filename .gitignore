@@ -6,6 +6,13 @@
 .pnp.js
 .yarn/install-state.gz
 
+#.env file should not be uploaded to the repository
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # testing
 /coverage
 
