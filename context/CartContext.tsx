@@ -122,7 +122,7 @@ export function CartProvider({ children }: CartProviderProps) {
     try {
       localStorage.setItem('guest_cart', JSON.stringify(cartItems));
     } catch (error) {
-      console.error('Error saving guest cart:', error);
+      // Error saving to localStorage
     }
   };
 
@@ -156,8 +156,6 @@ export function CartProvider({ children }: CartProviderProps) {
       setPricingError(null);
 
       // Use fallback calculation for now to avoid pricing API issues
-      console.log('Using fallback pricing calculation');
-      
       // Fallback to basic calculation with default Austin, TX tax rate
       const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
       const shipping = subtotal > 100 ? 0 : 15.99;
@@ -223,7 +221,6 @@ export function CartProvider({ children }: CartProviderProps) {
       */
 
     } catch (error) {
-      console.error('Error calculating pricing:', error);
       setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
       
       // Fallback to basic calculation with default Austin, TX tax rate
@@ -265,7 +262,7 @@ export function CartProvider({ children }: CartProviderProps) {
           }
         }
       } catch (error) {
-        console.error('Error loading cart:', error);
+        // Error loading cart
       }
     };
     loadCart();
@@ -278,28 +275,20 @@ export function CartProvider({ children }: CartProviderProps) {
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
-    console.log('CartContext addItem received:', newItem);
-    console.log('CartContext newItem.roomType:', newItem.roomType);
-    
     try {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        console.log('Sending to API:', newItem);
         const response = await fetch('/api/account/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
-        console.log('API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('API response data:', data);
-          console.log('Cart items after API response:', data.items);
           setItems(data.items);
         } else {
-          const errorText = await response.text();
-          console.error('API error:', response.status, errorText);
+          // API error adding item
         }
       } else {
         // Handle guest cart with localStorage
@@ -332,7 +321,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error adding item to cart:', error);
+      // Error adding item to cart
     }
   };
 
@@ -356,7 +345,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error removing item from cart:', error);
+      // Error removing item from cart
     }
   };
 
@@ -390,7 +379,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error updating cart item:', error);
+      // Error updating cart item
     }
   };
 
@@ -414,7 +403,7 @@ export function CartProvider({ children }: CartProviderProps) {
         localStorage.removeItem('guest_cart');
       }
     } catch (error) {
-      console.error('Error clearing cart:', error);
+      // Error clearing cart
     }
   };
 

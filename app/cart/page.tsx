@@ -64,18 +64,12 @@ export default function CartPage() {
           configParams.set(key, String(value));
         }
       });
-      console.log('Configuration being passed to edit:', item.configuration);
-      console.log('roomType in configuration:', item.configuration.roomType);
-      console.log('URL params:', configParams.toString());
     }
     
     if (!slug) {
-      console.error('No slug found for cart item:', item);
       alert('Unable to edit this item: product information missing');
       return;
     }
-    
-    console.log('Navigating to edit with slug:', slug);
     const url = `/products/configure/${slug}?edit=${item.cart_item_id}&${configParams.toString()}`;
     router.push(url);
   };

@@ -29,7 +29,6 @@ function formatCartItems(items: any[]) {
         try {
           config = JSON.parse(item.configuration);
         } catch (e) {
-          console.error('Error parsing configuration JSON:', e);
           config = {};
         }
       } else if (typeof item.configuration === 'object') {
@@ -58,9 +57,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json();
     const { id } = await params;
     const cart_item_id = parseInt(id);
-    
-    console.log('Updating cart item:', cart_item_id, 'to quantity:', body.quantity);
-    
     // Update the cart item quantity
     const [result] = await pool.execute(
       `UPDATE cart_items SET quantity = ?, updated_at = NOW()
@@ -83,11 +79,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     
     const formattedItems = formatCartItems(items);
     
-    console.log('Cart items after update:', formattedItems.length);
-    
     return NextResponse.json({ success: true, items: formattedItems });
   } catch (error) {
-    console.error('Cart item update error:', error);
     return NextResponse.json({ error: 'Failed to update cart item' }, { status: 500 });
   }
 }
@@ -99,9 +92,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const cart = await getOrCreateCart(pool);
     const { id } = await params;
     const cart_item_id = parseInt(id);
-    
-    console.log('Removing cart item:', cart_item_id);
-    
     // Delete the cart item
     const [result] = await pool.execute(
       'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
@@ -123,11 +113,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     
     const formattedItems = formatCartItems(items);
     
-    console.log('Cart items after removal:', formattedItems.length);
-    
     return NextResponse.json({ success: true, items: formattedItems });
   } catch (error) {
-    console.error('Cart item removal error:', error);
     return NextResponse.json({ error: 'Failed to remove cart item' }, { status: 500 });
   }
 }

@@ -128,7 +128,7 @@ export default function VendorLayout({
                 </Link>
                 <div className="mt-3 flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-default flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                       {user?.firstName && user?.lastName ? (
                         <span className="text-primary-red font-medium text-xs">
                           {user.firstName.charAt(0)}{user.lastName.charAt(0)}
@@ -137,11 +137,11 @@ export default function VendorLayout({
                         <User size={16} className="text-primary-red" />
                       )}
                     </div>
-                    <span className="text-sm text-primary">
+                    <span className="text-sm text-gray-700">
                       {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
                     </span>
                   </div>
-                  <Link href="/" className="text-xs text-secondary hover:text-primary">
+                  <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">
                     Store →
                   </Link>
                 </div>
@@ -153,8 +153,8 @@ export default function VendorLayout({
                     href={item.href}
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
-                        ? 'bg-default text-primary-red border-l-4 border-primary-red'
-                        : 'text-secondary hover:bg-default'
+                        ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
@@ -167,7 +167,7 @@ export default function VendorLayout({
 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-4 py-3 text-secondary hover:bg-default transition-colors"
+                  className="flex items-center w-full px-4 py-3 text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <span className="mr-3"><LogOut size={18} /></span>
                   <span>Logout</span>
@@ -176,25 +176,25 @@ export default function VendorLayout({
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mt-6">
-              <h3 className="font-medium text-primary mb-2">Quick Access</h3>
+              <h3 className="font-medium text-gray-800 mb-2">Quick Access</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/vendor/products/new" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/vendor/products/new" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">➕</span> Add New Product
                   </Link>
                 </li>
                 <li>
-                  <Link href="/vendor/discounts" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/vendor/discounts" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">🏷️</span> Manage Discounts
                   </Link>
                 </li>
                 <li>
-                  <Link href="/vendor/orders?status=pending" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/vendor/orders?status=pending" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">⏱️</span> View Pending Orders
                   </Link>
                 </li>
                 <li>
-                  <Link href="/vendor/analytics" className="text-primary-red hover:text-primary-dark flex items-center">
+                  <Link href="/vendor/analytics" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">📊</span> View Sales Report
                   </Link>
                 </li>

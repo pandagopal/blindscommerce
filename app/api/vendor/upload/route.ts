@@ -5,13 +5,12 @@ import { apiRateLimiter } from '@/lib/security/validation';
 import { getPool } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
-  console.log('=== VENDOR UPLOAD API START ===');
+  // Vendor upload API
   try {
     // Rate limiting for vendor uploads
     const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 
                     request.headers.get('x-real-ip') || 
                     'unknown';
-    console.log('Client IP:', clientIP);
     
     if (apiRateLimiter.isRateLimited(clientIP)) {
       return NextResponse.json(
@@ -21,12 +20,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Authentication and authorization
-    console.log('Checking user authentication...');
     const user = await getCurrentUser();
-    console.log('User authenticated:', user?.email, user?.role);
     
     if (!user) {
-      console.log('No user found - authentication required');
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -58,25 +54,14 @@ export async function POST(request: NextRequest) {
     const vendor = vendors[0] as { vendor_info_id: number; is_active: boolean };
     
     // Parse form data
-    console.log('Parsing form data...');
     const formData = await request.formData();
     const uploadType = formData.get('uploadType') as keyof typeof VENDOR_UPLOAD_LIMITS;
     const category = formData.get('category') as string;
     const productId = formData.get('productId') as string;
     const files = formData.getAll('files') as File[];
     
-    console.log('Form data parsed:', {
-      uploadType,
-      category,
-      productId,
-      filesCount: files.length,
-      fileNames: files.map(f => f.name)
-    });
-
     // Validate upload type
-    console.log('Validating upload type...');
     if (!uploadType || !VENDOR_UPLOAD_LIMITS[uploadType]) {
-      console.log('Invalid upload type:', uploadType);
       return NextResponse.json(
         { error: 'Invalid upload type' },
         { status: 400 }
@@ -84,9 +69,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate file count
-    console.log('Validating file count...');
+    
     if (!files || files.length === 0) {
-      console.log('No files provided');
+      
       return NextResponse.json(
         { error: 'No files provided' },
         { status: 400 }
@@ -94,46 +79,46 @@ export async function POST(request: NextRequest) {
     }
 
     const limits = VENDOR_UPLOAD_LIMITS[uploadType];
-    console.log('Upload limits:', limits);
+    
     if (files.length > limits.maxFiles) {
-      console.log(`Too many files: ${files.length} > ${limits.maxFiles}`);
+      
       return NextResponse.json(
         { error: `Maximum ${limits.maxFiles} files allowed for ${uploadType}` },
         { status: 400 }
       );
     }
     
-    console.log('Validation passed, starting file processing...');
+    
 
     // Process files securely
-    console.log('Creating SecureVendorUpload instance...');
+    
     const secureUpload = new SecureVendorUpload(vendor.vendor_info_id, uploadType, productId);
     const results = [];
     const errors = [];
 
-    console.log(`Processing ${files.length} files...`);
+    
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      console.log(`Processing file ${i + 1}/${files.length}: ${file.name}`);
+      
       
       try {
         // Special validation for business documents
         if (uploadType === 'businessDocuments') {
-          console.log('Validating business document...');
+          
           const docValidation = await validateBusinessDocument(file, category);
           if (!docValidation.isValid) {
-            console.log('Business document validation failed:', docValidation.errors);
+            
             errors.push(`${file.name}: ${docValidation.errors.join(', ')}`);
             continue;
           }
         }
 
-        console.log('Processing file with SecureVendorUpload...');
+        
         const result = await secureUpload.processFile(file);
-        console.log('File processing result:', result);
+        
         
         if (result.success) {
-          console.log('File processing successful, storing metadata...');
+          
           // Store file metadata in database
           await storeFileMetadata({
             vendorId: vendor.vendor_info_id,
@@ -148,7 +133,7 @@ export async function POST(request: NextRequest) {
             secureUrl: result.secureUrl,
             requiresApproval: uploadType === 'businessDocuments' || uploadType === 'catalogs'
           });
-          console.log('Metadata stored successfully');
+          
 
           results.push({
             fileId: result.fileId,
@@ -157,9 +142,9 @@ export async function POST(request: NextRequest) {
             status: 'uploaded',
             requiresApproval: uploadType === 'businessDocuments' || uploadType === 'catalogs'
           });
-          console.log('File added to results:', result.secureUrl);
+          
         } else {
-          console.log('File processing failed:', result.errors);
+          
           errors.push(`${file.name}: ${result.errors?.join(', ')}`);
         }
 
@@ -174,11 +159,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log('File processing complete. Results:', results.length, 'Errors:', errors.length);
+    
 
     // Upload activity logging removed - table doesn't exist in database
 
-    console.log('Returning response...');
+    
     return NextResponse.json({
       success: true,
       uploaded: results,

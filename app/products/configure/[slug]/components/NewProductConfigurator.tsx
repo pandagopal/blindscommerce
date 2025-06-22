@@ -32,8 +32,6 @@ interface ProductConfiguratorProps {
 export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false }: ProductConfiguratorProps) {
   const { itemCount } = useCart();
   
-  console.log('NewProductConfigurator received initialConfig:', initialConfig);
-  console.log('isEditMode:', isEditMode);
   
   const [config, setConfig] = useState({
     roomType: initialConfig.roomType || '',
@@ -96,7 +94,6 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
         );
         
         if (selectedFabric) {
-          console.log('Setting fabric tab based on selected fabric:', selectedFabric.fabric_type);
           setActiveFabricType(selectedFabric.fabric_type);
         } else {
           // Fallback to first tab if fabric not found
@@ -129,22 +126,22 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     // Get dimensions from product data - NO hardcoded fallbacks
     const dimensions = product?.dimensions || {};
     
-    console.log('Product dimensions after refresh:', dimensions);
+    // Product dimensions after refresh
     
     const minWidth = dimensions?.minWidth;
     const maxWidth = dimensions?.maxWidth;
     const minHeight = dimensions?.minHeight;
     const maxHeight = dimensions?.maxHeight;
 
-    console.log('Extracted dimension values:', { minWidth, maxWidth, minHeight, maxHeight });
+    // Extracted dimension values
 
     // If no dimension data from database, don't validate
     if (!minWidth || !maxWidth || !minHeight || !maxHeight) {
-      console.log('Missing dimension data, skipping validation');
+      // Missing dimension data, skipping validation
       return ''; // No validation if database doesn't have dimension limits
     }
     
-    console.log('Validation will proceed with database values');
+    // Validation will proceed with database values
 
     // Add eighths fraction to get total dimension
     let totalValue = numValue;
@@ -152,7 +149,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       const widthFraction = parseFloat(config.widthFraction) || 0;
       totalValue = numValue + widthFraction;
       
-      console.log(`Width validation: ${numValue} + ${widthFraction} = ${totalValue}, limits: ${minWidth} - ${maxWidth}`);
+      // Width validation with fraction
       
       if (totalValue < minWidth) {
         return `Width must be at least ${minWidth} inches`;
@@ -164,7 +161,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       const heightFraction = parseFloat(config.heightFraction) || 0;
       totalValue = numValue + heightFraction;
       
-      console.log(`Height validation: ${numValue} + ${heightFraction} = ${totalValue}, limits: ${minHeight} - ${maxHeight}`);
+      // Height validation with fraction
       
       if (totalValue < minHeight) {
         return `Height must be at least ${minHeight} inches`;

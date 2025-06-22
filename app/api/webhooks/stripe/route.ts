@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         break;
         
       default:
-        console.log(`Unhandled Stripe event type: ${event.type}`);
+        // Unhandled Stripe event type
     }
 
     return NextResponse.json({ received: true });
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent, pool: any) {
-  console.log(`Payment succeeded: ${paymentIntent.id}`);
+  // Payment succeeded
   
   try {
     // Update payment intent status
@@ -119,7 +119,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent,
 }
 
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent, pool: any) {
-  console.log(`Payment failed: ${paymentIntent.id}`);
+  // Payment failed
   
   try {
     // Update payment intent status
@@ -149,14 +149,14 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent, po
 }
 
 async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod, pool: any) {
-  console.log(`Payment method attached: ${paymentMethod.id}`);
+  // Payment method attached
   
   // This could be used to automatically save payment methods for customers
   // Implementation depends on your business logic
 }
 
 async function handleChargeDisputeCreated(dispute: Stripe.Dispute, pool: any) {
-  console.log(`Dispute created: ${dispute.id}`);
+  // Dispute created
   
   try {
     // Get payment ID from charge
@@ -195,7 +195,7 @@ async function handleChargeDisputeCreated(dispute: Stripe.Dispute, pool: any) {
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, pool: any) {
-  console.log(`Invoice payment succeeded: ${invoice.id}`);
+  // Invoice payment succeeded
   
   // Handle subscription or recurring payment success
   // Implementation depends on your subscription model

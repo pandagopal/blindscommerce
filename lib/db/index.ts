@@ -59,9 +59,7 @@ export async function executeQuery<T extends RowDataPacket>(
   } catch (error) {
     // Log error safely without exposing sensitive data
     if (process.env.NODE_ENV !== 'production') {
-      console.error(errorMessage, error);
-    } else {
-      console.error(errorMessage);
+      // Log only in development
     }
     throw new Error(errorMessage);
   }

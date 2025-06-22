@@ -40,7 +40,6 @@ export async function GET(req: NextRequest) {
           try {
             config = JSON.parse(item.configuration);
           } catch (e) {
-            console.error('Error parsing configuration JSON:', e);
             config = {};
           }
         } else if (typeof item.configuration === 'object') {
@@ -63,7 +62,6 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json({ cart, items: formattedItems });
   } catch (error) {
-    console.error('Cart GET error:', error);
     return NextResponse.json({ error: 'Failed to load cart' }, { status: 500 });
   }
 }
@@ -73,9 +71,6 @@ export async function POST(req: NextRequest) {
     const pool = await getPool();
     const cart = await getOrCreateCart(pool);
     const body = await req.json();
-    
-    console.log('Cart API received:', body);
-    console.log('Cart API roomType:', body.roomType);
     
     // Prepare configuration object for JSON storage - include ALL body fields
     const configuration = {
@@ -110,7 +105,6 @@ export async function POST(req: NextRequest) {
           try {
             config = JSON.parse(item.configuration);
           } catch (e) {
-            console.error('Error parsing configuration JSON:', e);
             config = {};
           }
         } else if (typeof item.configuration === 'object') {
@@ -131,11 +125,8 @@ export async function POST(req: NextRequest) {
       };
     });
     
-    console.log('Cart items after adding:', formattedItems);
-    
     return NextResponse.json({ success: true, items: formattedItems });
   } catch (error) {
-    console.error('Cart API error:', error);
     return NextResponse.json({ error: 'Failed to add item to cart', details: error.message }, { status: 500 });
   }
 }

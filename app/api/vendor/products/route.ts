@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error fetching vendor products:', error);
+    // Error fetching vendor products
     return NextResponse.json(
       { error: 'Failed to fetch products' },
       { status: 500 }
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error creating product:', error);
+    // Error creating product
     return NextResponse.json(
       { error: 'Failed to create product' },
       { status: 500 }

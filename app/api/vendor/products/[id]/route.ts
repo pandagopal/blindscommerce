@@ -364,7 +364,7 @@ export async function GET(
       );
       featureRows = rows;
     } catch (featuresError) {
-      console.error('Features query error:', featuresError);
+      // Features query error
       featureRows = []; // Continue with empty array if query fails
     }
 
@@ -380,7 +380,7 @@ export async function GET(
       );
       roomRows = rows;
     } catch (roomsError) {
-      console.error('Rooms query error:', roomsError);
+      // Rooms query error
       roomRows = []; // Continue with empty array if query fails
     }
 
@@ -464,7 +464,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Error fetching product:', error);
+    // Error fetching product
     return NextResponse.json(
       { 
         success: false,
@@ -861,7 +861,7 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('Error updating product:', error);
+    // Error updating product
     return NextResponse.json(
       { error: 'Failed to update product' },
       { status: 500 }
@@ -940,7 +940,7 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('Error updating product status:', error);
+    // Error updating product status
     return NextResponse.json(
       { error: 'Failed to update product status' },
       { status: 500 }
@@ -1029,7 +1029,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Error deleting product:', error);
+    // Error deleting product
     return NextResponse.json(
       { error: 'Failed to delete product' },
       { status: 500 }
