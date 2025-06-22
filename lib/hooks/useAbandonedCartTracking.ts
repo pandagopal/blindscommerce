@@ -108,7 +108,6 @@ export const useAbandonedCartTracking = (options: TrackingOptions = {}) => {
 
       if (response.ok) {
         lastTrackingRef.current = currentCartSignature;
-        console.log('Abandoned cart tracked successfully');
       }
     } catch (error) {
       console.error('Failed to track abandoned cart:', error);

@@ -61,7 +61,6 @@ class ZigbeeBridge extends EventEmitter {
       await this.coordinator.start();
       this.setupEventHandlers();
       
-      console.log('Zigbee coordinator initialized');
     } catch (error) {
       console.error('Failed to initialize Zigbee coordinator:', error);
     }
@@ -132,7 +131,6 @@ class ZigbeeBridge extends EventEmitter {
       // );
       
       // Simulate command execution
-      console.log(`Sending Zigbee command to ${ieee}:`, command);
       
       // Simulate response after delay
       setTimeout(() => {
@@ -217,7 +215,6 @@ class ZigbeeBridge extends EventEmitter {
     }
     
     await this.coordinator.permitJoin?.(duration);
-    console.log(`Device pairing enabled for ${duration} seconds`);
   }
 
   // Get all discovered devices

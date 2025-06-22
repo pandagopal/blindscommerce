@@ -73,12 +73,6 @@ export default function InstallationScheduling() {
     if (!selectedDate || !selectedTimeSlot) return;
 
     // TODO: Implement API call to schedule installation
-    console.log('Scheduling installation:', {
-      date: selectedDate,
-      timeSlot: selectedTimeSlot,
-      products,
-      address
-    });
   };
 
   const isFormValid = () => {

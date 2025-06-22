@@ -317,7 +317,6 @@ const VirtualInteriorDesigner: React.FC = () => {
   // Setup VR scene with room and blinds
   const setupVRScene = (session: any) => {
     // VR-specific setup would go here
-    console.log('VR session started:', session);
   };
 
   // Setup room geometry for 3D visualization

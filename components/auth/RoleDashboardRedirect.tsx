@@ -44,7 +44,6 @@ export default function RoleDashboardRedirect({
     }
 
     if (isAccessingWrongDashboard) {
-      console.log(`Redirecting ${userRole} from ${currentPath} to ${userDashboard}`);
       router.push(userDashboard);
     }
   }, [userRole, currentPath, router]);

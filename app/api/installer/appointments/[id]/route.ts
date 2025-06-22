@@ -79,7 +79,6 @@ export async function PATCH(
     const { status, notes, completedAt } = body;
 
     // In a real app, this would update the database
-    console.log(`Updating appointment ${id}:`, { status, notes, completedAt });
 
     return NextResponse.json({ 
       success: true, 
@@ -125,7 +124,6 @@ export async function DELETE(
     const { id } = params;
 
     // In a real app, this would delete from database
-    console.log(`Deleting appointment ${id}`);
 
     return NextResponse.json({ 
       success: true, 

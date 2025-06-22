@@ -214,11 +214,5 @@ export function initializeSecureConfig(): void {
   
   // Log sanitized configuration in development
   if (process.env.NODE_ENV !== 'production') {
-    console.log('Secure configuration initialized:', {
-      database: { ...secureConfig.database, password: '***REDACTED***' },
-      security: { ...secureConfig.security, jwtSecret: '***REDACTED***' },
-      cors: secureConfig.cors,
-      upload: secureConfig.upload
-    });
   }
 }

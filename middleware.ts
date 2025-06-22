@@ -126,7 +126,6 @@ export async function middleware(request: NextRequest) {
 
     if (!token) {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('No token found, redirecting to login');
       }
       response = NextResponse.redirect(new URL('/login', request.url));
     } else {
@@ -134,7 +133,6 @@ export async function middleware(request: NextRequest) {
       const isValid = await verifyToken(token);
       if (!isValid) {
         if (process.env.NODE_ENV !== 'production') {
-          console.log('Invalid token, redirecting to login');
         }
         response = NextResponse.redirect(new URL('/login', request.url));
       } else {

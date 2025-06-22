@@ -50,7 +50,6 @@ export class SocketManager {
 
   private setupEventHandlers() {
     this.io.on('connection', async (socket: Socket) => {
-      console.log('Client connected:', socket.id);
 
       // User authentication
       socket.on('authenticate', async ({ userId, role }) => {

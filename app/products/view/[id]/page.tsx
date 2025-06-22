@@ -41,7 +41,6 @@ export default function ViewProductPage() {
 
   const loadProductData = async (id: string) => {
     try {
-      console.log('Loading product data for ID:', id);
       
       // Try vendor products API first, then fall back to general products API
       let res = await fetch(`/api/vendor/products/${id}`);
@@ -53,10 +52,8 @@ export default function ViewProductPage() {
       
       if (res.ok) {
         const data = await res.json();
-        console.log('API Response:', data);
         
         if (data && data.product) {
-          console.log('Setting product data:', data.product);
           setProductData(data.product);
         } else {
           setError('Product not found');

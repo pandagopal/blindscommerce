@@ -34,7 +34,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
       await this.tuyaApi.initialize();
       await this.discoverAndSyncDevices();
       this.startPeriodicSync();
-      console.log('Tuya Smart Home Bridge initialized');
     } catch (error) {
       console.error('Failed to initialize Tuya bridge:', error);
       throw error;
@@ -57,7 +56,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
   async discoverAndSyncDevices(): Promise<void> {
     try {
       const blindDevices = await this.tuyaApi.getBlindDevices();
-      console.log(`Found ${blindDevices.length} Tuya blind devices`);
 
       for (const device of blindDevices) {
         await this.syncDeviceToAllPlatforms(device);
@@ -229,7 +227,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
     };
 
     // In production: Send to Alexa Smart Home API
-    console.log('Alexa device registered:', alexaEndpoint.endpointId);
   }
 
   // Google Assistant registration
@@ -264,7 +261,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
     };
 
     // In production: Send to Google Home Graph API
-    console.log('Google device registered:', googleDevice.id);
   }
 
   // HomeKit registration
@@ -306,7 +302,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
     };
 
     // In production: Register with HAP-NodeJS
-    console.log('HomeKit accessory registered:', homeKitAccessory.UUID);
   }
 
   // SmartThings registration
@@ -340,7 +335,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
     };
 
     // In production: Register with SmartThings API
-    console.log('SmartThings device registered:', smartThingsDevice.deviceId);
   }
 
   // Matter registration
@@ -379,7 +373,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
     };
 
     // In production: Commission with Matter fabric
-    console.log('Matter device registered:', matterDevice.nodeId);
   }
 
   // Execute command from smart home platform
@@ -503,27 +496,22 @@ class TuyaSmartHomeBridge extends EventEmitter {
   // Platform-specific status update methods
   private async sendAlexaChangeReport(platformDevice: SmartHomePlatformDevice, state: any): Promise<void> {
     // Implementation for Alexa ChangeReport
-    console.log(`Alexa ChangeReport for ${platformDevice.platformDeviceId}:`, state);
   }
 
   private async sendGoogleReportState(platformDevice: SmartHomePlatformDevice, state: any): Promise<void> {
     // Implementation for Google ReportState
-    console.log(`Google ReportState for ${platformDevice.platformDeviceId}:`, state);
   }
 
   private async updateHomeKitCharacteristics(platformDevice: SmartHomePlatformDevice, state: any): Promise<void> {
     // Implementation for HomeKit characteristic updates
-    console.log(`HomeKit update for ${platformDevice.platformDeviceId}:`, state);
   }
 
   private async sendSmartThingsEvent(platformDevice: SmartHomePlatformDevice, state: any): Promise<void> {
     // Implementation for SmartThings events
-    console.log(`SmartThings event for ${platformDevice.platformDeviceId}:`, state);
   }
 
   private async updateMatterAttributes(platformDevice: SmartHomePlatformDevice, state: any): Promise<void> {
     // Implementation for Matter attribute updates
-    console.log(`Matter update for ${platformDevice.platformDeviceId}:`, state);
   }
 
   // Handle Tuya status updates
@@ -584,7 +572,6 @@ class TuyaSmartHomeBridge extends EventEmitter {
       this.syncInterval = null;
     }
     this.removeAllListeners();
-    console.log('Tuya Smart Home Bridge disconnected');
   }
 }
 

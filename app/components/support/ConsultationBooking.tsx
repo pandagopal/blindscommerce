@@ -68,12 +68,6 @@ export default function ConsultationBooking() {
     if (!selectedDate || !selectedTime || !selectedType) return;
 
     // TODO: Implement API call to book consultation
-    console.log('Booking consultation:', {
-      date: selectedDate,
-      time: selectedTime,
-      type: selectedType,
-      contactInfo
-    });
   };
 
   return (

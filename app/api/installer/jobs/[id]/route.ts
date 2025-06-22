@@ -99,15 +99,6 @@ export async function PATCH(
     } = body;
 
     // In a real app, this would update the database
-    console.log(`Updating job ${id}:`, { 
-      status, 
-      completed_at, 
-      completion_notes,
-      customer_satisfaction,
-      notes,
-      priority,
-      materials_needed
-    });
 
     const updatedJob = {
       id,
@@ -161,7 +152,6 @@ export async function DELETE(
     const { id } = params;
 
     // In a real app, this would delete from database
-    console.log(`Deleting job ${id}`);
 
     return NextResponse.json({ 
       success: true, 

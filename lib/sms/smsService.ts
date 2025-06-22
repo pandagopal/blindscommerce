@@ -101,7 +101,6 @@ export class SMSService {
         to: formattedPhone,
       });
 
-      console.log('SMS sent successfully:', message.sid);
       
       // Log SMS for analytics (optional)
       await this.logSMS({
@@ -177,7 +176,6 @@ export class SMSService {
     try {
       // Log to database for analytics and compliance
       // This would typically insert into an sms_logs table
-      console.log('SMS Log:', smsLog);
     } catch (error) {
       console.error('Error logging SMS:', error);
     }
@@ -225,7 +223,6 @@ export async function handleSMSOptOut(phone: string): Promise<void> {
   try {
     // Update user preferences to opt out of SMS
     // This would typically update a database record
-    console.log(`Phone ${phone} opted out of SMS notifications`);
   } catch (error) {
     console.error('Error handling SMS opt-out:', error);
   }

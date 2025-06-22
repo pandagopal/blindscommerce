@@ -93,7 +93,6 @@ const handleConsultationChat = (io: SocketIOServer) => {
 
       // Handle disconnection
       socket.on('disconnect', () => {
-        console.log('User disconnected:', user.userId);
       });
 
     } catch (error) {

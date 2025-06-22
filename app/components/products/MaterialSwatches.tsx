@@ -48,10 +48,6 @@ export default function MaterialSwatches({ swatches, maxSelections = 5 }: Materi
 
   const handleSubmit = async () => {
     // TODO: Implement API call to submit swatch order
-    console.log('Submitting swatch order:', {
-      selectedSwatches,
-      shippingInfo
-    });
   };
 
   return (

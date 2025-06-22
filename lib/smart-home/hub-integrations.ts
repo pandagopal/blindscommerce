@@ -38,7 +38,6 @@ class SmartHomeHubManager extends EventEmitter {
     this.platformClients.set('alexa', {
       sendDirective: async (directive: any) => {
         // In production: AWS Lambda function or Alexa Gateway API
-        console.log('Sending Alexa directive:', directive);
         return this.executeZigbeeCommand(directive);
       },
       discoverDevices: async () => {
@@ -50,7 +49,6 @@ class SmartHomeHubManager extends EventEmitter {
     this.platformClients.set('google', {
       executeCommand: async (command: any) => {
         // In production: Google Cloud Functions or Actions API
-        console.log('Executing Google command:', command);
         return this.executeZigbeeCommand(command);
       },
       syncDevices: async () => {
@@ -62,7 +60,6 @@ class SmartHomeHubManager extends EventEmitter {
     this.platformClients.set('homekit', {
       updateCharacteristic: async (accessoryId: string, characteristic: string, value: any) => {
         // In production: HomeKit Accessory Protocol (HAP-NodeJS)
-        console.log('HomeKit characteristic update:', { accessoryId, characteristic, value });
         return this.executeZigbeeCommand({ accessoryId, characteristic, value });
       },
       getAccessories: async () => {
@@ -74,7 +71,6 @@ class SmartHomeHubManager extends EventEmitter {
     this.platformClients.set('smartthings', {
       executeCommand: async (deviceId: string, command: any) => {
         // In production: SmartThings API
-        console.log('SmartThings command:', { deviceId, command });
         return this.executeZigbeeCommand({ deviceId, command });
       },
       getDevices: async () => {
@@ -86,7 +82,6 @@ class SmartHomeHubManager extends EventEmitter {
     this.platformClients.set('matter', {
       sendCommand: async (nodeId: string, command: any) => {
         // In production: Matter.js or Thread network
-        console.log('Matter command:', { nodeId, command });
         return this.executeZigbeeCommand({ nodeId, command });
       }
     });
@@ -112,7 +107,6 @@ class SmartHomeHubManager extends EventEmitter {
 
   // Handle new Zigbee device discovery and register with platforms
   private async onZigbeeDeviceDiscovered(zigbeeDevice: any) {
-    console.log('New Zigbee device discovered:', zigbeeDevice.ieee);
 
     // Register device with all connected platforms
     for (const [platform, client] of this.platformClients) {
@@ -188,7 +182,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
 
     // In production: Send to Alexa Device Discovery
-    console.log('Registering with Alexa:', alexaDevice);
     return alexaDevice.endpointId;
   }
 
@@ -216,7 +209,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
 
     // In production: Send to Google Home Graph API
-    console.log('Registering with Google:', googleDevice);
     return googleDevice.id;
   }
 
@@ -239,7 +231,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
 
     // In production: Register with HAP-NodeJS
-    console.log('Registering with HomeKit:', homeKitAccessory);
     return homeKitAccessory.UUID;
   }
 
@@ -264,7 +255,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
 
     // In production: Register with SmartThings API
-    console.log('Registering with SmartThings:', smartThingsDevice);
     return smartThingsDevice.deviceId;
   }
 
@@ -286,7 +276,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
 
     // In production: Commission with Matter fabric
-    console.log('Registering with Matter:', matterDevice);
     return matterDevice.nodeId;
   }
 
@@ -428,7 +417,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
     
     // Send to Alexa Event Gateway
-    console.log('Sending Alexa ChangeReport:', changeReport);
   }
 
   private async sendGoogleReportState(deviceId: string, state: any) {
@@ -448,7 +436,6 @@ class SmartHomeHubManager extends EventEmitter {
     };
     
     // Send to Google Home Graph ReportState API
-    console.log('Sending Google ReportState:', reportState);
   }
 
   private async sendSmartThingsEvent(deviceId: string, state: any) {
@@ -462,12 +449,10 @@ class SmartHomeHubManager extends EventEmitter {
     };
     
     // Send to SmartThings Events API
-    console.log('Sending SmartThings event:', event);
   }
 
   private async updateMatterAttribute(nodeId: string, state: any) {
     // Update Matter Window Covering cluster attribute
-    console.log('Updating Matter attribute:', { nodeId, state });
   }
 
   // Utility methods

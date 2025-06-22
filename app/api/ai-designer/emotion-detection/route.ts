@@ -308,7 +308,6 @@ async function logEmotionData(userId: number, analysis: EmotionAnalysis): Promis
     };
     
     // Store for analytics and model improvement
-    console.log('Emotion data logged:', emotionLog);
     
     // This would integrate with your analytics pipeline
     // await analyticsDB.collection('emotion_logs').add(emotionLog);
