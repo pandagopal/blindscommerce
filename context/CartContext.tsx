@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
+import { cartClientCache, ClientCacheKeys } from '@/lib/cache/clientCache';
 
 export interface CartItem {
   cart_item_id: number;
@@ -33,12 +34,27 @@ export interface CartItem {
   [key: string]: any;
 }
 
+interface VendorDiscount {
+  type: 'vendor_discount' | 'vendor_coupon';
+  vendor_id: number;
+  vendor_name: string;
+  discount_id?: number;
+  coupon_id?: number;
+  coupon_code?: string;
+  name: string;
+  discount_type: string;
+  amount: number;
+  applied_to: string;
+  vendor_subtotal?: number;
+  vendor_subtotal_after?: number;
+}
+
 interface PricingDetails {
   subtotal: number;
-  volume_discount: number;
-  coupon_discount: number;
-  campaign_discount: number;
-  total_discount: number;
+  vendor_discounts: VendorDiscount[];
+  vendor_coupons: VendorDiscount[];
+  total_discount_amount: number;
+  applied_discounts_list: VendorDiscount[];
   shipping: number;
   tax: number;
   tax_rate: number;
@@ -51,9 +67,9 @@ interface PricingDetails {
   tax_jurisdiction?: string;
   zip_code?: string;
   total: number;
+  vendors_in_cart: number;
   applied_promotions?: {
     coupon_code?: string;
-    campaign_code?: string;
   };
 }
 
@@ -76,14 +92,15 @@ interface CartContextType {
 
 const defaultPricing: PricingDetails = {
   subtotal: 0,
-  volume_discount: 0,
-  coupon_discount: 0,
-  campaign_discount: 0,
-  total_discount: 0,
+  vendor_discounts: [],
+  vendor_coupons: [],
+  total_discount_amount: 0,
+  applied_discounts_list: [],
   shipping: 0,
   tax: 0,
   tax_rate: 0,
   total: 0,
+  vendors_in_cart: 0,
   applied_promotions: {}
 };
 
@@ -176,10 +193,21 @@ export function CartProvider({ children }: CartProviderProps) {
         })),
         customer_id: customerData?.id,
         customer_type: customerData?.type,
-        coupon_code: couponCode || appliedCoupon,
-        shipping_state: 'TX' // TODO: Get from user address
-        // zip_code removed - tax calculation should only happen at checkout
+        coupon_code: couponCode || appliedCoupon
+        // Note: tax calculation only happens at checkout with ZIP code
       };
+
+      // Create cache key based on request content
+      const cacheKey = ClientCacheKeys.cart.pricing(customerData?.id) + 
+        ':' + JSON.stringify(pricingRequest);
+      
+      // Try to get cached pricing first
+      const cachedPricing = cartClientCache.get(cacheKey);
+      if (cachedPricing) {
+        setPricing(cachedPricing);
+        setIsLoading(false);
+        return;
+      }
 
       const response = await fetch('/api/pricing/calculate', {
         method: 'POST',
@@ -194,7 +222,7 @@ export function CartProvider({ children }: CartProviderProps) {
 
       const data = await response.json();
       
-      setPricing({
+      const pricingData = {
         subtotal: data.pricing.subtotal,
         volume_discount: data.pricing.discounts.volume_discount,
         coupon_discount: data.pricing.discounts.coupon_discount,
@@ -208,7 +236,12 @@ export function CartProvider({ children }: CartProviderProps) {
         zip_code: data.pricing.zip_code,
         total: data.pricing.total,
         applied_promotions: data.pricing.applied_promotions
-      });
+      };
+
+      // Cache the pricing data (shorter TTL since cart data changes frequently)
+      cartClientCache.set(cacheKey, pricingData, 30 * 1000); // 30 seconds
+
+      setPricing(pricingData);
 
       if (data.coupon_error) {
         setPricingError(data.coupon_error);

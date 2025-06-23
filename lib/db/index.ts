@@ -45,6 +45,8 @@ let connectionRetries = 0;
 const MAX_RETRIES = 3;
 const RETRY_INTERVAL = 2000;
 let dbConnectionFailed = false;
+let lastFailureTime = 0;
+const RECOVERY_INTERVAL = 30000; // 30 seconds recovery period
 
 // Generic execute query function with proper typing
 export async function executeQuery<T extends RowDataPacket>(
@@ -65,6 +67,34 @@ export async function executeQuery<T extends RowDataPacket>(
   }
 }
 
+// Connection recovery logic
+const shouldAttemptRecovery = (): boolean => {
+  if (!dbConnectionFailed) return true;
+  
+  const timeSinceFailure = Date.now() - lastFailureTime;
+  const recoveryDelay = Math.min(RECOVERY_INTERVAL * Math.pow(2, connectionRetries), 300000); // Max 5 minutes
+  
+  if (timeSinceFailure > recoveryDelay) {
+    // Reset connection state for recovery attempt
+    dbConnectionFailed = false;
+    connectionRetries = 0;
+    pool = null;
+    isConnecting = false;
+    return true;
+  }
+  
+  return false;
+};
+
+// Reset connection state (for development/testing)
+export const resetConnectionState = (): void => {
+  dbConnectionFailed = false;
+  connectionRetries = 0;
+  lastFailureTime = 0;
+  pool = null;
+  isConnecting = false;
+};
+
 // Function to get the database connection pool
 export const getPool = async (): Promise<mysql.Pool> => {
   if (pool) return pool;
@@ -76,8 +106,11 @@ export const getPool = async (): Promise<mysql.Pool> => {
 
   const maxRetries = process.env.NODE_ENV === 'production' ? MAX_RETRIES : 1;
 
-  if (dbConnectionFailed && connectionRetries >= maxRetries) {
-    throw new Error('Database connection is not available after all retries');
+  // Check if we should attempt recovery
+  if (dbConnectionFailed && !shouldAttemptRecovery()) {
+    const timeSinceFailure = Date.now() - lastFailureTime;
+    const nextRetryIn = Math.min(RECOVERY_INTERVAL * Math.pow(2, connectionRetries), 300000) - timeSinceFailure;
+    throw new Error(`Database connection is not available. Next retry in ${Math.ceil(nextRetryIn / 1000)} seconds`);
   }
 
   isConnecting = true;
@@ -128,8 +161,17 @@ export const getPool = async (): Promise<mysql.Pool> => {
       return getPool();
     }
 
+    // Set failure state with timestamp for recovery logic
     dbConnectionFailed = true;
-    throw new Error('Database connection failed after all retries');
+    lastFailureTime = Date.now();
+    
+    if (process.env.NODE_ENV === 'production') {
+      // In production, provide more helpful error message
+      const nextRetryIn = Math.ceil(RECOVERY_INTERVAL / 1000);
+      throw new Error(`Database connection failed after ${maxRetries} retries. Will retry automatically in ${nextRetryIn} seconds`);
+    } else {
+      throw new Error('Database connection failed after all retries');
+    }
   }
 };
 

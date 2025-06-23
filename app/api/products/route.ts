@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProducts } from '@/lib/db';
+import { productsCache, CacheKeys } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,21 @@ export async function GET(request: NextRequest) {
     const sortBy = url.searchParams.get('sortBy') || 'name';
     const sortOrder = url.searchParams.get('sortOrder') || 'asc';
 
+    // Create cache key from query parameters
+    const cacheKey = CacheKeys.products.list({
+      limit, offset, categoryId, search, minPrice, maxPrice, sortBy, sortOrder
+    });
+    
+    // Try to get cached data first
+    const cachedProducts = productsCache.get(cacheKey);
+    
+    if (cachedProducts) {
+      return NextResponse.json({ 
+        ...cachedProducts,
+        cached: true
+      }, { status: 200 });
+    }
+
     const products = await getProducts({
       limit,
       offset,
@@ -32,7 +48,16 @@ export async function GET(request: NextRequest) {
       sortOrder
     });
 
-    return NextResponse.json({ products, count: products.length }, { status: 200 });
+    const responseData = { products, count: products.length };
+    
+    // Cache the results (shorter TTL for filtered results to keep data fresh)
+    const cacheTTL = search || minPrice || maxPrice ? 2 * 60 * 1000 : undefined; // 2 min for searches
+    productsCache.set(cacheKey, responseData, cacheTTL);
+
+    return NextResponse.json({ 
+      ...responseData,
+      cached: false
+    }, { status: 200 });
   } catch (error) {
     console.error('Error fetching products:', error);
     return NextResponse.json(

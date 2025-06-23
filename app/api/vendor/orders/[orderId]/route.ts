@@ -47,7 +47,14 @@ export async function GET(req: NextRequest, { params }: { params: { orderId: str
        WHERE oi.order_id = ? AND vi.user_id = ?`,
       [orderId, user.userId]
     );
+    
+    // Calculate vendor-specific totals
+    const vendorItemsTotal = itemRows.reduce((sum, item) => sum + Number(item.total_price), 0);
+    const vendorItemsCount = itemRows.length;
+    
     order.items = itemRows;
+    order.vendor_items_total = vendorItemsTotal;
+    order.vendor_items_count = vendorItemsCount;
     return NextResponse.json({ order });
   } catch (error) {
     console.error('Error fetching vendor order details:', error);

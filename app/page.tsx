@@ -5,10 +5,11 @@ async function getHomePageData() {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     
     // Fetch homepage data, hero banners, and rooms in parallel
+    // Using cached APIs for better performance
     const [homepageResponse, heroBannersResponse, roomsResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/pages/homepage`, { cache: 'no-store' }),
-      fetch(`${baseUrl}/api/hero-banners`, { cache: 'no-store' }),
-      fetch(`${baseUrl}/api/rooms`, { cache: 'no-store' })
+      fetch(`${baseUrl}/api/pages/homepage`, { next: { revalidate: 900 } }), // 15 min cache
+      fetch(`${baseUrl}/api/hero-banners`, { next: { revalidate: 3600 } }), // 1 hour cache
+      fetch(`${baseUrl}/api/rooms`, { next: { revalidate: 1800 } }) // 30 min cache
     ]);
 
     let homepageData = { categories: [], products: [], reviews: [] };

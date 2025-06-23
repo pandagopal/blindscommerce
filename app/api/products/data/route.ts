@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
+import { productsCache, CacheKeys } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +23,22 @@ export async function GET(request: NextRequest) {
     const page = parseInt(pageParam, 10);
     const itemsPerPage = 24;
     const offset = (page - 1) * itemsPerPage;
+
+    // Create cache key from all parameters
+    const cacheKey = CacheKeys.products.list({
+      categoryId, minPrice, maxPrice, sortBy: sortByParam, sortOrder: sortOrderParam,
+      search: searchParam, room: roomParam, page, limit: itemsPerPage, offset
+    });
+    
+    // Try to get cached data first
+    const cachedData = productsCache.get(cacheKey);
+    if (cachedData) {
+      return NextResponse.json({
+        success: true,
+        data: cachedData,
+        cached: true
+      });
+    }
 
     const pool = await getPool();
     
@@ -124,19 +141,26 @@ export async function GET(request: NextRequest) {
       ORDER BY display_order ASC, name ASC`
     );
 
+    const responseData = {
+      categories: Array.isArray(categoryRows) ? categoryRows : [],
+      products: Array.isArray(productRows) ? productRows : [],
+      features: Array.isArray(featureRows) ? featureRows : [],
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems,
+        itemsPerPage
+      }
+    };
+
+    // Cache the response data (shorter TTL for search results)
+    const cacheTTL = searchParam || minPrice || maxPrice ? 2 * 60 * 1000 : undefined; // 2 min for filtered searches
+    productsCache.set(cacheKey, responseData, cacheTTL);
+
     return NextResponse.json({
       success: true,
-      data: {
-        categories: Array.isArray(categoryRows) ? categoryRows : [],
-        products: Array.isArray(productRows) ? productRows : [],
-        features: Array.isArray(featureRows) ? featureRows : [],
-        pagination: {
-          currentPage: page,
-          totalPages,
-          totalItems,
-          itemsPerPage
-        }
-      }
+      data: responseData,
+      cached: false
     });
 
   } catch (error) {

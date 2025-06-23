@@ -249,105 +249,189 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Apply volume discounts (skip if vendor coupon is being applied)
-    let volumeDiscountAmount = 0;
-    let hasVendorCoupon = false;
+    // MULTI-VENDOR DISCOUNT SYSTEM:
+    // 1. Only vendor-specific discounts/coupons (no platform-wide)
+    // 2. Order: Vendor discounts first (automatic) → then vendor coupons (automatic)  
+    // 3. Each vendor's discounts apply ONLY to their own products
+    // 4. Track all applied discounts per vendor for cart display
     
-    // Check if we have a vendor coupon first to optimize processing
-    if (body.coupon_code) {
-      const [vendorCouponCheck] = await pool.execute<any[]>(
-        `SELECT coupon_id FROM vendor_coupons 
-         WHERE coupon_code = ? AND is_active = TRUE
+    let appliedDiscountsList = [];
+    let totalDiscountAmount = 0;
+
+    // STEP 1: Get vendor mapping for all products in cart
+    const productIds = calculatedItems.map(item => item.product_id);
+    const [vendorMappings] = await pool.execute<any[]>(
+      `SELECT vp.product_id, vp.vendor_id, vi.business_name as vendor_name
+       FROM vendor_products vp
+       JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
+       WHERE vp.product_id IN (${productIds.map(() => '?').join(',')})`,
+      productIds
+    );
+
+    // Create vendor mapping lookup
+    const productVendorMap = new Map();
+    vendorMappings.forEach(mapping => {
+      productVendorMap.set(mapping.product_id, {
+        vendor_id: mapping.vendor_id,
+        vendor_name: mapping.vendor_name
+      });
+    });
+
+    // STEP 2: Group cart items by vendor
+    const itemsByVendor = new Map();
+    calculatedItems.forEach(item => {
+      const vendorInfo = productVendorMap.get(item.product_id);
+      if (vendorInfo) {
+        const vendorId = vendorInfo.vendor_id;
+        if (!itemsByVendor.has(vendorId)) {
+          itemsByVendor.set(vendorId, {
+            vendor_name: vendorInfo.vendor_name,
+            items: [],
+            subtotal: 0,
+            total_quantity: 0
+          });
+        }
+        const vendorData = itemsByVendor.get(vendorId);
+        vendorData.items.push({...item, vendor_id: vendorId});
+        vendorData.subtotal += item.item_total;
+        vendorData.total_quantity += item.quantity;
+      }
+    });
+
+    // STEP 3: Apply vendor discounts first (automatic) - per vendor
+    for (const [vendorId, vendorData] of itemsByVendor) {
+      // Get automatic discounts for this specific vendor
+      const [vendorDiscounts] = await pool.execute<any[]>(
+        `SELECT discount_id, discount_name, discount_type, discount_value, minimum_order_value, 
+                maximum_discount_amount, minimum_quantity, applies_to, target_ids, volume_tiers
+         FROM vendor_discounts 
+         WHERE vendor_id = ? AND is_active = TRUE AND is_automatic = TRUE
          AND (valid_from IS NULL OR valid_from <= NOW())
-         AND (valid_until IS NULL OR valid_until >= NOW())`,
-        [body.coupon_code]
+         AND (valid_until IS NULL OR valid_until >= NOW())
+         ORDER BY priority DESC`,
+        [vendorId]
       );
-      hasVendorCoupon = vendorCouponCheck.length > 0;
+
+      let bestDiscount = null;
+      let bestDiscountAmount = 0;
+
+      for (const discount of vendorDiscounts) {
+        // Check if vendor's subtotal and quantity meet requirements
+        if (vendorData.subtotal >= discount.minimum_order_value && 
+            vendorData.total_quantity >= discount.minimum_quantity) {
+          
+          let discountAmount = 0;
+          let applicableItems = vendorData.items;
+
+          // Filter items based on discount target
+          if (discount.applies_to === 'specific_products' && discount.target_ids) {
+            try {
+              const targetIds = JSON.parse(discount.target_ids);
+              applicableItems = vendorData.items.filter(item => targetIds.includes(item.product_id));
+            } catch (e) {
+              console.error('Invalid target_ids JSON:', discount.target_ids);
+              continue;
+            }
+          } else if (discount.applies_to === 'specific_categories' && discount.target_ids) {
+            try {
+              const targetCategoryIds = JSON.parse(discount.target_ids);
+              // Get categories for vendor items
+              const vendorProductIds = vendorData.items.map(item => item.product_id);
+              const [productCategories] = await pool.execute<any[]>(
+                `SELECT product_id, category_id FROM products WHERE product_id IN (${vendorProductIds.map(() => '?').join(',')})`,
+                vendorProductIds
+              );
+              const productCategoryMap = new Map();
+              productCategories.forEach(pc => productCategoryMap.set(pc.product_id, pc.category_id));
+              
+              applicableItems = vendorData.items.filter(item => 
+                targetCategoryIds.includes(productCategoryMap.get(item.product_id))
+              );
+            } catch (e) {
+              console.error('Invalid category target_ids JSON:', discount.target_ids);
+              continue;
+            }
+          }
+
+          if (applicableItems.length === 0) continue;
+
+          const applicableSubtotal = applicableItems.reduce((sum, item) => sum + item.item_total, 0);
+          const applicableQuantity = applicableItems.reduce((sum, item) => sum + item.quantity, 0);
+
+          // Calculate discount amount
+          switch (discount.discount_type) {
+            case 'percentage':
+              discountAmount = applicableSubtotal * (discount.discount_value / 100);
+              break;
+            case 'fixed_amount':
+              discountAmount = discount.discount_value;
+              break;
+            case 'tiered':
+              if (discount.volume_tiers) {
+                try {
+                  const tiers = JSON.parse(discount.volume_tiers);
+                  const tier = tiers.find(t => 
+                    applicableQuantity >= t.min_qty && 
+                    (!t.max_qty || applicableQuantity <= t.max_qty)
+                  );
+                  if (tier) {
+                    if (tier.discount_percent) {
+                      discountAmount = applicableSubtotal * (tier.discount_percent / 100);
+                    } else if (tier.discount_amount) {
+                      discountAmount = tier.discount_amount;
+                    }
+                  }
+                } catch (e) {
+                  console.error('Invalid volume_tiers JSON:', discount.volume_tiers);
+                }
+              }
+              break;
+          }
+
+          // Apply maximum discount limit
+          if (discount.maximum_discount_amount && discountAmount > discount.maximum_discount_amount) {
+            discountAmount = discount.maximum_discount_amount;
+          }
+
+          // Ensure discount doesn't exceed applicable subtotal
+          discountAmount = Math.min(discountAmount, applicableSubtotal);
+
+          // Keep track of best discount for this vendor
+          if (discountAmount > bestDiscountAmount) {
+            bestDiscount = discount;
+            bestDiscountAmount = discountAmount;
+          }
+        }
+      }
+
+      // Apply the best discount found for this vendor
+      if (bestDiscount && bestDiscountAmount > 0) {
+        totalDiscountAmount += bestDiscountAmount;
+        appliedDiscountsList.push({
+          type: 'vendor_discount',
+          vendor_id: vendorId,
+          vendor_name: vendorData.vendor_name,
+          discount_id: bestDiscount.discount_id,
+          name: bestDiscount.discount_name,
+          discount_type: bestDiscount.discount_type,
+          amount: bestDiscountAmount,
+          applied_to: bestDiscount.applies_to,
+          vendor_subtotal: vendorData.subtotal,
+          vendor_subtotal_after: vendorData.subtotal - bestDiscountAmount
+        });
+      }
     }
 
-    // Only process volume discounts if no vendor coupon (per CLAUDE.md vendor-centric architecture)
-    if (!hasVendorCoupon) {
-      const [volumeDiscounts] = await pool.execute<VolumeDiscountRow[]>(
-        `SELECT discount_id, discount_name, volume_tiers, product_id, category_ids, brand_ids
-         FROM volume_discounts 
-         WHERE is_active = TRUE
-         AND (valid_from IS NULL OR valid_from <= NOW())
-         AND (valid_until IS NULL OR valid_until >= NOW())`
-      );
-
-    for (const discount of volumeDiscounts) {
-      let tiers;
-      try {
-        tiers = JSON.parse(discount.volume_tiers);
-      } catch (error) {
-        console.error('Invalid volume_tiers JSON for discount', discount.discount_id, ':', discount.volume_tiers);
-        continue; // Skip this discount if JSON is invalid
-      }
-      const totalQuantity = body.items.reduce((sum, item) => {
-        const product = productMap.get(item.product_id);
-        if (!product) return sum;
-
-        // Check if discount applies to this product
-        if (discount.product_id && discount.product_id === product.product_id) {
-          return sum + item.quantity;
-        }
-        if (discount.category_ids) {
-          try {
-            const categoryIds = JSON.parse(discount.category_ids);
-            if (categoryIds.includes(product.category_id)) {
-              return sum + item.quantity;
-            }
-          } catch (error) {
-            console.error('Invalid category_ids JSON for discount', discount.discount_id, ':', discount.category_ids);
-          }
-        }
-        if (discount.brand_ids) {
-          try {
-            const brandIds = JSON.parse(discount.brand_ids);
-            if (brandIds.includes(product.brand_id)) {
-              return sum + item.quantity;
-            }
-          } catch (error) {
-            console.error('Invalid brand_ids JSON for discount', discount.discount_id, ':', discount.brand_ids);
-          }
-        }
-        return sum;
-      }, 0);
-
-      // Find applicable tier
-      for (const tier of tiers) {
-        if (totalQuantity >= tier.min_qty && (!tier.max_qty || totalQuantity <= tier.max_qty)) {
-          if (tier.discount_percent) {
-            volumeDiscountAmount += subtotal * (tier.discount_percent / 100);
-          }
-          if (tier.discount_amount) {
-            volumeDiscountAmount += tier.discount_amount;
-          }
-          break;
-        }
-      }
-    }
-    } // End volume discount processing
-
-    // Apply coupon discount (check both platform and vendor coupons)
-    let couponDiscountAmount = 0;
+    // STEP 4: Apply vendor coupons after discounts (if provided)
     let couponError = null;
     if (body.coupon_code) {
-      // First check platform-wide coupons
-      const [platformCoupons] = await pool.execute<CouponRow[]>(
-        `SELECT coupon_id, discount_type, discount_value, minimum_order_value, maximum_discount_amount, usage_count, usage_limit_total, usage_limit_per_customer
-         FROM coupon_codes 
-         WHERE coupon_code = ? 
-         AND is_active = TRUE
-         AND (valid_from IS NULL OR valid_from <= NOW())
-         AND (valid_until IS NULL OR valid_until >= NOW())`,
-        [body.coupon_code]
-      );
-
-      // Then check vendor-specific coupons  
+      // Only check vendor-specific coupons (NO platform-wide coupons)
       const [vendorCoupons] = await pool.execute<any[]>(
-        `SELECT vc.coupon_id, vc.vendor_id, vc.discount_type, vc.discount_value, vc.minimum_order_value, vc.maximum_discount_amount, vc.usage_count, vc.usage_limit_total, vc.usage_limit_per_customer
+        `SELECT vc.coupon_id, vc.vendor_id, vc.discount_type, vc.discount_value, vc.minimum_order_value, 
+                vc.maximum_discount_amount, vc.usage_count, vc.usage_limit_total, vc.usage_limit_per_customer,
+                vc.coupon_name, vi.business_name as vendor_name
          FROM vendor_coupons vc
+         JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
          WHERE vc.coupon_code = ? 
          AND vc.is_active = TRUE
          AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())
@@ -355,87 +439,72 @@ export async function POST(req: NextRequest) {
         [body.coupon_code]
       );
 
-      if (platformCoupons.length === 0 && vendorCoupons.length === 0) {
+      if (vendorCoupons.length === 0) {
         couponError = 'Invalid or expired coupon code';
       } else {
-        let applicableCoupon = null;
-        let applicableSubtotal = subtotal;
+        const vendorCoupon = vendorCoupons[0];
+        const couponVendorId = vendorCoupon.vendor_id;
+        
+        // Check if cart has products from this vendor
+        const vendorData = itemsByVendor.get(couponVendorId);
+        if (!vendorData) {
+          couponError = `No products from ${vendorCoupon.vendor_name} in your cart`;
+        } else {
+          // Calculate vendor subtotal after any discounts already applied
+          let vendorSubtotalAfterDiscounts = vendorData.subtotal;
+          const existingVendorDiscount = appliedDiscountsList.find(d => 
+            d.type === 'vendor_discount' && d.vendor_id === couponVendorId
+          );
+          if (existingVendorDiscount) {
+            vendorSubtotalAfterDiscounts -= existingVendorDiscount.amount;
+          }
 
-        // Check platform coupon first
-        if (platformCoupons.length > 0) {
-          applicableCoupon = platformCoupons[0];
-        } 
-        // Check vendor coupon (applies only to that vendor's products)
-        else if (vendorCoupons.length > 0) {
-          const vendorCoupon = vendorCoupons[0];
-          applicableCoupon = vendorCoupon;
-          
-          // Calculate subtotal for only this vendor's products
-          applicableSubtotal = calculatedItems
-            .filter(item => {
-              // Find vendor for this product (need to add vendor lookup)
-              return true; // For now apply to all items - will refine based on cart structure
-            })
-            .reduce((sum, item) => sum + item.item_total, 0);
-        }
-
-        if (applicableCoupon) {
-          // Check usage limits
-          if (applicableCoupon.usage_limit_total && applicableCoupon.usage_count >= applicableCoupon.usage_limit_total) {
+          // Check coupon requirements
+          if (vendorCoupon.usage_limit_total && vendorCoupon.usage_count >= vendorCoupon.usage_limit_total) {
             couponError = 'Coupon usage limit exceeded';
-          } else if (applicableSubtotal < applicableCoupon.minimum_order_value) {
-            couponError = `Minimum order value of $${applicableCoupon.minimum_order_value} required`;
+          } else if (vendorSubtotalAfterDiscounts < vendorCoupon.minimum_order_value) {
+            couponError = `Minimum order value of $${vendorCoupon.minimum_order_value} required for ${vendorCoupon.vendor_name}`;
           } else {
-            switch (applicableCoupon.discount_type) {
+            let couponDiscountAmount = 0;
+            
+            switch (vendorCoupon.discount_type) {
               case 'percentage':
-                couponDiscountAmount = applicableSubtotal * (applicableCoupon.discount_value / 100);
-                if (applicableCoupon.maximum_discount_amount) {
-                  couponDiscountAmount = Math.min(couponDiscountAmount, applicableCoupon.maximum_discount_amount);
+                couponDiscountAmount = vendorSubtotalAfterDiscounts * (vendorCoupon.discount_value / 100);
+                if (vendorCoupon.maximum_discount_amount) {
+                  couponDiscountAmount = Math.min(couponDiscountAmount, vendorCoupon.maximum_discount_amount);
                 }
                 break;
               case 'fixed_amount':
-                couponDiscountAmount = applicableCoupon.discount_value;
+                couponDiscountAmount = Math.min(vendorCoupon.discount_value, vendorSubtotalAfterDiscounts);
                 break;
               case 'free_shipping':
-                // Free shipping logic would be handled separately
+                // Free shipping logic handled separately
+                couponDiscountAmount = 0;
                 break;
+            }
+
+            if (couponDiscountAmount > 0) {
+              totalDiscountAmount += couponDiscountAmount;
+              appliedDiscountsList.push({
+                type: 'vendor_coupon',
+                vendor_id: couponVendorId,
+                vendor_name: vendorCoupon.vendor_name,
+                coupon_id: vendorCoupon.coupon_id,
+                coupon_code: body.coupon_code,
+                name: vendorCoupon.coupon_name,
+                discount_type: vendorCoupon.discount_type,
+                amount: couponDiscountAmount,
+                applied_to: 'vendor_products',
+                vendor_subtotal_before_coupon: vendorSubtotalAfterDiscounts,
+                vendor_subtotal_after_coupon: vendorSubtotalAfterDiscounts - couponDiscountAmount
+              });
             }
           }
         }
       }
     }
 
-    // Apply campaign discount
-    let campaignDiscountAmount = 0;
-    if (body.campaign_code) {
-      const [campaigns] = await pool.execute<CampaignRow[]>(
-        `SELECT * FROM promotional_campaigns 
-         WHERE campaign_code = ? 
-         AND is_active = TRUE
-         AND starts_at <= NOW()
-         AND ends_at >= NOW()`,
-        [body.campaign_code]
-      );
-
-      if (campaigns.length > 0) {
-        const campaign = campaigns[0];
-        if (subtotal >= campaign.minimum_order_value) {
-          switch (campaign.campaign_type) {
-            case 'percentage_off':
-              campaignDiscountAmount = subtotal * (campaign.discount_percent / 100);
-              if (campaign.maximum_discount_amount) {
-                campaignDiscountAmount = Math.min(campaignDiscountAmount, campaign.maximum_discount_amount);
-              }
-              break;
-            case 'fixed_amount_off':
-              campaignDiscountAmount = campaign.discount_amount;
-              break;
-          }
-        }
-      }
-    }
-
-    const totalDiscountAmount = volumeDiscountAmount + couponDiscountAmount + campaignDiscountAmount;
+    // Calculate final totals with vendor-specific discounts
     const discountedSubtotal = Math.max(0, subtotal - totalDiscountAmount);
 
     // Get admin settings for shipping
@@ -450,17 +519,16 @@ export async function POST(req: NextRequest) {
         pricing: {
           items: calculatedItems,
           subtotal,
-          discounts: {
-            volume_discount: volumeDiscountAmount,
-            coupon_discount: couponDiscountAmount,
-            campaign_discount: campaignDiscountAmount,
-            total_discount: totalDiscountAmount
-          },
+          vendor_discounts: appliedDiscountsList.filter(d => d.type === 'vendor_discount'),
+          vendor_coupons: appliedDiscountsList.filter(d => d.type === 'vendor_coupon'),
+          total_discount_amount: totalDiscountAmount,
+          applied_discounts_list: appliedDiscountsList,
           discounted_subtotal: discountedSubtotal,
           minimum_order_required: minimumOrderAmount,
           shipping: 0,
           tax: 0,
-          total: 0
+          total: 0,
+          vendors_in_cart: Array.from(itemsByVendor.keys()).length
         }
       }, { status: 400 });
     }
@@ -470,24 +538,16 @@ export async function POST(req: NextRequest) {
     const isFreeShipping = discountedSubtotal >= freeShippingThreshold;
     
     if (!isFreeShipping) {
-      // Basic shipping calculation - could be enhanced with shipping rates API
+      // Calculate shipping cost - enhanced with vendor-specific shipping rules
       shippingCost = 9.99;
       
-      // Check for free shipping coupon
-      if (body.coupon_code) {
-        const [shippingCoupons] = await pool.execute<CouponRow[]>(
-          `SELECT * FROM coupon_codes 
-           WHERE coupon_code = ? 
-           AND discount_type = 'free_shipping'
-           AND is_active = TRUE
-           AND (valid_from IS NULL OR valid_from <= NOW())
-           AND (valid_until IS NULL OR valid_until >= NOW())`,
-          [body.coupon_code]
-        );
-        
-        if (shippingCoupons.length > 0) {
-          shippingCost = 0;
-        }
+      // Check if any applied vendor coupons provide free shipping
+      const freeShippingCoupon = appliedDiscountsList.find(
+        discount => discount.type === 'vendor_coupon' && discount.discount_type === 'free_shipping'
+      );
+      
+      if (freeShippingCoupon) {
+        shippingCost = 0;
       }
     }
 
@@ -504,12 +564,10 @@ export async function POST(req: NextRequest) {
       pricing: {
         items: calculatedItems,
         subtotal,
-        discounts: {
-          volume_discount: volumeDiscountAmount,
-          coupon_discount: couponDiscountAmount,
-          campaign_discount: campaignDiscountAmount,
-          total_discount: totalDiscountAmount
-        },
+        vendor_discounts: appliedDiscountsList.filter(d => d.type === 'vendor_discount'),
+        vendor_coupons: appliedDiscountsList.filter(d => d.type === 'vendor_coupon'),
+        total_discount_amount: totalDiscountAmount,
+        applied_discounts_list: appliedDiscountsList,
         discounted_subtotal: discountedSubtotal,
         shipping: shippingCost,
         is_free_shipping: isFreeShipping,
@@ -520,9 +578,9 @@ export async function POST(req: NextRequest) {
         tax_jurisdiction: taxCalculation?.tax_jurisdiction,
         zip_code: taxCalculation?.zip_code,
         total: finalTotal,
+        vendors_in_cart: Array.from(itemsByVendor.keys()).length,
         applied_promotions: {
-          ...(body.coupon_code && !couponError && { coupon_code: body.coupon_code }),
-          ...(body.campaign_code && campaignDiscountAmount > 0 && { campaign_code: body.campaign_code })
+          ...(body.coupon_code && !couponError && { coupon_code: body.coupon_code })
         }
       },
       ...(couponError && { coupon_error: couponError })

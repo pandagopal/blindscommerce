@@ -16,13 +16,18 @@ const ORDER_STATUSES = [
 ];
 
 interface Order {
-  orderId: number;
-  orderNumber: string;
-  customerName: string;
-  customerEmail: string;
-  orderDate: string;
+  order_id: number;
+  user_id: number;
   status: string;
-  total: number;
+  total_amount: number;
+  vendor_items_total: number;
+  vendor_items_count: number;
+  created_at: string;
+  updated_at: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
 }
 
 export default function VendorOrdersPage() {
@@ -125,25 +130,50 @@ export default function VendorOrdersPage() {
                   <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">My Items Total</th>
+                  <th className="px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Full Order Total</th>
                   <th className="px-6 py-3 border-b border-gray-200 bg-gray-50"></th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((order) => (
-                  <tr key={order.orderId}>
-                    <td className="px-6 py-4 border-b border-gray-200">{order.orderNumber}</td>
-                    <td className="px-6 py-4 border-b border-gray-200">{order.customerName}</td>
-                    <td className="px-6 py-4 border-b border-gray-200">{order.customerEmail}</td>
-                    <td className="px-6 py-4 border-b border-gray-200">{new Date(order.orderDate).toLocaleString()}</td>
-                    <td className="px-6 py-4 border-b border-gray-200">{order.status}</td>
-                    <td className="px-6 py-4 border-b border-gray-200">${order.total.toFixed(2)}</td>
+                  <tr key={order.order_id}>
+                    <td className="px-6 py-4 border-b border-gray-200">#{order.order_id}</td>
+                    <td className="px-6 py-4 border-b border-gray-200">
+                      {order.first_name} {order.last_name}
+                    </td>
+                    <td className="px-6 py-4 border-b border-gray-200">{order.email}</td>
+                    <td className="px-6 py-4 border-b border-gray-200">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 border-b border-gray-200">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                        order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                        order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {order.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 border-b border-gray-200">
+                      <span className="font-medium text-green-600">
+                        ${order.vendor_items_total.toFixed(2)}
+                      </span>
+                      <div className="text-xs text-gray-500">
+                        ({order.vendor_items_count} items)
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 border-b border-gray-200 text-gray-600">
+                      ${order.total_amount.toFixed(2)}
+                    </td>
                     <td className="px-6 py-4 border-b border-gray-200">
                       <button
                         className="text-blue-600 hover:underline"
-                        onClick={() => router.push(`/vendor/orders/${order.orderId}`)}
+                        onClick={() => router.push(`/vendor/orders/${order.order_id}`)}
                       >
-                        View
+                        View Details
                       </button>
                     </td>
                   </tr>

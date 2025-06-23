@@ -8,6 +8,7 @@ import {
   validateDiscountData, 
   stringifyJsonSafely 
 } from '@/lib/utils/vendorDiscountHelpers';
+import { discountsCache, CacheKeys, CacheInvalidation } from '@/lib/cache';
 
 interface VendorDiscount extends RowDataPacket {
   discount_id: number;
@@ -63,6 +64,20 @@ export async function GET(request: NextRequest) {
     const vendorValidation = await validateVendorAccess(user.userId);
     if (!vendorValidation.isValid || !vendorValidation.vendorId) {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 403 });
+    }
+
+    // Try to get cached data first (only for simple queries without filters)
+    const cacheKey = CacheKeys.vendor.discounts(vendorValidation.vendorId);
+    const shouldCache = !search && !status && !type && page === 1 && limit === 10 && sortBy === 'created_at' && sortOrder === 'DESC';
+    
+    if (shouldCache) {
+      const cachedDiscounts = discountsCache.get(cacheKey);
+      if (cachedDiscounts) {
+        return NextResponse.json({
+          ...cachedDiscounts,
+          cached: true
+        });
+      }
     }
 
     const pool = await getPool();
@@ -125,7 +140,7 @@ export async function GET(request: NextRequest) {
     // Parse JSON fields safely
     const formattedDiscounts = discounts.map(discount => parseVendorDiscount(discount));
 
-    return NextResponse.json({
+    const responseData = {
       discounts: formattedDiscounts,
       pagination: {
         page,
@@ -133,6 +148,16 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
+    };
+
+    // Cache only simple queries
+    if (shouldCache) {
+      discountsCache.set(cacheKey, responseData);
+    }
+
+    return NextResponse.json({
+      ...responseData,
+      cached: false
     });
 
   } catch (error: any) {
@@ -255,6 +280,9 @@ export async function POST(request: NextRequest) {
     ];
 
     const [result] = await pool.execute<any>(insertQuery, insertParams);
+
+    // Invalidate vendor discount cache
+    CacheInvalidation.vendor(vendorValidation.vendorId);
 
     return NextResponse.json({
       message: 'Discount created successfully',

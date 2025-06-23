@@ -3,6 +3,7 @@ import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
+import { CacheInvalidation } from '@/lib/cache';
 
 // GET - Get specific vendor discount
 export async function GET(
@@ -255,6 +256,9 @@ export async function PUT(
 
     await pool.execute(updateQuery, updateParams);
 
+    // Invalidate vendor discount cache
+    CacheInvalidation.vendor(vendorValidation.vendorId);
+
     return NextResponse.json({ message: 'Discount updated successfully' });
 
   } catch (error) {
@@ -309,6 +313,9 @@ export async function DELETE(
     if (result.affectedRows === 0) {
       return NextResponse.json({ error: 'Discount not found' }, { status: 404 });
     }
+
+    // Invalidate vendor discount cache
+    CacheInvalidation.vendor(vendorValidation.vendorId);
 
     return NextResponse.json({ message: 'Discount deleted successfully' });
 

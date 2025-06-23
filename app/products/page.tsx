@@ -72,9 +72,8 @@ export async function generateMetadata({
   };
 }
 
-// Enable dynamic rendering for API fetching
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+// Enable caching for better performance
+export const revalidate = 600; // 10 minutes
 
 // Dynamic metadata will be generated in generateMetadata function
 
@@ -168,7 +167,7 @@ export default async function ProductsPage({
     if (featureIds.length > 0) apiUrl.searchParams.set('features', featureIds.join(','));
 
     const response = await fetch(apiUrl.toString(), {
-      cache: 'no-store', // Ensure fresh data on each request
+      next: { revalidate: 600 }, // 10 minutes cache for products
     });
 
     if (response.ok) {

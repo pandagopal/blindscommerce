@@ -100,7 +100,8 @@ export default function VendorOrderDetailsPage() {
         {statusError && <div className="text-red-600 text-sm mt-1">{statusError}</div>}
         <div>Customer: {order.customer_name || order.customerName}</div>
         <div>Email: {order.customer_email || order.customerEmail}</div>
-        <div>Total: <span className="font-semibold">${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</span></div>
+        <div>My Items Total: <span className="font-semibold text-green-600">${order.vendor_items_total?.toFixed(2)}</span></div>
+        <div>Full Order Total: <span className="font-semibold">${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</span></div>
       </div>
       <h2 className="text-lg font-semibold mb-2">Order Items</h2>
       <div className="overflow-x-auto mb-6">
@@ -136,7 +137,14 @@ export default function VendorOrderDetailsPage() {
       <div className="mb-6 text-gray-700">
         {order.shipping_address || 'N/A'}
       </div>
-      <div className="font-bold text-right">Order Total: ${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</div>
+      <div className="flex justify-between items-center font-bold text-right">
+        <span>My Items Total:</span>
+        <span className="text-green-600">${order.vendor_items_total?.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between items-center text-gray-600 text-sm">
+        <span>Full Order Total:</span>
+        <span>${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</span>
+      </div>
     </div>
   );
 } 

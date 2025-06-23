@@ -8,6 +8,7 @@ import {
   validateCouponData, 
   stringifyJsonSafely 
 } from '@/lib/utils/vendorDiscountHelpers';
+import { discountsCache, CacheKeys, CacheInvalidation } from '@/lib/cache';
 
 interface VendorCoupon extends RowDataPacket {
   coupon_id: number;
@@ -70,6 +71,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 403 });
     }
 
+    // Try to get cached data first (only for simple queries without filters)
+    const cacheKey = CacheKeys.vendor.coupons(vendorValidation.vendorId);
+    const shouldCache = !search && !status && !type && page === 1 && limit === 10 && sortBy === 'created_at' && sortOrder === 'DESC';
+    
+    if (shouldCache) {
+      const cachedCoupons = discountsCache.get(cacheKey);
+      if (cachedCoupons) {
+        return NextResponse.json({
+          ...cachedCoupons,
+          cached: true
+        });
+      }
+    }
+
     const pool = await getPool();
     const offset = Math.max(0, (page - 1) * limit);
 
@@ -130,7 +145,7 @@ export async function GET(request: NextRequest) {
     // Parse JSON fields safely
     const formattedCoupons = coupons.map(coupon => parseVendorCoupon(coupon));
 
-    return NextResponse.json({
+    const responseData = {
       coupons: formattedCoupons,
       pagination: {
         page,
@@ -138,6 +153,16 @@ export async function GET(request: NextRequest) {
         total,
         totalPages: Math.ceil(total / limit)
       }
+    };
+
+    // Cache only simple queries
+    if (shouldCache) {
+      discountsCache.set(cacheKey, responseData);
+    }
+
+    return NextResponse.json({
+      ...responseData,
+      cached: false
     });
 
   } catch (error) {
@@ -276,6 +301,9 @@ export async function POST(request: NextRequest) {
     ];
 
     const [result] = await pool.execute<any>(insertQuery, insertParams);
+
+    // Invalidate vendor coupon cache
+    CacheInvalidation.vendor(vendorValidation.vendorId);
 
     return NextResponse.json({
       message: 'Coupon created successfully',

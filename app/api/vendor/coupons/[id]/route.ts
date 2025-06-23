@@ -3,6 +3,7 @@ import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
+import { CacheInvalidation } from '@/lib/cache';
 
 // GET - Get specific vendor coupon
 export async function GET(
@@ -254,6 +255,9 @@ export async function PUT(
     updateParams.push(couponId, vendorValidation.vendorId);
 
     await pool.execute(updateQuery, updateParams);
+
+    // Invalidate vendor coupon cache
+    CacheInvalidation.vendor(vendorValidation.vendorId);
 
     return NextResponse.json({ message: 'Coupon updated successfully' });
 
