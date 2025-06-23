@@ -259,13 +259,13 @@ export async function POST(req: NextRequest) {
     let totalDiscountAmount = 0;
 
     // STEP 1: Get vendor mapping for all products in cart
-    const productIds = calculatedItems.map(item => item.product_id);
+    const calculatedProductIds = calculatedItems.map(item => item.product_id);
     const [vendorMappings] = await pool.execute<any[]>(
       `SELECT vp.product_id, vp.vendor_id, vi.business_name as vendor_name
        FROM vendor_products vp
        JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
-       WHERE vp.product_id IN (${productIds.map(() => '?').join(',')})`,
-      productIds
+       WHERE vp.product_id IN (${calculatedProductIds.map(() => '?').join(',')})`,
+      calculatedProductIds
     );
 
     // Create vendor mapping lookup

@@ -68,7 +68,6 @@ interface VendorCoupon {
 export default function VendorDiscountsPage() {
   const [discounts, setDiscounts] = useState<VendorDiscount[]>([]);
   const [coupons, setCoupons] = useState<VendorCoupon[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
