@@ -14,12 +14,6 @@ interface ProductExportRow extends RowDataPacket {
   base_price: number;
   sale_price: number | null;
   cost_price: number | null;
-  weight: number;
-  width: number;
-  height: number;
-  depth: number;
-  material: string;
-  color: string;
   finish: string;
   is_active: number;
   is_featured: number;
@@ -99,16 +93,10 @@ export async function GET(request: NextRequest) {
       p.product_id,
       p.name,
       p.sku,
-      p.description,
+      p.full_description as description,
       p.short_description,
       COALESCE(c.name, '') as category_name,
       COALESCE(vi.business_name, '') as brand_name,
-      p.weight,
-      p.width,
-      p.height,
-      p.depth,
-      p.material,
-      p.color,
       p.finish,
       p.is_active,
       p.is_featured,
@@ -177,12 +165,6 @@ export async function GET(request: NextRequest) {
       'category_name',
       'brand_name',
       ...(includePricing ? ['base_price', 'sale_price', 'cost_price'] : []),
-      'weight',
-      'width',
-      'height',
-      'depth',
-      'material',
-      'color',
       'finish',
       'is_active',
       'is_featured',
@@ -222,12 +204,6 @@ export async function GET(request: NextRequest) {
           product.sale_price || '',
           product.cost_price || ''
         ] : []),
-        product.weight || 0,
-        product.width || 0,
-        product.height || 0,
-        product.depth || 0,
-        escapeCsvValue(product.material || ''),
-        escapeCsvValue(product.color || ''),
         escapeCsvValue(product.finish || ''),
         product.is_active ? 'TRUE' : 'FALSE',
         product.is_featured ? 'TRUE' : 'FALSE',

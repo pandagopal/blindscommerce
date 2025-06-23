@@ -42,18 +42,20 @@ export async function GET(request: NextRequest) {
     const [productStats] = await pool.execute<StatsRow[]>(
       `SELECT 
         COUNT(*) as total_products,
-        SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) as active_products,
-        SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) as inactive_products
-      FROM products 
-      WHERE vendor_id = ?`,
+        SUM(CASE WHEN p.is_active = 1 THEN 1 ELSE 0 END) as active_products,
+        SUM(CASE WHEN p.is_active = 0 THEN 1 ELSE 0 END) as inactive_products
+      FROM vendor_products vp
+      JOIN products p ON vp.product_id = p.product_id 
+      WHERE vp.vendor_id = ?`,
       [vendorId]
     );
 
     // Get category count
     const [categoryStats] = await pool.execute<RowDataPacket[]>(
-      `SELECT COUNT(DISTINCT category_id) as total_categories
-      FROM products 
-      WHERE vendor_id = ? AND category_id IS NOT NULL`,
+      `SELECT COUNT(DISTINCT p.category_id) as total_categories
+      FROM vendor_products vp
+      JOIN products p ON vp.product_id = p.product_id 
+      WHERE vp.vendor_id = ? AND p.category_id IS NOT NULL`,
       [vendorId]
     );
 

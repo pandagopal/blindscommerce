@@ -229,56 +229,107 @@ async function processCSVImport(jobId: string, vendorId: number, headers: string
           .replace(/-+/g, '-')
           .trim('-');
 
-        // Check if product exists (by SKU)
+        // Check if product exists (by SKU) in vendor_products table
         const [existingProducts] = await pool.execute(
-          'SELECT product_id FROM products WHERE sku = ? AND vendor_id = ?',
+          `SELECT p.product_id FROM products p 
+           JOIN vendor_products vp ON p.product_id = vp.product_id 
+           WHERE p.sku = ? AND vp.vendor_id = ?`,
           [rowData.sku, vendorId]
         );
 
+        let productId;
+
         if (Array.isArray(existingProducts) && existingProducts.length > 0) {
           // Update existing product
-          const productId = (existingProducts[0] as any).product_id;
+          productId = (existingProducts[0] as any).product_id;
           
           await pool.execute(
             `UPDATE products SET 
-             name = ?, slug = ?, description = ?, short_description = ?,
-             category_id = ?, base_price = ?, sale_price = ?,
-             weight = ?, width = ?, height = ?, depth = ?, material = ?, color = ?,
-             is_active = ?, is_featured = ?, meta_title = ?, meta_description = ?,
-             updated_at = NOW()
+             name = ?, slug = ?, full_description = ?, short_description = ?,
+             category_id = ?, base_price = ?, 
+             finish = ?, tags = ?, room_types = ?, mount_types = ?, control_types = ?,
+             light_filtering = ?, energy_efficiency = ?, child_safety_certified = ?,
+             warranty_years = ?, custom_width_min = ?, custom_width_max = ?,
+             custom_height_min = ?, custom_height_max = ?, notes = ?,
+             is_active = ?, is_featured = ?, updated_at = NOW()
              WHERE product_id = ?`,
             [
               rowData.name, slug, rowData.description, rowData.short_description,
               categoryId, parseFloat(rowData.base_price) || 0,
-              rowData.sale_price ? parseFloat(rowData.sale_price) : null,
-              parseFloat(rowData.weight) || 0, parseFloat(rowData.width) || 0,
-              parseFloat(rowData.height) || 0, parseFloat(rowData.depth) || 0,
-              rowData.material, rowData.color,
+              rowData.finish, rowData.tags, rowData.room_types, rowData.mount_types, rowData.control_types,
+              rowData.light_filtering, rowData.energy_efficiency, 
+              rowData.child_safety_certified?.toLowerCase() === 'true' ? 1 : 0,
+              parseInt(rowData.warranty_years) || 1,
+              parseFloat(rowData.custom_width_min) || null,
+              parseFloat(rowData.custom_width_max) || null,
+              parseFloat(rowData.custom_height_min) || null,
+              parseFloat(rowData.custom_height_max) || null,
+              rowData.notes,
               rowData.is_active?.toLowerCase() === 'true' ? 1 : 0,
               rowData.is_featured?.toLowerCase() === 'true' ? 1 : 0,
-              rowData.meta_title, rowData.meta_description,
               productId
+            ]
+          );
+
+          // Update vendor_products table
+          await pool.execute(
+            `UPDATE vendor_products SET 
+             vendor_price = ?, cost_price = ?, quantity_available = ?, 
+             low_stock_threshold = ?, allow_backorder = ?, updated_at = NOW()
+             WHERE vendor_id = ? AND product_id = ?`,
+            [
+              parseFloat(rowData.base_price) || 0,
+              rowData.cost_price ? parseFloat(rowData.cost_price) : null,
+              parseInt(rowData.stock_quantity) || 0,
+              parseInt(rowData.low_stock_threshold) || 0,
+              rowData.allow_backorder?.toLowerCase() === 'true' ? 1 : 0,
+              vendorId, productId
             ]
           );
         } else {
           // Create new product
-          await pool.execute(
+          const [productResult] = await pool.execute<ResultSetHeader>(
             `INSERT INTO products 
-             (vendor_id, name, slug, sku, description, short_description, category_id,
-              base_price, sale_price, weight, width, height, depth, material, color,
-              is_active, is_featured, meta_title, meta_description, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+             (name, slug, sku, full_description, short_description, category_id,
+              base_price, finish, tags, room_types, mount_types, control_types,
+              light_filtering, energy_efficiency, child_safety_certified, warranty_years,
+              custom_width_min, custom_width_max, custom_height_min, custom_height_max,
+              notes, is_active, is_featured, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
             [
-              vendorId, rowData.name, slug, rowData.sku, rowData.description, 
+              rowData.name, slug, rowData.sku, rowData.description, 
               rowData.short_description, categoryId,
               parseFloat(rowData.base_price) || 0,
-              rowData.sale_price ? parseFloat(rowData.sale_price) : null,
-              parseFloat(rowData.weight) || 0, parseFloat(rowData.width) || 0,
-              parseFloat(rowData.height) || 0, parseFloat(rowData.depth) || 0,
-              rowData.material, rowData.color,
+              rowData.finish, rowData.tags, rowData.room_types, rowData.mount_types, rowData.control_types,
+              rowData.light_filtering, rowData.energy_efficiency,
+              rowData.child_safety_certified?.toLowerCase() === 'true' ? 1 : 0,
+              parseInt(rowData.warranty_years) || 1,
+              parseFloat(rowData.custom_width_min) || null,
+              parseFloat(rowData.custom_width_max) || null,
+              parseFloat(rowData.custom_height_min) || null,
+              parseFloat(rowData.custom_height_max) || null,
+              rowData.notes,
               rowData.is_active?.toLowerCase() === 'true' ? 1 : 0,
-              rowData.is_featured?.toLowerCase() === 'true' ? 1 : 0,
-              rowData.meta_title, rowData.meta_description
+              rowData.is_featured?.toLowerCase() === 'true' ? 1 : 0
+            ]
+          );
+
+          productId = productResult.insertId;
+
+          // Create vendor_products relationship
+          await pool.execute(
+            `INSERT INTO vendor_products 
+             (vendor_id, product_id, vendor_price, cost_price, quantity_available,
+              low_stock_threshold, allow_backorder, is_active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            [
+              vendorId, productId,
+              parseFloat(rowData.base_price) || 0,
+              rowData.cost_price ? parseFloat(rowData.cost_price) : null,
+              parseInt(rowData.stock_quantity) || 0,
+              parseInt(rowData.low_stock_threshold) || 0,
+              rowData.allow_backorder?.toLowerCase() === 'true' ? 1 : 0,
+              rowData.is_active?.toLowerCase() === 'true' ? 1 : 0
             ]
           );
         }

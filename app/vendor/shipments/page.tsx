@@ -66,89 +66,18 @@ export default function VendorShipmentsPage() {
 
   // Lazy load shipments data only when this route is active
   const fetchShipmentsData = async () => {
-    // TODO: Replace with actual API call
-    // For now, using mock data
-    const mockShipments: Shipment[] = [
-        {
-          id: 'SHIP-001',
-          order_id: 'ORD-12345',
-          customer_name: 'Sarah Johnson',
-          shipping_address: '123 Maple St, Austin, TX 78701',
-          tracking_number: '1Z999AA1234567890',
-          carrier: 'ups',
-          status: 'in_transit',
-          created_date: '2023-10-20',
-          shipped_date: '2023-10-21',
-          estimated_delivery: '2023-10-25',
-          items: [
-            { id: 'item-1', product_name: 'Premium Wood Blinds', quantity: 4, sku: 'PWB-001' },
-            { id: 'item-2', product_name: 'Mounting Hardware', quantity: 1, sku: 'MH-001' }
-          ],
-          weight: 25.5,
-          dimensions: '48" x 12" x 6"',
-          shipping_cost: 45.99,
-          notes: 'Fragile items - handle with care'
-        },
-        {
-          id: 'SHIP-002',
-          order_id: 'ORD-12346',
-          customer_name: 'Mike Wilson',
-          shipping_address: '456 Oak Ave, Dallas, TX 75201',
-          tracking_number: '9400111206213000123456',
-          carrier: 'usps',
-          status: 'delivered',
-          created_date: '2023-10-18',
-          shipped_date: '2023-10-19',
-          estimated_delivery: '2023-10-23',
-          actual_delivery: '2023-10-22',
-          items: [
-            { id: 'item-3', product_name: 'Cellular Shades', quantity: 6, sku: 'CS-001' }
-          ],
-          weight: 18.2,
-          dimensions: '36" x 8" x 4"',
-          shipping_cost: 32.50
-        },
-        {
-          id: 'SHIP-003',
-          order_id: 'ORD-12347',
-          customer_name: 'Lisa Chen',
-          shipping_address: '789 Pine Rd, Houston, TX 77001',
-          tracking_number: '785412345678',
-          carrier: 'fedex',
-          status: 'pending',
-          created_date: '2023-10-25',
-          estimated_delivery: '2023-10-30',
-          items: [
-            { id: 'item-4', product_name: 'Roller Shades', quantity: 3, sku: 'RS-001' },
-            { id: 'item-5', product_name: 'Cord Replacement Kit', quantity: 2, sku: 'CRK-001' }
-          ],
-          weight: 12.8,
-          dimensions: '24" x 6" x 3"',
-          shipping_cost: 28.75,
-          notes: 'Customer requested expedited shipping'
-        },
-        {
-          id: 'SHIP-004',
-          order_id: 'ORD-12348',
-          customer_name: 'David Thompson',
-          shipping_address: '321 Elm St, San Antonio, TX 78201',
-          tracking_number: '4201234567890',
-          carrier: 'dhl',
-          status: 'out_for_delivery',
-          created_date: '2023-10-22',
-          shipped_date: '2023-10-23',
-          estimated_delivery: '2023-10-25',
-          items: [
-            { id: 'item-6', product_name: 'Plantation Shutters', quantity: 8, sku: 'PS-001' }
-          ],
-          weight: 45.3,
-          dimensions: '60" x 18" x 8"',
-          shipping_cost: 85.00
-        }
-      ];
-      
-      return { shipments: mockShipments };
-    };
+    try {
+      const response = await fetch('/api/vendor/shipments');
+      if (!response.ok) {
+        throw new Error('Failed to fetch shipments');
+      }
+      const data = await response.json();
+      return { shipments: data.shipments || [] };
+    } catch (error) {
+      console.error('Error fetching shipments:', error);
+      return { shipments: [] };
+    }
+  };
 
   const { 
     data: fetchedData, 
@@ -168,7 +97,16 @@ export default function VendorShipmentsPage() {
 
   const updateShipmentStatus = async (shipmentId: string, status: Shipment['status']) => {
     try {
-      // Mock API call
+      const response = await fetch(`/api/vendor/shipments/${shipmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update shipment status');
+      }
+      
       refetch(); // Refresh data
     } catch (error) {
       console.error('Error updating shipment status:', error);

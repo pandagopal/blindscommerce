@@ -79,52 +79,17 @@ export default function InstallerReportsPage() {
   const fetchReportData = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockData: ReportData = {
-        performance: {
-          total_jobs: 45,
-          completed_jobs: 42,
-          avg_rating: 4.7,
-          avg_completion_time: 165,
-          on_time_percentage: 94,
-          repeat_customers: 12
-        },
-        revenue: {
-          total_revenue: 28450.75,
-          avg_job_value: 677.18,
-          monthly_revenue: [18500, 22300, 25800, 28450],
-          revenue_by_type: {
-            installation: 22560.75,
-            repair: 3890.00,
-            measurement: 2000.00
-          }
-        },
-        productivity: {
-          jobs_per_day: 2.3,
-          utilization_rate: 87,
-          travel_time_percentage: 15,
-          most_productive_day: 'Tuesday'
-        },
-        customer_satisfaction: {
-          avg_rating: 4.7,
-          rating_distribution: {
-            5: 28,
-            4: 12,
-            3: 2,
-            2: 0,
-            1: 0
-          },
-          feedback_summary: [
-            'Excellent installation quality',
-            'Professional and courteous',
-            'On-time arrival',
-            'Clean work area'
-          ]
-        }
-      };
-      setReportData(mockData);
+      const response = await fetch(`/api/installer/reports?startDate=${dateRange.start}&endDate=${dateRange.end}`);
+      if (response.ok) {
+        const data = await response.json();
+        setReportData(data);
+      } else {
+        console.error('Failed to fetch report data');
+        setReportData(null);
+      }
     } catch (error) {
       console.error('Error fetching report data:', error);
+      setReportData(null);
     } finally {
       setLoading(false);
     }

@@ -107,113 +107,25 @@ export default function SalesOrdersPage() {
       const res = await fetch('/api/sales/orders');
       if (res.ok) {
         const data = await res.json();
-        setOrders(data.orders);
-        setStats(data.stats);
+        setOrders(data.orders || []);
+        setStats(data.stats || {
+          total_orders: 0,
+          pending_orders: 0,
+          monthly_revenue: 0,
+          commission_earned: 0,
+          avg_order_value: 0,
+          conversion_rate: 0
+        });
       } else {
-        // Mock data for demonstration
-        const mockOrders: SalesOrder[] = [
-          {
-            id: 'SO-001',
-            customer_name: 'Sarah Johnson',
-            customer_email: 'sarah.johnson@email.com',
-            customer_phone: '+1-555-0123',
-            status: 'confirmed',
-            priority: 'high',
-            total_amount: 2485.99,
-            commission_amount: 372.90,
-            commission_rate: 15.0,
-            items: [
-              {
-                id: 'ITEM-001',
-                product_name: 'Premium Wood Blinds',
-                quantity: 4,
-                unit_price: 399.99,
-                total_price: 1599.96,
-                sku: 'PWB-001',
-                customizations: 'Custom color: Mahogany'
-              },
-              {
-                id: 'ITEM-002',
-                product_name: 'Plantation Shutters',
-                quantity: 2,
-                unit_price: 443.02,
-                total_price: 886.03,
-                sku: 'PS-001'
-              }
-            ],
-            shipping_address: '123 Maple St, Austin, TX 78701',
-            order_date: '2023-10-20',
-            expected_delivery: '2023-11-15',
-            sales_rep: 'Mike Wilson',
-            vendor: 'Premium Window Solutions',
-            notes: 'Customer prefers afternoon delivery. Installation scheduled.',
-            tracking_number: 'TRK-789456123'
-          },
-          {
-            id: 'SO-002',
-            customer_name: 'David Thompson',
-            customer_email: 'david.t@company.com',
-            customer_phone: '+1-555-0456',
-            status: 'processing',
-            priority: 'medium',
-            total_amount: 1845.50,
-            commission_amount: 276.83,
-            commission_rate: 15.0,
-            items: [
-              {
-                id: 'ITEM-003',
-                product_name: 'Cellular Shades',
-                quantity: 6,
-                unit_price: 307.58,
-                total_price: 1845.50,
-                sku: 'CS-001',
-                customizations: 'Energy efficient option'
-              }
-            ],
-            shipping_address: '456 Oak Ave, Dallas, TX 75201',
-            order_date: '2023-10-18',
-            expected_delivery: '2023-11-10',
-            sales_rep: 'Lisa Chen',
-            vendor: 'Eco Blinds Co',
-            notes: 'Commercial order. Requires special handling.'
-          },
-          {
-            id: 'SO-003',
-            customer_name: 'Jennifer Martinez',
-            customer_email: 'jmartinez@email.com',
-            customer_phone: '+1-555-0789',
-            status: 'pending',
-            priority: 'urgent',
-            total_amount: 945.99,
-            commission_amount: 141.90,
-            commission_rate: 15.0,
-            items: [
-              {
-                id: 'ITEM-004',
-                product_name: 'Roller Shades',
-                quantity: 3,
-                unit_price: 315.33,
-                total_price: 945.99,
-                sku: 'RS-001'
-              }
-            ],
-            shipping_address: '789 Pine Rd, Houston, TX 77001',
-            order_date: '2023-10-22',
-            expected_delivery: '2023-11-05',
-            sales_rep: 'Mike Wilson',
-            vendor: 'Modern Shades Inc',
-            notes: 'Rush order. Customer needs by next week.'
-          }
-        ];
-
-        setOrders(mockOrders);
+        console.error('Failed to fetch orders');
+        setOrders([]);
         setStats({
-          total_orders: 245,
-          pending_orders: 18,
-          monthly_revenue: 125000,
-          commission_earned: 18750,
-          avg_order_value: 1650,
-          conversion_rate: 22.5
+          total_orders: 0,
+          pending_orders: 0,
+          monthly_revenue: 0,
+          commission_earned: 0,
+          avg_order_value: 0,
+          conversion_rate: 0
         });
       }
     } catch (error) {

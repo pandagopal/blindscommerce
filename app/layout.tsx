@@ -12,8 +12,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { defaultMetadata } from './config';
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
-//import LiveChat from "./components/chat/LiveChat";
-//import LiveChat from "@/components/chat/LiveChat";
+import LiveChat from "@/app/components/chat/LiveChat";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -45,7 +44,7 @@ export default function RootLayout({
                   <Navbar />
                   <main className="flex-1">{children}</main>
                   <Footer />
-                 {/* <LiveChat /> */}
+                  <LiveChat />
                 </div>
                 <Toaster richColors />
               </RecentlyViewedProvider>

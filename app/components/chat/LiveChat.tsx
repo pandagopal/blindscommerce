@@ -1,10 +1,11 @@
+'use client';
+
 import React, { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 import { MessageCircle, Send, X, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useSocket } from '@/lib/hooks/useSocket';
 
 interface Message {
   id: string;
@@ -16,46 +17,43 @@ interface Message {
 }
 
 export default function LiveChat() {
-  const { data: session } = useSession();
+  const { user, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const socket = useSocket();
 
   useEffect(() => {
-    if (!socket) return;
-
-    socket.on('connect', () => {
+    if (isAuthenticated && user) {
       setIsConnected(true);
-      // Join chat room with user ID
-      if (session?.user?.id) {
-        socket.emit('join_chat', { userId: session.user.id });
+      loadMessages();
+    }
+  }, [isAuthenticated, user]);
+
+  const loadMessages = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`/api/chat?sessionId=${sessionId || ''}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.message_id.toString(),
+          content: msg.message,
+          sender: msg.is_agent ? 'agent' : 'user',
+          timestamp: new Date(msg.sent_at),
+          agentName: msg.is_agent ? `${msg.first_name} ${msg.last_name}`.trim() : undefined
+        }));
+        setMessages(formattedMessages.reverse()); // API returns newest first, we want oldest first
       }
-    });
-
-    socket.on('disconnect', () => {
-      setIsConnected(false);
-    });
-
-    socket.on('message', (message: Message) => {
-      setMessages(prev => [...prev, message]);
-    });
-
-    socket.on('agent_typing', (isTyping: boolean) => {
-      setIsTyping(isTyping);
-    });
-
-    return () => {
-      socket.off('connect');
-      socket.off('disconnect');
-      socket.off('message');
-      socket.off('agent_typing');
-    };
-  }, [socket, session]);
+    } catch (error) {
+      console.error('Error loading messages:', error);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -67,7 +65,7 @@ export default function LiveChat() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !socket || !session?.user?.id) return;
+    if (!newMessage.trim() || !user) return;
 
     const message: Message = {
       id: Date.now().toString(),
@@ -76,26 +74,49 @@ export default function LiveChat() {
       timestamp: new Date(),
     };
 
-    socket.emit('send_message', {
-      userId: session.user.id,
-      message,
-    });
-
+    // Optimistically add message to UI
     setMessages(prev => [...prev, message]);
     setNewMessage('');
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: newMessage,
+          sessionId: sessionId
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update sessionId if this was the first message
+        if (!sessionId && data.sessionId) {
+          setSessionId(data.sessionId);
+        }
+        // Reload messages to get the actual server data
+        loadMessages();
+      } else {
+        // Remove optimistic message on error
+        setMessages(prev => prev.filter(msg => msg.id !== message.id));
+        console.error('Failed to send message');
+      }
+    } catch (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== message.id));
+      console.error('Error sending message:', error);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
-    if (socket && session?.user?.id) {
-      socket.emit('user_typing', {
-        userId: session.user.id,
-        isTyping: e.target.value.length > 0,
-      });
-    }
+    // Note: Real-time typing indicators would need WebSocket/Server-Sent Events
+    // For now, we'll skip the typing indicator functionality
   };
 
-  if (!session) return null;
+  if (!isAuthenticated || !user) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -194,7 +215,4 @@ export default function LiveChat() {
       )}
     </div>
   );
-}
-
-export const LiveChat = LiveChat;
-export default LiveChat; 
+} 

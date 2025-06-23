@@ -140,95 +140,35 @@ export default function SalesDashboard() {
   }, [router]);
 
   useEffect(() => {
-    // In a real app, this would fetch data from an API
     const fetchDashboardData = async () => {
       try {
-        // Mock leads data
-        const mockLeads = [
-          {
-            id: 1,
-            name: 'John Davis',
-            email: 'john@example.com',
-            phone: '(555) 123-4567',
-            status: 'new' as const,
-            date: '2023-10-18',
-            source: 'Website'
-          },
-          {
-            id: 2,
-            name: 'Emily Wilson',
-            email: 'emily@example.com',
-            phone: '(555) 987-6543',
-            status: 'contacted' as const,
-            date: '2023-10-17',
-            source: 'Referral'
-          },
-          {
-            id: 3,
-            name: 'Michael Brown',
-            email: 'michael@example.com',
-            phone: '(555) 456-7890',
-            status: 'qualified' as const,
-            date: '2023-10-16',
-            source: 'Google Ads'
-          },
-          {
-            id: 4,
-            name: 'Sarah Johnson',
-            email: 'sarah@example.com',
-            phone: '(555) 321-6547',
-            status: 'proposal' as const,
-            date: '2023-10-15',
-            source: 'Facebook'
-          },
-          {
-            id: 5,
-            name: 'Robert Miller',
-            email: 'robert@example.com',
-            phone: '(555) 889-7410',
-            status: 'closed' as const,
-            date: '2023-10-14',
-            source: 'Direct Mail'
-          },
-        ];
-        setLeads(mockLeads);
-
-        // Mock recent orders
-        const mockOrders = [
-          {
-            id: 'SBH-10584',
-            customer: 'Robert Miller',
-            date: '2023-10-14',
-            total: 849.99,
-            status: 'Completed'
-          },
-          {
-            id: 'SBH-10572',
-            customer: 'Jennifer Adams',
-            date: '2023-10-13',
-            total: 1245.50,
-            status: 'Processing'
-          },
-          {
-            id: 'SBH-10568',
-            customer: 'William Clark',
-            date: '2023-10-12',
-            total: 478.75,
-            status: 'Shipped'
-          },
-        ];
-        setRecentOrders(mockOrders);
-
-        // Mock performance data
-        setPerformance({
-          dailyTarget: 5000,
-          dailyAchieved: 3250,
-          monthlyTarget: 100000,
-          monthlyAchieved: 85450,
-          conversionRate: 28,
-          averageOrderValue: 785.50
-        });
-
+        // Fetch dashboard data from API
+        const response = await fetch('/api/sales/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setLeads(data.leads || []);
+          setRecentOrders(data.recentOrders || []);
+          setPerformance(data.performance || {
+            dailyTarget: 0,
+            dailyAchieved: 0,
+            monthlyTarget: 0,
+            monthlyAchieved: 0,
+            conversionRate: 0,
+            averageOrderValue: 0
+          });
+        } else {
+          console.error('Failed to fetch dashboard data');
+          setLeads([]);
+          setRecentOrders([]);
+          setPerformance({
+            dailyTarget: 0,
+            dailyAchieved: 0,
+            monthlyTarget: 0,
+            monthlyAchieved: 0,
+            conversionRate: 0,
+            averageOrderValue: 0
+          });
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
       }

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { message, chatId } = body;
+    const { message, sessionId } = body;
 
     if (!message) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -20,18 +20,36 @@ export async function POST(req: NextRequest) {
 
     const pool = await getPool();
 
+    let currentSessionId = sessionId;
+
+    // Create chat session if it doesn't exist
+    if (!currentSessionId) {
+      const sessionQuery = `
+        INSERT INTO chat_sessions (
+          user_id,
+          session_type,
+          status,
+          started_at
+        ) VALUES (?, 'support', 'waiting', NOW())
+      `;
+
+      const [sessionResult] = await pool.execute(sessionQuery, [user.userId]);
+      currentSessionId = (sessionResult as any).insertId;
+    }
+
     // Create message
     const messageQuery = `
       INSERT INTO chat_messages (
-        chat_id,
-        sender_id,
+        session_id,
+        user_id,
         message,
-        created_at
-      ) VALUES (?, ?, ?, NOW())
+        message_type,
+        sent_at
+      ) VALUES (?, ?, ?, 'text', NOW())
     `;
 
     const [messageResult] = await pool.execute(messageQuery, [
-      chatId,
+      currentSessionId,
       user.userId,
       message
     ]);
@@ -40,42 +58,24 @@ export async function POST(req: NextRequest) {
 
     // Get message with timestamp
     const [messageRows] = await pool.execute<RowDataPacket[]>(
-      'SELECT message_id, created_at FROM chat_messages WHERE message_id = ?',
+      'SELECT message_id, sent_at FROM chat_messages WHERE message_id = ?',
       [messageId]
-    );
-
-    // Create chat if it doesn't exist
-    const chatQuery = `
-      INSERT INTO chats (
-        user_id,
-        status,
-        created_at,
-        updated_at
-      ) VALUES (?, 'active', NOW(), NOW())
-    `;
-
-    const [chatResult] = await pool.execute(chatQuery, [user.userId]);
-    const newChatId = (chatResult as any).insertId;
-
-    // Update the message with the new chat_id
-    await pool.execute(
-      'UPDATE chat_messages SET chat_id = ? WHERE message_id = ?',
-      [newChatId, messageId]
     );
 
     // Trigger real-time update via Pusher
     await pusher.trigger('chat', 'new-message', {
       messageId,
-      chatId: newChatId,
+      sessionId: currentSessionId,
       userId: user.userId,
       message,
-      createdAt: (messageRows[0] as any).created_at
+      sentAt: messageRows[0].sent_at
     });
 
     return NextResponse.json({
       message: 'Message sent successfully',
       messageId,
-      createdAt: (messageRows[0] as any).created_at
+      sessionId: currentSessionId,
+      sentAt: messageRows[0].sent_at
     });
   } catch (error) {
     console.error('Error sending message:', error);
@@ -94,22 +94,22 @@ export async function GET(req: NextRequest) {
     }
 
     const searchParams = req.nextUrl.searchParams;
-    const chatId = searchParams.get('chatId');
+    const sessionId = searchParams.get('sessionId');
 
     const pool = await getPool();
     
     let query = `
       SELECT 
         cm.message_id,
-        cm.chat_id,
+        cm.session_id,
         cm.user_id,
         cm.message,
-        cm.created_at,
+        cm.sent_at,
         u.first_name,
         u.last_name,
         CASE 
           WHEN u.role = 'admin' THEN true
-          WHEN EXISTS (SELECT 1 FROM support_staff ss WHERE ss.user_id = u.user_id) THEN true
+          WHEN u.role = 'sales_representative' THEN true
           ELSE false
         END as is_agent
       FROM chat_messages cm
@@ -117,15 +117,18 @@ export async function GET(req: NextRequest) {
     `;
 
     const params: any[] = [];
-    if (chatId) {
-      query += ' WHERE cm.chat_id = ?';
-      params.push(chatId);
+    if (sessionId) {
+      query += ' WHERE cm.session_id = ?';
+      params.push(sessionId);
     } else {
-      query += ' WHERE cm.user_id = ?';
+      // Get messages from all sessions for this user
+      query += ` WHERE cm.session_id IN (
+        SELECT session_id FROM chat_sessions WHERE user_id = ?
+      )`;
       params.push(user.userId);
     }
 
-    query += ' ORDER BY cm.created_at DESC LIMIT 50';
+    query += ' ORDER BY cm.sent_at DESC LIMIT 50';
 
     const [result] = await pool.execute(query, params);
 
