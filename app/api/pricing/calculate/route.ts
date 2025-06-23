@@ -249,15 +249,31 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Apply volume discounts
+    // Apply volume discounts (skip if vendor coupon is being applied)
     let volumeDiscountAmount = 0;
-    const [volumeDiscounts] = await pool.execute<VolumeDiscountRow[]>(
-      `SELECT discount_id, discount_name, volume_tiers, product_id, category_ids, brand_ids
-       FROM volume_discounts 
-       WHERE is_active = TRUE
-       AND (valid_from IS NULL OR valid_from <= NOW())
-       AND (valid_until IS NULL OR valid_until >= NOW())`
-    );
+    let hasVendorCoupon = false;
+    
+    // Check if we have a vendor coupon first to optimize processing
+    if (body.coupon_code) {
+      const [vendorCouponCheck] = await pool.execute<any[]>(
+        `SELECT coupon_id FROM vendor_coupons 
+         WHERE coupon_code = ? AND is_active = TRUE
+         AND (valid_from IS NULL OR valid_from <= NOW())
+         AND (valid_until IS NULL OR valid_until >= NOW())`,
+        [body.coupon_code]
+      );
+      hasVendorCoupon = vendorCouponCheck.length > 0;
+    }
+
+    // Only process volume discounts if no vendor coupon (per CLAUDE.md vendor-centric architecture)
+    if (!hasVendorCoupon) {
+      const [volumeDiscounts] = await pool.execute<VolumeDiscountRow[]>(
+        `SELECT discount_id, discount_name, volume_tiers, product_id, category_ids, brand_ids
+         FROM volume_discounts 
+         WHERE is_active = TRUE
+         AND (valid_from IS NULL OR valid_from <= NOW())
+         AND (valid_until IS NULL OR valid_until >= NOW())`
+      );
 
     for (const discount of volumeDiscounts) {
       let tiers;
@@ -311,6 +327,7 @@ export async function POST(req: NextRequest) {
         }
       }
     }
+    } // End volume discount processing
 
     // Apply coupon discount (check both platform and vendor coupons)
     let couponDiscountAmount = 0;
@@ -474,11 +491,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Calculate tax using ZIP code-based rates
-    const zipCode = body.zip_code || '78701'; // Default to Austin, TX
-    const taxCalculation = await calculateTax(discountedSubtotal + shippingCost, zipCode);
+    // Calculate tax using ZIP code-based rates (only if ZIP code is provided)
+    let taxCalculation = null;
+    if (body.zip_code && body.zip_code.trim().length >= 5) {
+      taxCalculation = await calculateTax(discountedSubtotal + shippingCost, body.zip_code.trim());
+    }
     
-    const finalTotal = discountedSubtotal + shippingCost + taxCalculation.tax_amount;
+    const finalTotal = discountedSubtotal + shippingCost + (taxCalculation?.tax_amount || 0);
 
     return NextResponse.json({
       success: true,
@@ -495,11 +514,11 @@ export async function POST(req: NextRequest) {
         shipping: shippingCost,
         is_free_shipping: isFreeShipping,
         free_shipping_threshold: freeShippingThreshold,
-        tax_rate: taxCalculation.tax_rate,
-        tax: taxCalculation.tax_amount,
-        tax_breakdown: taxCalculation.tax_breakdown,
-        tax_jurisdiction: taxCalculation.tax_jurisdiction,
-        zip_code: taxCalculation.zip_code,
+        tax_rate: taxCalculation?.tax_rate || 0,
+        tax: taxCalculation?.tax_amount || 0,
+        tax_breakdown: taxCalculation?.tax_breakdown,
+        tax_jurisdiction: taxCalculation?.tax_jurisdiction,
+        zip_code: taxCalculation?.zip_code,
         total: finalTotal,
         applied_promotions: {
           ...(body.coupon_code && !couponError && { coupon_code: body.coupon_code }),

@@ -397,6 +397,11 @@ export default function CartPage() {
                       type="text"
                       value={promoCode}
                       onChange={(e) => setPromoCode(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && promoCode.trim()) {
+                          applyPromoCode();
+                        }
+                      }}
                       placeholder="Enter code"
                       className="flex-1 p-2 border border-gray-300 rounded-l"
                     />

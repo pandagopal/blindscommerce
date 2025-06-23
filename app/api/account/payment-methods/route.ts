@@ -3,10 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20'
-});
+import { getStripeCredentials } from '@/lib/settings';
 
 interface SavedPaymentMethodRow extends RowDataPacket {
   id: number;
@@ -184,6 +181,21 @@ export async function POST(req: NextRequest) {
     }
 
     const pool = await getPool();
+
+    // Get Stripe credentials from database
+    const stripeCredentials = await getStripeCredentials();
+    
+    if (!stripeCredentials.enabled || !stripeCredentials.secretKey) {
+      return NextResponse.json(
+        { error: 'Stripe payment methods are not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Stripe with database credentials
+    const stripe = new Stripe(stripeCredentials.secretKey, {
+      apiVersion: '2024-06-20'
+    });
 
     // Retrieve payment method details from Stripe
     let stripePaymentMethod;

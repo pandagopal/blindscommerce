@@ -2,6 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { clearSettingsCache } from '@/lib/settings';
+import { 
+  encryptSensitiveData, 
+  decryptSensitiveData, 
+  isSensitiveSetting,
+  safeDecrypt 
+} from '@/lib/security/encryption';
 
 // GET /api/admin/settings - Retrieve all admin settings
 export async function GET(request: NextRequest) {
@@ -18,64 +24,16 @@ export async function GET(request: NextRequest) {
       'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = TRUE'
     );
 
-    // Convert flat settings to nested structure that matches the frontend
+    // Build settings structure using only actual database values (no fallbacks)
     const settings = {
-      general: {
-        site_name: 'Smart Blinds Hub',
-        site_description: 'Premium window treatments and smart home solutions',
-        contact_email: 'support@smartblindshub.com',
-        phone: '+1 (555) 123-4567',
-        address: '123 Business Ave, Austin, TX 78701',
-        timezone: 'America/Chicago',
-        currency: 'USD',
-        tax_rate: '8.25',
-        maintenance_mode: false
-      },
-      notifications: {
-        email_notifications: true,
-        sms_notifications: false,
-        push_notifications: true,
-        order_notifications: true,
-        inventory_alerts: true,
-        vendor_notifications: true,
-        customer_service_alerts: true,
-        system_alerts: true
-      },
-      payments: {
-        stripe_enabled: true,
-        paypal_enabled: true,
-        klarna_enabled: true,
-        afterpay_enabled: true,
-        affirm_enabled: true,
-        payment_processing_fee: '2.9',
-        minimum_order_amount: '25.00',
-        free_shipping_threshold: '100.00',
-        vendor_commission_rate: '15.0'
-      },
-      security: {
-        two_factor_required: false,
-        password_expiry_days: '90',
-        login_attempts_limit: '5',
-        session_timeout_minutes: '30',
-        ip_whitelist_enabled: false,
-        audit_logs_retention_days: '365'
-      },
-      integrations: {
-        google_analytics_id: '',
-        facebook_pixel_id: '',
-        mailchimp_api_key: '',
-        twilio_account_sid: '',
-        aws_s3_bucket: '',
-        smtp_server: 'smtp.smartblindshub.com',
-        smtp_port: '587',
-        smtp_username: 'notifications@smartblindshub.com',
-        taxjar_api_key: '',
-        taxjar_environment: 'production',
-        use_taxjar_api: false
-      }
+      general: {},
+      notifications: {},
+      payments: {},
+      security: {},
+      integrations: {}
     };
 
-    // Override with actual database values
+    // Populate with actual database values
     if (Array.isArray(rows)) {
       rows.forEach((row: any) => {
         const { config_key, config_value, config_type } = row;
@@ -96,7 +54,17 @@ export async function GET(request: NextRequest) {
             }
             break;
           default:
-            parsedValue = config_value;
+            // Decrypt sensitive values when retrieving them
+            if (isSensitiveSetting(config_key)) {
+              try {
+                parsedValue = safeDecrypt(config_value);
+              } catch (error) {
+                console.error(`Failed to decrypt ${config_key}:`, error);
+                parsedValue = ''; // Return empty string for failed decryption
+              }
+            } else {
+              parsedValue = config_value;
+            }
         }
 
         // Map database keys to frontend structure
@@ -170,6 +138,38 @@ function validateSetting(category: string, key: string, value: any): { valid: bo
           const commission = parseFloat(value);
           if (isNaN(commission) || commission < 0 || commission > 50) {
             return { valid: false, error: 'Commission rate must be between 0-50%' };
+          }
+          break;
+        case 'stripe_secret_key':
+          if (value && !value.startsWith('sk_')) {
+            return { valid: false, error: 'Stripe secret key must start with sk_' };
+          }
+          break;
+        case 'stripe_publishable_key':
+          if (value && !value.startsWith('pk_')) {
+            return { valid: false, error: 'Stripe publishable key must start with pk_' };
+          }
+          break;
+        case 'stripe_webhook_secret':
+          if (value && !value.startsWith('whsec_')) {
+            return { valid: false, error: 'Stripe webhook secret must start with whsec_' };
+          }
+          break;
+        case 'paypal_client_id':
+          if (value && (typeof value !== 'string' || value.length < 10)) {
+            return { valid: false, error: 'PayPal client ID must be at least 10 characters' };
+          }
+          break;
+        case 'paypal_client_secret':
+          if (value && (typeof value !== 'string' || value.length < 10)) {
+            return { valid: false, error: 'PayPal client secret must be at least 10 characters' };
+          }
+          break;
+        case 'braintree_merchant_id':
+        case 'braintree_public_key':
+        case 'braintree_private_key':
+          if (value && (typeof value !== 'string' || value.length < 5)) {
+            return { valid: false, error: 'Braintree credentials must be at least 5 characters' };
           }
           break;
       }
@@ -283,7 +283,19 @@ export async function PUT(request: NextRequest) {
           dbValue = JSON.stringify(value);
         } else {
           dbType = 'string';
-          dbValue = String(value);
+          let stringValue = String(value);
+          
+          // Encrypt sensitive values before storing
+          if (isSensitiveSetting(dbKey) && stringValue) {
+            try {
+              dbValue = encryptSensitiveData(stringValue);
+            } catch (error) {
+              console.error(`Failed to encrypt ${dbKey}:`, error);
+              throw new Error(`Failed to encrypt sensitive setting: ${key}`);
+            }
+          } else {
+            dbValue = stringValue;
+          }
         }
 
         // Use INSERT ... ON DUPLICATE KEY UPDATE
@@ -357,7 +369,19 @@ export async function PATCH(request: NextRequest) {
               dbValue = JSON.stringify(value);
             } else {
               dbType = 'string';
-              dbValue = String(value);
+              let stringValue = String(value);
+              
+              // Encrypt sensitive values before storing
+              if (isSensitiveSetting(dbKey) && stringValue) {
+                try {
+                  dbValue = encryptSensitiveData(stringValue);
+                } catch (error) {
+                  console.error(`Failed to encrypt ${dbKey}:`, error);
+                  throw new Error(`Failed to encrypt sensitive setting: ${key}`);
+                }
+              } else {
+                dbValue = stringValue;
+              }
             }
 
             await pool.execute(`

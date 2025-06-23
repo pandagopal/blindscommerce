@@ -2,6 +2,17 @@ import { getPool } from '@/lib/db';
 import { getSetting } from '@/lib/settings';
 import { calculateTaxWithTaxJar } from './taxjarIntegration';
 
+// Tax rate cache to prevent multiple database calls for same ZIP code
+let taxRateCache: { [zipCode: string]: TaxRate } = {};
+let taxCacheTimestamp = 0;
+const TAX_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+
+// Clear tax rate cache (call when tax rates are updated)
+export function clearTaxRateCache(): void {
+  taxRateCache = {};
+  taxCacheTimestamp = 0;
+}
+
 export interface TaxRate {
   tax_rate_id: number;
   zip_code: string;
@@ -38,6 +49,12 @@ export interface TaxCalculation {
  * Get tax rate by ZIP code with fallback logic
  */
 export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
+  // Check cache first
+  const now = Date.now();
+  if (taxRateCache[zipCode] && (now - taxCacheTimestamp) < TAX_CACHE_DURATION) {
+    return taxRateCache[zipCode];
+  }
+
   try {
     const pool = await getPool();
     
@@ -51,7 +68,10 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     );
     
     if (rows.length > 0) {
-      return rows[0] as TaxRate;
+      const taxRate = rows[0] as TaxRate;
+      taxRateCache[zipCode] = taxRate;
+      taxCacheTimestamp = now;
+      return taxRate;
     }
     
     // Try 5-digit ZIP if 9-digit ZIP+4 was provided
@@ -86,11 +106,14 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     );
     
     if (rows.length > 0) {
-      return rows[0] as TaxRate;
+      const taxRate = rows[0] as TaxRate;
+      taxRateCache[zipCode] = taxRate;
+      taxCacheTimestamp = now;
+      return taxRate;
     }
     
     // Ultimate fallback - return a default rate
-    return {
+    const defaultRate = {
       tax_rate_id: 0,
       zip_code: zipCode,
       city: 'Unknown',
@@ -105,11 +128,16 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
       tax_jurisdiction: 'Default US Rate'
     };
     
+    // Cache the default rate too
+    taxRateCache[zipCode] = defaultRate;
+    taxCacheTimestamp = now;
+    return defaultRate;
+    
   } catch (error) {
     console.error('Error fetching tax rate:', error);
     
     // Return default rate on error
-    return {
+    const errorRate = {
       tax_rate_id: 0,
       zip_code: zipCode,
       city: 'Unknown',
@@ -123,6 +151,11 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
       total_tax_rate: 8.0,
       tax_jurisdiction: 'Default US Rate'
     };
+    
+    // Cache error rate to prevent repeated failed lookups
+    taxRateCache[zipCode] = errorRate;
+    taxCacheTimestamp = Date.now();
+    return errorRate;
   }
 }
 

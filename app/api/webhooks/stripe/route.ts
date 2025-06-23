@@ -2,15 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { getPool } from '@/lib/db';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20'
-});
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+import { getStripeCredentials } from '@/lib/settings';
 
 export async function POST(request: NextRequest) {
   try {
+    // Get Stripe credentials from database
+    const stripeCredentials = await getStripeCredentials();
+    
+    if (!stripeCredentials.enabled) {
+      return NextResponse.json(
+        { error: 'Stripe webhooks are not enabled' },
+        { status: 400 }
+      );
+    }
+    
+    if (!stripeCredentials.secretKey || !stripeCredentials.webhookSecret) {
+      return NextResponse.json(
+        { error: 'Stripe credentials not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Stripe with database credentials
+    const stripe = new Stripe(stripeCredentials.secretKey, {
+      apiVersion: '2024-06-20'
+    });
+
     const body = await request.text();
     const headersList = headers();
     const sig = headersList.get('stripe-signature')!;
@@ -18,7 +35,7 @@ export async function POST(request: NextRequest) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+      event = stripe.webhooks.constructEvent(body, sig, stripeCredentials.webhookSecret);
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return NextResponse.json(
@@ -44,7 +61,7 @@ export async function POST(request: NextRequest) {
         break;
         
       case 'charge.dispute.created':
-        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute, pool);
+        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute, pool, stripe);
         break;
         
       case 'invoice.payment_succeeded':
@@ -155,7 +172,7 @@ async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod, 
   // Implementation depends on your business logic
 }
 
-async function handleChargeDisputeCreated(dispute: Stripe.Dispute, pool: any) {
+async function handleChargeDisputeCreated(dispute: Stripe.Dispute, pool: any, stripe: Stripe) {
   // Dispute created
   
   try {

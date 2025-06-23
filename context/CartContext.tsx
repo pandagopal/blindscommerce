@@ -69,6 +69,7 @@ interface CartContextType {
   applyCoupon: (code: string) => Promise<{ success: boolean; message?: string }>;
   removeCoupon: () => void;
   updateZipCode: (zipCode: string) => void;
+  updatePricingWithTax: (newPricing: PricingDetails) => void;
   isLoading: boolean;
   pricingError: string | null;
 }
@@ -98,6 +99,7 @@ const CartContext = createContext<CartContextType>({
   applyCoupon: async () => ({ success: false }),
   removeCoupon: () => {},
   updateZipCode: () => {},
+  updatePricingWithTax: () => {},
   isLoading: false,
   pricingError: null,
 });
@@ -120,7 +122,12 @@ export function CartProvider({ children }: CartProviderProps) {
   // Helper function to save cart to localStorage
   const saveGuestCart = (cartItems: CartItem[]) => {
     try {
-      localStorage.setItem('guest_cart', JSON.stringify(cartItems));
+      const cartData = {
+        items: cartItems,
+        appliedCoupon,
+        zipCode
+      };
+      localStorage.setItem('guest_cart', JSON.stringify(cartData));
     } catch (error) {
       // Error saving to localStorage
     }
@@ -170,8 +177,8 @@ export function CartProvider({ children }: CartProviderProps) {
         customer_id: customerData?.id,
         customer_type: customerData?.type,
         coupon_code: couponCode || appliedCoupon,
-        shipping_state: 'TX', // TODO: Get from user address
-        zip_code: zipCode
+        shipping_state: 'TX' // TODO: Get from user address
+        // zip_code removed - tax calculation should only happen at checkout
       };
 
       const response = await fetch('/api/pricing/calculate', {
@@ -220,6 +227,7 @@ export function CartProvider({ children }: CartProviderProps) {
   useEffect(() => {
     // Load cart from API or localStorage on mount
     const loadCart = async () => {
+      setIsLoading(true);
       try {
         const authenticated = await isAuthenticated();
         
@@ -233,11 +241,21 @@ export function CartProvider({ children }: CartProviderProps) {
           const savedCart = localStorage.getItem('guest_cart');
           if (savedCart) {
             const parsedCart = JSON.parse(savedCart);
-            setItems(parsedCart);
+            // Handle both old format (just items array) and new format (object with items, coupon, zipCode)
+            if (Array.isArray(parsedCart)) {
+              setItems(parsedCart);
+            } else {
+              setItems(parsedCart.items || []);
+              setAppliedCoupon(parsedCart.appliedCoupon || null);
+              setZipCode(parsedCart.zipCode || '78701');
+            }
           }
         }
       } catch (error) {
         // Error loading cart
+        console.error('Error loading cart:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadCart();
@@ -375,6 +393,7 @@ export function CartProvider({ children }: CartProviderProps) {
         // Handle guest cart
         setItems([]);
         setAppliedCoupon(null);
+        setZipCode('78701');
         localStorage.removeItem('guest_cart');
       }
     } catch (error) {
@@ -409,6 +428,11 @@ export function CartProvider({ children }: CartProviderProps) {
     setZipCode(newZipCode);
   };
 
+  // Update pricing externally (used by checkout page for tax calculation)
+  const updatePricingWithTax = (newPricing: PricingDetails) => {
+    setPricing(newPricing);
+  };
+
   // Calculate total number of items
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -429,6 +453,7 @@ export function CartProvider({ children }: CartProviderProps) {
         applyCoupon,
         removeCoupon,
         updateZipCode,
+        updatePricingWithTax,
         isLoading,
         pricingError
       }}

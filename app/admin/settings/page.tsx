@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Settings, Shield, Bell, Mail, DollarSign, Globe, 
-  Database, Key, AlertTriangle, Save, Upload 
+  Database, Key, AlertTriangle, Save, Upload, CreditCard 
 } from 'lucide-react';
 
 export default function AdminSettingsPage() {
@@ -42,10 +42,22 @@ export default function AdminSettingsPage() {
       klarna_enabled: true,
       afterpay_enabled: true,
       affirm_enabled: true,
+      braintree_enabled: true,
       payment_processing_fee: '2.9',
       minimum_order_amount: '25.00',
       free_shipping_threshold: '100.00',
-      vendor_commission_rate: '15.0'
+      vendor_commission_rate: '15.0',
+      // Stripe Configuration
+      stripe_secret_key: '',
+      stripe_publishable_key: '',
+      stripe_webhook_secret: '',
+      // PayPal Configuration
+      paypal_client_id: '',
+      paypal_client_secret: '',
+      // Braintree Configuration
+      braintree_merchant_id: '',
+      braintree_public_key: '',
+      braintree_private_key: ''
     },
     security: {
       two_factor_required: false,
@@ -100,11 +112,19 @@ export default function AdminSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const res = await fetch('/api/admin/settings');
+      console.log('Loading settings from API...');
+      const res = await fetch('/api/admin/settings', {
+        // Add cache-busting headers to ensure fresh data
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!res.ok) {
         throw new Error('Failed to load settings');
       }
       const data = await res.json();
+      console.log('Loaded settings:', data.settings);
       setSettings(data.settings);
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -180,8 +200,7 @@ export default function AdminSettingsPage() {
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
       
-      // Reload settings to ensure we have the latest data
-      await loadSettings();
+      // Don't reload settings immediately - the local state is already correct
     } catch (error) {
       console.error('Error saving settings:', error);
       setErrors({ 
@@ -353,69 +372,320 @@ export default function AdminSettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <h4 className="font-medium">Payment Methods</h4>
-                  {Object.entries(settings.payments)
-                    .filter(([key]) => key.endsWith('_enabled'))
-                    .map(([key, value]) => (
-                    <div key={key} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <h4 className="font-medium capitalize">
-                          {key.replace(/_enabled/g, '').replace(/_/g, ' ')}
-                        </h4>
+                {/* Stripe Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-blue-600" />
                       </div>
-                      <Switch
-                        checked={value as boolean}
-                        onCheckedChange={(checked) => handleSettingChange('payments', key, checked)}
-                      />
+                      <div>
+                        <h3 className="text-lg font-semibold">Stripe</h3>
+                        <p className="text-sm text-gray-600">Accept credit cards, debit cards, and digital wallets</p>
+                      </div>
                     </div>
-                  ))}
+                    <Switch
+                      checked={settings.payments.stripe_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'stripe_enabled', checked)}
+                    />
+                  </div>
+                  
+                  {settings.payments.stripe_enabled && (
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Secret Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.stripe_secret_key}
+                            onChange={(e) => handleSettingChange('payments', 'stripe_secret_key', e.target.value)}
+                            placeholder="sk_test_... or sk_live_..."
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Publishable Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.stripe_publishable_key}
+                            onChange={(e) => handleSettingChange('payments', 'stripe_publishable_key', e.target.value)}
+                            placeholder="pk_test_... or pk_live_..."
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Webhook Secret
+                        </label>
+                        <Input
+                          type="password"
+                          value={settings.payments.stripe_webhook_secret}
+                          onChange={(e) => handleSettingChange('payments', 'stripe_webhook_secret', e.target.value)}
+                          placeholder="whsec_..."
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your keys from the <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Stripe Dashboard</a>
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Processing Fee (%)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.payments.payment_processing_fee}
-                      onChange={(e) => handleSettingChange('payments', 'payment_processing_fee', e.target.value)}
+                {/* PayPal Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                        <DollarSign className="h-6 w-6 text-yellow-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">PayPal</h3>
+                        <p className="text-sm text-gray-600">Accept PayPal payments and Pay Later options</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payments.paypal_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'paypal_enabled', checked)}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Minimum Order Amount ($)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.payments.minimum_order_amount}
-                      onChange={(e) => handleSettingChange('payments', 'minimum_order_amount', e.target.value)}
+                  
+                  {settings.payments.paypal_enabled && (
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Client ID *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.paypal_client_id}
+                            onChange={(e) => handleSettingChange('payments', 'paypal_client_id', e.target.value)}
+                            placeholder="Enter PayPal Client ID"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Client Secret *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.paypal_client_secret}
+                            onChange={(e) => handleSettingChange('payments', 'paypal_client_secret', e.target.value)}
+                            placeholder="Enter PayPal Client Secret"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your credentials from the <a href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">PayPal Developer Dashboard</a>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Klarna Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-pink-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Klarna</h3>
+                        <p className="text-sm text-gray-600">Buy now, pay later in 4 interest-free payments</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payments.klarna_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'klarna_enabled', checked)}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Free Shipping Threshold ($)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.payments.free_shipping_threshold}
-                      onChange={(e) => handleSettingChange('payments', 'free_shipping_threshold', e.target.value)}
+                  
+                  {settings.payments.klarna_enabled && (
+                    <div className="mt-4 pl-13">
+                      <p className="text-sm text-gray-600">Klarna configuration coming soon. Contact support for setup assistance.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Afterpay Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-teal-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Afterpay</h3>
+                        <p className="text-sm text-gray-600">Split purchases into 4 interest-free payments</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payments.afterpay_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'afterpay_enabled', checked)}
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vendor Commission Rate (%)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={settings.payments.vendor_commission_rate}
-                      onChange={(e) => handleSettingChange('payments', 'vendor_commission_rate', e.target.value)}
+                  
+                  {settings.payments.afterpay_enabled && (
+                    <div className="mt-4 pl-13">
+                      <p className="text-sm text-gray-600">Afterpay configuration coming soon. Contact support for setup assistance.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Affirm Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-indigo-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Affirm</h3>
+                        <p className="text-sm text-gray-600">Flexible payment plans from 3-36 months</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payments.affirm_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'affirm_enabled', checked)}
                     />
+                  </div>
+                  
+                  {settings.payments.affirm_enabled && (
+                    <div className="mt-4 pl-13">
+                      <p className="text-sm text-gray-600">Affirm configuration coming soon. Contact support for setup assistance.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Braintree Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Braintree</h3>
+                        <p className="text-sm text-gray-600">All-in-one payment platform with BNPL options</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={settings.payments.braintree_enabled}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'braintree_enabled', checked)}
+                    />
+                  </div>
+                  
+                  {settings.payments.braintree_enabled && (
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Merchant ID *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.braintree_merchant_id}
+                            onChange={(e) => handleSettingChange('payments', 'braintree_merchant_id', e.target.value)}
+                            placeholder="Enter Merchant ID"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Public Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.braintree_public_key}
+                            onChange={(e) => handleSettingChange('payments', 'braintree_public_key', e.target.value)}
+                            placeholder="Enter Public Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Private Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.braintree_private_key}
+                            onChange={(e) => handleSettingChange('payments', 'braintree_private_key', e.target.value)}
+                            placeholder="Enter Private Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your credentials from the <a href="https://sandbox.braintreegateway.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Braintree Control Panel</a>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* General Payment Settings */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">General Payment Settings</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Processing Fee (%)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.payments.payment_processing_fee}
+                        onChange={(e) => handleSettingChange('payments', 'payment_processing_fee', e.target.value)}
+                        placeholder="2.9"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Standard payment processing fee charged to vendors</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Vendor Commission Rate (%)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.payments.vendor_commission_rate}
+                        onChange={(e) => handleSettingChange('payments', 'vendor_commission_rate', e.target.value)}
+                        placeholder="15.0"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Platform commission on vendor sales</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Minimum Order Amount ($)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.payments.minimum_order_amount}
+                        onChange={(e) => handleSettingChange('payments', 'minimum_order_amount', e.target.value)}
+                        placeholder="25.00"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Minimum order value required for checkout</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Free Shipping Threshold ($)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.payments.free_shipping_threshold}
+                        onChange={(e) => handleSettingChange('payments', 'free_shipping_threshold', e.target.value)}
+                        placeholder="100.00"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Order amount for free shipping eligibility</p>
+                    </div>
                   </div>
                 </div>
 
