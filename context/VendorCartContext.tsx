@@ -194,7 +194,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         }
       }
     } catch (error) {
-      console.error('Error initializing cart:', error);
+      // Error initializing cart
       setError('Failed to load cart');
     } finally {
       setIsLoading(false);
@@ -295,7 +295,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         setItems(updatedItems);
       }
     } catch (error) {
-      console.error('Error refreshing discounts:', error);
+      // Error refreshing discounts
     } finally {
       setIsLoadingDiscounts(false);
     }
@@ -317,7 +317,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error('Error validating coupon:', error);
+      // Error validating coupon
       return {
         isValid: false,
         error: 'Failed to validate coupon'
@@ -385,7 +385,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         return { success: false, error: result.error };
       }
     } catch (error) {
-      console.error('Error applying coupon:', error);
+      // Error applying coupon
       return { success: false, error: 'Failed to apply coupon' };
     } finally {
       setIsApplyingCoupon(false);
@@ -416,7 +416,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         return { success: false, message: result.error };
       }
     } catch (error) {
-      console.error('Error removing coupon:', error);
+      // Error removing coupon
       return { success: false, message: 'Failed to remove coupon' };
     }
   };
@@ -424,7 +424,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
   // Basic cart operations (simplified - implement full functionality as needed)
   const addItem = async (item: Omit<CartItem, 'cart_item_id' | 'cart_id'>) => {
     // Implementation for adding items
-    console.log('Adding item:', item);
+    // Adding item to cart
   };
 
   const removeItem = async (cart_item_id: number) => {

@@ -108,8 +108,6 @@ export async function GET(request: NextRequest) {
     query += ` LIMIT ? OFFSET ?`;
     values.push(limit, offset);
 
-    console.log('Query:', query);
-    console.log('Values:', values);
 
     const [result] = await pool.query(query, values);
 

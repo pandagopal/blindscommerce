@@ -19,7 +19,6 @@ export async function POST(request: NextRequest) {
     const event = JSON.parse(body);
     const pool = await getPool();
 
-    console.log(`Afterpay webhook received: ${event.eventType}`);
 
     // Handle different Afterpay events
     switch (event.eventType) {
@@ -44,7 +43,6 @@ export async function POST(request: NextRequest) {
         break;
         
       default:
-        console.log(`Unhandled Afterpay event type: ${event.eventType}`);
     }
 
     return NextResponse.json({ status: 'OK' });
@@ -97,7 +95,6 @@ async function handleOrderApproved(event: any, pool: any) {
       order.token
     ]);
 
-    console.log(`Afterpay order approved: ${order.token}`);
 
   } catch (error) {
     console.error('Error handling Afterpay order approved:', error);
@@ -125,7 +122,6 @@ async function handleOrderDeclined(event: any, pool: any) {
     // Update analytics
     await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(order.amount?.amount || 0), 'failed', pool);
 
-    console.log(`Afterpay order declined: ${order.token}`);
 
   } catch (error) {
     console.error('Error handling Afterpay order declined:', error);
@@ -174,7 +170,6 @@ async function handlePaymentCaptured(event: any, pool: any) {
     // Update analytics
     await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(payment.amount?.amount || 0), 'success', pool);
 
-    console.log(`Afterpay payment captured: ${payment.id}`);
 
   } catch (error) {
     console.error('Error handling Afterpay payment captured:', error);
@@ -202,7 +197,6 @@ async function handlePaymentFailed(event: any, pool: any) {
     // Update analytics
     await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(payment.amount?.amount || 0), 'failed', pool);
 
-    console.log(`Afterpay payment failed: ${payment.id}`);
 
   } catch (error) {
     console.error('Error handling Afterpay payment failed:', error);
@@ -237,7 +231,6 @@ async function handleRefundCompleted(event: any, pool: any) {
       ]);
     }
 
-    console.log(`Afterpay refund completed: ${refund.refundId}`);
 
   } catch (error) {
     console.error('Error handling Afterpay refund:', error);

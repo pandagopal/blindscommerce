@@ -3,10 +3,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20'
-});
+import { getStripeCredentials } from '@/lib/settings';
 
 // GET /api/account/payment-methods/[id] - Get specific payment method
 export async function GET(
@@ -275,9 +272,15 @@ export async function DELETE(
       );
     }
 
-    // Detach payment method from Stripe customer (optional - depends on your business logic)
+    // Get Stripe credentials and detach payment method from Stripe customer
     try {
-      await stripe.paymentMethods.detach(paymentMethod.stripe_payment_method_id);
+      const stripeCredentials = await getStripeCredentials();
+      if (stripeCredentials.enabled && stripeCredentials.secretKey) {
+        const stripe = new Stripe(stripeCredentials.secretKey, {
+          apiVersion: '2024-06-20'
+        });
+        await stripe.paymentMethods.detach(paymentMethod.stripe_payment_method_id);
+      }
     } catch (stripeError) {
       // Log error but don't fail the request - payment method might already be detached
       console.warn('Failed to detach payment method from Stripe:', stripeError);

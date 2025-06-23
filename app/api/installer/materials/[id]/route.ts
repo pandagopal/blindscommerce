@@ -95,7 +95,6 @@ export async function PUT(
     }
 
     // In a real app, this would update the database
-    console.log(`Updating material ${id}:`, { name, quantity, status });
 
     const updatedMaterial: Material = {
       id,
@@ -143,7 +142,6 @@ export async function DELETE(
     const { id } = params;
 
     // In a real app, this would delete from the database
-    console.log(`Deleting material ${id}`);
 
     return NextResponse.json({ 
       success: true, 

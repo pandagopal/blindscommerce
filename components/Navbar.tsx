@@ -396,18 +396,21 @@ const Navbar = () => {
               )
             )}
 
-            <Link
-              href="/cart"
-              className="text-gray-500 hover:text-primary-red focus:outline-none relative"
-              aria-label="Cart"
-            >
-              <ShoppingCart size={20} />
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary-red text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {itemCount > 99 ? '99+' : itemCount}
-                </span>
-              )}
-            </Link>
+            {/* Cart - Only visible to customers and guests */}
+            {(!user || user.role === 'customer') && (
+              <Link
+                href="/cart"
+                className="text-gray-500 hover:text-primary-red focus:outline-none relative"
+                aria-label="Cart"
+              >
+                <ShoppingCart size={20} />
+                {itemCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-primary-red text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
+              </Link>
+            )}
           </div>
         </div>
       </div>

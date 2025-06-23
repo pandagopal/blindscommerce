@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
+import { getCurrentUser } from '@/lib/auth';
 
-const userId = 1; // Demo user
-
-async function getOrCreateCart(pool: any) {
-  // Try to find an existing cart for the user
+async function getOrCreateCart(pool: any, userId: number) {
+  // Try to find an existing cart for the specific user
   const [carts] = await pool.execute(
     'SELECT * FROM carts WHERE user_id = ? ORDER BY created_at DESC LIMIT 1',
     [userId]
   );
   if (carts.length > 0) return carts[0];
-  // Create a new cart
+  // Create a new cart for this specific user
   const [result] = await pool.execute(
     'INSERT INTO carts (user_id) VALUES (?)',
     [userId]
@@ -29,7 +28,6 @@ function formatCartItems(items: any[]) {
         try {
           config = JSON.parse(item.configuration);
         } catch (e) {
-          console.error('Error parsing configuration JSON:', e);
           config = {};
         }
       } else if (typeof item.configuration === 'object') {
@@ -53,14 +51,17 @@ function formatCartItems(items: any[]) {
 // PATCH /api/account/cart/items/[id] - Update cart item quantity
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const body = await req.json();
     const { id } = await params;
     const cart_item_id = parseInt(id);
-    
-    console.log('Updating cart item:', cart_item_id, 'to quantity:', body.quantity);
-    
     // Update the cart item quantity
     const [result] = await pool.execute(
       `UPDATE cart_items SET quantity = ?, updated_at = NOW()
@@ -83,11 +84,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     
     const formattedItems = formatCartItems(items);
     
-    console.log('Cart items after update:', formattedItems.length);
-    
     return NextResponse.json({ success: true, items: formattedItems });
   } catch (error) {
-    console.error('Cart item update error:', error);
     return NextResponse.json({ error: 'Failed to update cart item' }, { status: 500 });
   }
 }
@@ -95,13 +93,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 // DELETE /api/account/cart/items/[id] - Remove cart item
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    // Get authenticated user
+    const user = await getCurrentUser();
+    if (!user || user.role !== 'customer') {
+      return NextResponse.json({ error: 'Access denied. Cart is only available to customers.' }, { status: 403 });
+    }
+
     const pool = await getPool();
-    const cart = await getOrCreateCart(pool);
+    const cart = await getOrCreateCart(pool, user.userId);
     const { id } = await params;
     const cart_item_id = parseInt(id);
-    
-    console.log('Removing cart item:', cart_item_id);
-    
     // Delete the cart item
     const [result] = await pool.execute(
       'DELETE FROM cart_items WHERE cart_item_id = ? AND cart_id = ?',
@@ -123,11 +124,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     
     const formattedItems = formatCartItems(items);
     
-    console.log('Cart items after removal:', formattedItems.length);
-    
     return NextResponse.json({ success: true, items: formattedItems });
   } catch (error) {
-    console.error('Cart item removal error:', error);
     return NextResponse.json({ error: 'Failed to remove cart item' }, { status: 500 });
   }
 }

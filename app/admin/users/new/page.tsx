@@ -64,8 +64,8 @@ export default function NewUserPage() {
       } catch (error) {
         console.error('Error fetching user role:', error);
         // Fallback to admin permissions
-        const roles = getAvailableRolesForUser('admin');
-        setAvailableRoles(roles);
+        //const roles = getAvailableRolesForUser('admin');
+        //setAvailableRoles(roles);
       }
     };
 

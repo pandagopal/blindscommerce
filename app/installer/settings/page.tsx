@@ -140,7 +140,6 @@ export default function InstallerSettingsPage() {
       const dataToSave = section ? { [section]: settings[section as keyof InstallerSettings] } : settings;
       
       // Mock save - in real implementation, this would save to the database
-      console.log('Saving settings:', dataToSave);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));

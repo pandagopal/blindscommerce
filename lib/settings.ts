@@ -1,4 +1,5 @@
 import { getPool } from '@/lib/db';
+import { safeDecrypt, isSensitiveSetting } from '@/lib/security/encryption';
 
 // Settings cache
 let settingsCache: { [key: string]: any } = {};
@@ -33,10 +34,20 @@ export interface PlatformSettings {
     klarna_enabled: boolean;
     afterpay_enabled: boolean;
     affirm_enabled: boolean;
+    braintree_enabled: boolean;
     payment_processing_fee: string;
     minimum_order_amount: string;
     free_shipping_threshold: string;
     vendor_commission_rate: string;
+    // Payment Provider Credentials
+    stripe_secret_key: string;
+    stripe_publishable_key: string;
+    stripe_webhook_secret: string;
+    paypal_client_id: string;
+    paypal_client_secret: string;
+    braintree_merchant_id: string;
+    braintree_public_key: string;
+    braintree_private_key: string;
   };
   security: {
     two_factor_required: boolean;
@@ -106,10 +117,20 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         klarna_enabled: true,
         afterpay_enabled: true,
         affirm_enabled: true,
+        braintree_enabled: true,
         payment_processing_fee: '2.9',
         minimum_order_amount: '25.00',
         free_shipping_threshold: '100.00',
-        vendor_commission_rate: '15.0'
+        vendor_commission_rate: '15.0',
+        // Payment Provider Credentials
+        stripe_secret_key: '',
+        stripe_publishable_key: '',
+        stripe_webhook_secret: '',
+        paypal_client_id: '',
+        paypal_client_secret: '',
+        braintree_merchant_id: '',
+        braintree_public_key: '',
+        braintree_private_key: ''
       },
       security: {
         two_factor_required: false,
@@ -156,6 +177,16 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
             break;
           default:
             parsedValue = config_value;
+        }
+
+        // Decrypt sensitive values when loading from database
+        if (typeof parsedValue === 'string' && isSensitiveSetting(config_key)) {
+          try {
+            parsedValue = safeDecrypt(parsedValue);
+          } catch (error) {
+            console.error(`Failed to decrypt ${config_key}:`, error);
+            parsedValue = ''; // Return empty string for failed decryption
+          }
         }
 
         // Map database keys to settings structure
@@ -291,4 +322,48 @@ export async function areEmailNotificationsEnabled(): Promise<boolean> {
 
 export async function areSMSNotificationsEnabled(): Promise<boolean> {
   return await getSetting('notifications', 'sms_notifications') || false;
+}
+
+// Payment Provider Credential Functions
+export async function getStripeCredentials(): Promise<{
+  secretKey: string;
+  publishableKey: string;
+  webhookSecret: string;
+  enabled: boolean;
+}> {
+  const settings = await getPlatformSettings();
+  return {
+    secretKey: settings.payments.stripe_secret_key || '',
+    publishableKey: settings.payments.stripe_publishable_key || '',
+    webhookSecret: settings.payments.stripe_webhook_secret || '',
+    enabled: settings.payments.stripe_enabled || false
+  };
+}
+
+export async function getPayPalCredentials(): Promise<{
+  clientId: string;
+  clientSecret: string;
+  enabled: boolean;
+}> {
+  const settings = await getPlatformSettings();
+  return {
+    clientId: settings.payments.paypal_client_id || '',
+    clientSecret: settings.payments.paypal_client_secret || '',
+    enabled: settings.payments.paypal_enabled || false
+  };
+}
+
+export async function getBraintreeCredentials(): Promise<{
+  merchantId: string;
+  publicKey: string;
+  privateKey: string;
+  enabled: boolean;
+}> {
+  const settings = await getPlatformSettings();
+  return {
+    merchantId: settings.payments.braintree_merchant_id || '',
+    publicKey: settings.payments.braintree_public_key || '',
+    privateKey: settings.payments.braintree_private_key || '',
+    enabled: settings.payments.braintree_enabled || false
+  };
 }

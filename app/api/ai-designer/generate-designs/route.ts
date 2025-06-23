@@ -556,7 +556,6 @@ async function logDesignSession(
       created_at: new Date()
     };
     
-    console.log('Design session logged:', sessionLog);
     
     // In production, store in analytics database
     // await analyticsDB.collection('design_sessions').add(sessionLog);

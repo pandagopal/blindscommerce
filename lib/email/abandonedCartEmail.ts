@@ -59,7 +59,6 @@ export class AbandonedCartEmailService {
          AND expires_at > NOW()`
     );
 
-    console.log(`Found ${carts.length} carts for first reminder email`);
 
     for (const cart of carts) {
       try {
@@ -71,7 +70,6 @@ export class AbandonedCartEmailService {
           ['email_sent', cart.id]
         );
 
-        console.log(`First reminder sent for cart ${cart.id}`);
       } catch (error) {
         console.error(`Failed to send first reminder for cart ${cart.id}:`, error);
       }
@@ -93,7 +91,6 @@ export class AbandonedCartEmailService {
          AND expires_at > NOW()`
     );
 
-    console.log(`Found ${carts.length} carts for reminder email`);
 
     for (const cart of carts) {
       try {
@@ -105,7 +102,6 @@ export class AbandonedCartEmailService {
           ['reminder_sent', cart.id]
         );
 
-        console.log(`Reminder sent for cart ${cart.id}`);
       } catch (error) {
         console.error(`Failed to send reminder for cart ${cart.id}:`, error);
       }
@@ -127,7 +123,6 @@ export class AbandonedCartEmailService {
          AND last_email_sent_at <= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
     );
 
-    console.log(`Found ${carts.length} carts for final reminder email`);
 
     for (const cart of carts) {
       try {
@@ -139,7 +134,6 @@ export class AbandonedCartEmailService {
           [cart.id]
         );
 
-        console.log(`Final reminder sent for cart ${cart.id}`);
       } catch (error) {
         console.error(`Failed to send final reminder for cart ${cart.id}:`, error);
       }
@@ -160,7 +154,6 @@ export class AbandonedCartEmailService {
     );
 
     const expiredCount = (result as any).affectedRows;
-    console.log(`Marked ${expiredCount} carts as expired`);
 
     return expiredCount;
   }
@@ -189,11 +182,6 @@ export class AbandonedCartEmailService {
     
     // Here you would integrate with your email service (SendGrid, AWS SES, etc.)
     // For now, we'll just log the email content
-    console.log('Email Content Generated:', {
-      to: cart.email,
-      subject: template.subject_line,
-      content: emailContent
-    });
 
     // In a real implementation, you would send the email here:
     /*

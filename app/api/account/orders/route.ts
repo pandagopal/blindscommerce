@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserOrders } from '@/lib/db';
+import { getUserOrders, getUserOrdersCount } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -14,21 +14,21 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get query parameters
+    // Get and validate query parameters (validated integers for safe string interpolation)
     const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') || '10', 10);
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10', 10))); // 1-100 range
+    const offset = Math.max(0, parseInt(url.searchParams.get('offset') || '0', 10)); // Non-negative
 
-    // Fetch orders for the user
-    const orders = await getUserOrders(user.userId);
-
-    // Apply pagination
-    const paginatedOrders = orders.slice(offset, offset + limit);
+    // Get total count of orders for this user
+    const totalOrders = await getUserOrdersCount(user.userId);
+    
+    // Fetch paginated orders for the user (using validated integers for LIMIT/OFFSET)
+    const orders = await getUserOrders(user.userId, limit, offset);
 
     return NextResponse.json(
       {
-        orders: paginatedOrders,
-        total: orders.length,
+        orders: orders || [],
+        total: totalOrders,
         limit,
         offset
       },

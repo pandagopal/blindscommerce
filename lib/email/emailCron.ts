@@ -4,13 +4,11 @@ import { getPool } from '@/lib/db';
 
 // Process email queue every minute
 cron.schedule('* * * * *', async () => {
-  console.log('Processing email queue...');
   await emailService.processEmailQueue();
 });
 
 // Send reminders for tomorrow's installations and consultations
 cron.schedule('0 9 * * *', async () => {
-  console.log('Sending reminders for tomorrow...');
   const pool = await getPool();
 
   try {

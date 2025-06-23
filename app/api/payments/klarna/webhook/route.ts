@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
         break;
 
       default:
-        console.log('Unhandled Klarna event:', event.event_type);
     }
 
     return NextResponse.json({ success: true });
@@ -60,7 +59,6 @@ async function handleOrderPending(event: any, pool: any) {
     WHERE provider_order_id = ? AND provider = 'klarna'
   `, [order_id]);
 
-  console.log(`Klarna order ${order_id} is pending`);
 }
 
 async function handleOrderCaptured(event: any, pool: any) {
@@ -110,7 +108,6 @@ async function handleOrderCaptured(event: any, pool: any) {
     ]);
   }
 
-  console.log(`Klarna order ${order_id} captured: ${captured_amount / 100} ${purchase_currency}`);
 }
 
 async function handleOrderCancelled(event: any, pool: any) {
@@ -123,7 +120,6 @@ async function handleOrderCancelled(event: any, pool: any) {
     WHERE provider_order_id = ? AND provider = 'klarna'
   `, [order_id]);
 
-  console.log(`Klarna order ${order_id} cancelled`);
 }
 
 async function handleOrderExpired(event: any, pool: any) {
@@ -136,7 +132,6 @@ async function handleOrderExpired(event: any, pool: any) {
     WHERE provider_order_id = ? AND provider = 'klarna'
   `, [order_id]);
 
-  console.log(`Klarna order ${order_id} expired`);
 }
 
 function verifyKlarnaSignature(body: string, signature: string | null): boolean {

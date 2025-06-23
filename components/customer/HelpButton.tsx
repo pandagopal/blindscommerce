@@ -21,7 +21,6 @@ export default function HelpButton({
 
   const handleRequestSubmitted = (data: { accessPin: string; sessionId: number }) => {
     // You could add additional handling here, like showing notifications
-    console.log('Assistance request created:', data);
   };
 
   return (

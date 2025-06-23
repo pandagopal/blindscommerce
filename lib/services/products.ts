@@ -380,7 +380,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     } else if (role === 'admin' && (!vendorId || vendorId === '' || vendorId === 'marketplace')) {
       // Admin creating marketplace product - assign to default vendor or leave unassigned
       // For now, we'll leave it unassigned as the admin should specify a vendor
-      console.log('Product created by admin but no vendor specified - product will be unassigned');
+      // Product created by admin but no vendor specified - product will be unassigned
     } else if (role === 'vendor') {
       // Vendor creating their own product
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(

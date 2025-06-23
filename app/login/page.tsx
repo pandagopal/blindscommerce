@@ -23,7 +23,6 @@ function LoginForm() {
     setError('');
 
     try {
-      console.log('Attempting login...');
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -34,7 +33,6 @@ function LoginForm() {
       });
 
       const data = await response.json();
-      console.log('Login response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Login failed');
@@ -71,8 +69,6 @@ function LoginForm() {
           targetUrl = '/account';
         }
       }
-      console.log('Current URL:', window.location.href);
-      console.log('Redirecting to:', targetUrl);
 
       // Use replace to prevent back button from returning to login
       window.location.replace(targetUrl);

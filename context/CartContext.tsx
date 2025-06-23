@@ -69,6 +69,7 @@ interface CartContextType {
   applyCoupon: (code: string) => Promise<{ success: boolean; message?: string }>;
   removeCoupon: () => void;
   updateZipCode: (zipCode: string) => void;
+  updatePricingWithTax: (newPricing: PricingDetails) => void;
   isLoading: boolean;
   pricingError: string | null;
 }
@@ -98,6 +99,7 @@ const CartContext = createContext<CartContextType>({
   applyCoupon: async () => ({ success: false }),
   removeCoupon: () => {},
   updateZipCode: () => {},
+  updatePricingWithTax: () => {},
   isLoading: false,
   pricingError: null,
 });
@@ -120,23 +122,34 @@ export function CartProvider({ children }: CartProviderProps) {
   // Helper function to save cart to localStorage
   const saveGuestCart = (cartItems: CartItem[]) => {
     try {
-      localStorage.setItem('guest_cart', JSON.stringify(cartItems));
+      const cartData = {
+        items: cartItems,
+        appliedCoupon,
+        zipCode
+      };
+      localStorage.setItem('guest_cart', JSON.stringify(cartData));
     } catch (error) {
-      console.error('Error saving guest cart:', error);
+      // Error saving to localStorage
     }
   };
 
-  // Helper function to check if user is authenticated
+  // Helper function to check if user is authenticated and is a customer
   const isAuthenticated = async (): Promise<boolean> => {
     try {
       const response = await fetch('/api/auth/me');
       if (response.ok) {
         const data = await response.json();
-        setCustomerData({ 
-          id: data.user?.user_id, 
-          type: data.user?.role === 'customer' ? 'retail' : data.user?.role 
-        });
-        return true;
+        // Only allow customers to use the cart
+        if (data.user?.role === 'customer') {
+          setCustomerData({ 
+            id: data.user?.user_id, 
+            type: 'retail'
+          });
+          return true;
+        }
+        // For non-customers, clear customer data and return false
+        setCustomerData(null);
+        return false;
       }
       return false;
     } catch {
@@ -155,25 +168,6 @@ export function CartProvider({ children }: CartProviderProps) {
       setIsLoading(true);
       setPricingError(null);
 
-      // Use fallback calculation for now to avoid pricing API issues
-      console.log('Using fallback pricing calculation');
-      
-      // Fallback to basic calculation with default Austin, TX tax rate
-      const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
-      const shipping = subtotal > 100 ? 0 : 15.99;
-      const tax = subtotal * 0.0825; // Default Austin, TX rate
-      
-      setPricing({
-        ...defaultPricing,
-        subtotal,
-        shipping,
-        tax,
-        tax_rate: 8.25,
-        total: subtotal + shipping + tax,
-        applied_promotions: {}
-      });
-
-      /* Temporarily disabled complex pricing calculation
       const pricingRequest = {
         items: cartItems.map(item => ({
           product_id: item.product_id,
@@ -183,8 +177,8 @@ export function CartProvider({ children }: CartProviderProps) {
         customer_id: customerData?.id,
         customer_type: customerData?.type,
         coupon_code: couponCode || appliedCoupon,
-        shipping_state: 'TX', // TODO: Get from user address
-        zip_code: zipCode
+        shipping_state: 'TX' // TODO: Get from user address
+        // zip_code removed - tax calculation should only happen at checkout
       };
 
       const response = await fetch('/api/pricing/calculate', {
@@ -220,26 +214,11 @@ export function CartProvider({ children }: CartProviderProps) {
         setPricingError(data.coupon_error);
         setAppliedCoupon(null);
       }
-      */
 
     } catch (error) {
-      console.error('Error calculating pricing:', error);
       setPricingError(error instanceof Error ? error.message : 'Failed to calculate pricing');
-      
-      // Fallback to basic calculation with default Austin, TX tax rate
-      const subtotal = cartItems.reduce((total, item) => total + ((item.unit_price ?? 0) * (item.quantity ?? 1)), 0);
-      const shipping = subtotal > 100 ? 0 : 15.99;
-      const tax = subtotal * 0.0825; // Default Austin, TX rate
-      
-      setPricing({
-        ...defaultPricing,
-        subtotal,
-        shipping,
-        tax,
-        tax_rate: 8.25,
-        total: subtotal + shipping + tax,
-        applied_promotions: {}
-      });
+      // No fallback - pricing calculation must succeed through the API
+      setPricing(defaultPricing);
     } finally {
       setIsLoading(false);
     }
@@ -248,6 +227,7 @@ export function CartProvider({ children }: CartProviderProps) {
   useEffect(() => {
     // Load cart from API or localStorage on mount
     const loadCart = async () => {
+      setIsLoading(true);
       try {
         const authenticated = await isAuthenticated();
         
@@ -261,11 +241,21 @@ export function CartProvider({ children }: CartProviderProps) {
           const savedCart = localStorage.getItem('guest_cart');
           if (savedCart) {
             const parsedCart = JSON.parse(savedCart);
-            setItems(parsedCart);
+            // Handle both old format (just items array) and new format (object with items, coupon, zipCode)
+            if (Array.isArray(parsedCart)) {
+              setItems(parsedCart);
+            } else {
+              setItems(parsedCart.items || []);
+              setAppliedCoupon(parsedCart.appliedCoupon || null);
+              setZipCode(parsedCart.zipCode || '78701');
+            }
           }
         }
       } catch (error) {
+        // Error loading cart
         console.error('Error loading cart:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     loadCart();
@@ -278,28 +268,20 @@ export function CartProvider({ children }: CartProviderProps) {
 
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
-    console.log('CartContext addItem received:', newItem);
-    console.log('CartContext newItem.roomType:', newItem.roomType);
-    
     try {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        console.log('Sending to API:', newItem);
         const response = await fetch('/api/account/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
-        console.log('API response status:', response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log('API response data:', data);
-          console.log('Cart items after API response:', data.items);
           setItems(data.items);
         } else {
-          const errorText = await response.text();
-          console.error('API error:', response.status, errorText);
+          // API error adding item
         }
       } else {
         // Handle guest cart with localStorage
@@ -332,7 +314,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error adding item to cart:', error);
+      // Error adding item to cart
     }
   };
 
@@ -356,7 +338,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error removing item from cart:', error);
+      // Error removing item from cart
     }
   };
 
@@ -390,7 +372,7 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error updating cart item:', error);
+      // Error updating cart item
     }
   };
 
@@ -411,10 +393,11 @@ export function CartProvider({ children }: CartProviderProps) {
         // Handle guest cart
         setItems([]);
         setAppliedCoupon(null);
+        setZipCode('78701');
         localStorage.removeItem('guest_cart');
       }
     } catch (error) {
-      console.error('Error clearing cart:', error);
+      // Error clearing cart
     }
   };
 
@@ -445,6 +428,11 @@ export function CartProvider({ children }: CartProviderProps) {
     setZipCode(newZipCode);
   };
 
+  // Update pricing externally (used by checkout page for tax calculation)
+  const updatePricingWithTax = (newPricing: PricingDetails) => {
+    setPricing(newPricing);
+  };
+
   // Calculate total number of items
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 
@@ -465,6 +453,7 @@ export function CartProvider({ children }: CartProviderProps) {
         applyCoupon,
         removeCoupon,
         updateZipCode,
+        updatePricingWithTax,
         isLoading,
         pricingError
       }}

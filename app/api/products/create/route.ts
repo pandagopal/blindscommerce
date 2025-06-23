@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     try {
       // Use provided slug or generate from name as fallback
-      let finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      let finalSlug = slug ;// || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
       
       // Check if slug exists and make it unique
       let slugCounter = 0;

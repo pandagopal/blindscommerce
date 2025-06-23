@@ -10,7 +10,6 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     io.on('connection', (socket) => {
-      console.log('Client connected:', socket.id);
 
       socket.on('join_chat', async ({ userId }) => {
         socket.join(`user_${userId}`);
@@ -106,7 +105,6 @@ const ioHandler = (req: NextApiRequest, res: NextApiResponse) => {
       });
 
       socket.on('disconnect', async () => {
-        console.log('Client disconnected:', socket.id);
 
         // Update chat session status
         const pool = await getPool();

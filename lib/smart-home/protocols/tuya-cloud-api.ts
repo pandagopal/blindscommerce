@@ -50,7 +50,6 @@ class TuyaCloudAPI extends EventEmitter {
   async initialize(): Promise<void> {
     try {
       await this.getAccessToken();
-      console.log('Tuya Cloud API initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Tuya Cloud API:', error);
       throw error;
@@ -89,7 +88,6 @@ class TuyaCloudAPI extends EventEmitter {
         this.accessToken = response.data.result.access_token;
         this.refreshToken = response.data.result.refresh_token;
         this.tokenExpiry = Date.now() + (response.data.result.expire_time * 1000);
-        console.log('Tuya access token obtained');
       } else {
         throw new Error(`Token request failed: ${response.data.msg}`);
       }
@@ -234,7 +232,6 @@ class TuyaCloudAPI extends EventEmitter {
   async sendCommand(deviceId: string, commands: TuyaCommand['commands']): Promise<boolean> {
     try {
       await this.makeRequest('POST', `/v1.0/devices/${deviceId}/commands`, { commands });
-      console.log(`Command sent to device ${deviceId}:`, commands);
       return true;
     } catch (error) {
       console.error('Error sending command:', error);
@@ -310,7 +307,6 @@ class TuyaCloudAPI extends EventEmitter {
         url: webhookUrl,
         events: ['status', 'online', 'offline']
       });
-      console.log('Webhook configured for real-time updates');
     } catch (error) {
       console.error('Error setting up webhook:', error);
     }

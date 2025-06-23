@@ -173,7 +173,6 @@ export default function VendorShipmentsPage() {
   const updateShipmentStatus = async (shipmentId: string, status: Shipment['status']) => {
     try {
       // Mock API call
-      console.log(`Updating shipment ${shipmentId} to status: ${status}`);
       fetchShipments(); // Refresh data
     } catch (error) {
       console.error('Error updating shipment status:', error);

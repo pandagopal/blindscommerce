@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const event = JSON.parse(body);
     const pool = await getPool();
 
-    console.log(`PayPal webhook received: ${event.event_type}`);
+    // PayPal webhook received
 
     // Handle different PayPal events
     switch (event.event_type) {
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         break;
         
       default:
-        console.log(`Unhandled PayPal event type: ${event.event_type}`);
+        // Unhandled PayPal event type
     }
 
     return NextResponse.json({ status: 'SUCCESS' });
@@ -132,7 +132,7 @@ async function handlePaymentCaptureCompleted(event: any, pool: any) {
     // Update analytics
     await updatePaymentAnalytics('paypal', 'paypal', parseFloat(capture.amount.value), 'success', pool);
 
-    console.log(`PayPal payment completed: ${capture.id}`);
+    // PayPal payment completed
 
   } catch (error) {
     console.error('Error handling PayPal payment capture completed:', error);
@@ -162,7 +162,7 @@ async function handlePaymentCaptureDenied(event: any, pool: any) {
     // Update analytics
     await updatePaymentAnalytics('paypal', 'paypal', parseFloat(capture.amount.value), 'failed', pool);
 
-    console.log(`PayPal payment denied: ${capture.id}`);
+    // PayPal payment denied
 
   } catch (error) {
     console.error('Error handling PayPal payment capture denied:', error);
@@ -197,7 +197,7 @@ async function handlePaymentCaptureRefunded(event: any, pool: any) {
       ]);
     }
 
-    console.log(`PayPal refund processed: ${refund.id}`);
+    // PayPal refund processed
 
   } catch (error) {
     console.error('Error handling PayPal refund:', error);
@@ -220,7 +220,7 @@ async function handleCheckoutOrderApproved(event: any, pool: any) {
       order.id
     ]);
 
-    console.log(`PayPal order approved: ${order.id}`);
+    // PayPal order approved
 
   } catch (error) {
     console.error('Error handling PayPal order approved:', error);
@@ -257,7 +257,7 @@ async function handleCustomerDisputeCreated(event: any, pool: any) {
       ]);
     }
 
-    console.log(`PayPal dispute created: ${dispute.dispute_id}`);
+    // PayPal dispute created
 
   } catch (error) {
     console.error('Error handling PayPal dispute:', error);

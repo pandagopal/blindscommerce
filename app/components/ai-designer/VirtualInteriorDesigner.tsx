@@ -287,7 +287,7 @@ const VirtualInteriorDesigner: React.FC = () => {
       }
     } catch (error) {
       console.error('Error starting VR session:', error);
-      setup3DViewer(); // Fallback
+      //setup3DViewer(); // Fallback
     }
   };
 
@@ -317,7 +317,6 @@ const VirtualInteriorDesigner: React.FC = () => {
   // Setup VR scene with room and blinds
   const setupVRScene = (session: any) => {
     // VR-specific setup would go here
-    console.log('VR session started:', session);
   };
 
   // Setup room geometry for 3D visualization

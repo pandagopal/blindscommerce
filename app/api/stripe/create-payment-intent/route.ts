@@ -1,17 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
-
-// Initialize Stripe with secret key from environment variables
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-
-if (!stripeSecretKey) {
-  console.error('Missing STRIPE_SECRET_KEY environment variable');
-}
-
-const stripe = new Stripe(stripeSecretKey || '');
+import { getStripeCredentials } from '@/lib/settings';
 
 export async function POST(req: NextRequest) {
   try {
+    // Get Stripe credentials from database
+    const stripeCredentials = await getStripeCredentials();
+    
+    if (!stripeCredentials.enabled) {
+      return NextResponse.json(
+        { error: 'Stripe payments are not enabled' },
+        { status: 400 }
+      );
+    }
+    
+    if (!stripeCredentials.secretKey) {
+      return NextResponse.json(
+        { error: 'Stripe secret key not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Initialize Stripe with database credentials
+    const stripe = new Stripe(stripeCredentials.secretKey);
+    
     const body = await req.json();
     const { amount, metadata, shipping, customer_email } = body;
 

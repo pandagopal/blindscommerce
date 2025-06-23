@@ -17,7 +17,6 @@ export const initVideoChat = (server: NetServer) => {
   const rooms = new Map();
   
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
 
     socket.on('join-room', (roomId: string, userId: string) => {
       // Leave previous room if any
@@ -35,7 +34,6 @@ export const initVideoChat = (server: NetServer) => {
       // Notify others in room
       socket.to(roomId).emit('user-joined', userId);
 
-      console.log(`User ${userId} joined room ${roomId}`);
     });
 
     socket.on('offer', (data: { roomId: string; offer: RTCSessionDescriptionInit }) => {
@@ -68,7 +66,6 @@ export const initVideoChat = (server: NetServer) => {
         }
         socket.to(roomId).emit('user-left', socket.id);
       });
-      console.log('Client disconnected:', socket.id);
     });
   });
 

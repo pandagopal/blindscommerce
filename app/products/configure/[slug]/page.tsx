@@ -30,7 +30,7 @@ export default function ProductConfiguratorPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        console.log('Fetching product with slug:', slug);
+        // Fetching product with slug
         const res = await fetch(`/api/products/${slug}?configure=true`);
 
         if (!res.ok) {
@@ -80,9 +80,6 @@ export default function ProductConfiguratorPage() {
   }
 
   const handleAddToCart = (config: any) => {
-    console.log('handleAddToCart received config:', config);
-    console.log('config.roomType:', config.roomType);
-    
     // Find fabric name from product data if fabricType is an ID
     let fabricName = config.fabricOption || '';
     if (config.fabricType && product.fabricOptions) {
@@ -137,7 +134,6 @@ export default function ProductConfiguratorPage() {
         config[key] = value;
       }
     });
-    console.log('Initial config from URL params:', config);
     return config;
   };
 

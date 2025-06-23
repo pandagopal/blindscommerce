@@ -134,7 +134,6 @@ export default function AIProductRecommendations({
 
       if (response.ok) {
         // You might want to show a toast notification here
-        console.log('Added to wishlist');
       }
     } catch (error) {
       console.error('Error adding to wishlist:', error);
@@ -157,7 +156,6 @@ export default function AIProductRecommendations({
 
       if (response.ok) {
         // You might want to show a toast notification here
-        console.log('Added to cart');
       }
     } catch (error) {
       console.error('Error adding to cart:', error);

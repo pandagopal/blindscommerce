@@ -37,23 +37,10 @@ export async function POST(request: NextRequest) {
     
     const { email, password } = validatedData;
 
-    // Remove sensitive email logging in production
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Login attempt for:', email?.substring(0, 3) + '***');
-    }
-
     // Attempt to login user
     const user = await loginUser(email, password);
-    // Safe logging without exposing user data
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Login result:', user ? 'Success' : 'Failed');
-    }
 
     if (!user) {
-      // Remove debug logging that could aid brute force attacks
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('Authentication failed');
-      }
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
@@ -65,10 +52,6 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = await generateToken(user);
-    // Remove token information logging
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Token generated successfully');
-    }
 
     // Set secure cookie
     const cookieStore = await cookies();
@@ -79,10 +62,6 @@ export async function POST(request: NextRequest) {
       path: '/',
       maxAge: 60 * 60 * 24 // 24 hours
     });
-    // Safe logging
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Authentication cookie set');
-    }
 
     // Determine redirect URL based on role
     let redirectUrl = '/account';
@@ -90,11 +69,6 @@ export async function POST(request: NextRequest) {
     else if (user.role === 'vendor') redirectUrl = '/vendor';
     else if (user.role === 'sales') redirectUrl = '/sales';
     else if (user.role === 'installer') redirectUrl = '/installer';
-
-    // Safe logging
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Redirecting to:', redirectUrl);
-    }
 
     return NextResponse.json({
       user: {
@@ -107,12 +81,6 @@ export async function POST(request: NextRequest) {
       redirectUrl
     });
   } catch (error) {
-    // Safe error logging
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Login error:', error);
-    } else {
-      console.error('Authentication error occurred');
-    }
     return NextResponse.json(
       { error: 'An error occurred during login' },
       { status: 500 }

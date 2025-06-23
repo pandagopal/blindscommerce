@@ -261,7 +261,6 @@ export default function SalesQuotesPage() {
   const sendQuote = async (quoteId: string) => {
     try {
       // Mock API call
-      console.log(`Sending quote ${quoteId}...`);
       alert('Quote sent successfully! Customer will receive an email.');
       fetchQuotes(); // Refresh data
     } catch (error) {
@@ -272,7 +271,6 @@ export default function SalesQuotesPage() {
   const duplicateQuote = async (quoteId: string) => {
     try {
       // Mock API call
-      console.log(`Duplicating quote ${quoteId}...`);
       alert('Quote duplicated successfully!');
       fetchQuotes(); // Refresh data
     } catch (error) {

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log('Starting abandoned cart email processing...');
+    // Starting abandoned cart email processing
 
     const results = {
       firstReminders: 0,
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       results.errors.push(`Expired carts: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 
-    console.log('Abandoned cart email processing completed:', results);
+    // Abandoned cart email processing completed
 
     return NextResponse.json({
       success: true,

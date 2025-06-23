@@ -133,7 +133,6 @@ export async function POST(request: NextRequest) {
       status
     };
 
-    console.log('Creating new material:', newMaterial);
 
     return NextResponse.json({ 
       success: true, 

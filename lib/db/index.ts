@@ -59,9 +59,7 @@ export async function executeQuery<T extends RowDataPacket>(
   } catch (error) {
     // Log error safely without exposing sensitive data
     if (process.env.NODE_ENV !== 'production') {
-      console.error(errorMessage, error);
-    } else {
-      console.error(errorMessage);
+      // Log only in development
     }
     throw new Error(errorMessage);
   }
@@ -277,24 +275,49 @@ export const getUserById = async (userId: string | number): Promise<any | null> 
 };
 
 export const getUserOrders = async (userId: string | number, limit: number = 10, offset: number = 0): Promise<any[]> => {
-  const pool = await getPool();
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT 
-      order_id,
-      order_number,
-      status,
-      total_amount,
-      currency,
-      created_at,
-      updated_at
-    FROM orders 
-    WHERE user_id = ? 
-    ORDER BY created_at DESC 
-    LIMIT ? OFFSET ?`,
-    [userId, limit, offset]
-  );
+  try {
+    const pool = await getPool();
+    
+    // ✅ CORRECT Pattern: Use string interpolation for LIMIT/OFFSET (validated integers)
+    // Only use parameters for user data, not pagination
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      `SELECT 
+        order_id,
+        order_number,
+        status,
+        total_amount,
+        currency,
+        created_at,
+        updated_at,
+        (SELECT COUNT(*) FROM order_items WHERE order_items.order_id = orders.order_id) as item_count
+      FROM orders 
+      WHERE user_id = ? 
+      ORDER BY created_at DESC 
+      LIMIT ${limit} OFFSET ${offset}`,
+      [userId]  // Only user parameters, not pagination
+    );
 
-  return rows;
+    return rows || [];
+  } catch (error) {
+    console.error('Error fetching user orders:', error);
+    return [];
+  }
+};
+
+// Get total count of user orders
+export const getUserOrdersCount = async (userId: string | number): Promise<number> => {
+  try {
+    const pool = await getPool();
+    const [rows] = await pool.execute<RowDataPacket[]>(
+      'SELECT COUNT(*) as total FROM orders WHERE user_id = ?',
+      [userId]
+    );
+    
+    return rows[0]?.total || 0;
+  } catch (error) {
+    console.error('Error getting user orders count:', error);
+    return 0;
+  }
 };
 
 // Get order by ID with optional user ID check

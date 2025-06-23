@@ -20,7 +20,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log('Checking authentication...');
         const response = await fetch('/api/auth/me', {
           method: 'GET',
           credentials: 'include',
@@ -30,21 +29,16 @@ export default function AdminDashboard() {
           },
         });
 
-        console.log('Auth check response:', response.status);
         const data = await response.json();
-        console.log('Auth check data:', data);
 
         if (!response.ok) {
-          console.log('Auth check failed:', data.error);
           throw new Error(data.error || 'Authentication failed');
         }
 
         if (data.user.role !== 'admin') {
-          console.log('User is not an admin');
           throw new Error('Access denied: Admin privileges required');
         }
 
-        console.log('Auth check successful:', data);
         setUser(data.user);
         setLoading(false);
       } catch (err) {

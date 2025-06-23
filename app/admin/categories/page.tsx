@@ -43,14 +43,12 @@ export default function AdminCategoriesPage() {
   const fetchCategories = async () => {
     try {
       const response = await fetch('/api/admin/categories');
-      console.log('Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.text();
         console.error('Error response:', errorData);
       } else {
         const data = await response.json();
-        console.log('Categories data:', data);
         setCategories(data.categories || []);
       }
     } catch (error) {

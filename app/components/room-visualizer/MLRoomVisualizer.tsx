@@ -88,7 +88,6 @@ const MLRoomVisualizer = ({
 
   const loadModel = async () => {
     try {
-      console.log('Loading AI detection model...');
       
       // First try TensorFlow.js models
       if (typeof cocoSsd !== 'undefined') {
@@ -96,16 +95,13 @@ const MLRoomVisualizer = ({
           // Try default model first
           const loadedModel = await cocoSsd.load();
           setModel(loadedModel);
-          console.log('TensorFlow.js model loaded successfully');
           toast.success('Advanced AI model loaded successfully');
           return;
         } catch (tfError) {
-          console.log('TensorFlow.js model failed:', tfError);
         }
       }
       
       // Load local detection model as fallback
-      console.log('Loading local detection model...');
       await loadLocalDetectionModel();
       
       // Create a wrapper that mimics the TensorFlow.js interface
@@ -120,7 +116,6 @@ const MLRoomVisualizer = ({
       };
       
       setModel(localModel as any);
-      console.log('Local detection model loaded successfully');
       toast.success('Local AI detection ready');
       
     } catch (error) {
@@ -177,7 +172,6 @@ const MLRoomVisualizer = ({
     
     // If no AI model is available, provide manual selection option
     if (!model) {
-      console.log('No AI model available - enabling manual window selection');
       
       // Load the image and provide a default window area for manual adjustment
       const img = new Image();
