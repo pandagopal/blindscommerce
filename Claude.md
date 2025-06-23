@@ -1,3628 +1,638 @@
-# Claude's BlindsCommerce Application Reference
-
-## 🏗️ Project Overview
-
-**BlindsCommerce** is a comprehensive e-commerce platform for custom window treatments (blinds, shades, shutters, etc.) built with Next.js 14. It features a sophisticated multi-role system supporting customers, vendors, sales representatives, installers, and administrators.
-
-### Key Business Model
-- **Multi-vendor marketplace** (like Amazon for blinds)
-- **B2B/B2C hybrid** with specialized user roles
-- **Custom product configuration** with real-time pricing
-- **Installation services** and smart home integration
-- **Advanced AI/AR features** for product visualization
-
----
-
-## 🚀 Tech Stack & Dependencies
-
-### Core Framework
-- **Next.js 15.2.0** with App Router
-- **React 18.3.1** with TypeScript 5.8.3
-- **Tailwind CSS 3.4.17** with custom design system
-- **MySQL** database with connection pooling
-
-### Key Libraries
-- **Authentication**: JWT with `jose`, bcrypt for password hashing
-- **UI Components**: Radix UI primitives + Shadcn/UI
-- **Database**: MySQL2 with Prisma schema
-- **Forms**: React Hook Form with Zod validation
-- **Payments**: Stripe, PayPal, Braintree (BNPL)
-- **Real-time**: Socket.IO for live chat/notifications
-- **3D/AR**: Three.js, React Three Fiber, TensorFlow.js
-- **Email**: Nodemailer with cron jobs
-- **File Upload**: Sharp for image processing
-
-### Build Tools
-- **Biome** for linting and formatting
-- **ESLint** configuration
-- **PostCSS** for CSS processing
-- **Netlify** deployment configuration
-
----
-
-## 📁 Project Structure
-
-```
-/app                    # Next.js App Router pages
-├── /account           # Customer dashboard pages
-├── /admin             # Admin portal (comprehensive management)
-├── /api               # API routes (REST endpoints)
-├── /components        # Page-specific components
-├── /products          # Product catalog and configuration
-├── /sales             # Sales representative portal
-├── /installer         # Installer job management
-├── /vendor            # Vendor management pages
-└── /storefront        # Individual vendor storefronts
-
-/components             # Reusable UI components
-├── /ui                # Shadcn/UI component library
-├── /products          # Product-related components
-├── /payments          # Payment processing components
-├── /admin             # Admin-specific components
-└── /[domain]          # Feature-specific components
-
-/lib                    # Utility libraries and services
-├── /auth              # Authentication system
-├── /db                # Database connection and utilities
-├── /security          # Validation, rate limiting, file upload
-├── /smart-home        # IoT device integration
-└── /utils             # General utilities
-
-/context               # React Context providers
-/prisma                # Database schema
-/public                # Static assets
-/scripts               # Database and maintenance scripts
-```
-
----
-
-## 🔐 Authentication & User Roles
-
-### Authentication System
-- **JWT tokens** with 24-hour expiration
-- **HTTP-only cookies** for security
-- **Role-based access control** with comprehensive middleware protection
-- **Password requirements**: 8+ chars, uppercase, lowercase, number, special char
-- **Role hierarchy enforcement** with permission-based access control
-
-### Registration & User Creation Rules
-- **Public Registration**: ONLY for customers via `/register` page
-- **Business Accounts**: Created by admins via `/admin/users/new`
-- **Sales Teams**: Created by vendors via `/vendor/sales-team`
-- **Role Validation**: Enforced at API level with proper hierarchy checks
-
-### Complete User Role Hierarchy
-
-#### 1. **Super Admin** (Level 100)
-- **Platform ownership** with complete system access
-- Can create: Admin, Vendor, Installer, Customer, Trade Professional
-- Can manage: All user types and roles
-- Permissions: Full system control, financial access, analytics
-
-#### 2. **Admin** (Level 90)
-- **Platform administration** with broad access
-- Can create: Vendor, Installer, Trade Professional
-- Can manage: Vendors, installers, customers, trade professionals
-- Permissions: User management, vendor approval, order management, analytics
-
-#### 3. **Vendor** (Level 70)
-- **Business partner** selling products on platform
-- Can create: Sales Representatives
-- Can manage: Own sales team
-- Permissions: Product management, order fulfillment, storefront control, sales team management
-
-#### 4. **Installer** (Level 60)
-- **Professional installation services**
-- Can create: None
-- Can manage: None
-- Permissions: Installation jobs, measurements, customer contact for assigned work
-
-#### 5. **Sales Representative** (Level 50)
-- **Vendor's sales team member**
-- Can create: None
-- Can manage: None
-- Permissions: Lead management, quotes, commission tracking, assigned customer contact
-
-#### 6. **Trade Professional** (Level 40)
-- **B2B customers** (designers, architects, contractors)
-- Can create: None
-- Can manage: None
-- Permissions: Trade pricing access, project management, client management
-
-#### 7. **Customer** (Level 10)
-- **Regular consumers** purchasing window treatments
-- Can create: None (self-registration only)
-- Can manage: Own account
-- Permissions: Shopping, orders, account management, reviews
-
-### Role Hierarchy Implementation Files
-
-#### Core System Files
-- **`/lib/roleHierarchy.ts`**: Complete role definitions, permissions, and hierarchy logic
-- **`/lib/middleware/roleGuard.ts`**: Role-based access control middleware and utilities
-- **`/app/api/auth/register/route.ts`**: Enforces customer-only public registration
-- **`/app/register/page.tsx`**: Updated UI with customer-only messaging
-
-#### Admin User Management
-- **`/app/admin/users/new/page.tsx`**: Dynamic role selection based on current user permissions
-- **`/app/api/admin/users/route.ts`**: Handles creation of all business role types
-
-#### Vendor Sales Team Management
-- **`/app/vendor/sales-team/page.tsx`**: Complete sales team management interface
-- **`/api/vendor/sales-team/route.ts`**: API for vendor to create/manage sales staff
-
-### E-commerce Competitive Strategy
-This role system enables competition with Amazon through:
-- **Marketplace functionality** via vendor ecosystem
-- **B2B sales capabilities** through trade professionals and sales teams
-- **Service marketplace** integration with installers
-- **Scalable administration** with hierarchical management
-- **Relationship-based selling** through vendor-managed sales teams
-
-### Security & Access Control
-- **Route protection** middleware enforces proper access levels
-- **Permission-based** system with granular controls
-- **Role creation validation** prevents unauthorized account types
-- **Dynamic UI** shows only appropriate options based on user role
-- **Hierarchical management** ensures proper business structure
-
----
-
-## 🛍️ Core Business Features
-
-### Product Configuration System
-- **Multi-step configurator** with real-time pricing
-- **Custom dimensions** with fraction precision
-- **Material and color selection** with swatches
-- **Room visualization** with AR capabilities
-- **Mount types, controls, and accessories**
-- **Volume pricing** and discounts
-
-### Advanced Shopping Cart
-- **Persistent cart** with auto-save
-- **Guest and authenticated** user support
-- **Save for later** functionality
-- **Bulk operations** and cart templates
-- **Price alerts** and notifications
-- **Multiple shipping addresses**
-- **Gift wrapping** and messaging
-- **Installation service** booking
-- **Sample ordering** with limits
-
-### Pricing Engine
-- **Dynamic pricing** with multiple discount types:
-  - Volume discounts (quantity tiers)
-  - Customer-specific pricing
-  - Coupon codes with usage tracking
-  - Promotional campaigns
-  - Seasonal and time-based rules
-- **Tax calculation** (8.25% default)
-- **Shipping costs** (free over $100)
-- **Minimum order** requirements
-
-### Order Management
-- **Complex order creation** with transaction support
-- **Multi-vendor order splitting**
-- **Order modifications** after placement
-- **Guest order support**
-- **Reorder functionality**
-- **Installation scheduling**
-
----
-
-## 🔌 API Architecture
-
-### Key API Endpoints Structure
-
-```
-/api/auth/*           # Authentication (login, register, logout)
-/api/products/*       # Product CRUD, search, configuration
-/api/orders/*         # Order management, modifications
-/api/cart/*           # Cart operations, pricing, recommendations
-/api/pricing/*        # Dynamic pricing calculations
-/api/account/*        # User account management
-/api/admin/*          # Administrative functions
-/api/vendor/*         # Vendor portal APIs
-/api/sales/*          # Sales representative tools
-/api/installer/*      # Installation management
-/api/payments/*       # Payment processing (multiple providers)
-/api/ai-designer/*    # AI-powered design features
-/api/room-visualizer/* # AR/ML room analysis
-/api/analytics/*      # Business intelligence
-/api/iot/*           # Smart home integration
-```
-
-### Authentication Middleware
-- **JWT verification** on protected routes
-- **Role-based access** enforcement
-- **Rate limiting** protection
-- **Security headers** application
-
----
-
-## 🎨 UI System & Styling
-
-### Design System
-- **Custom color palette** defined in `/app/styles/colors.ts`
-- **Tailwind CSS** with custom design tokens
-- **Responsive design** with mobile-first approach
-- **Accessibility features** built-in
-
-### Color Scheme
-- **Primary Red**: `#CC2229` (brand color)
-- **Dark Blue**: `#1A365D` (secondary)
-- **Text Colors**: `#333333` (primary), `#717171` (secondary)
-- **Backgrounds**: `#F5F5F5` (light gray), `#FFFFFF` (white)
-- **Status Colors**: Success, Error, Warning, Info
-
-### Component Architecture
-- **Shadcn/UI** component library
-- **Radix UI** primitives for accessibility
-- **Class Variance Authority** for component variants
-- **Tailwind Animate** for smooth transitions
-
----
-
-## 🛡️ Security Measures
-
-### Input Validation & Security
-- **Zod schemas** for comprehensive validation
-- **Rate limiting** with configurable windows
-- **XSS prevention** through input sanitization
-- **SQL injection protection** with parameterized queries
-- **CSRF protection** with secure cookies
-
-### File Upload Security
-- **Strict file type** validation (JPEG, PNG, WebP, PDF)
-- **Malicious content** scanning
-- **File size limits** (5MB images, 10MB documents)
-- **Secure filename** generation
-- **Directory traversal** prevention
-
-### Security Headers
-- **Content Security Policy** (CSP)
-- **HTTP Strict Transport Security** (HSTS)
-- **XSS Protection** headers
-- **Frame Options** for clickjacking protection
-
----
-
-## 🗄️ Database Schema (Key Models)
-
-### User Management
-- **Users** with role-based access
-- **Authentication** with password hashing
-- **User preferences** and settings
-
-### Product Catalog
-- **Products** with features, specifications, materials
-- **Categories** and subcategories
-- **Vendor-specific** product options
-- **Pricing matrices** and volume discounts
-
-### E-commerce Core
-- **Orders** with complex pricing calculations
-- **Cart items** with configuration data
-- **Shipping addresses** and payment methods
-- **Order modifications** and tracking
-
-### Business Features
-- **Room visualizations** and measurements
-- **Sales pipeline** (customers, appointments, leads)
-- **Installation jobs** and scheduling
-- **Product comparisons** and analytics
-- **Swatch ordering** system
-
----
-
-## 🎯 Advanced Features
-
-### AI/ML Capabilities
-- **Product recommendations** based on behavior
-- **Visual search** with image upload
-- **Room analysis** and product placement
-- **Emotion detection** for design preferences
-- **Predictive analytics** for inventory
-
-### Smart Home Integration
-- **Tuya IoT platform** for motorized blinds
-- **Multi-platform bridge** (Alexa, Google, HomeKit)
-- **Voice control** and automation
-- **Real-time device** synchronization
-
-### AR/VR Features
-- **Room visualization** with product placement
-- **Mobile AR** preview capabilities
-- **3D product configurator**
-- **Window detection** and measurement
-- **Lighting simulation** effects
-
----
-
-## 🚀 Development Commands
-
-```bash
-# Development
-npm run dev              # Start development server
-npm run build            # Build for production
-npm run start            # Start production server
-
-# Code Quality
-npm run lint             # Run Biome linter and TypeScript check
-npm run format           # Format code with Biome
-
-# Database
-npm run db:setup         # Initialize database
-```
-
----
-
-## 🔧 Environment Configuration
-
-### Required Environment Variables
-```bash
-# Database
-DATABASE_URL=mysql://user:password@host:3306/database
-
-# JWT
-JWT_SECRET=your-secret-key
-
-# Payment Providers
-STRIPE_SECRET_KEY=sk_...
-PAYPAL_CLIENT_ID=...
-BRAINTREE_MERCHANT_ID=...
-
-# Email
-SMTP_HOST=...
-SMTP_USER=...
-SMTP_PASS=...
-
-# File Upload
-UPLOAD_MAX_SIZE=5242880  # 5MB
-
-# Smart Home
-TUYA_API_KEY=...
-TUYA_API_SECRET=...
-```
-
----
-
-## 📊 Key Business Metrics
-
-### Performance Goals
-- **35% increase** in sales through AI recommendations
-- **40% reduction** in returns through AR visualization
-- **67% improvement** in supply chain efficiency
-- **76% higher** purchase likelihood with voice features
-
-### User Experience Targets
-- **Mobile-first** responsive design
-- **Accessibility compliance** (WCAG 2.1)
-- **Fast loading** with image optimization
-- **Real-time** pricing and inventory updates
-
----
-
-## 🚨 Common Issues & Solutions
-
-### Database Connection
-- **Connection pooling** configured (max 10)
-- **Retry logic** for failed connections (3 retries in production)
-- **Environment validation** for required credentials
-- **Pool configuration** in `/lib/db/index.ts`:
-  ```typescript
-  {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT),
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    connectTimeout: 20000,
-    multipleStatements: false
-  }
-  ```
-
-### Authentication Issues
-- **JWT expiration** handled with automatic refresh
-- **Role-based access** enforced at middleware level
-- **Secure cookie** configuration for cross-site requests
-
-### Performance Optimization
-- **Image optimization** with Next.js Image component
-- **Static generation** for product pages
-- **Dynamic imports** for large components
-- **Database query** optimization with connection pooling
-
-### Products Page Layout Fix (December 2024)
-- **Issue**: Products appearing at bottom instead of beside filters on `/products?category=1`
-- **Root Cause**: `ProductFilters` component was returning both sidebar AND sorting header in fragment
-- **Solution**: 
-  - Split `ProductFilters` to return only the filter sidebar
-  - Created separate `ProductSortHeader` component for sorting controls
-  - Updated products page layout to properly structure sidebar and products section
-- **Layout Structure**:
-  ```
-  grid grid-cols-1 md:grid-cols-4 gap-6
-  ├── md:col-span-1 (Filter Sidebar)
-  └── md:col-span-3 (Products Section)
-      ├── ProductSortHeader
-      └── ProductGrid
-  ```
-
-### PRODUCT_MGMT_FABRIC_TAB_FIX_2025_01
-ISSUE: fabric_focus_loss + img_blob_disappear + multi_tab_save_partial
-ROOT: immediate_onChange + blob_urls + state_conflicts
-
-SOLUTION_PATTERN: unified_save_all_tabs_at_once
-- NO_onChange_calls_during_edit
-- blob_preview_only → upload_on_save
-- fabricRef.getCurrentData() pattern
-- productId_in_img_names: `${productId}_${category}_${fabricIndex}_${file.name}`
-
-SAVE_FLOW:
-```
-saveProduct() {
-  // ALL tabs: productData.* (direct state)
-  // FABRIC tab: fabricRef.current?.getCurrentData() (special)
-  // IMG processing: blob:// → /api/vendor/upload → real_url
-  // API: complete_snapshot_all_tabs
-}
-```
-
-FILES:
-- Fabric.tsx: local_state + isUserTyping + ref_pattern
-- UnifiedProductPage.tsx: fabricRef + img_upload_logic
-- /api/vendor/upload/route.ts: vendor_id→vendor_info_id
-
-TAB_DATA_SOURCES:
-basic|options|pricing|images|features|rooms: productData.*
-fabric: fabricRef.getCurrentData() + img_upload_processing
-
-STATE_MGMT:
-- FabricNameInput/PriceInput: useState(local) + blur_commit
-- NO React.memo, NO complex_commit_logic
-- coloredFabric|sheerFabric|blackoutFabric: identical_component
-
-PRICING_SYSTEMS_DISCOVERED:
-```json
 {
-  "main_pricing_matrix": {
-    "table": "product_pricing_matrix",
-    "structure": "width_min, width_max, height_min, height_max, base_price, price_per_sqft", 
-    "purpose": "overall_product_pricing_by_dimensions",
-    "component": "PricingMatrix.tsx",
-    "grid": "width_x_height_ranges"
-  },
-  "fabric_pricing_matrix": {
-    "table": "product_fabric_pricing", 
-    "structure": "fabric_option_id, min_width, max_width, price_per_sqft",
-    "purpose": "fabric_specific_pricing_per_sqft",
-    "component": "Fabric.tsx_price_matrix_section",
-    "grid": "width_ranges_only_per_fabric_type"
-  }
-}
-```
-
-FABRIC_DATA_FLOW_TRACED:
-database: product_fabric_options(3_records) + product_fabric_pricing(33_records) + product_fabric_images(5_records)
-api: /api/vendor/products/[id]/route.ts → formatFabricData() → loads_real_data
-ui: shows_real_pricing_values(10,11,20,23) not_defaults
-fix: double_click_issue → onMouseDown_vs_onClick
-
-IMAGE_NAMING_SECURITY_PROTOCOL:
-```json
-{
-  "security_benefits": {
-    "malicious_file_identification": "product_243_a1b2c3d4_timestamp_random.ext",
-    "rapid_threat_response": "quarantine_all_files_matching_product_243_*",
-    "bulk_security_actions": "disable_product_flag_vendor_scan_portfolio", 
-    "audit_trail": "forensic_analysis_vendor_behavior_monitoring",
-    "automated_scanning": "product_grouped_ml_threat_detection"
-  },
-  "naming_convention": {
-    "fabric_images": "product_{productId}_{vendorHash}_{timestamp}_{random}.ext",
-    "main_images": "product_{productId}_{timestamp}_{random}.ext",
-    "local_preview": "{productId}_{category}_{fabricIndex}_{filename}"
-  },
-  "implementation": {
-    "SecureVendorUpload.generateSecureFileId()": "includes_product_prefix_when_provided",
-    "/api/vendor/upload": "accepts_productId_parameter",
-    "/api/upload/images": "supports_product_prefix_naming",
-    "Components": "Fabric.tsx + Images.tsx + UnifiedProductPage.tsx"
-  },
-  "security_scenarios": {
-    "malicious_detection": "product_243_hash_time_rand.jpg → quarantine_product_243_* → disable_listing → flag_vendor",
-    "forensic_investigation": "trace_vendor_by_hash → analyze_upload_patterns → compliance_reporting",
-    "threat_containment": "rapid_bulk_actions_on_product_or_vendor_level"
-  }
-}
-```
-
-PRICING_MATRIX_CRITICAL_BUG_FIX_2025:
-```json
-{
-  "issue_type": "data_format_key_separator_conflict",
-  "severity": "critical_data_loss",
-  "symptoms": {
-    "user_input": "pricing_matrix_inputs_not_accepting_values",
-    "save_behavior": "api_returns_200_but_no_database_entries",
-    "edit_behavior": "pricing_tab_shows_all_zeros_on_reload",
-    "database_state": "product_pricing_matrix_table_remains_empty"
-  },
-  "root_cause": {
-    "problem": "key_format_separator_conflict_between_component_and_parser",
-    "technical_detail": "UnifiedProductPage creates keys like '11-20-21-30' but PricingMatrix.split('-') creates wrong array",
-    "data_flow_break": "wRange='11', hRange='20' → lookup fails → WIDTH_RANGES.find(label='11') → undefined → no_db_save"
-  },
-  "solution": {
-    "key_format_change": "separator changed from '-' to '_'",
-    "old_format": "11-20-21-30 (widthRange + '-' + heightRange)",
-    "new_format": "11-20_21-30 (widthRange + '_' + heightRange)",
-    "parsing_fix": "split('_') gives ['11-20', '21-30'] → correct_lookup_succeeds"
-  },
-  "files_modified": {
-    "UnifiedProductPage.tsx": "line_76: key = `${widthRange}_${heightRange}`",
-    "PricingMatrix.tsx": [
-      "line_92: key = `${widthRange}_${heightRange}`",
-      "line_108: rangeKey.split('_')",
-      "line_139: key = `${widthRange}_${heightRange}`"
-    ]
-  },
-  "data_flow_fixed": {
-    "user_input": "25.00 → input_onChange",
-    "component": "handlePriceChange → updatedPriceMatrix['11-20_21-30'] = '25.00'",
-    "conversion": "matrixEntries with width_min=11, width_max=20, base_price=25.00",
-    "api_save": "INSERT INTO product_pricing_matrix with proper values",
-    "database": "actual_data_stored_successfully",
-    "reload": "edit_page_shows_saved_pricing_data"
-  },
-  "validation_commands": {
-    "test_save": "enter_pricing_data → click_update_product",
-    "verify_db": "SELECT * FROM product_pricing_matrix WHERE product_id = ?",
-    "test_reload": "refresh_edit_page → verify_pricing_tab_populated"
-  },
-  "importance": "CRITICAL - affects_all_vendor_pricing_workflows_and_revenue_calculations"
-}
-```
-
-### FEATURES_TAB_SAVE_LOAD_FIX_2025:
-```json
-{
-  "issue_type": "features_data_not_populating_after_save",
-  "severity": "high_functionality_missing",
-  "symptoms": {
-    "save_behavior": "features_saved_successfully_to_database",
-    "edit_behavior": "features_tab_empty_on_product_edit_reload",
-    "data_flow": "save_works_but_load_missing",
-    "user_impact": "vendors_cannot_edit_existing_product_features"
-  },
-  "root_cause": {
-    "problem": "GET_route_missing_features_query_and_formatting",
-    "missing_component": "features_data_extraction_from_database",
-    "api_gap": "features_array_not_included_in_product_response"
-  },
-  "solution": {
-    "database_query": "JOIN product_features + features tables to get product-specific features",
-    "api_response": "include formatted features array in product data",
-    "data_format": "match Features.tsx component expectations with id, title, description, icon",
-    "filtering": "only include features with category='product_specific'"
-  },
-  "implementation": {
-    "query_added": "SELECT f.feature_id, f.name as title, f.description, f.icon FROM product_features pf JOIN features f ON pf.feature_id = f.feature_id WHERE pf.product_id = ? AND f.category = 'product_specific'",
-    "formatting": "map to {id, title, description, icon} structure",
-    "api_inclusion": "features: formattedFeatures in product response",
-    "component_compatibility": "matches Features.tsx interface expectations"
-  },
-  "data_flow_complete": {
-    "save": "Features component → API → features table + product_features junction",
-    "load": "Database → API → Features component → populated form",
-    "round_trip": "add_feature → save_product → reload_edit → features_visible"
-  },
-  "storage_architecture": {
-    "approach": "product_specific_features_not_global_references",
-    "features_table": "stores individual feature records with category='product_specific'",
-    "product_features_table": "junction table linking products to their specific features",
-    "business_logic": "each product has its own unique features list"
-  },
-  "files_modified": {
-    "api_route": "/app/api/vendor/products/[id]/route.ts - added features query and formatting in GET method",
-    "line_changes": "added featureRows query + formattedFeatures mapping + features in response"
-  },
-  "validation_commands": {
-    "test_save": "add_features → save_product → verify_database_entries",
-    "test_load": "reload_edit_page → verify_features_tab_populated", 
-    "verify_db": "SELECT * FROM features f JOIN product_features pf ON f.feature_id = pf.feature_id WHERE pf.product_id = ?"
-  },
-  "importance": "HIGH - enables_complete_product_feature_management_workflow"
-}
-```
-
-### FEATURES_AND_ROOMS_POPULATION_FIX_2025:
-```json
-{
-  "issue_type": "features_and_rooms_tabs_not_populating_on_edit",
-  "severity": "high_functionality_broken",
-  "symptoms": {
-    "save_behavior": "both_features_and_rooms_save_successfully_with_success_message", 
-    "edit_behavior": "tabs_show_empty_when_editing_existing_products",
-    "api_save": "data_reaches_database_correctly",
-    "api_load": "data_not_returned_in_product_response"
-  },
-  "root_causes": {
-    "features_tab": {
-      "problem": "features_query_had_incorrect_WHERE_clause",
-      "issue": "AND f.category = 'product_specific' filter was too restrictive",
-      "fix": "removed_category_filter_to_load_all_product_features"
-    },
-    "rooms_tab": {
-      "problem": "complete_absence_of_room_recommendations_queries",
-      "missing_get": "no_query_to_load_room_data_from_product_rooms_table",
-      "missing_put": "no_logic_to_save_room_recommendations_data",
-      "missing_destructure": "roomRecommendations_not_extracted_from_request_body"
-    }
-  },
-  "complete_solution": {
-    "features_loading": {
-      "query_fixed": "SELECT f.feature_id, f.name as title, f.description, f.icon FROM product_features pf JOIN features f ON pf.feature_id = f.feature_id WHERE pf.product_id = ?",
-      "formatting": "map to {id, title, description, icon} structure",
-      "response_inclusion": "features: formattedFeatures"
-    },
-    "rooms_loading": {
-      "query_added": "SELECT room_type, suitability_score, special_considerations FROM product_rooms WHERE product_id = ? ORDER BY suitability_score DESC",
-      "formatting": "map to {id, roomType, recommendation, priority} structure", 
-      "response_inclusion": "roomRecommendations: formattedRoomRecommendations"
-    },
-    "rooms_saving": {
-      "destructure_added": "roomRecommendations extracted from request body",
-      "delete_existing": "DELETE FROM product_rooms WHERE product_id = ?",
-      "insert_new": "INSERT INTO product_rooms with room_type, suitability_score, special_considerations"
-    }
-  },
-  "data_flow_complete": {
-    "features": "save_to_features+product_features → load_from_product_features+features → populate_Features_component",
-    "rooms": "save_to_product_rooms → load_from_product_rooms → populate_RoomRecommendations_component",
-    "round_trip_test": "add_data → save_product → reload_edit → verify_both_tabs_populated"
-  },
-  "database_tables": {
-    "features_storage": {
-      "features_table": "stores_individual_feature_records",
-      "product_features_table": "junction_table_linking_products_to_features"
-    },
-    "rooms_storage": {
-      "product_rooms_table": "stores_room_recommendations_per_product",
-      "fields": "product_id, room_type, suitability_score, special_considerations"
-    }
-  },
-  "files_modified": {
-    "api_route": "/app/api/vendor/products/[id]/route.ts",
-    "changes": [
-      "GET: added featureRows and roomRows queries",
-      "GET: added formattedFeatures and formattedRoomRecommendations mapping", 
-      "GET: included both in product response",
-      "PUT: added roomRecommendations to destructuring",
-      "PUT: added complete room recommendations save logic"
-    ]
-  },
-  "validation_tests": {
-    "features_test": "add_feature → save → reload_edit → verify_features_tab_populated",
-    "rooms_test": "add_room_recommendation → save → reload_edit → verify_rooms_tab_populated",
-    "database_verify": "check_features+product_features_tables AND product_rooms_table_for_saved_data"
-  },
-  "importance": "CRITICAL - restores_complete_product_management_functionality_for_features_and_rooms_tabs"
-}
-```
-
-### ROOM_TYPES_MANAGEMENT_SYSTEM_2025:
-```json
-{
-  "feature_name": "room_types_management_system",
-  "implementation_date": "2025-06-19",
-  "purpose": "manage_shop_by_room_section_and_product_recommendations",
-  
-  "database_structure": {
-    "table": "room_types",
-    "columns": [
-      "room_type_id INT PRIMARY KEY AUTO_INCREMENT",
-      "name VARCHAR(100) UNIQUE NOT NULL",
-      "description TEXT",
-      "image_url VARCHAR(500)",
-      "typical_humidity VARCHAR(50)",
-      "light_exposure VARCHAR(50)",
-      "privacy_requirements VARCHAR(50)",
-      "recommended_products TEXT",
-      "is_active TINYINT(1) DEFAULT 1",
-      "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-      "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-    ],
-    "initial_data": [
-      {"id": 1, "name": "Living Room", "is_active": 1},
-      {"id": 2, "name": "Bedroom", "is_active": 1},
-      {"id": 3, "name": "Kitchen", "is_active": 1},
-      {"id": 4, "name": "Bathroom", "is_active": 1},
-      {"id": 5, "name": "Dining Room", "is_active": 1},
-      {"id": 6, "name": "Home Office", "is_active": 1},
-      {"id": 7, "name": "Nursery", "is_active": 1},
-      {"id": 8, "name": "Media Room", "is_active": 1}
-    ]
+  "metadata": {
+    "title": "Claude's BlindsCommerce Application Reference",
+    "format": "machine_readable_json",
+    "last_updated": "2025-06-23",
+    "version": "2.0",
+    "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant"
   },
   
-  "admin_interface": {
-    "location": "/app/admin/rooms/page.tsx",
-    "features": [
-      "full_crud_operations",
-      "search_and_filter_by_status",
-      "toggle_active_inactive_with_toggle_icons",
-      "image_upload_support",
-      "room_characteristics_management"
-    ],
-    "ui_components": {
-      "table_view": "displays_all_rooms_with_status_and_actions",
-      "modal_form": "add_edit_room_with_all_attributes",
-      "status_toggle": "ToggleLeft/ToggleRight_icons_for_active_state",
-      "filters": "search_by_name_filter_by_status"
+  "project_overview": {
+    "name": "BlindsCommerce",
+    "description": "comprehensive e-commerce platform for custom window treatments",
+    "framework": "Next.js 14",
+    "architecture": "multi-role system",
+    "supported_roles": ["customers", "vendors", "sales_representatives", "installers", "administrators"],
+    "business_model": {
+      "type": "multi_vendor_marketplace",
+      "comparison": "Amazon for blinds",
+      "market_segments": ["B2B", "B2C"],
+      "key_features": [
+        "custom_product_configuration",
+        "real_time_pricing",
+        "installation_services",
+        "smart_home_integration",
+        "ai_ar_product_visualization"
+      ]
     }
   },
   
-  "api_endpoints": {
-    "admin_rooms": {
-      "GET /api/admin/rooms": "fetch_all_rooms_for_admin",
-      "POST /api/admin/rooms": "create_new_room_type",
-      "PUT /api/admin/rooms/[id]": "update_existing_room",
-      "DELETE /api/admin/rooms/[id]": "delete_room_type"
+  "tech_stack": {
+    "core_framework": {
+      "nextjs": "15.2.0",
+      "react": "18.3.1", 
+      "typescript": "5.8.3",
+      "css": "Tailwind CSS 3.4.17",
+      "database": "MySQL"
     },
-    "public_rooms": {
-      "GET /api/rooms": "fetch_active_rooms_for_homepage",
-      "filters": "WHERE is_active = 1"
+    "key_libraries": {
+      "authentication": ["JWT", "jose", "bcrypt"],
+      "ui_components": ["Radix UI", "Shadcn/UI"],
+      "database": ["MySQL2", "Prisma"],
+      "forms": ["React Hook Form", "Zod"],
+      "payments": ["Stripe", "PayPal", "Braintree"],
+      "real_time": ["Socket.IO"],
+      "3d_ar": ["Three.js", "React Three Fiber", "TensorFlow.js"],
+      "email": ["Nodemailer"],
+      "file_processing": ["Sharp"]
     },
-    "image_upload": {
-      "POST /api/upload/rooms": "upload_room_images"
+    "build_tools": {
+      "linting": "Biome",
+      "config": "ESLint",
+      "css_processing": "PostCSS",
+      "deployment": "Netlify"
     }
   },
   
-  "frontend_integration": {
-    "homepage_shop_by_room": {
-      "component": "/app/components/home/HomeClient.tsx",
-      "data_flow": "fetch_from_api_rooms → display_active_rooms → link_to_products",
-      "fallback_removed": "no_hardcoded_rooms_only_database_data",
-      "conditional_rendering": "only_show_section_if_rooms_exist"
+  "project_structure": {
+    "app_directory": {
+      "description": "Next.js App Router pages",
+      "subdirectories": {
+        "account": "customer dashboard pages",
+        "admin": "admin portal comprehensive management",
+        "api": "API routes REST endpoints",
+        "components": "page specific components",
+        "products": "product catalog and configuration",
+        "sales": "sales representative portal",
+        "installer": "installer job management",
+        "vendor": "vendor management pages",
+        "storefront": "individual vendor storefronts"
+      }
     },
-    "vendor_product_recommendations": {
-      "component": "/components/products/shared/RoomRecommendations.tsx",
-      "dynamic_loading": "fetch_room_types_from_api_instead_of_hardcoded",
-      "loading_state": "shows_loading_while_fetching_rooms",
-      "api_endpoint": "/api/rooms"
+    "components_directory": {
+      "description": "reusable UI components",
+      "subdirectories": {
+        "ui": "Shadcn/UI component library",
+        "products": "product related components",
+        "payments": "payment processing components",
+        "admin": "admin specific components"
+      }
+    },
+    "lib_directory": {
+      "description": "utility libraries and services",
+      "subdirectories": {
+        "auth": "authentication system",
+        "db": "database connection and utilities",
+        "security": "validation rate limiting file upload",
+        "smart_home": "IoT device integration",
+        "utils": "general utilities"
+      }
+    },
+    "other_directories": {
+      "context": "React Context providers",
+      "prisma": "database schema",
+      "public": "static assets",
+      "scripts": "database and maintenance scripts"
     }
   },
   
-  "key_changes_2025_06_19": {
-    "categories_api_fix": {
-      "issue": "is_active_column_not_in_categories_table",
-      "fix": "changed_to_featured_column_in_query",
-      "file": "/app/api/homepage/data/route.ts:17"
+  "authentication_system": {
+    "jwt_configuration": {
+      "expiration": "24_hours",
+      "storage": "http_only_cookies",
+      "security": "role_based_access_control"
     },
-    "homepage_rooms_dynamic": {
-      "removed": "hardcoded_defaultRooms_array",
-      "added": "conditional_rendering_only_if_rooms_exist",
-      "file": "/app/components/home/HomeClient.tsx:126-132"
+    "password_requirements": {
+      "minimum_length": 8,
+      "required_elements": ["uppercase", "lowercase", "number", "special_character"]
     },
-    "room_recommendations_dynamic": {
-      "removed": "hardcoded_ROOM_TYPES_array",
-      "added": "useEffect_to_fetch_from_api_rooms",
-      "state": "roomTypes_useState_with_loading",
-      "files": "/components/products/shared/RoomRecommendations.tsx"
+    "registration_rules": {
+      "public_registration": {
+        "allowed_roles": ["customer"],
+        "endpoint": "/register"
+      },
+      "business_accounts": {
+        "created_by": "admin",
+        "endpoint": "/admin/users/new"
+      },
+      "sales_teams": {
+        "created_by": "vendor",
+        "endpoint": "/vendor/sales-team"
+      }
     },
-    "admin_toggle_icon_update": {
-      "old": "Eye/EyeOff_icons",
-      "new": "ToggleLeft/ToggleRight_icons",
-      "purpose": "clearer_toggle_switch_metaphor",
-      "file": "/app/admin/rooms/page.tsx:4,333"
+    "role_hierarchy": {
+      "super_admin": {
+        "level": 100,
+        "description": "platform ownership complete system access",
+        "can_create": ["admin", "vendor", "installer", "customer", "trade_professional"],
+        "can_manage": "all_user_types_and_roles",
+        "permissions": ["full_system_control", "financial_access", "analytics"]
+      },
+      "admin": {
+        "level": 90,
+        "description": "platform administration broad access",
+        "can_create": ["vendor", "installer", "trade_professional"],
+        "can_manage": ["vendors", "installers", "customers", "trade_professionals"],
+        "permissions": ["user_management", "vendor_approval", "order_management", "analytics"]
+      },
+      "vendor": {
+        "level": 70,
+        "description": "business partner selling products on platform",
+        "can_create": ["sales_representative"],
+        "can_manage": ["own_sales_team"],
+        "permissions": ["product_management", "order_fulfillment", "storefront_control", "sales_team_management"]
+      },
+      "installer": {
+        "level": 60,
+        "description": "professional installation services",
+        "can_create": "none",
+        "can_manage": "none",
+        "permissions": ["installation_jobs", "measurements", "customer_contact_for_assigned_work"]
+      },
+      "sales_representative": {
+        "level": 50,
+        "description": "vendor sales team member",
+        "can_create": "none",
+        "can_manage": "none",
+        "permissions": ["lead_management", "quotes", "commission_tracking", "assigned_customer_contact"]
+      },
+      "trade_professional": {
+        "level": 40,
+        "description": "B2B customers designers architects contractors",
+        "can_create": "none",
+        "can_manage": "none",
+        "permissions": ["trade_pricing_access", "project_management", "client_management"]
+      },
+      "customer": {
+        "level": 10,
+        "description": "regular consumers purchasing window treatments",
+        "can_create": "none",
+        "can_manage": "own_account",
+        "permissions": ["shopping", "orders", "account_management", "reviews"]
+      }
     }
   },
   
-  "usage_instructions": {
-    "admin_workflow": [
-      "navigate_to_/admin/rooms",
-      "click_add_new_room_button",
-      "fill_form_with_name_description_image",
-      "set_humidity_light_privacy_levels",
-      "toggle_active_status_as_needed",
-      "save_room_type"
-    ],
-    "visibility_rules": {
-      "active_rooms": "appear_in_homepage_and_vendor_dropdowns",
-      "inactive_rooms": "hidden_from_public_but_retained_in_admin"
-    }
-  },
-  
-  "testing_commands": {
-    "verify_rooms_exist": "SELECT * FROM room_types;",
-    "check_active_rooms": "SELECT * FROM room_types WHERE is_active = 1;",
-    "test_homepage_api": "curl http://localhost:3000/api/rooms",
-    "test_admin_api": "curl http://localhost:3000/api/admin/rooms"
-  }
-}
-
-### Login System & Role Hierarchy Overhaul (December 2024)
-- **Challenge**: Implement secure role-based user creation system to compete with Amazon
-- **Implementation**: Complete authentication and authorization system with 7-tier role hierarchy
-- **Key Features**:
-  - **Restricted Public Registration**: Only customers can self-register via `/register`
-  - **Admin-Controlled Business Accounts**: Vendors, installers, trade professionals created by admin
-  - **Vendor Sales Team Management**: Vendors can create and manage their own sales representatives
-  - **Comprehensive Role Hierarchy**: 7 levels from Customer (10) to Super Admin (100)
-  - **Permission-Based Access Control**: Granular permissions with middleware enforcement
-  - **Dynamic UI Controls**: Role-appropriate options shown based on current user permissions
-
-- **Security Enhancements**:
-  - Role creation validation at API level
-  - Route protection middleware for all dashboard areas
-  - Hierarchical management permissions
-  - Proper business account approval workflow
-
-- **Files Created/Modified**:
-  - `/lib/roleHierarchy.ts` - Complete role system definitions
-  - `/lib/middleware/roleGuard.ts` - Access control middleware
-  - `/app/api/auth/register/route.ts` - Customer-only registration enforcement
-  - `/app/register/page.tsx` - Updated UI with clear messaging
-  - `/app/admin/users/new/page.tsx` - Dynamic role selection for admins
-
----
-
-## 🔄 Future Development Roadmap
-
-### Phase 1 (0-6 months)
-- Enhanced AI recommendations
-- Advanced AR capabilities
-- Mobile app development
-- Performance optimizations
-
-### Phase 2 (6-12 months)
-- IoT smart home integration
-- Voice commerce features
-- Advanced vendor tools
-- Predictive analytics
-
-### Phase 3 (12+ months)
-- Metaverse showroom
-- Blockchain integration
-- Advanced AI personalization
-- Complete ecosystem platform
-
----
-
-## 📝 Notes for Future Development
-
-### Key Architecture Decisions
-- **Monolithic Next.js** app with API routes
-- **MySQL** database with Prisma schema
-- **JWT authentication** with HTTP-only cookies
-- **Multi-role** system with middleware protection
-- **File-based** routing with App Router
-
-### Scalability Considerations
-- **Database connection** pooling for high traffic
-- **API rate limiting** to prevent abuse
-- **Image optimization** for performance
-- **Caching strategies** for frequently accessed data
-
-### Vendor Integration Points
-- **API endpoints** for vendor data sync
-- **Webhook support** for real-time updates
-- **Bulk import** capabilities for large catalogs
-- **Commission calculation** automation
-
----
-
-## 🚨 CRITICAL: Database Connection Leak Prevention (June 2025)
-
-### The Connection Leak Crisis of June 2025
-- **Problem**: Database connections reached 152 (from 10 limit), causing complete site failure
-- **Root Causes**: 
-  1. **Disabled Settings Cache**: Settings cache was commented out, causing every `getSetting()` call to hit database
-  2. **Multiple Database Calls Per Request**: Pricing API + Tax calculation making 15-20+ database calls per checkout
-  3. **Missing Tax Rate Caching**: Every ZIP code lookup made 1-4 database calls without caching
-- **Impact**: "Too many connections" error, website became unresponsive
-
-### Major Connection Leak Sources Fixed
-1. **Settings Cache Disabled** (`/lib/settings.ts`):
-   - Cache was commented out (lines 80-82)
-   - Every `getFreeShippingThreshold()`, `getMinimumOrderAmount()`, `getSetting()` call hit database
-   - **FIX**: Re-enabled 5-minute settings cache
-
-2. **Tax Calculation Multiple DB Calls** (`/lib/services/taxCalculation.ts`):
-   - `getTaxRateByZip()` made 1-4 database calls per ZIP code lookup
-   - No caching for repeated ZIP code lookups
-   - **FIX**: Added 10-minute tax rate cache per ZIP code
-
-3. **Pricing API Heavy Database Usage** (`/app/api/pricing/calculate/route.ts`):
-   - 9+ separate database calls per pricing request
-   - Called from cart + checkout + tax calculations
-   - **FIX**: Reduced calls through caching
-
-### Connection Management Rules
-
-#### ✅ CORRECT Pattern (for non-transactional queries):
-```typescript
-const pool = await getPool();
-const [results] = await pool.execute('SELECT * FROM table WHERE id = ?', [id]);
-```
-
-#### ❌ INCORRECT Pattern (causes leaks):
-```typescript
-const pool = await getPool();
-const connection = await pool.getConnection();
-const [results] = await connection.execute('SELECT * FROM table WHERE id = ?', [id]);
-// Missing connection.release() - LEAK!
-```
-
-#### ✅ CORRECT Pattern (for transactions only):
-```typescript
-const pool = await getPool();
-const connection = await pool.getConnection();
-try {
-  await connection.beginTransaction();
-  await connection.execute('INSERT INTO ...');
-  await connection.execute('UPDATE ...');
-  await connection.commit();
-} catch (error) {
-  await connection.rollback();
-  throw error;
-} finally {
-  connection.release(); // CRITICAL!
-}
-```
-
-### Fixed Connection Leaks (25+ files):
-1. `/lib/auth.ts` - registerUser function
-2. `/app/api/account/dashboard/route.ts`
-3. `/app/api/orders/create/route.ts`
-4. `/app/api/products/create/route.ts`
-5. `/app/api/admin/*` - Multiple admin routes
-6. `/app/api/vendor/*` - Vendor management routes
-7. `/lib/services/products.ts`
-8. `/lib/email/emailService.ts`
-9. All other API routes using improper patterns
-
-### Transaction-Required Files (Correctly use getConnection):
-- `/app/api/delivery/schedule/route.ts`
-- `/app/api/orders/[id]/modifications/route.ts`
-- `/app/api/account/shipping-addresses/[id]/route.ts`
-- These files MUST use `getConnection()` for transaction support
-
-### Database Configuration Updates:
-- Removed invalid MySQL2 options: `acquireTimeout`, `timeout`, `reconnect`
-- Use only valid options: `connectTimeout`, `connectionLimit`, etc.
-
-### IMPORTANT RULES FOR PRODUCTION:
-1. **ALWAYS CHECK DATABASE FIRST** - Never assume table/column existence
-2. **Use `pool.execute()` directly** for 99% of queries
-3. **Only use `getConnection()`** when you need transactions
-4. **ALWAYS release connections** in finally blocks
-5. **Test with `SHOW PROCESSLIST`** to monitor connection count
-6. **Avoid parameterized LIMIT/OFFSET** - Use string interpolation with validated integers
-
-### Database Credentials (.env):
-```
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=blindscommerce_test
-DB_USER=root
-DB_PASSWORD=Test@1234
-```
-
----
-
-## 🔥 CRITICAL: MySQL Parameter Binding Issues (June 2025)
-
-### The "Incorrect arguments to mysqld_stmt_execute" Crisis
-- **Problem**: APIs failing with `Error: Incorrect arguments to mysqld_stmt_execute`
-- **Root Cause**: MySQL2 parameter binding has issues with `LIMIT ? OFFSET ?` syntax
-- **Symptoms**: 500 Internal Server Error on pagination queries
-- **Impact**: Admin tax rates page and other paginated APIs failing
-
-### Parameter Binding Issue Analysis
-```typescript
-// ❌ PROBLEMATIC Pattern (causes MySQL binding errors):
-const [rows] = await pool.execute(
-  'SELECT * FROM table WHERE active = ? LIMIT ? OFFSET ?',
-  [true, 10, 0]  // MySQL2 struggles with LIMIT/OFFSET parameters
-);
-
-// ✅ WORKING Solution (hybrid approach):
-const limit = 10; // Validated integer
-const offset = 0; // Validated integer
-const [rows] = await pool.execute(
-  `SELECT * FROM table WHERE active = ? LIMIT ${limit} OFFSET ${offset}`,
-  [true]  // Only search parameters, not pagination
-);
-```
-
-### Safe String Interpolation Rules
-**ONLY use string interpolation for:**
-1. **Validated integers** (page numbers, limits, offsets)
-2. **Predefined column names** from allowlist
-3. **ORDER BY directions** ('ASC'/'DESC' after validation)
-
-**NEVER use string interpolation for:**
-1. **User input strings** (search terms, names, etc.)
-2. **Untrusted data** of any kind
-3. **Dynamic table/column names** from user input
-
-### Correct Pagination Pattern
-```typescript
-// ✅ RECOMMENDED Pattern for paginated queries:
-export async function getPaginatedData(page: number, limit: number, search?: string) {
-  const pool = await getPool();
-  
-  // Build WHERE clause with parameters for search
-  let whereClause = 'WHERE is_active = TRUE';
-  let params = [];
-  
-  if (search) {
-    whereClause += ' AND (name LIKE ? OR description LIKE ?)';
-    const searchPattern = `%${search}%`;
-    params = [searchPattern, searchPattern];
-  }
-  
-  // Get count with search parameters only
-  const [countRows] = await pool.execute<RowDataPacket[]>(
-    `SELECT COUNT(*) as total FROM table ${whereClause}`,
-    params
-  );
-  
-  // Get data with safe pagination (validated integers)
-  const offset = (page - 1) * limit;
-  const [rows] = await pool.execute<RowDataPacket[]>(
-    `SELECT * FROM table ${whereClause} 
-     ORDER BY created_at DESC 
-     LIMIT ${limit} OFFSET ${offset}`,
-    params  // Same search parameters, no pagination params
-  );
-  
-  return { rows, total: countRows[0].total };
-}
-```
-
-### Real-World Fix Example (Tax Rates API)
-**Problem**: `/app/api/admin/tax-rates/route.ts` failing with MySQL binding error
-
-**Before** (Broken):
-```typescript
-const queryParams = [...searchParams, limit, offset];
-const [rows] = await pool.execute(
-  'SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ? OFFSET ?',
-  queryParams  // ❌ MySQL2 can't handle LIMIT/OFFSET parameters properly
-);
-```
-
-**After** (Fixed):
-```typescript
-const [rows] = await pool.execute(
-  `SELECT * FROM tax_rates WHERE is_active = TRUE LIMIT ${limit} OFFSET ${offset}`,
-  searchParams  // ✅ Only search parameters, pagination interpolated safely
-);
-```
-
-### Debugging Parameter Binding Issues
-1. **Check connection count**: `SHOW PROCESSLIST;` - should be ~5-10, not 100+
-2. **Test without parameters**: Start with hardcoded query, add parameters incrementally
-3. **Isolate LIMIT/OFFSET**: Remove pagination first, then add back with interpolation
-4. **Validate parameter arrays**: Log parameter array contents and types
-5. **Check for connection leaks**: If 100+ connections, restart dev server
-
-### Files Fixed in June 2025:
-- `/app/api/admin/tax-rates/route.ts` - Parameter binding issue with pagination
-- Connection leak cleanup (dropped from 110+ to 5 connections)
-
-### Production Monitoring:
-- Monitor connection count with `SHOW PROCESSLIST;`
-- Set up alerts for >20 database connections
-- Log parameter binding errors for investigation
-
----
-
-## 🏪 CHECKOUT & TAX CALCULATION FIXES (June 2025)
-
-### Issues Fixed
-1. **Checkout Redirect on Refresh** - Page redirected to cart due to race condition
-2. **Missing Coupon Codes** - Coupons not passed during tax calculation
-3. **TaxJar API Called During Cart Browsing** - Should only calculate tax at checkout
-
-### Checkout Redirect Fix (`/app/checkout/page.tsx`)
-- **Problem**: Race condition where checkout redirected before cart context loaded
-- **Solution**: 
-  - Added `cartLoadAttempted` state tracking
-  - Increased redirect timeout from 100ms to 1500ms
-  - Added proper loading state management in CartContext
-  - Fixed timing issue with cart initialization
-
-### Tax Calculation Flow Fixed
-- **Old Flow**: Cart → Pricing API → Tax calculation → TaxJar API calls
-- **New Flow**: 
-  - **Cart Stage**: No tax calculation (subtotal + shipping only)
-  - **Checkout Stage**: Tax calculated when billing ZIP entered (onBlur event)
-  - **API**: Same `/api/pricing/calculate` endpoint but with ZIP code parameter
-
-### Tax Calculation Optimization (`/lib/services/taxCalculation.ts`)
-- **Added ZIP Code Caching**: 10-minute cache per ZIP code
-- **Cache Function**: `clearTaxRateCache()` for cache invalidation
-- **Reduced Database Calls**: From 1-4 calls per ZIP to 1 call (then cached)
-
-### Coupon Preservation Fix
-- **Issue**: Coupon codes not passed during checkout tax calculation
-- **Fix**: Enhanced tax calculation to include current applied coupons
-- **Customer ID**: Added authenticated customer ID retrieval for tax requests
-
-### Files Modified
-- `/app/checkout/page.tsx` - Fixed redirect timing, added tax calculation on ZIP blur
-- `/context/CartContext.tsx` - Added loading state management, `updatePricingWithTax()` method
-- `/app/api/pricing/calculate/route.ts` - Only calculate tax when ZIP provided
-- `/lib/services/taxCalculation.ts` - Added comprehensive ZIP code caching
-- `/lib/settings.ts` - Re-enabled 5-minute settings cache
-
-### Performance Improvements
-- **Connection Usage**: Reduced from 152 to ~5-10 connections
-- **Tax Calculation Speed**: 10x faster with caching
-- **Settings Access**: 50x faster with caching
-- **User Experience**: Smooth checkout without connection timeouts
-
----
-
-## 📊 Database Tables Reference (Actual Schema)
-
-### 🏢 VENDOR-CENTRIC ARCHITECTURE (CRITICAL)
-**IMPORTANT**: Products, discounts, coupons, and sales people all belong to vendors. Always start with vendor tables for quick information gathering!
-
-### Vendor Core Tables:
-- `vendor_info` - Main vendor profiles (vendor_info_id is key)
-- `vendor_products` - Links vendors to products with vendor-specific pricing
-- `vendor_discounts` - Vendor-specific discount rules (percentage, fixed, tiered)
-- `vendor_coupons` - Vendor-managed coupon codes
-- `vendor_inventory` - Stock levels per vendor
-- `sales_staff` - Sales representatives belonging to vendors
-
-### Key Vendor Relationships:
-```sql
--- vendor_info (main vendor table)
-vendor_info_id INT PRIMARY KEY
-user_id INT -- Links to users table
-business_name VARCHAR(255)
-commission_rate DECIMAL(5,2) DEFAULT 15.00
-
--- vendor_products (vendor-specific product data)
-vendor_id INT -- Links to vendor_info.vendor_info_id
-product_id INT -- Links to products.product_id
-vendor_price DECIMAL(10,2) -- Vendor's selling price
-quantity_available INT
-
--- vendor_discounts (sale pricing)
-vendor_id INT
-discount_type ENUM('percentage','fixed_amount','tiered','bulk_pricing')
-discount_value DECIMAL(8,2)
-applies_to ENUM('all_vendor_products','specific_products','specific_categories')
-```
-
-### Product-Related Tables:
-- `products` - Base product catalog (no sale_price column!)
-- `product_categories` - Product to category mapping
-- `product_features` - Product feature assignments
-- `product_rooms` - Product room recommendations (NOT product_room_types)
-- `product_pricing_matrix` - Dimension-based pricing
-- `product_fabric_options` - Fabric configurations
-- `product_fabric_pricing` - Fabric-specific pricing
-- `product_images` - Product image gallery
-- `categories` - Product categories
-- `room_types` - Available room types for recommendations
-
-### Important Notes:
-- **NO sale_price in products table** - Use vendor_discounts instead
-- **Prices**: base_price (MSRP), cost_price (vendor cost), vendor_price (selling price)
-- **Discounts**: Applied through vendor_discounts table with rules
-- **Multi-vendor**: Same product can have different prices per vendor
-
-### 🛒 Multi-Vendor Cart & Checkout (CRITICAL)
-**IMPORTANT**: Customers can add products from multiple vendors to a single cart. At checkout:
-
-1. **Cart contains products from different vendors**
-   - Each cart item tracks its vendor_id
-   - Prices are vendor-specific (vendor_products.vendor_price)
-
-2. **Vendor-specific discounts apply individually**
-   - Vendor A's discount only applies to Vendor A's products
-   - Vendor B's discount only applies to Vendor B's products
-   - Each vendor's discount rules are evaluated separately
-
-3. **Checkout process splits by vendor**:
-   ```sql
-   -- Example checkout flow
-   Cart Items:
-   - Product X from Vendor A: $100 (Vendor A has 20% discount = $80)
-   - Product Y from Vendor A: $50 (Vendor A has 20% discount = $40)
-   - Product Z from Vendor B: $75 (Vendor B has 10% discount = $67.50)
-   
-   Total: $80 + $40 + $67.50 = $187.50
-   ```
-
-4. **Order splitting**:
-   - Single customer order creates multiple vendor sub-orders
-   - Each vendor only sees their portion of the order
-   - Commission calculated per vendor based on their items
-
-5. **Discount application tables**:
-   - `cart_vendor_discounts` - Tracks which vendor discounts apply to cart
-   - `vendor_discount_usage` - Records discount usage per vendor
-
-### Key Database Relationships for Checkout:
-```sql
--- cart_items
-cart_item_id INT
-cart_id INT
-product_id INT
-vendor_id INT -- Critical: tracks which vendor for this item
-price DECIMAL -- Vendor-specific price at time of adding
-quantity INT
-
--- cart_vendor_discounts
-cart_id INT
-vendor_id INT
-discount_id INT
-discount_amount DECIMAL -- Calculated discount for this vendor's items
-
--- orders (after checkout)
-order_id INT -- Customer's main order
-vendor_id INT -- NULL for main order, set for vendor sub-orders
-parent_order_id INT -- Links vendor orders to main order
-```
-
----
-
-## 💰 COMPREHENSIVE PRICING SYSTEM ARCHITECTURE (June 2025)
-
-### 🎯 Multi-Layered Pricing Engine Overview
-The BlindsCommerce platform features a sophisticated pricing system that handles complex B2B/B2C scenarios with multiple pricing strategies, discounts, and dynamic calculations.
-
-### 📊 Database Pricing Architecture
-
-#### **Core Pricing Tables:**
-```json
-{
-  "main_pricing_systems": {
-    "products": {
-      "base_price": "MSRP starting price",
-      "cost_price": "vendor wholesale cost", 
-      "purpose": "foundation pricing for all calculations"
+  "core_business_features": {
+    "product_configuration": {
+      "features": [
+        "multi_step_configurator_real_time_pricing",
+        "custom_dimensions_fraction_precision",
+        "material_color_selection_swatches",
+        "room_visualization_ar_capabilities",
+        "mount_types_controls_accessories",
+        "volume_pricing_discounts"
+      ]
     },
-    "product_pricing_matrix": {
-      "structure": "width_min, width_max, height_min, height_max, base_price, price_per_sqft",
-      "purpose": "dimensional pricing based on width/height ranges (11-300 inches)",
-      "component": "PricingMatrix.tsx",
-      "grid_format": "width_x_height_ranges with '_' separator",
-      "example": "11-20_21-30 = 11-20 inch width, 21-30 inch height",
-      "critical_fix_2025": "key separator changed from '-' to '_' to prevent parsing conflicts"
+    "shopping_cart": {
+      "features": [
+        "persistent_cart_auto_save",
+        "guest_authenticated_user_support",
+        "save_for_later_functionality",
+        "bulk_operations_cart_templates",
+        "price_alerts_notifications",
+        "multiple_shipping_addresses",
+        "gift_wrapping_messaging",
+        "installation_service_booking",
+        "sample_ordering_limits"
+      ]
     },
-    "product_fabric_pricing": {
-      "structure": "fabric_option_id, min_width, max_width, price_per_sqft",
-      "purpose": "fabric-specific pricing per square foot",
-      "component": "Fabric.tsx price matrix section",
-      "calculation": "(width × height) / 144 × price_per_sqft"
-    },
-    "vendor_products": {
-      "vendor_price": "vendor-specific selling price",
-      "quantity_available": "vendor inventory levels",
-      "purpose": "multi-vendor marketplace pricing"
-    }
-  }
-}
-```
-
-### 🧮 Pricing Calculation Flow
-
-#### **Step-by-Step Price Calculation:**
-```javascript
-// Complete pricing engine flow
-function calculateFinalPrice(productConfig) {
-  // 1. Base Price Foundation
-  let basePrice = getBasePrice(productConfig);
-  
-  // 2. Dimensional Pricing (if applicable)
-  if (hasDimensions(productConfig)) {
-    basePrice = getPricingMatrixPrice(width, height) || basePrice;
-  }
-  
-  // 3. Fabric/Material Costs
-  if (hasFabricSelection(productConfig)) {
-    const fabricCost = calculateFabricCost(fabric, width, height);
-    basePrice += fabricCost;
-  }
-  
-  // 4. Configuration Option Modifiers
-  const optionModifiers = calculateOptionModifiers(selectedOptions);
-  let configuredPrice = basePrice + optionModifiers;
-  
-  // 5. Customer-Specific Pricing
-  if (hasCustomerPricing(customer)) {
-    configuredPrice = applyCustomerPricing(configuredPrice, customer);
-  }
-  
-  // 6. Dynamic Pricing Rules (time-based, inventory-based)
-  configuredPrice = applyDynamicPricing(configuredPrice, rules);
-  
-  // 7. Item Total (price × quantity)
-  let itemTotal = configuredPrice * quantity;
-  
-  // 8. Volume Discounts
-  itemTotal = applyVolumeDiscounts(itemTotal, quantity);
-  
-  // 9. Vendor-Specific Discounts
-  itemTotal = applyVendorDiscounts(itemTotal, vendorId);
-  
-  // 10. Coupon/Campaign Discounts
-  itemTotal = applyCoupons(itemTotal, coupons);
-  
-  // 11. Shipping Calculation
-  const shipping = calculateShipping(itemTotal, customer);
-  
-  // 12. Tax Calculation
-  const tax = calculateTax(itemTotal + shipping, taxRate);
-  
-  // 13. Final Total
-  return {
-    basePrice,
-    configuredPrice,
-    itemTotal,
-    shipping,
-    tax,
-    finalTotal: itemTotal + shipping + tax,
-    discountBreakdown: getDiscountBreakdown()
-  };
-}
-```
-
-### 💡 Pricing Components & Files
-
-#### **Key Pricing Files:**
-```json
-{
-  "pricing_components": {
-    "PricingMatrix.tsx": {
-      "location": "/components/products/shared/",
-      "purpose": "interactive dimensional pricing grid",
-      "features": "width×height ranges, paginated view, real-time updates",
-      "grid_size": "11 width ranges × 29 height ranges",
-      "ranges": "11-20\" to 291-300\" in 10-inch increments"
-    },
-    "UnifiedProductPage.tsx": {
-      "pricing_integration": "formatPricingMatrix() function",
-      "key_format": "widthRange + '_' + heightRange",
-      "database_conversion": "range labels to min/max values"
-    },
-    "Fabric.tsx": {
-      "fabric_pricing": "per square foot calculations",
-      "width_tiers": "different pricing for width ranges",
-      "area_calculation": "(width × height) / 144 square feet"
-    }
-  },
-  "api_endpoints": {
-    "/api/pricing/calculate": "main pricing engine with all discounts",
-    "/api/products/[slug]/pricing": "product-specific pricing",
-    "/api/products/[slug]/fabric-pricing": "fabric pricing calculations",
-    "/api/cart/vendor-discounts": "cart-level discount application",
-    "/api/admin/pricing/*": "admin pricing management"
-  }
-}
-```
-
-### 🏷️ Discount & Commission System
-
-#### **Discount Types & Applications:**
-```json
-{
-  "discount_hierarchy": {
-    "1_customer_specific": {
-      "types": ["fixed_price", "discount_percent", "discount_amount", "markup_percent"],
-      "application": "override or modify base pricing",
-      "table": "customer_specific_pricing"
-    },
-    "2_volume_discounts": {
-      "structure": "quantity tiers with percentage discounts",
-      "example": "5-10 items: 5%, 11-25 items: 10%, 26+: 15%",
-      "table": "volume_discounts"
-    },
-    "3_vendor_discounts": {
-      "types": ["percentage", "fixed_amount", "tiered", "bulk_pricing"],
-      "scope": ["all_products", "specific_categories", "individual_products"],
-      "table": "vendor_discounts"
-    },
-    "4_coupon_codes": {
-      "features": ["usage_limits", "expiration_dates", "customer_restrictions"],
-      "stacking": "configurable with other promotions",
-      "table": "coupon_codes"
-    },
-    "5_promotional_campaigns": {
-      "types": ["seasonal", "clearance", "new_customer", "category_specific"],
-      "scheduling": "start/end dates with automatic activation",
-      "table": "promotional_campaigns"
-    }
-  },
-  "commission_structure": {
-    "vendor_commissions": {
-      "calculation_methods": ["percentage", "fixed_amount", "tiered"],
-      "scope": ["vendor_specific", "category_based", "product_specific", "global"],
-      "table": "commission_rules"
-    },
-    "sales_staff_commissions": {
-      "individual_rates": "per salesperson commission tracking",
-      "override_capability": "can override vendor default rates",
-      "tracking": "tied to order attribution"
-    }
-  }
-}
-```
-
-### 🔧 Dynamic Pricing Engine
-
-#### **Real-Time Pricing Adjustments:**
-```json
-{
-  "dynamic_pricing_rules": {
-    "time_based_pricing": {
-      "hour_of_day": "different rates for peak/off-peak hours",
-      "day_of_week": "weekend vs weekday pricing",
-      "seasonal": "month-based price adjustments"
-    },
-    "inventory_based_pricing": {
-      "low_stock": "increase prices when inventory drops below threshold",
-      "overstock": "discount pricing to move excess inventory",
-      "out_of_stock": "hide pricing or show backorder pricing"
-    },
-    "demand_based_pricing": {
-      "high_demand": "increase prices for popular items",
-      "conversion_optimization": "A/B test different price points",
-      "geographic": "regional pricing variations"
-    },
-    "rule_constraints": {
-      "min_max_prices": "prevent prices from going below/above limits",
-      "percentage_limits": "cap maximum discount percentages",
-      "customer_type_rules": "different rules for B2B vs B2C"
-    }
-  }
-}
-```
-
-### 🛒 Multi-Vendor Cart Pricing
-
-#### **Complex Cart Calculations:**
-```json
-{
-  "multi_vendor_cart_logic": {
-    "vendor_separation": {
-      "cart_grouping": "items grouped by vendor for discount application",
-      "individual_calculations": "each vendor's discounts apply only to their items",
-      "shipping_per_vendor": "separate shipping calculations per vendor"
-    },
-    "discount_stacking": {
-      "application_order": [
+    "pricing_engine": {
+      "discount_types": [
+        "volume_discounts_quantity_tiers",
         "customer_specific_pricing",
-        "volume_discounts",
-        "vendor_discounts", 
-        "coupon_codes",
-        "promotional_campaigns"
+        "coupon_codes_usage_tracking",
+        "promotional_campaigns",
+        "seasonal_time_based_rules"
       ],
-      "maximum_discount_caps": "prevent over-discounting",
-      "conflict_resolution": "highest discount wins vs stackable rules"
+      "calculations": {
+        "tax": "8.25_percent_default",
+        "shipping": "free_over_100_dollars",
+        "minimum_order": "requirement_enforcement"
+      }
     },
-    "cart_level_features": {
-      "price_alerts": "notify when items go on sale",
-      "save_for_later": "price tracking for saved items",
-      "bulk_pricing": "automatic volume discount application",
-      "free_shipping_calculation": "threshold per vendor vs combined"
-    }
-  }
-}
-```
-
-### ⚙️ Administrative Controls
-
-#### **Admin Pricing Management:**
-```json
-{
-  "admin_pricing_controls": {
-    "global_settings": {
-      "tax_rate": "platform-wide tax percentage (default 8.25%)",
-      "minimum_order_amount": "minimum purchase requirement",
-      "free_shipping_threshold": "free shipping cutoff ($100 default)",
-      "default_commission_rate": "standard vendor commission (15%)",
-      "payment_processing_fee": "credit card processing costs"
-    },
-    "pricing_rule_management": {
-      "commission_rules": "create/modify vendor and sales staff rates",
-      "volume_discounts": "configure quantity-based pricing tiers",
-      "promotional_campaigns": "setup platform-wide sales events",
-      "dynamic_pricing": "configure time/inventory-based rules"
-    },
-    "vendor_oversight": {
-      "discount_approval": "review and approve vendor discount requests",
-      "pricing_audits": "monitor vendor pricing compliance",
-      "commission_reports": "track commission payments and calculations"
-    }
-  }
-}
-```
-
-### 🧪 Testing & Validation
-
-#### **Pricing System Testing:**
-```json
-{
-  "testing_scenarios": {
-    "basic_pricing": {
-      "single_product": "verify base price + options calculations",
-      "fabric_pricing": "test per-sqft calculations with different dimensions",
-      "matrix_pricing": "validate dimensional pricing grid accuracy"
-    },
-    "discount_testing": {
-      "volume_discounts": "test quantity tier breakpoints",
-      "coupon_stacking": "verify discount combination rules",
-      "vendor_specific": "ensure vendor discounts don't cross-apply"
-    },
-    "edge_cases": {
-      "zero_pricing": "handle free items and promotional giveaways",
-      "negative_discounts": "prevent negative final prices",
-      "extreme_dimensions": "test very large window configurations"
-    },
-    "performance_testing": {
-      "cart_calculations": "bulk pricing calculations with many items",
-      "real_time_updates": "pricing updates during configuration",
-      "concurrent_users": "multiple users calculating prices simultaneously"
-    }
-  }
-}
-```
-
-### 📈 Business Intelligence & Reporting
-
-#### **Pricing Analytics:**
-```json
-{
-  "pricing_analytics": {
-    "revenue_optimization": {
-      "price_elasticity": "track sales volume vs price point changes",
-      "discount_effectiveness": "measure ROI of different discount types",
-      "conversion_rates": "pricing impact on purchase decisions"
-    },
-    "vendor_performance": {
-      "commission_tracking": "vendor earnings and payment schedules",
-      "pricing_competitiveness": "compare vendor prices for same products",
-      "discount_usage": "track vendor discount strategy effectiveness"
-    },
-    "customer_insights": {
-      "price_sensitivity": "customer response to pricing changes", 
-      "average_order_value": "impact of pricing on purchase amounts",
-      "customer_lifetime_value": "pricing strategy effect on retention"
-    }
-  }
-}
-```
-
-### 🚀 Production Deployment Considerations
-
-#### **Pricing System Performance:**
-```json
-{
-  "performance_optimization": {
-    "caching_strategy": {
-      "pricing_matrix_cache": "cache dimensional pricing for faster lookups",
-      "discount_rule_cache": "cache active discount rules",
-      "tax_calculation_cache": "cache tax rates by location"
-    },
-    "database_optimization": {
-      "pricing_indexes": "optimize queries on price-related tables",
-      "discount_indexes": "fast lookups for applicable discounts",
-      "vendor_pricing_indexes": "multi-vendor price comparisons"
-    },
-    "api_optimization": {
-      "bulk_pricing_endpoints": "calculate multiple items efficiently",
-      "real_time_calculations": "fast response for interactive pricing",
-      "concurrent_processing": "handle multiple pricing requests"
+    "order_management": {
+      "features": [
+        "complex_order_creation_transaction_support",
+        "multi_vendor_order_splitting",
+        "order_modifications_after_placement",
+        "guest_order_support",
+        "reorder_functionality",
+        "installation_scheduling"
+      ]
     }
   },
-  "monitoring_alerts": {
-    "pricing_errors": "alert on calculation failures",
-    "discount_abuse": "monitor excessive discount usage",
-    "commission_discrepancies": "validate commission calculations"
-  }
-}
-```
-
----
-
-## 🔐 CRITICAL: Cart Security & Hardcoded User ID Audit (June 2025)
-
-### Cart Shared Data Crisis
-```json
-{
-  "issue_type": "critical_security_vulnerability",
-  "severity": "P0_data_breach_risk", 
-  "discovery_date": "2025-06-22",
-  "symptoms": {
-    "shared_cart_count": "all users see identical cart item count (3 items)",
-    "cross_user_visibility": "admin, vendor, customer, guest all see same cart",
-    "data_privacy_violation": "users can access other users' cart items",
-    "role_access_inappropriate": "cart visible to admin/vendor roles who shouldn't have shopping access"
+  
+  "api_architecture": {
+    "endpoint_structure": {
+      "auth": "/api/auth/* - authentication login register logout",
+      "products": "/api/products/* - product CRUD search configuration",
+      "orders": "/api/orders/* - order management modifications",
+      "cart": "/api/cart/* - cart operations pricing recommendations",
+      "pricing": "/api/pricing/* - dynamic pricing calculations",
+      "account": "/api/account/* - user account management",
+      "admin": "/api/admin/* - administrative functions",
+      "vendor": "/api/vendor/* - vendor portal APIs",
+      "sales": "/api/sales/* - sales representative tools",
+      "installer": "/api/installer/* - installation management",
+      "payments": "/api/payments/* - payment processing multiple providers",
+      "ai_designer": "/api/ai-designer/* - AI powered design features",
+      "room_visualizer": "/api/room-visualizer/* - AR ML room analysis",
+      "analytics": "/api/analytics/* - business intelligence",
+      "iot": "/api/iot/* - smart home integration"
+    },
+    "middleware": {
+      "authentication": "JWT verification protected routes",
+      "authorization": "role based access enforcement",
+      "security": "rate limiting protection",
+      "headers": "security headers application"
+    }
   },
-  "root_cause": {
-    "hardcoded_user_id": "const userId = 1; // Demo user in cart APIs",
-    "missing_authentication": "cart APIs not using getCurrentUser() validation",
-    "no_role_validation": "cart accessible to all user roles instead of customers only",
-    "shared_state": "all users accessing same hardcoded user's cart data"
-  }
-}
-```
-
-### Comprehensive Security Fix Implementation
-```json
-{
-  "fix_strategy": "complete_cart_system_authentication_overhaul",
-  "implementation_date": "2025-06-22",
-  "affected_components": {
-    "api_routes": [
-      "/app/api/account/cart/route.ts",
-      "/app/api/account/cart/items/[id]/route.ts", 
-      "/app/api/account/wishlist/route.ts"
+  
+  "ui_system": {
+    "design_system": {
+      "colors_file": "/app/styles/colors.ts",
+      "framework": "Tailwind CSS custom design tokens",
+      "approach": "responsive design mobile first",
+      "accessibility": "built in features"
+    },
+    "color_scheme": {
+      "primary_red": "#CC2229",
+      "dark_blue": "#1A365D",
+      "text_primary": "#333333",
+      "text_secondary": "#717171",
+      "background_light": "#F5F5F5",
+      "background_white": "#FFFFFF"
+    },
+    "component_architecture": {
+      "library": "Shadcn/UI",
+      "primitives": "Radix UI",
+      "variants": "Class Variance Authority",
+      "animations": "Tailwind Animate"
+    }
+  },
+  
+  "security_measures": {
+    "input_validation": {
+      "schemas": "Zod comprehensive validation",
+      "rate_limiting": "configurable windows",
+      "xss_prevention": "input sanitization",
+      "sql_injection": "parameterized queries",
+      "csrf_protection": "secure cookies"
+    },
+    "file_upload_security": {
+      "allowed_types": ["JPEG", "PNG", "WebP", "PDF"],
+      "scanning": "malicious content detection",
+      "size_limits": "5MB images 10MB documents",
+      "filename_generation": "secure random naming",
+      "directory_protection": "traversal prevention"
+    },
+    "security_headers": {
+      "csp": "Content Security Policy",
+      "hsts": "HTTP Strict Transport Security",
+      "xss_protection": "XSS protection headers",
+      "frame_options": "clickjacking protection"
+    }
+  },
+  
+  "database_schema": {
+    "user_management": [
+      "users - role based access",
+      "authentication - password hashing",
+      "user_preferences - settings"
     ],
-    "ui_components": [
-      "/components/Navbar.tsx",
-      "/context/CartContext.tsx"
+    "product_catalog": [
+      "products - features specifications materials",
+      "categories - subcategories",
+      "vendor_specific - product options",
+      "pricing_matrices - volume discounts"
     ],
-    "authentication_pattern": "getCurrentUser() with role validation"
+    "ecommerce_core": [
+      "orders - complex pricing calculations",
+      "cart_items - configuration data",
+      "shipping_addresses - payment methods",
+      "order_modifications - tracking"
+    ],
+    "business_features": [
+      "room_visualizations - measurements",
+      "sales_pipeline - customers appointments leads",
+      "installation_jobs - scheduling",
+      "product_comparisons - analytics",
+      "swatch_ordering - system"
+    ]
   },
-  "security_measures_applied": {
-    "user_specific_data": {
-      "before": "const userId = 1; // Demo user",
-      "after": "const user = await getCurrentUser(); cart = await getOrCreateCart(pool, user.userId);",
-      "enforcement": "each user only accesses their own cart/wishlist data"
-    },
-    "role_based_access_control": {
-      "cart_access": "if (!user || user.role !== 'customer') return 403",
-      "ui_visibility": "cart icon only shown to customers and guests",
-      "context_protection": "CartContext only loads for customer role"
-    },
-    "api_authentication": {
-      "all_cart_endpoints": "GET, POST, PUT, DELETE require customer authentication",
-      "error_handling": "secure error messages for unauthorized access",
-      "guest_support": "localStorage fallback for non-authenticated users"
+  
+  "advanced_features": {
+    "ai_ml_capabilities": [
+      "product_recommendations - behavior based",
+      "visual_search - image upload",
+      "room_analysis - product placement",
+      "emotion_detection - design preferences",
+      "predictive_analytics - inventory"
+    ],
+    "smart_home_integration": [
+      "tuya_iot_platform - motorized blinds",
+      "multi_platform_bridge - alexa google homekit",
+      "voice_control - automation",
+      "real_time_device - synchronization"
+    ],
+    "ar_vr_features": [
+      "room_visualization - product placement",
+      "mobile_ar - preview capabilities",
+      "3d_product_configurator",
+      "window_detection - measurement",
+      "lighting_simulation - effects"
+    ]
+  },
+  
+  "development_commands": {
+    "development": "npm run dev - start development server",
+    "build": "npm run build - build for production",
+    "start": "npm run start - start production server",
+    "lint": "npm run lint - run Biome linter TypeScript check",
+    "format": "npm run format - format code with Biome",
+    "database": "npm run db:setup - initialize database"
+  },
+  
+  "environment_configuration": {
+    "required_variables": {
+      "database": "DATABASE_URL",
+      "jwt": "JWT_SECRET",
+      "stripe": "STRIPE_SECRET_KEY",
+      "paypal": "PAYPAL_CLIENT_ID",
+      "braintree": "BRAINTREE_MERCHANT_ID",
+      "email": ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"],
+      "file_upload": "UPLOAD_MAX_SIZE",
+      "smart_home": ["TUYA_API_KEY", "TUYA_API_SECRET"]
     }
-  }
-}
-```
-
-### Hardcoded User ID Comprehensive Audit
-```json
-{
-  "audit_scope": "entire_codebase_hardcoded_userid_patterns",
-  "audit_date": "2025-06-22",
-  "search_patterns": [
-    "userId = 1",
-    "user_id = 1", 
-    "const userId = 1",
-    "Demo user"
-  ],
-  "critical_findings": {
-    "cart_apis": {
-      "status": "FIXED",
-      "files": [
+  },
+  
+  "critical_fixes_and_issues": {
+    "database_connection_leak_prevention_june_2025": {
+      "issue": "database connections reached 152 from 10 limit causing site failure",
+      "root_causes": [
+        "disabled_settings_cache_causing_every_getSetting_call_to_hit_database",
+        "multiple_database_calls_per_request_pricing_tax_15_20_calls_per_checkout",
+        "missing_tax_rate_caching_every_zip_lookup_1_4_database_calls"
+      ],
+      "solution": {
+        "settings_cache": "re_enabled_5_minute_cache",
+        "tax_calculation": "added_10_minute_cache_per_zip_code",
+        "pricing_api": "reduced_calls_through_caching"
+      },
+      "connection_patterns": {
+        "correct_non_transactional": "pool.execute() directly",
+        "incorrect_causes_leaks": "pool.getConnection() without release",
+        "correct_transactional": "getConnection() with try_catch_finally_release"
+      },
+      "fixed_files": [
+        "/lib/auth.ts",
+        "/app/api/account/dashboard/route.ts",
+        "/app/api/orders/create/route.ts",
+        "/lib/services/products.ts",
+        "/lib/email/emailService.ts"
+      ]
+    },
+    "mysql_parameter_binding_issues_june_2025": {
+      "issue": "APIs failing with Incorrect arguments to mysqld_stmt_execute",
+      "root_cause": "MySQL2 parameter binding issues with LIMIT ? OFFSET ? syntax",
+      "solution": {
+        "problematic_pattern": "LIMIT ? OFFSET ? with parameters",
+        "working_solution": "LIMIT ${limit} OFFSET ${offset} with validated integers",
+        "safe_interpolation_rules": "only for validated integers predefined columns ORDER BY directions",
+        "never_interpolate": "user input strings untrusted data dynamic table names"
+      },
+      "pagination_pattern": "WHERE with parameters, LIMIT OFFSET with safe interpolation"
+    },
+    "checkout_tax_calculation_fixes_june_2025": {
+      "issues_fixed": [
+        "checkout_redirect_on_refresh_race_condition",
+        "missing_coupon_codes_during_tax_calculation",
+        "taxjar_api_called_during_cart_browsing_should_only_calculate_at_checkout"
+      ],
+      "solutions": {
+        "checkout_redirect": "added cartLoadAttempted state, increased timeout 100ms to 1500ms",
+        "tax_flow": "cart stage no tax, checkout stage tax calculated when billing ZIP entered",
+        "optimization": "added ZIP code caching 10 minute cache per ZIP"
+      }
+    },
+    "payment_credential_encryption_june_2025": {
+      "issue": "payment credentials stored as plain text in database",
+      "solution": "implemented AES-256-GCM encryption",
+      "implementation": {
+        "algorithm": "AES-256-GCM",
+        "key_derivation": "PBKDF2 100000 iterations",
+        "format": "base64(iv + auth_tag + encrypted_data)",
+        "automatic_detection": "isSensitiveSetting() identifies credentials"
+      },
+      "protected_credentials": [
+        "payment_stripe_secret_key",
+        "payment_paypal_client_secret",
+        "payment_braintree_private_key",
+        "integrations_mailchimp_api_key"
+      ]
+    },
+    "admin_dashboard_access_system_june_2025": {
+      "purpose": "enable admins to view any user role dashboard with data isolation",
+      "implementation": {
+        "session_management": "AdminViewId in sessionStorage",
+        "api_communication": "x-admin-view-id header",
+        "user_assignment": "effectiveUserId = adminViewId || currentUserId"
+      },
+      "dashboards_supported": ["vendor", "sales", "installer", "customer"],
+      "ui_indicators": "blue banner with user name and back link"
+    },
+    "lazy_loading_optimization_june_2025": {
+      "problem": "dashboard pages causing database connection leak 141+ connections",
+      "root_cause": "eager loading all dashboard pages, 13+ duplicate auth calls",
+      "solution": {
+        "centralized_auth": "/context/AuthContext.tsx single auth call",
+        "lazy_loading_hook": "/hooks/useLazyLoad.ts conditional data fetching",
+        "route_based_loading": "only fetch when targetPath matches current route"
+      },
+      "performance_improvement": "90% reduction in connections 141 to 17"
+    },
+    "cart_security_hardcoded_userid_audit_june_2025": {
+      "issue": "all users seeing identical cart shared data userId = 1 hardcoded",
+      "security_risk": "data breach cross user visibility",
+      "solution": {
+        "authentication": "replaced hardcoded userId with getCurrentUser()",
+        "role_validation": "cart only accessible to customers and guests",
+        "api_security": "all cart endpoints require customer authentication"
+      },
+      "files_fixed": [
         "/app/api/account/cart/route.ts",
-        "/app/api/account/cart/items/[id]/route.ts"
-      ],
-      "fix": "replaced hardcoded userId with getCurrentUser() authentication"
+        "/app/api/account/wishlist/route.ts",
+        "/components/Navbar.tsx"
+      ]
     },
-    "wishlist_api": {
-      "status": "FIXED", 
-      "file": "/app/api/account/wishlist/route.ts",
-      "fix": "implemented proper authentication for GET, POST, DELETE operations"
-    },
-    "other_apis": {
-      "status": "VERIFIED_SECURE",
-      "scope": "124+ files checked",
-      "result": "most APIs already using proper getCurrentUser() patterns"
-    }
-  },
-  "security_validation": {
-    "authentication_pattern": "getCurrentUser() with JWT token validation",
-    "role_validation": "user.role checks for appropriate access levels",
-    "data_isolation": "user.userId used for database queries",
-    "error_handling": "403 responses for unauthorized access"
-  }
-}
-```
-
-### Cart System Architecture Post-Fix
-```json
-{
-  "cart_access_control": {
-    "customers": {
-      "access": "full cart functionality",
-      "data_scope": "own cart items only",
-      "api_access": "authenticated cart APIs",
-      "ui_visibility": "cart icon visible in navbar"
-    },
-    "guests": {
-      "access": "localStorage-based cart",
-      "data_scope": "local browser storage only", 
-      "migration": "auto-merge to authenticated cart on login",
-      "ui_visibility": "cart icon visible in navbar"
-    },
-    "admin_vendor_sales_installer": {
-      "access": "NO_CART_ACCESS",
-      "data_scope": "N/A - cart not applicable to business roles",
-      "api_access": "403 forbidden responses",
-      "ui_visibility": "cart icon hidden from navbar"
-    }
-  },
-  "data_flow_security": {
-    "authenticated_users": "getCurrentUser() → role validation → user-specific cart data",
-    "guest_users": "localStorage cart → auto-merge on authentication",
-    "role_enforcement": "customer role required for all cart API operations",
-    "cross_user_protection": "database queries use authenticated user.userId only"
-  }
-}
-```
-
-### MULTI_VENDOR_DISCOUNT_COUPON_SYSTEM_FIX_2025:
-```json
-{
-  "feature_name": "multi_vendor_discount_coupon_system_overhaul",
-  "implementation_date": "2025-06-23",
-  "issue_type": "business_logic_architectural_fix",
-  "severity": "critical_revenue_affecting",
-  
-  "previous_problems": {
-    "conflicting_logic": "platform_wide_and_vendor_specific_discounts_conflicted",
-    "stacking_issues": "no_clear_hierarchy_for_multiple_discount_application",
-    "cart_wide_application": "discounts_applied_to_entire_cart_instead_of_per_vendor",
-    "missing_visibility": "users_could_not_see_applied_discounts_breakdown"
-  },
-  
-  "new_business_rules": {
-    "vendor_only_discounts": "NO platform-wide discounts/coupons - only vendor-specific",
-    "application_order": "vendor_discounts_first_automatic → vendor_coupons_second_automatic",
-    "vendor_isolation": "each_vendors_discounts_apply_ONLY_to_their_own_products",
-    "cart_display": "show_complete_list_of_applied_discounts_per_vendor"
-  },
-  
-  "technical_implementation": {
-    "pricing_api_overhaul": "/app/api/pricing/calculate/route.ts",
-    "vendor_grouping": "group_cart_items_by_vendor_via_vendor_products_table",
-    "discount_processing": "process_each_vendor_separately_with_isolated_calculations",
-    "stacking_logic": "discounts_first_then_coupons_per_vendor_with_proper_hierarchy"
-  },
-  
-  "data_flow": {
-    "step_1": "group_cart_items_by_vendor_using_vendor_products_mapping",
-    "step_2": "apply_vendor_automatic_discounts_per_vendor_subtotal",
-    "step_3": "apply_vendor_coupons_after_discounts_per_vendor",
-    "step_4": "calculate_final_totals_with_vendor_specific_breakdowns",
-    "step_5": "return_complete_applied_discounts_list_for_cart_display"
-  },
-  
-  "cart_display_enhancement": {
-    "component": "/components/cart/AppliedDiscountsList.tsx",
-    "features": [
-      "show_automatic_vendor_discounts_with_green_percent_icon",
-      "show_vendor_coupons_with_blue_tag_icon_and_remove_button",
-      "display_savings_by_vendor_breakdown",
-      "total_savings_badge_in_header"
-    ],
-    "user_experience": "users_can_see_exactly_which_vendor_gave_which_discount"
-  },
-  
-  "database_structure": {
-    "vendor_discounts": "automatic_discounts_per_vendor_with_priority_ordering",
-    "vendor_coupons": "manual_coupon_codes_per_vendor_with_usage_limits",
-    "vendor_products": "mapping_table_to_determine_product_vendor_ownership",
-    "cart_vendor_discounts": "tracking_table_for_applied_discounts_per_cart_session"
-  },
-  
-  "api_response_structure": {
-    "vendor_discounts": "array_of_automatic_discounts_applied",
-    "vendor_coupons": "array_of_coupon_discounts_applied",
-    "applied_discounts_list": "complete_list_for_ui_display",
-    "total_discount_amount": "sum_of_all_vendor_discounts_and_coupons",
-    "vendors_in_cart": "count_of_unique_vendors_in_current_cart"
-  },
-  
-  "business_examples": {
-    "multi_vendor_cart": {
-      "vendor_a_products": "$100_subtotal → 10%_auto_discount → $90 → SAVE10_coupon_5% → $85.50",
-      "vendor_b_products": "$50_subtotal → no_auto_discount → $50 → no_coupon → $50",
-      "total_cart": "$150_original → $135.50_final → $14.50_total_savings"
-    },
-    "discount_isolation": {
-      "vendor_a_20_percent_discount": "applies_only_to_vendor_a_products_not_entire_cart",
-      "vendor_b_coupon": "applies_only_to_vendor_b_products_not_vendor_a"
-    }
-  },
-  
-  "error_handling": {
-    "coupon_vendor_mismatch": "show_error_if_coupon_vendor_products_not_in_cart",
-    "minimum_order_validation": "check_vendor_specific_minimums_not_cart_wide",
-    "usage_limit_enforcement": "track_vendor_coupon_usage_separately"
-  },
-  
-  "context_updates": {
-    "cart_context": "/context/CartContext.tsx",
-    "interface_changes": [
-      "VendorDiscount_interface_for_discount_objects",
-      "PricingDetails_updated_with_vendor_arrays",
-      "removed_old_platform_wide_discount_fields"
-    ]
-  },
-  
-  "validation_testing": {
-    "test_scenarios": [
-      "cart_with_multiple_vendors_products",
-      "automatic_discounts_apply_only_to_correct_vendor",
-      "coupons_apply_only_to_correct_vendor_products",
-      "discount_stacking_order_vendor_discount_then_coupon",
-      "applied_discounts_list_shows_correct_breakdown"
-    ]
-  },
-  
-  "production_benefits": {
-    "revenue_optimization": "vendors_can_create_targeted_promotions_for_their_products",
-    "user_transparency": "customers_see_exactly_which_vendor_provided_savings",
-    "business_logic_clarity": "clear_separation_of_vendor_specific_promotions",
-    "scalability": "system_supports_unlimited_vendors_with_isolated_pricing"
-  }
-}
-```
-
-### Production Security Validation
-```json
-{
-  "security_checklist": {
-    "user_data_isolation": "VERIFIED - each user only sees own cart/wishlist",
-    "role_based_access": "VERIFIED - cart only accessible to customers/guests",
-    "api_authentication": "VERIFIED - all cart endpoints require proper auth",
-    "ui_role_visibility": "VERIFIED - cart icon hidden from business roles",
-    "hardcoded_removal": "VERIFIED - no remaining const userId = 1 patterns",
-    "error_handling": "VERIFIED - secure error messages for unauthorized access"
-  },
-  "testing_scenarios": {
-    "customer_login": "sees only own cart items with correct count",
-    "admin_login": "cart icon hidden, cart APIs return 403",
-    "vendor_login": "cart icon hidden, cart APIs return 403", 
-    "guest_user": "localStorage cart works, migrates on login",
-    "cross_user_test": "user A cannot access user B's cart data"
-  },
-  "monitoring_recommendations": {
-    "auth_failures": "monitor 403 responses on cart endpoints",
-    "role_violations": "alert on non-customer cart access attempts",
-    "data_integrity": "verify cart user_id matches authenticated user",
-    "session_security": "monitor JWT token validation failures"
-  }
-}
-```
-
-### Files Modified for Security
-```json
-{
-  "api_routes_fixed": {
-    "/app/api/account/cart/route.ts": {
-      "changes": ["replaced hardcoded userId with getCurrentUser()", "added customer role validation", "added proper error handling"],
-      "impact": "cart now user-specific and secure"
-    },
-    "/app/api/account/cart/items/[id]/route.ts": {
-      "changes": ["replaced hardcoded userId with getCurrentUser()", "added customer role validation", "added authentication to PATCH/DELETE"],
-      "impact": "cart item operations now user-specific"
-    },
-    "/app/api/account/wishlist/route.ts": {
-      "changes": ["replaced hardcoded userId with getCurrentUser()", "added customer role validation", "secured GET/POST/DELETE operations"],
-      "impact": "wishlist now user-specific and secure"
-    }
-  },
-  "ui_components_modified": {
-    "/components/Navbar.tsx": {
-      "changes": ["wrapped cart icon with customer/guest role check"],
-      "impact": "cart only visible to appropriate user roles"
-    },
-    "/context/CartContext.tsx": {
-      "changes": ["modified isAuthenticated() to only return true for customers"],
-      "impact": "cart context only active for customer role"
-    }
-  }
-}
-```
-
-### Business Impact & Risk Mitigation
-```json
-{
-  "risk_mitigation": {
-    "data_breach_prevention": "users can no longer access other users' cart data",
-    "role_appropriate_access": "business users (admin/vendor) no longer see inappropriate cart functionality",
-    "privacy_compliance": "cart data properly isolated per user",
-    "user_experience": "customers see correct personalized cart count"
-  },
-  "business_continuity": {
-    "customer_shopping": "enhanced - now sees own cart items correctly",
-    "guest_experience": "maintained - localStorage cart still works",
-    "admin_workflow": "improved - no confusing cart icon in business interface",
-    "vendor_workflow": "improved - focused on business tools without cart distraction"
-  },
-  "security_posture": {
-    "authentication": "strengthened with proper JWT validation throughout cart system",
-    "authorization": "implemented with role-based access control",
-    "data_isolation": "enforced at API and UI levels",
-    "audit_trail": "comprehensive documentation for future security reviews"
-  }
-}
-```
-
----
-
-## 🛒 CHECKOUT FLOW TRANSFORMATION (June 2025)
-
-### Multi-Step to Single-Page Checkout Conversion
-```json
-{
-  "feature_name": "single_page_checkout_conversion",
-  "implementation_date": "2025-06-22",
-  "change_type": "major_ux_architectural_overhaul",
-  "business_impact": "reduced_cart_abandonment_improved_conversion_rate",
-  
-  "previous_architecture": {
-    "flow_type": "multi_step_wizard",
-    "steps": [
-      "step_1_shipping_information",
-      "step_2_billing_information", 
-      "step_3_payment_information"
-    ],
-    "navigation": "linear_step_progression_with_back_next_buttons",
-    "user_experience": "traditional_e_commerce_checkout_flow",
-    "drawbacks": [
-      "higher_abandonment_rate_between_steps",
-      "requires_multiple_navigation_actions",
-      "mobile_users_frustrated_with_step_progression",
-      "cannot_see_all_requirements_upfront"
-    ]
-  },
-  
-  "new_architecture": {
-    "flow_type": "single_page_unified_checkout",
-    "layout": "all_sections_visible_simultaneously",
-    "sections": [
-      "contact_information_gray_background",
-      "shipping_address_blue_background_truck_icon",
-      "billing_address_green_background_creditcard_icon",
-      "payment_information_stripe_integration"
-    ],
-    "navigation": "single_submit_action_pay_now_button",
-    "user_experience": "modern_streamlined_checkout_experience"
-  },
-  
-  "technical_implementation": {
-    "removed_components": [
-      "progress_steps_indicator_with_numbered_circles",
-      "step_based_conditional_rendering_activeStep_state",
-      "navigation_buttons_back_next_continue_to_payment",
-      "multi_step_state_management_nextStep_prevStep_functions"
-    ],
-    "added_components": [
-      "unified_container_with_space_y_6_layout",
-      "color_coded_section_backgrounds_gray_blue_green",
-      "icon_indicators_truck_creditcard_shieldcheck",
-      "single_page_header_complete_your_order"
-    ],
-    "layout_optimization": {
-      "address_forms": "compact_grid_layouts_with_smaller_text_sizes",
-      "contact_info": "2_column_grid_for_name_fields",
-      "address_layout": "3_column_grid_address_apt_4_column_city_state_zip",
-      "responsive_design": "mobile_first_with_collapsible_sections"
-    }
-  },
-  
-  "code_changes": {
-    "file_modified": "/app/checkout/page.tsx",
-    "lines_affected": "566-924 major structural overhaul",
-    "key_modifications": [
-      "removed activeStep === 1, 2, 3 conditional rendering",
-      "replaced progress indicator with single page header",
-      "converted step sections to bordered card containers",
-      "eliminated nextStep prevStep navigation functions",
-      "integrated PaymentForm directly without step wrapper",
-      "removed back buttons from all sections",
-      "added color coded backgrounds for visual organization"
-    ],
-    "preserved_functionality": [
-      "all form validation and data collection",
-      "stripe payment integration remains intact",
-      "same as shipping address checkbox functionality",
-      "guest checkout and account creation options",
-      "order creation and database storage logic",
-      "pricing calculation and coupon application"
-    ]
-  },
-  
-  "user_experience_improvements": {
-    "conversion_optimization": {
-      "reduced_abandonment": "eliminate_step_progression_friction",
-      "faster_completion": "single_page_reduces_time_to_purchase",
-      "mobile_friendly": "better_mobile_experience_no_step_navigation",
-      "transparency": "users_see_all_requirements_upfront"
-    },
-    "accessibility_enhancements": {
-      "visual_organization": "color_coded_sections_improve_scanning",
-      "form_efficiency": "compact_layouts_reduce_scrolling",
-      "error_visibility": "all_validation_errors_visible_simultaneously",
-      "progress_clarity": "no_confusion_about_checkout_progress"
-    },
-    "business_benefits": {
-      "higher_conversion_rates": "reduced_checkout_abandonment",
-      "improved_mobile_sales": "mobile_optimized_single_page_flow",
-      "faster_order_processing": "streamlined_completion_process",
-      "better_user_satisfaction": "modern_checkout_experience"
-    }
-  },
-  
-  "address_management": {
-    "shipping_address": {
-      "section_styling": "bg_blue_50_with_truck_icon",
-      "form_layout": "compact_grid_2_3_4_column_responsive",
-      "field_organization": "street_apt_in_3_column_city_state_zip_in_4_column"
-    },
-    "billing_address": {
-      "section_styling": "bg_green_50_with_creditcard_icon", 
-      "same_as_shipping": "checkbox_functionality_preserved",
-      "conditional_display": "billing_form_only_shows_when_different"
-    },
-    "contact_information": {
-      "section_styling": "bg_gray_50_dedicated_contact_section",
-      "layout": "2_column_grid_for_first_last_name_email_phone"
-    }
-  },
-  
-  "payment_integration": {
-    "stripe_elements": "preserved_all_stripe_functionality",
-    "security_messaging": "maintained_encryption_security_notices",
-    "form_validation": "all_payment_validation_rules_intact", 
-    "submission_flow": "single_pay_now_button_processes_entire_order"
-  },
-  
-  "database_integration": {
-    "order_creation": "unchanged_all_address_data_properly_stored",
-    "shipping_billing_storage": "both_addresses_saved_to_orders_table",
-    "guest_checkout": "guest_order_creation_functionality_preserved",
-    "authenticated_checkout": "user_specific_order_creation_maintained"
-  },
-  
-  "testing_requirements": {
-    "functional_testing": [
-      "verify_all_form_fields_collect_data_properly",
-      "test_same_as_shipping_checkbox_functionality", 
-      "validate_stripe_payment_processing_works",
-      "confirm_order_creation_with_both_addresses",
-      "test_guest_and_authenticated_user_flows"
-    ],
-    "ux_testing": [
-      "mobile_responsiveness_across_devices",
-      "form_validation_errors_display_correctly",
-      "color_coded_sections_improve_user_comprehension",
-      "single_page_scroll_behavior_acceptable"
-    ],
-    "conversion_testing": [
-      "measure_checkout_completion_rates",
-      "track_mobile_vs_desktop_conversion_improvements",
-      "monitor_cart_abandonment_rate_changes"
-    ]
-  },
-  
-  "future_enhancements": {
-    "potential_improvements": [
-      "add_progress_bar_within_single_page_as_user_fills_sections",
-      "implement_real_time_form_validation_feedback",
-      "add_estimated_delivery_date_display",
-      "integrate_address_autocomplete_for_faster_entry",
-      "add_saved_addresses_for_returning_customers"
-    ],
-    "mobile_optimizations": [
-      "consider_collapsible_sections_for_very_small_screens",
-      "implement_floating_pay_button_for_long_forms",
-      "add_form_section_anchor_navigation"
-    ]
-  },
-  
-  "monitoring_metrics": {
-    "conversion_tracking": [
-      "checkout_completion_rate_before_vs_after",
-      "mobile_checkout_completion_improvements",
-      "time_to_complete_checkout_reduction",
-      "cart_abandonment_rate_by_section"
-    ],
-    "user_experience_metrics": [
-      "form_completion_time_measurements",
-      "error_rate_per_checkout_section",
-      "mobile_vs_desktop_user_satisfaction_scores"
-    ]
-  },
-  
-  "architectural_impact": {
-    "component_simplification": "reduced_complexity_by_removing_step_state_management",
-    "maintainability": "easier_to_modify_checkout_flow_with_single_component_structure",
-    "performance": "reduced_re_renders_from_step_state_changes",
-    "scalability": "easier_to_add_new_checkout_sections_without_step_logic"
-  }
-}
-```
-
----
-
-## 🚀 LAZY LOADING & DATABASE CONNECTION OPTIMIZATION (June 2025)
-
-### 🚨 **Critical Performance Crisis Resolved**
-
-**Issue**: Dashboard pages were causing a database connection leak crisis with 141+ concurrent connections, causing complete site failure due to connection pool exhaustion.
-
-**Root Cause**: All dashboard pages were making eager API calls on load, including duplicate authentication calls, resulting in:
-- 13+ duplicate `/api/auth/me` calls across dashboard tabs
-- Every dashboard page fetching data immediately regardless of user interaction
-- Connection pool exhaustion (exceeded 10 connection limit by 1400%)
-
-**Solution**: Implemented comprehensive lazy loading architecture with centralized authentication and route-based data fetching.
-
-```json
-{
-  "performance_transformation": {
-    "before": {
-      "database_connections": "141+ concurrent connections",
-      "loading_pattern": "eager_loading_all_dashboard_pages",
-      "authentication": "duplicate_auth_calls_per_tab",
-      "user_experience": "connection_timeouts_and_site_failures",
-      "api_calls": "13+_auth_calls_plus_data_calls_on_dashboard_load"
-    },
-    "after": {
-      "database_connections": "17 concurrent connections (90% reduction)",
-      "loading_pattern": "lazy_loading_only_active_routes",
-      "authentication": "single_centralized_auth_call",
-      "user_experience": "fast_responsive_dashboard_no_timeouts",
-      "api_calls": "1_auth_call_plus_conditional_data_calls"
-    }
-  },
-  
-  "technical_implementation": {
-    "centralized_authentication": {
-      "component": "/context/AuthContext.tsx",
-      "purpose": "single_auth_call_for_entire_application",
-      "features": [
-        "eliminates_duplicate_auth_calls_across_tabs",
-        "automatic_logout_handling_across_tabs",
-        "loading_state_management",
-        "role_based_access_control"
-      ],
-      "integration": "wrapped_entire_app_in_layout.tsx"
-    },
-    "lazy_loading_hook": {
-      "component": "/hooks/useLazyLoad.ts",
-      "purpose": "conditional_data_fetching_based_on_route_activity",
-      "features": [
-        "only_fetches_when_targetPath_matches_current_route",
-        "dependency_based_refetching",
-        "loading_and_error_state_management",
-        "user_authentication_validation"
-      ],
-      "usage_pattern": "replaces_useEffect_immediate_fetch_pattern"
-    },
-    "route_based_loading": {
-      "mechanism": "pathname_comparison_with_targetPath",
-      "activation": "shouldLoad = enabled && isCurrentPath && user && !authLoading",
+    "checkout_single_page_conversion_june_2025": {
+      "change": "multi step wizard to single page unified checkout",
       "benefits": [
-        "prevents_unnecessary_api_calls",
-        "reduces_database_connection_usage",
-        "improves_initial_dashboard_load_time",
-        "eliminates_background_data_fetching"
-      ]
-    }
-  },
-  
-  "implementation_scope": {
-    "vendor_dashboard_pages": {
-      "/vendor/orders": "lazy_loading_with_pagination_and_filters",
-      "/vendor/analytics": "lazy_loading_with_date_range_dependencies",
-      "/vendor/discounts": "lazy_loading_with_tab_switching_support",
-      "/vendor/notifications": "lazy_loading_with_mock_data_structure",
-      "/vendor/shipments": "lazy_loading_with_status_updates",
-      "/vendor/payments": "lazy_loading_with_export_functionality"
-    },
-    "pattern_replacement": {
-      "old_pattern": "useEffect(() => { fetchData(); }, [user]);",
-      "new_pattern": "useLazyLoad(fetchFunction, { targetPath, dependencies })",
-      "refetch_calls": "replaced_fetchData()_calls_with_refetch()_throughout"
-    }
-  },
-  
-  "performance_metrics": {
-    "database_connections": {
-      "before": "141_connections_causing_pool_exhaustion",
-      "after": "17_connections_within_healthy_limits",
-      "improvement": "90%_reduction_in_connection_usage"
-    },
-    "dashboard_load_time": {
-      "before": "slow_due_to_multiple_concurrent_api_calls",
-      "after": "fast_single_auth_call_then_conditional_loading",
-      "improvement": "significantly_improved_perceived_performance"
-    },
-    "user_experience": {
-      "before": "connection_timeouts_site_unresponsive",
-      "after": "smooth_navigation_no_timeouts",
-      "improvement": "eliminated_database_connection_errors"
-    }
-  },
-  
-  "architectural_benefits": {
-    "scalability": "supports_unlimited_concurrent_users_without_connection_leaks",
-    "maintainability": "centralized_auth_and_consistent_loading_patterns",
-    "performance": "dramatic_reduction_in_unnecessary_api_calls",
-    "reliability": "prevents_database_connection_pool_exhaustion",
-    "user_experience": "faster_dashboard_interactions_better_responsiveness"
-  },
-  
-  "files_modified": {
-    "new_architecture": [
-      "/context/AuthContext.tsx - centralized_authentication_system",
-      "/hooks/useLazyLoad.ts - conditional_route_based_data_fetching",
-      "/app/layout.tsx - AuthProvider_wrapper_integration"
-    ],
-    "dashboard_layouts_updated": [
-      "/app/vendor/layout.tsx - uses_AuthContext_removes_duplicate_auth",
-      "/app/sales/layout.tsx - uses_AuthContext_removes_duplicate_auth",
-      "/app/installer/layout.tsx - uses_AuthContext_removes_duplicate_auth",
-      "/app/account/layout.tsx - uses_AuthContext_removes_duplicate_auth"
-    ],
-    "vendor_pages_optimized": [
-      "/app/vendor/orders/page.tsx - lazy_loading_implementation",
-      "/app/vendor/analytics/page.tsx - lazy_loading_implementation",
-      "/app/vendor/discounts/page.tsx - lazy_loading_implementation",
-      "/app/vendor/notifications/page.tsx - lazy_loading_implementation",
-      "/app/vendor/shipments/page.tsx - lazy_loading_implementation",
-      "/app/vendor/payments/page.tsx - lazy_loading_implementation"
-    ]
-  },
-  
-  "usage_pattern_evolution": {
-    "authentication": {
-      "old": "each_dashboard_layout_calls_fetch('/api/auth/me')",
-      "new": "single_AuthContext_provides_user_across_entire_app"
-    },
-    "data_fetching": {
-      "old": "useEffect(() => fetchData(), [user]) in_every_page",
-      "new": "useLazyLoad(fetchFunction, options) only_when_route_active"
-    },
-    "refresh_operations": {
-      "old": "call_fetchData()_directly_for_updates",
-      "new": "call_refetch()_from_useLazyLoad_hook"
-    }
-  },
-  
-  "monitoring_and_validation": {
-    "connection_monitoring": "mysql SHOW PROCESSLIST confirms ~17 connections",
-    "performance_testing": "dashboard_navigation_smooth_no_timeouts",
-    "functionality_verification": "all_features_work_with_lazy_loading",
-    "scalability_proof": "multiple_users_can_access_dashboards_simultaneously"
-  },
-  
-  "future_expansion": {
-    "additional_dashboards": "pattern_ready_for_sales_installer_customer_pages",
-    "api_optimization": "can_implement_caching_layer_on_top_of_lazy_loading",
-    "real_time_features": "foundation_for_websocket_integration",
-    "mobile_optimization": "lazy_loading_especially_beneficial_for_mobile_users"
-  }
-}
-```
-
-### 🎯 **Business Impact**
-
-This lazy loading implementation transforms the BlindsCommerce platform from having critical performance issues to enterprise-grade scalability:
-
-**Immediate Benefits:**
-- **Eliminated site crashes** from database connection exhaustion
-- **90% reduction** in database connections (141 → 17)
-- **Dramatically improved** dashboard responsiveness
-- **Enables unlimited concurrent users** without performance degradation
-
-**Long-term Strategic Value:**
-- **Foundation for scalability** as the platform grows
-- **Reduced infrastructure costs** through efficient resource usage
-- **Improved user experience** leading to higher engagement
-- **Enterprise-ready architecture** for B2B marketplace expansion
-
----
-
-## 🔐 PAYMENT CREDENTIAL ENCRYPTION SYSTEM (2025)
-
-### 🚨 **Critical Security Implementation - June 2025**
-
-**Issue**: Payment provider credentials (Stripe secret keys, PayPal client secrets, etc.) were stored as **plain text** in the database, creating a massive security vulnerability.
-
-**Solution**: Implemented enterprise-grade **AES-256-GCM encryption** for all sensitive payment credentials with automatic encryption/decryption throughout the application.
-
-### 🔒 **ENV FILE SECURITY ISSUE RESOLVED (June 2025)**
-
-**Issue**: The .env file containing database credentials and sensitive configuration was repeatedly committed to git repository despite being in .gitignore.
-
-**Root Cause**: Multiple commits (923743e, 9b8808d, deb2fe2, etc.) accidentally included .env file in version control.
-
-**Security Risk**: Database passwords, API keys, and other sensitive credentials exposed in git history.
-
-**Solution Implemented**:
-```bash
-git rm --cached .env
-git commit -m "🔒 Remove .env file from git tracking for security"
-```
-
-**Prevention Measures**:
-- .env file properly configured in .gitignore
-- Clear documentation that .env must NEVER be committed
-- Database credentials should be rotated if exposed
-- Environment variables should be set directly in production environments
-
-**Critical Security Rule**: .env files containing credentials must NEVER be committed to any repository.
-
-```json
-{
-  "security_transformation": {
-    "before": {
-      "storage": "plain_text_credentials_in_database",
-      "vulnerability": "database_breach_exposes_all_payment_keys",
-      "impact": "catastrophic_financial_and_compliance_risk",
-      "stripe_secret": "sk_test_1234567890abcdef (VISIBLE)",
-      "paypal_secret": "client_secret_plaintext (VISIBLE)"
-    },
-    "after": {
-      "storage": "aes_256_gcm_encrypted_credentials",
-      "protection": "database_breach_reveals_only_encrypted_blobs",
-      "impact": "credentials_protected_even_with_database_access",
-      "stripe_secret": "aGVsbG8gd29ybGQgZW5jcnlwdGVkIGJsb2I= (ENCRYPTED)",
-      "paypal_secret": "YW5vdGhlciBlbmNyeXB0ZWQgYmxvYiBoZXJl (ENCRYPTED)"
-    }
-  },
-  
-  "implementation_details": {
-    "encryption_algorithm": "AES-256-GCM",
-    "key_derivation": "PBKDF2_with_100000_iterations",
-    "data_format": "base64(iv + auth_tag + encrypted_data)",
-    "key_management": "environment_variable_with_entropy_validation",
-    "authentication": "gcm_provides_authenticated_encryption",
-    "performance": "transparent_encryption_decryption_in_apis"
-  },
-  
-  "security_components": {
-    "encryption_utility": "/lib/security/encryption.ts",
-    "key_configuration": "ENCRYPTION_KEY environment variable",
-    "automatic_detection": "isSensitiveSetting() identifies credentials",
-    "safe_operations": "safeEncrypt() and safeDecrypt() prevent double-processing",
-    "validation": "key_strength_and_entropy_validation"
-  },
-  
-  "sensitive_credentials_protected": [
-    "payment_stripe_secret_key",
-    "payment_stripe_webhook_secret", 
-    "payment_paypal_client_secret",
-    "payment_braintree_merchant_id",
-    "payment_braintree_public_key",
-    "payment_braintree_private_key",
-    "integrations_mailchimp_api_key",
-    "integrations_twilio_account_sid",
-    "integrations_taxjar_api_key"
-  ],
-  
-  "api_integration": {
-    "admin_settings_save": {
-      "process": "validate_format → encrypt_sensitive_values → store_encrypted",
-      "example": "sk_test_123 → validation → AES encryption → database_blob",
-      "files": "/app/api/admin/settings/route.ts"
-    },
-    "settings_retrieval": {
-      "process": "fetch_encrypted → detect_format → decrypt_automatically → return_plaintext",
-      "example": "database_blob → AES decryption → sk_test_123 → admin_UI",
-      "files": "/lib/settings.ts"
-    },
-    "payment_processing": {
-      "process": "getStripeCredentials() → auto_decrypt → stripe_api_call",
-      "example": "payment_intent → decrypt_secret_key → stripe.paymentIntents.create()",
-      "files": [
-        "/app/api/stripe/create-payment-intent/route.ts",
-        "/app/api/webhooks/stripe/route.ts",
-        "/app/api/account/payment-methods/route.ts"
-      ]
-    }
-  },
-  
-  "data_flow_complete": {
-    "admin_configuration": {
-      "step_1": "admin_enters_stripe_secret_key_sk_test_1234567890",
-      "step_2": "api_validates_sk_prefix_format",
-      "step_3": "encryption_utility_encrypts_with_aes_256_gcm",
-      "step_4": "database_stores_encrypted_blob_not_plaintext",
-      "step_5": "admin_ui_shows_decrypted_value_for_editing"
-    },
-    "payment_processing": {
-      "step_1": "customer_initiates_payment_in_checkout",
-      "step_2": "getStripeCredentials_called_by_payment_api",
-      "step_3": "settings_library_auto_decrypts_secret_key",
-      "step_4": "stripe_instance_created_with_decrypted_key",
-      "step_5": "payment_processed_without_exposing_credentials"
-    },
-    "security_audit": {
-      "database_access": "only_encrypted_blobs_visible_to_attackers",
-      "application_logs": "no_plaintext_credentials_in_logs",
-      "memory_safety": "credentials_decrypted_only_when_needed",
-      "key_rotation": "environment_variable_update_rotates_encryption"
-    }
-  },
-  
-  "environment_setup": {
-    "required_variable": "ENCRYPTION_KEY=your-strong-encryption-key-at-least-32-chars",
-    "key_generation": "crypto.randomBytes(32).toString('hex')",
-    "validation": "key_strength_entropy_and_format_validation",
-    "security_note": "store_encryption_key_separately_from_database"
-  },
-  
-  "files_modified": {
-    "new_security_utility": "/lib/security/encryption.ts",
-    "admin_settings_api": "/app/api/admin/settings/route.ts",
-    "settings_library": "/lib/settings.ts", 
-    "stripe_payment_api": "/app/api/stripe/create-payment-intent/route.ts",
-    "stripe_webhook_api": "/app/api/webhooks/stripe/route.ts",
-    "payment_methods_api": [
-      "/app/api/account/payment-methods/route.ts",
-      "/app/api/account/payment-methods/[id]/route.ts"
-    ],
-    "stripe_config_api": "/app/api/stripe/config/route.ts",
-    "checkout_frontend": "/app/checkout/page.tsx"
-  },
-  
-  "testing_verification": {
-    "database_inspection": "SELECT config_value FROM upload_security_config WHERE config_key LIKE 'payment_stripe%' → encrypted_blobs_only",
-    "admin_ui_test": "navigate_to_admin_settings → enter_credentials → save → reload → verify_decrypted_display",
-    "payment_test": "complete_checkout_flow → verify_stripe_api_success → confirm_encrypted_storage",
-    "security_test": "database_dump_shows_no_plaintext_credentials"
-  },
-  
-  "compliance_benefits": {
-    "pci_dss": "credential_encryption_supports_pci_compliance",
-    "data_protection": "encrypted_at_rest_requirement_satisfied",
-    "audit_requirements": "demonstrates_proper_credential_handling",
-    "breach_mitigation": "stolen_database_does_not_expose_payment_keys"
-  },
-  
-  "operational_impact": {
-    "admin_experience": "no_change_forms_work_identically",
-    "performance": "minimal_overhead_from_encryption_operations",
-    "maintainability": "automatic_encryption_requires_no_code_changes",
-    "scalability": "easy_to_add_new_sensitive_setting_types",
-    "monitoring": "encryption_failures_logged_for_alerting"
-  },
-  
-  "future_considerations": {
-    "key_rotation": "implement_automated_encryption_key_rotation",
-    "hsm_integration": "consider_hardware_security_modules_for_enterprise",
-    "additional_providers": "extend_encryption_to_new_payment_providers",
-    "audit_logging": "enhanced_logging_of_credential_access_patterns"
-  }
-}
-```
-
-### 🛡️ **Implementation Summary**
-
-This encryption system transforms BlindsCommerce from having a **critical security vulnerability** to implementing **enterprise-grade credential protection**. All payment provider secrets are now encrypted at rest, automatically decrypted for use, and never exposed in plaintext within the database or logs.
-
-**Key Achievement**: Database breaches can no longer expose payment credentials, significantly reducing financial and compliance risks while maintaining seamless user and developer experience.
-
----
-
-## 🎛️ ADMIN DASHBOARD ACCESS SYSTEM (June 2025)
-
-### 🚨 **Critical Feature Implementation - Session-Based Multi-Dashboard Admin Access**
-
-**Purpose**: Enable admins to seamlessly access and view any user's role-specific dashboard (vendor, sales, installer, customer) with proper data isolation and clear admin indicators.
-
-```json
-{
-  "feature_name": "admin_dashboard_access_system",
-  "implementation_date": "2025-06-22",
-  "change_type": "major_administrative_functionality_enhancement",
-  "business_impact": "complete_user_support_and_oversight_capability",
-
-  "problem_solved": {
-    "admin_limitation": "admins could not access user dashboards for support and oversight",
-    "new_tab_opening": "dashboard links opened in new windows instead of same page",
-    "api_field_mismatch": "400 errors due to user_id vs userId field name conflicts",
-    "no_admin_indicators": "no visual indication when admin viewing another user's data"
-  },
-
-  "architecture_approach": {
-    "session_based": "AdminViewId stored in sessionStorage for persistence",
-    "header_communication": "x-admin-view-id header for API context switching",
-    "assignment_pattern": "effectiveUserId = adminViewId || currentUserId",
-    "no_code_disruption": "existing dashboard logic flows unchanged"
-  },
-
-  "technical_implementation": {
-    "session_management": {
-      "storage_key": "AdminViewId",
-      "storage_location": "sessionStorage (browser session)",
-      "lifecycle": "set_on_dashboard_click → persist_across_pages → clear_on_logout",
-      "scope": "tab-specific session isolation"
-    },
-    
-    "dashboard_integration": {
-      "detection_pattern": "const adminViewUserId = searchParams.get('admin_view')",
-      "state_management": "isAdminView, viewedUser, originalAdmin states",
-      "api_header_pattern": "headers['x-admin-view-id'] = sessionStorage.getItem('AdminViewId')",
-      "user_assignment": "effectiveUserId for database queries"
-    },
-
-    "api_modification_pattern": {
-      "header_check": "const adminViewId = request.headers.get('x-admin-view-id')",
-      "user_assignment": "const effectiveUserId = (user.role === 'admin' && adminViewId) ? parseInt(adminViewId) : user.userId",
-      "database_flow": "all existing queries use effectiveUserId instead of user.userId",
-      "authentication_preserved": "admin authentication maintained for permissions"
-    }
-  },
-
-  "implementation_scope": {
-    "dashboards_updated": {
-      "vendor_dashboard": {
-        "file": "/app/vendor/page.tsx",
-        "api": "/app/api/vendor/dashboard/route.ts",
-        "status": "IMPLEMENTED",
-        "admin_indicator": "blue banner with vendor name and back link"
-      },
-      "sales_dashboard": {
-        "file": "/app/sales/page.tsx", 
-        "api": "/app/api/sales/dashboard/route.ts",
-        "status": "IMPLEMENTED",
-        "admin_indicator": "blue banner with sales person name and back link"
-      },
-      "installer_dashboard": {
-        "file": "/app/installer/page.tsx",
-        "api": "/app/api/installer/*",
-        "status": "IMPLEMENTED", 
-        "admin_indicator": "blue banner with installer name and back link"
-      },
-      "customer_dashboard": {
-        "file": "/app/account/page.tsx",
-        "api": "/app/api/account/*",
-        "status": "IMPLEMENTED",
-        "admin_indicator": "blue banner with customer name and back link"
+        "reduced_cart_abandonment",
+        "faster_completion",
+        "mobile_friendly_better_experience"
+      ],
+      "implementation": {
+        "removed": "progress steps, activeStep state, navigation buttons",
+        "added": "unified container, color coded sections, single submit"
       }
     },
-
-    "admin_users_interface": {
-      "file": "/app/admin/users/page.tsx",
-      "dashboard_buttons": "dynamic based on user role",
-      "url_generation": "getDashboardUrl(role, user_id) function",
-      "link_behavior": "same-page navigation (removed target='_blank')",
-      "role_mapping": {
-        "admin": "/admin?admin_view=${userId}",
-        "vendor": "/vendor?admin_view=${userId}", 
-        "sales": "/sales?admin_view=${userId}",
-        "installer": "/installer?admin_view=${userId}",
-        "customer": "/account?admin_view=${userId}"
-      }
-    }
-  },
-
-  "data_flow_architecture": {
-    "admin_clicks_dashboard": {
-      "step_1": "admin clicks Dashboard button in /admin/users for user X",
-      "step_2": "page navigates to /vendor?admin_view=123 (user X's ID)",
-      "step_3": "vendor page detects admin_view parameter",
-      "step_4": "sessionStorage.setItem('AdminViewId', '123')",
-      "step_5": "fetch /api/admin/users/123 to get user X details"
-    },
-
-    "dashboard_data_loading": {
-      "step_1": "dashboard calls /api/vendor/dashboard with headers",
-      "step_2": "headers['x-admin-view-id'] = '123' (from session)",
-      "step_3": "API: effectiveUserId = 123 (user X, not admin)",
-      "step_4": "vendor_info query uses user X's ID",
-      "step_5": "dashboard shows user X's data with admin indicator"
-    },
-
-    "session_persistence": {
-      "cross_page_navigation": "AdminViewId persists across vendor sub-pages",
-      "api_consistency": "all vendor APIs automatically use user X context",
-      "logout_cleanup": "sessionStorage cleared on admin logout",
-      "tab_isolation": "each browser tab has independent session"
-    }
-  },
-
-  "database_schema_compliance": {
-    "field_name_correction": {
-      "issue": "frontend used camelCase (userId) vs database snake_case (user_id)",
-      "solution": "updated all references to match API response format",
-      "critical_fixes": [
-        "viewedVendor.userId → viewedVendor.user_id",
-        "viewedVendor.firstName → viewedVendor.first_name", 
-        "viewedVendor.lastName → viewedVendor.last_name"
+    "comprehensive_caching_system_june_2025": {
+      "implementation": "multi tier application caching architecture",
+      "performance_impact": "70-90% reduction database queries, 50-80% faster page loads",
+      "cache_layers": {
+        "server_side": "9 cache instances with configurable TTL",
+        "client_side": "4 browser cache instances", 
+        "frontend": "Next.js revalidate caching"
+      },
+      "cached_apis": [
+        "homepage_data_15_minute_TTL",
+        "products_listing_10_minute_TTL",
+        "vendor_discounts_2_minute_TTL",
+        "rooms_30_minute_TTL"
       ]
     },
-
-    "vendor_relationship_understanding": {
-      "users_table": "user_id (PK), first_name, last_name, role",
-      "vendor_info_table": "vendor_info_id (PK), user_id (FK)",
-      "api_flow": "user_id → lookup vendor_info_id → fetch vendor data",
-      "admin_dashboard_api": "takes user_id, finds vendor_info_id internally"
-    }
-  },
-
-  "ui_enhancement_details": {
-    "admin_view_indicator": {
-      "design": "blue background banner with shield icon",
-      "content": "Admin View Mode | Viewing [User Name]'s [Role] dashboard (email)",
-      "back_link": "Back to Admin Users (navigates to /admin/users)",
-      "positioning": "top of dashboard, before main heading",
-      "conditional_display": "only shown when isAdminView === true"
-    },
-
-    "dashboard_headers": {
-      "admin_mode": "User Name's Vendor Dashboard",
-      "normal_mode": "Vendor Dashboard", 
-      "dynamic_title": "role-specific (Sales Dashboard, Installer Dashboard, etc.)"
-    },
-
-    "navigation_behavior": {
-      "same_page_opening": "removed target='_blank' from admin dashboard links",
-      "breadcrumb_preservation": "admin can navigate back to user list",
-      "session_continuity": "AdminViewId persists for entire admin session"
-    }
-  },
-
-  "security_implementation": {
-    "authentication_preservation": {
-      "admin_verification": "getCurrentUser() validates admin role first",
-      "permission_checks": "admin retains all administrative permissions",
-      "data_isolation": "admin sees target user's data, not mixed contexts"
-    },
-
-    "authorization_flow": {
-      "role_validation": "verify target user has expected role (vendor/sales/installer/customer)",
-      "cross_role_prevention": "admin cannot view customer dashboard as vendor",
-      "session_hijacking_protection": "AdminViewId only works for authenticated admins"
-    },
-
-    "audit_considerations": {
-      "admin_actions": "all admin dashboard views logged with original admin ID",
-      "data_access_tracking": "AdminViewId included in API request logs",
-      "session_monitoring": "track which admins access which user dashboards"
-    }
-  },
-
-  "files_modified_complete": {
-    "dashboard_pages": [
-      "/app/vendor/page.tsx - added admin view state, session management, UI indicator",
-      "/app/sales/page.tsx - added admin view state, session management, UI indicator", 
-      "/app/installer/page.tsx - added admin view state, session management, UI indicator",
-      "/app/account/page.tsx - added admin view state, session management, UI indicator"
-    ],
-
-    "api_routes": [
-      "/app/api/vendor/dashboard/route.ts - added x-admin-view-id header support",
-      "/app/api/vendor/info/route.ts - created for vendor_info_id lookup"
-    ],
-
-    "admin_interface": [
-      "/app/admin/users/page.tsx - removed target='_blank', fixed field names"
-    ],
-
-    "imports_added": [
-      "useSearchParams from next/navigation",
-      "Shield icon from lucide-react", 
-      "Link component for back navigation"
-    ]
-  },
-
-  "testing_scenarios": {
-    "basic_functionality": [
-      "admin clicks vendor dashboard → sees vendor's data with blue banner",
-      "admin clicks sales dashboard → sees sales person's data with indicator",
-      "admin clicks customer dashboard → sees customer's account with banner"
-    ],
-
-    "session_persistence": [
-      "admin views vendor dashboard → navigates to vendor products → still shows vendor X data",
-      "admin opens multiple tabs → each tab independent AdminViewId session",
-      "admin refreshes page → AdminViewId persists, data still correct"
-    ],
-
-    "error_handling": [
-      "admin tries to view deleted user → graceful error, redirect to admin users",
-      "admin views wrong role → alert 'user is not a vendor', redirect back",
-      "API fails → proper error messages, no broken states"
-    ],
-
-    "field_validation": [
-      "user names display correctly (first_name last_name format)",
-      "user IDs passed correctly (user_id not userId)",
-      "API responses populate UI without 400 errors"
-    ]
-  },
-
-  "business_value": {
-    "customer_support": "admins can troubleshoot user issues by seeing exact user view",
-    "oversight_capability": "management can review vendor/sales performance directly",
-    "training_support": "admins can guide users through their actual dashboard",
-    "data_verification": "confirm user data integrity across all dashboard types",
-    "compliance_auditing": "admin access to user interfaces for regulatory review"
-  },
-
-  "performance_considerations": {
-    "session_storage": "lightweight browser storage, no server overhead",
-    "api_overhead": "minimal - single header addition to existing requests",
-    "caching_compatibility": "works with existing dashboard caching strategies",
-    "concurrent_admins": "multiple admins can view different users simultaneously"
-  },
-
-  "scalability_design": {
-    "new_dashboard_addition": "follow same pattern: searchParams → session → header → API",
-    "role_extension": "easily add new user roles with corresponding dashboard access",
-    "permission_granularity": "can restrict admin access to specific dashboard types",
-    "multi_tenant_ready": "session isolation supports multi-tenant scenarios"
-  },
-
-  "maintenance_requirements": {
-    "session_cleanup": "AdminViewId cleared on logout, tab close, or manual navigation",
-    "header_consistency": "all new APIs should check x-admin-view-id header pattern",
-    "ui_consistency": "all admin view indicators follow same blue banner design",
-    "field_naming": "maintain snake_case consistency with database schema"
-  }
-}
-```
-
-### 🎯 **Implementation Impact Summary**
-
-This admin dashboard access system provides **complete administrative oversight** capabilities while maintaining **data isolation** and **security**. Admins can seamlessly switch between viewing any user's dashboard context with clear visual indicators and persistent session management.
-
-**Key Achievements**:
-- ✅ **Universal Dashboard Access**: Admin can view vendor, sales, installer, and customer dashboards
-- ✅ **Session Persistence**: AdminViewId maintains context across page navigation  
-- ✅ **Zero Code Disruption**: All existing dashboard APIs work unchanged
-- ✅ **Proper Data Isolation**: Each admin sees only target user's data
-- ✅ **Clear UI Indicators**: Blue banners show admin view mode with back navigation
-- ✅ **Security Compliance**: Authentication preserved, authorization enforced
-
----
-
-## 🔍 CRITICAL: DEVELOPMENT & TESTING STANDARDS (June 2025)
-
-### 🚨 **Lessons Learned from Admin Settings Testing Failures**
-
-**Issue Date**: June 22, 2025  
-**Context**: Admin Settings Notifications and Payment tabs were reported as "working" but had critical integration bugs
-
-### ❌ **Testing Failures Identified:**
-
-```json
-{
-  "critical_mistakes": {
-    "false_completion_claims": {
-      "issue": "reported tasks as completed based only on code structure review",
-      "impact": "admin users could not actually configure notifications or payment providers",
-      "root_cause": "assumed code structure = working functionality",
-      "severity": "high - misleading development progress reporting"
-    },
-    "insufficient_testing": {
-      "what_was_done": "code review only, no functional verification",
-      "what_was_missed": [
-        "database-api prefix mismatches (notification_ vs notifications_)",
-        "missing payment provider configuration fields",
-        "broken data flow between frontend and backend",
-        "actual UI rendering of toggle switches and input fields"
-      ]
-    },
-    "integration_blind_spots": {
-      "database_keys": "payments_* and notifications_* prefixes",
-      "api_mapping": "expected payment_* and notification_* prefixes",
-      "result": "complete data loading failure with empty UI sections"
-    }
-  }
-}
-```
-
-### ✅ **MANDATORY TESTING STANDARDS - Moving Forward:**
-
-```json
-{
-  "functional_verification_requirements": {
-    "1_actual_ui_testing": {
-      "requirement": "physically_navigate_to_pages_and_verify_functionality",
-      "methods": [
-        "open browser and test actual user workflows",
-        "verify form fields appear and accept input",
-        "confirm toggle switches and buttons work",
-        "test save functionality and data persistence"
-      ],
-      "never_assume": "code structure equals working functionality"
-    },
-    "2_end_to_end_data_flow": {
-      "requirement": "verify_complete_data_path_from_database_to_ui",
-      "checkpoints": [
-        "database contains expected data with correct keys",
-        "api returns data in expected format",
-        "frontend receives and displays data correctly",
-        "user interactions update database successfully"
-      ],
-      "validation_method": "trace data from database → API → frontend → user interaction"
-    },
-    "3_integration_point_verification": {
-      "requirement": "explicitly_test_all_integration_boundaries",
-      "critical_points": [
-        "database column names vs API key mapping",
-        "frontend state management vs API responses", 
-        "form field names vs database storage keys",
-        "authentication flows vs protected routes"
-      ],
-      "common_failures": "naming mismatches, prefix inconsistencies, case sensitivity"
-    },
-    "4_user_workflow_testing": {
-      "requirement": "test_complete_user_stories_not_individual_components",
-      "examples": [
-        "admin configures stripe payment → saves → reloads page → sees saved values",
-        "admin enables notifications → toggles settings → saves → verifies in database",
-        "vendor creates product → saves → edits → verifies all tabs populate correctly"
-      ],
-      "validation": "complete round-trip user workflows must work end-to-end"
+    "multi_vendor_discount_coupon_system_fix_2025": {
+      "issue": "conflicting platform wide and vendor specific discounts",
+      "solution": {
+        "business_rules": "vendor only discounts no platform wide",
+        "application_order": "vendor discounts first automatic then vendor coupons",
+        "vendor_isolation": "each vendor discounts apply only to their products",
+        "cart_display": "complete list applied discounts per vendor"
+      },
+      "implementation": "/app/api/pricing/calculate/route.ts vendor grouping discount processing"
     }
   },
   
-  "reporting_standards": {
+  "vendor_centric_architecture": {
+    "core_principle": "products discounts coupons sales people belong to vendors",
+    "vendor_tables": {
+      "vendor_info": "main vendor profiles vendor_info_id key",
+      "vendor_products": "links vendors to products vendor specific pricing",
+      "vendor_discounts": "vendor specific discount rules percentage fixed tiered",
+      "vendor_coupons": "vendor managed coupon codes",
+      "vendor_inventory": "stock levels per vendor",
+      "sales_staff": "sales representatives belonging to vendors"
+    },
+    "multi_vendor_cart_checkout": {
+      "cart_structure": "items from different vendors single cart",
+      "discount_application": "vendor specific discounts apply individually",
+      "checkout_splitting": "single order creates multiple vendor sub orders",
+      "commission_calculation": "per vendor based on their items"
+    }
+  },
+  
+  "pricing_system_architecture": {
+    "multi_layered_engine": "complex B2B B2C pricing strategies",
+    "core_pricing_tables": {
+      "products": "base_price MSRP, cost_price vendor wholesale",
+      "product_pricing_matrix": "dimensional pricing width height ranges",
+      "product_fabric_pricing": "fabric specific pricing per square foot",
+      "vendor_products": "vendor specific selling price"
+    },
+    "calculation_flow": [
+      "base_price_foundation",
+      "dimensional_pricing_if_applicable",
+      "fabric_material_costs",
+      "configuration_option_modifiers",
+      "customer_specific_pricing",
+      "dynamic_pricing_rules",
+      "volume_discounts",
+      "vendor_specific_discounts",
+      "coupon_campaign_discounts",
+      "shipping_calculation",
+      "tax_calculation"
+    ],
+    "discount_hierarchy": {
+      "customer_specific": "fixed_price discount_percent discount_amount markup_percent",
+      "volume_discounts": "quantity tiers with percentage discounts",
+      "vendor_discounts": "percentage fixed_amount tiered bulk_pricing",
+      "coupon_codes": "usage_limits expiration_dates customer_restrictions",
+      "promotional_campaigns": "seasonal clearance new_customer category_specific"
+    }
+  },
+  
+  "database_tables_actual_schema": {
+    "vendor_core": {
+      "vendor_info": "vendor_info_id user_id business_name commission_rate",
+      "vendor_products": "vendor_id product_id vendor_price quantity_available",
+      "vendor_discounts": "vendor_id discount_type discount_value applies_to"
+    },
+    "product_related": {
+      "products": "base_price cost_price no_sale_price_column",
+      "product_categories": "product to category mapping",
+      "product_features": "product feature assignments",
+      "product_rooms": "product room recommendations",
+      "product_pricing_matrix": "width_min width_max height_min height_max base_price price_per_sqft",
+      "product_fabric_options": "fabric configurations",
+      "product_fabric_pricing": "fabric specific pricing",
+      "product_images": "product image gallery"
+    },
+    "room_types_management": {
+      "table": "room_types",
+      "columns": "room_type_id name description image_url typical_humidity light_exposure privacy_requirements",
+      "admin_interface": "/app/admin/rooms/page.tsx full CRUD operations"
+    }
+  },
+  
+  "testing_and_development_standards": {
+    "mandatory_testing_requirements": {
+      "functional_verification": "physically navigate pages verify functionality",
+      "end_to_end_data_flow": "verify complete path database to UI",
+      "integration_point_verification": "test all integration boundaries",
+      "user_workflow_testing": "complete user stories not individual components"
+    },
     "completion_criteria": {
       "never_report_complete_until": [
-        "actual_ui_tested_and_verified_working",
+        "actual_UI_tested_verified_working",
         "user_workflows_tested_end_to_end",
         "data_persistence_confirmed",
-        "edge_cases_and_error_states_tested"
-      ],
-      "acceptable_phrases": [
-        "code structure implemented, testing required",
-        "implementation complete, awaiting verification",
-        "functionality ready for testing"
-      ],
-      "forbidden_phrases": [
-        "✅ completed" (without actual testing),
-        "working correctly" (without verification),
-        "fully functional" (without user workflow testing)
+        "edge_cases_error_states_tested"
       ]
     },
-    "testing_documentation": {
-      "requirement": "document_actual_testing_performed",
-      "format": "list specific steps taken to verify functionality",
-      "example": "navigated to /admin/settings → clicked Notifications tab → verified 8 toggle switches visible → tested save functionality → confirmed database updates"
+    "common_failure_patterns": {
+      "database_api_mismatches": "prefix inconsistencies field name conflicts",
+      "frontend_state_issues": "form fields defined no data loading logic",
+      "conditional_rendering_bugs": "components hidden due to false conditions",
+      "authentication_integration": "pages load API calls fail auth middleware"
     }
   },
   
-  "accountability_measures": {
-    "verification_steps": {
-      "before_reporting_completion": [
-        "ask_for_screenshots_if_uncertain",
-        "request_user_confirmation_of_functionality",
-        "document_specific_testing_performed",
-        "identify_any_assumptions_made"
-      ]
+  "production_deployment": {
+    "database_credentials": {
+      "host": "localhost",
+      "port": 3306,
+      "name": "blindscommerce_test",
+      "user": "root",
+      "note": "rotate credentials if exposed in git"
     },
-    "quality_gates": {
-      "code_review": "necessary_but_not_sufficient",
-      "functional_testing": "mandatory_for_completion_claims",
-      "user_validation": "required_for_critical_features",
-      "integration_testing": "required_for_multi_component_features"
-    }
-  },
-  
-  "common_failure_patterns_to_avoid": {
-    "database_api_mismatches": {
-      "example": "database uses payments_ prefix, API expects payment_ prefix",
-      "prevention": "always verify database schema matches API field mapping"
-    },
-    "frontend_state_issues": {
-      "example": "form fields defined but no data loading logic",
-      "prevention": "trace data flow from API response to UI rendering"
-    },
-    "conditional_rendering_bugs": {
-      "example": "components hidden due to false conditions or missing data",
-      "prevention": "test both enabled and disabled states of features"
-    },
-    "authentication_integration": {
-      "example": "pages load but API calls fail due to auth middleware issues", 
-      "prevention": "test with actual user sessions, not just code review"
-    }
-  },
-  
-  "implementation_checklist": {
-    "for_every_feature_completion": [
-      "□ Database schema verified",
-      "□ API endpoints tested with actual requests",
-      "□ Frontend components render with real data",
-      "□ User interactions work end-to-end",
-      "□ Error states handled appropriately",
-      "□ Data persistence confirmed",
-      "□ Cross-browser compatibility checked",
-      "□ Mobile responsiveness verified"
+    "monitoring_requirements": [
+      "database_connection_count_max_20_alert",
+      "cache_performance_hit_miss_ratios",
+      "API_response_times_error_rates",
+      "user_authentication_failures"
     ],
-    "for_bug_fixes": [
-      "□ Root cause identified and documented",
-      "□ Fix implemented and code reviewed",
-      "□ Regression testing performed",
-      "□ Related functionality verified unaffected",
-      "□ User workflow tested end-to-end"
+    "performance_optimization": [
+      "connection_pooling_10_max_connections",
+      "caching_strategies_multi_tier",
+      "image_optimization_next_js",
+      "static_generation_product_pages"
+    ]
+  },
+  
+  "business_metrics_and_goals": {
+    "performance_targets": {
+      "sales_increase": "35% through AI recommendations",
+      "returns_reduction": "40% through AR visualization", 
+      "supply_chain_efficiency": "67% improvement",
+      "purchase_likelihood": "76% higher with voice features"
+    },
+    "user_experience_targets": [
+      "mobile_first_responsive_design",
+      "accessibility_compliance_WCAG_2_1",
+      "fast_loading_image_optimization",
+      "real_time_pricing_inventory_updates"
     ]
   }
 }
-```
-
-### 🎯 **Application to BlindsCommerce Development:**
-
-These standards apply especially to:
-- **Admin dashboard functionality** (settings, user management, analytics)
-- **Vendor portal features** (product management, orders, payments)
-- **Customer-facing features** (checkout, cart, account management)
-- **Multi-role systems** where authentication and permissions are critical
-- **Payment and financial features** where accuracy is mandatory
-
-### 📋 **Enforcement:**
-
-- All feature implementations must follow these testing standards
-- Code reviews must include functional verification confirmation
-- No completion claims without documented testing steps
-- User acceptance testing required for critical business functions
-
----
-
-## 🚀 COMPREHENSIVE CACHING SYSTEM IMPLEMENTATION (June 2025)
-
-### 💾 **Multi-Tier Application Caching Architecture**
-
-```json
-{
-  "implementation_date": "2025-06-23",
-  "scope": "complete_application_caching_system",
-  "performance_impact": "70-90% reduction in database queries, 50-80% faster page loads",
-  "cache_layers": 3,
-  "total_cache_instances": 9,
-  
-  "server_side_caching": {
-    "infrastructure": {
-      "file": "/lib/cache/index.ts",
-      "architecture": "in_memory_caching_with_configurable_ttl",
-      "cache_instances": {
-        "cache": {
-          "ttl": "5_minutes",
-          "max_size": 1000,
-          "purpose": "general_purpose_caching"
-        },
-        "homepageCache": {
-          "ttl": "15_minutes", 
-          "max_size": 100,
-          "purpose": "homepage_data_long_term_storage"
-        },
-        "productsCache": {
-          "ttl": "10_minutes",
-          "max_size": 500,
-          "purpose": "product_listings_medium_term_storage"
-        },
-        "discountsCache": {
-          "ttl": "2_minutes",
-          "max_size": 200,
-          "purpose": "vendor_discounts_coupons_short_term_storage"
-        },
-        "roomsCache": {
-          "ttl": "30_minutes",
-          "max_size": 50,
-          "purpose": "room_types_very_long_term_storage"
-        }
-      },
-      "features": [
-        "automatic_expiration_cleanup",
-        "pattern_based_cache_invalidation",
-        "cache_statistics_monitoring",
-        "getOrSet_factory_pattern_support"
-      ]
-    },
-    
-    "cached_apis": {
-      "homepage_data": {
-        "endpoint": "/api/homepage/data/route.ts",
-        "cache_instance": "homepageCache",
-        "ttl": "15_minutes",
-        "cache_key": "homepage:data",
-        "data_cached": ["categories", "products", "reviews"],
-        "invalidation_triggers": ["product_updates", "category_changes", "manual_admin_action"]
-      },
-      "products_listing": {
-        "endpoint": "/api/products/route.ts",
-        "cache_instance": "productsCache", 
-        "ttl": "10_minutes_default_2_minutes_for_searches",
-        "cache_key_pattern": "products:list:{params_hash}",
-        "data_cached": ["product_listings", "pagination_info", "filter_results"],
-        "intelligent_ttl": "shorter_cache_for_search_results_and_filters"
-      },
-      "products_data": {
-        "endpoint": "/api/products/data/route.ts",
-        "cache_instance": "productsCache",
-        "ttl": "10_minutes_default_2_minutes_for_searches", 
-        "cache_key_pattern": "products:list:{complex_params_hash}",
-        "data_cached": ["categories", "products", "features", "pagination"],
-        "performance_gain": "70%_faster_product_page_loads"
-      },
-      "rooms": {
-        "endpoint": "/api/rooms/route.ts",
-        "cache_instance": "roomsCache",
-        "ttl": "30_minutes",
-        "cache_key": "rooms:active",
-        "data_cached": ["active_room_types"],
-        "justification": "room_types_change_infrequently"
-      },
-      "vendor_discounts": {
-        "endpoint": "/api/vendor/discounts/route.ts",
-        "cache_instance": "discountsCache",
-        "ttl": "2_minutes",
-        "cache_key_pattern": "vendor:{vendor_id}:discounts",
-        "cache_conditions": "only_simple_queries_without_filters",
-        "invalidation": "on_create_update_delete_operations"
-      },
-      "vendor_coupons": {
-        "endpoint": "/api/vendor/coupons/route.ts", 
-        "cache_instance": "discountsCache",
-        "ttl": "2_minutes",
-        "cache_key_pattern": "vendor:{vendor_id}:coupons",
-        "cache_conditions": "only_default_pagination_and_sorting",
-        "invalidation": "on_create_update_operations"
-      }
-    },
-    
-    "cache_invalidation_system": {
-      "automatic_invalidation": {
-        "vendor_operations": {
-          "triggers": ["discount_create", "discount_update", "discount_delete", "coupon_create", "coupon_update"],
-          "pattern": "CacheInvalidation.vendor(vendorId)",
-          "scope": "all_vendor_specific_cache_entries",
-          "files_with_invalidation": [
-            "/api/vendor/discounts/route.ts",
-            "/api/vendor/discounts/[id]/route.ts", 
-            "/api/vendor/coupons/route.ts",
-            "/api/vendor/coupons/[id]/route.ts"
-          ]
-        },
-        "pattern_based_cleanup": {
-          "homepage": "homepageCache.deleteByPattern('homepage:.*')",
-          "products": "productsCache.deleteByPattern('products:.*')",
-          "vendor_specific": "discountsCache.deleteByPattern(`vendor:${vendorId}:.*`)",
-          "categories": "homepageCache.deleteByPattern('categories:.*')"
-        }
-      },
-      "global_cleanup": {
-        "function": "performGlobalCleanup()",
-        "schedule": "every_10_minutes_automatic",
-        "purpose": "remove_expired_entries_across_all_caches",
-        "monitoring": "returns_cleanup_statistics"
-      }
-    }
-  },
-  
-  "client_side_caching": {
-    "infrastructure": {
-      "file": "/lib/cache/clientCache.ts",
-      "architecture": "browser_memory_caching_with_automatic_cleanup",
-      "cache_instances": {
-        "clientCache": {
-          "ttl": "5_minutes",
-          "purpose": "general_client_side_api_response_caching"
-        },
-        "productsClientCache": {
-          "ttl": "10_minutes",
-          "purpose": "product_search_and_browse_caching"
-        },
-        "cartClientCache": {
-          "ttl": "1_minute",
-          "purpose": "cart_pricing_calculations_short_term"
-        },
-        "vendorClientCache": {
-          "ttl": "5_minutes", 
-          "purpose": "vendor_dashboard_data_caching"
-        }
-      },
-      "utilities": {
-        "cachedFetch": "automatic_api_response_caching_utility",
-        "getOrFetch": "cache_first_with_fallback_pattern",
-        "cache_key_builders": "ClientCacheKeys_namespace_for_consistent_naming",
-        "automatic_cleanup": "every_5_minutes_expired_entry_removal"
-      }
-    },
-    
-    "cart_context_caching": {
-      "file": "/context/CartContext.tsx",
-      "implementation": "pricing_calculation_caching",
-      "cache_strategy": {
-        "cache_key_generation": "customer_id + cart_contents_hash",
-        "ttl": "30_seconds",
-        "cache_hits": "instant_pricing_without_api_calls",
-        "cache_misses": "api_call_with_automatic_caching",
-        "invalidation": "cart_content_changes"
-      },
-      "performance_improvement": "90%_reduction_in_pricing_api_calls"
-    }
-  },
-  
-  "frontend_caching_optimizations": {
-    "nextjs_server_components": {
-      "homepage": {
-        "file": "/app/page.tsx",
-        "cache_strategy": "next_revalidate_900_seconds", 
-        "improvement": "15_minute_page_cache_plus_api_cache"
-      },
-      "products_page": {
-        "file": "/app/products/page.tsx",
-        "cache_strategy": "next_revalidate_600_seconds",
-        "dynamic_setting": "removed_force_dynamic_enabled_caching",
-        "improvement": "10_minute_page_cache_plus_api_cache"
-      }
-    },
-    "api_orchestrators": {
-      "pages_homepage": {
-        "file": "/api/pages/homepage/route.ts",
-        "role": "aggregates_cached_homepage_data",
-        "cache_inheritance": "inherits_cache_from_underlying_apis"
-      },
-      "pages_products": {
-        "file": "/api/pages/products/route.ts", 
-        "role": "aggregates_cached_products_data",
-        "cache_inheritance": "inherits_cache_from_products_data_api"
-      }
-    }
-  },
-  
-  "performance_monitoring": {
-    "development_monitor": {
-      "file": "/components/dev/CachePerformanceMonitor.tsx",
-      "visibility": "development_environment_only",
-      "features": [
-        "real_time_cache_statistics",
-        "server_and_client_cache_monitoring",
-        "manual_cache_cleanup_controls",
-        "cache_hit_miss_ratio_tracking"
-      ],
-      "usage": "floating_widget_bottom_right_corner"
-    },
-    "cache_statistics": {
-      "metrics_tracked": [
-        "total_entries_per_cache",
-        "expired_entries_count", 
-        "active_entries_count",
-        "cache_utilization_percentage",
-        "cleanup_frequency_and_results"
-      ],
-      "access_method": "cache_instance.getStats()"
-    }
-  },
-  
-  "cache_key_architecture": {
-    "naming_conventions": {
-      "server_cache_keys": {
-        "homepage": "homepage:data",
-        "products_list": "products:list:{limit}:{offset}:{categoryId}:{search}:{filters}",
-        "products_detail": "products:detail:{slug}",
-        "rooms_active": "rooms:active",
-        "vendor_discounts": "vendor:{vendorId}:discounts",
-        "vendor_coupons": "vendor:{vendorId}:coupons"
-      },
-      "client_cache_keys": {
-        "cart_pricing": "cart:pricing:{customerId||'guest'}:{cart_hash}",
-        "product_search": "products:search:{query}",
-        "vendor_dashboard": "vendor:{vendorId}:dashboard_data"
-      }
-    },
-    "cache_key_builders": {
-      "server_side": "CacheKeys_namespace_in_cache_index",
-      "client_side": "ClientCacheKeys_namespace_in_clientCache",
-      "benefits": ["consistent_naming", "collision_prevention", "easy_pattern_matching"]
-    }
-  },
-  
-  "ttl_strategy_matrix": {
-    "data_volatility_based_ttl": {
-      "static_data": {
-        "ttl": "30_minutes",
-        "examples": ["room_types", "category_structure"],
-        "justification": "rarely_changes_administrative_data"
-      },
-      "semi_static_data": {
-        "ttl": "15_minutes", 
-        "examples": ["homepage_content", "featured_categories"],
-        "justification": "changes_occasionally_marketing_driven"
-      },
-      "dynamic_data": {
-        "ttl": "10_minutes",
-        "examples": ["product_listings", "category_products"],
-        "justification": "inventory_and_pricing_changes_regularly"
-      },
-      "search_results": {
-        "ttl": "2_minutes",
-        "examples": ["filtered_searches", "price_range_filters"],
-        "justification": "user_specific_frequently_changing_results"
-      },
-      "real_time_data": {
-        "ttl": "30_seconds",
-        "examples": ["cart_pricing", "inventory_levels"],
-        "justification": "business_critical_near_real_time_requirements"
-      }
-    }
-  },
-  
-  "implementation_files_modified": {
-    "cache_infrastructure": [
-      "/lib/cache/index.ts",
-      "/lib/cache/clientCache.ts"
-    ],
-    "server_api_endpoints": [
-      "/app/api/homepage/data/route.ts",
-      "/app/api/products/route.ts",
-      "/app/api/products/data/route.ts", 
-      "/app/api/rooms/route.ts",
-      "/app/api/vendor/discounts/route.ts",
-      "/app/api/vendor/discounts/[id]/route.ts",
-      "/app/api/vendor/coupons/route.ts",
-      "/app/api/vendor/coupons/[id]/route.ts"
-    ],
-    "frontend_components": [
-      "/app/page.tsx",
-      "/app/products/page.tsx",
-      "/context/CartContext.tsx"
-    ],
-    "monitoring_tools": [
-      "/components/dev/CachePerformanceMonitor.tsx"
-    ]
-  },
-  
-  "performance_benchmarks": {
-    "homepage_loading": {
-      "before": "database_queries_every_request",
-      "after": "cached_data_15_minute_ttl",
-      "improvement": "80%_faster_response_times"
-    },
-    "product_browsing": {
-      "before": "database_queries_every_category_filter",
-      "after": "cached_results_10_minute_ttl",
-      "improvement": "70%_faster_product_loading"
-    },
-    "cart_pricing": {
-      "before": "api_call_every_cart_change",
-      "after": "cached_pricing_30_second_ttl",
-      "improvement": "90%_reduction_in_api_calls"
-    },
-    "vendor_operations": {
-      "before": "database_queries_every_discount_coupon_list",
-      "after": "cached_lists_2_minute_ttl", 
-      "improvement": "60%_faster_vendor_dashboard_operations"
-    },
-    "overall_system": {
-      "database_query_reduction": "70-90%",
-      "page_load_improvement": "50-80%", 
-      "api_call_reduction": "60-90%",
-      "user_experience": "near_instant_responses_for_cached_data"
-    }
-  },
-  
-  "cache_invalidation_scenarios": {
-    "automatic_invalidation": {
-      "vendor_discount_create": "CacheInvalidation.vendor(vendorId)",
-      "vendor_discount_update": "CacheInvalidation.vendor(vendorId)",
-      "vendor_discount_delete": "CacheInvalidation.vendor(vendorId)",
-      "vendor_coupon_create": "CacheInvalidation.vendor(vendorId)",
-      "vendor_coupon_update": "CacheInvalidation.vendor(vendorId)"
-    },
-    "manual_invalidation": {
-      "homepage_content_update": "CacheInvalidation.homepage()",
-      "product_catalog_update": "CacheInvalidation.products()",
-      "category_structure_change": "CacheInvalidation.categories()",
-      "room_types_modification": "CacheInvalidation.rooms()"
-    },
-    "scheduled_invalidation": {
-      "global_cleanup": "every_10_minutes_automatic",
-      "client_cleanup": "every_5_minutes_automatic",
-      "expired_entry_removal": "automatic_on_access"
-    }
-  },
-  
-  "production_deployment_considerations": {
-    "memory_usage": {
-      "server_cache_memory": "estimated_50-100mb_for_full_cache_utilization",
-      "client_cache_memory": "estimated_5-20mb_per_user_session",
-      "monitoring": "cache_statistics_track_memory_usage"
-    },
-    "failover_strategy": {
-      "cache_miss_handling": "automatic_fallback_to_database_queries",
-      "cache_corruption": "automatic_cleanup_and_rebuild", 
-      "memory_pressure": "automatic_lru_eviction_with_max_size_limits"
-    },
-    "scalability": {
-      "horizontal_scaling": "cache_instances_per_server_process",
-      "cache_warming": "background_cache_population_strategies",
-      "distributed_caching": "future_redis_integration_ready"
-    }
-  },
-  
-  "testing_and_validation": {
-    "cache_hit_validation": [
-      "verify_cached_true_flag_in_api_responses",
-      "confirm_no_database_queries_on_cache_hits",
-      "validate_cache_key_generation_consistency"
-    ],
-    "cache_invalidation_testing": [
-      "verify_cache_clearing_on_data_mutations",
-      "confirm_fresh_data_after_invalidation",
-      "test_pattern_based_invalidation_accuracy"
-    ],
-    "performance_testing": [
-      "measure_response_times_before_vs_after_caching",
-      "load_test_cache_performance_under_concurrent_users",
-      "memory_usage_monitoring_under_sustained_load"
-    ]
-  },
-  
-  "future_enhancements": {
-    "redis_integration": {
-      "purpose": "distributed_caching_for_multi_server_deployments",
-      "benefits": ["shared_cache_across_instances", "persistent_cache_storage", "advanced_cache_strategies"]
-    },
-    "cache_warming": {
-      "purpose": "pre_populate_caches_with_frequently_accessed_data",
-      "implementation": "background_jobs_to_warm_critical_caches"
-    },
-    "advanced_invalidation": {
-      "purpose": "more_sophisticated_cache_dependency_management",
-      "implementation": "tag_based_invalidation_and_cache_hierarchies"
-    }
-  }
-}
-```
-
-### 🎯 **Business Impact**
-
-The comprehensive caching system delivers:
-- **70-90% reduction** in database queries
-- **50-80% faster** page load times  
-- **90% reduction** in redundant API calls
-- **Improved user experience** with near-instant responses
-- **Reduced server load** and infrastructure costs
-- **Better scalability** for high-traffic scenarios
-
-### 🔧 **Implementation Standards**
-
-All future development must:
-- **Use cache-first strategies** for data retrieval
-- **Implement proper cache invalidation** on data mutations
-- **Follow TTL guidelines** based on data volatility
-- **Monitor cache performance** using provided tools
-- **Test cache behavior** as part of feature validation
-
----
-
-## 📦 VENDOR BULK UPLOAD SYSTEM TESTING (June 2025)
-
-### **Complete Bulk Product Management Functionality Tested & Validated**
-
-```json
-{
-  "feature_name": "vendor_bulk_upload_system",
-  "testing_date": "2025-06-23",
-  "test_status": "COMPREHENSIVE_TESTING_COMPLETED",
-  "production_readiness": "FULLY_FUNCTIONAL_WITH_MINOR_ENV_VALIDATION_NEEDED",
-  
-  "system_architecture": {
-    "ui_component": "/app/vendor/bulk-products/page.tsx",
-    "features": [
-      "three_tab_interface_import_export_jobs",
-      "drag_drop_csv_upload_with_progress_tracking",
-      "real_time_job_status_monitoring",
-      "configurable_export_options",
-      "vendor_product_statistics_dashboard"
-    ],
-    "api_endpoints": {
-      "/api/vendor/bulk-products/import": "csv_file_upload_with_async_processing",
-      "/api/vendor/bulk-products/export": "configurable_product_data_export",
-      "/api/vendor/bulk-products/jobs": "job_status_tracking_and_error_reporting", 
-      "/api/vendor/bulk-products/stats": "vendor_product_metrics_dashboard",
-      "/api/vendor/bulk-products/template": "csv_template_download_with_samples"
-    }
-  },
-  
-  "database_integration": {
-    "job_tracking_table": "bulk_product_jobs",
-    "multi_table_architecture": "vendor_products_junction_table_pattern",
-    "relationship_handling": "proper_vendor_product_ownership_validation",
-    "schema_compatibility": "uses_full_description_field_matching_actual_structure",
-    "category_management": "auto_creation_of_categories_during_import"
-  },
-  
-  "testing_results": {
-    "template_download": {
-      "status": "WORKING",
-      "endpoint": "/api/vendor/bulk-products/template",
-      "features": [
-        "utf8_bom_for_excel_compatibility",
-        "comprehensive_field_coverage_31_columns",
-        "sample_data_with_2_complete_product_examples",
-        "proper_csv_escaping_for_complex_data"
-      ]
-    },
-    "job_management": {
-      "status": "WORKING", 
-      "job_creation": "unique_uuid_identifiers_generated",
-      "status_tracking": "real_time_updates_pending_processing_completed_failed",
-      "error_reporting": "detailed_messages_with_line_numbers_field_validation",
-      "progress_monitoring": "processed_success_error_counts_tracked"
-    },
-    "vendor_authentication": {
-      "status": "WORKING",
-      "role_validation": "only_vendor_users_access_bulk_operations",
-      "data_isolation": "vendors_only_see_own_products_and_jobs",
-      "jwt_security": "proper_token_validation_throughout_system"
-    },
-    "user_interface": {
-      "status": "WORKING",
-      "tab_navigation": "import_export_jobs_tabs_with_state_management",
-      "file_upload": "drag_drop_csv_upload_with_mime_validation",
-      "export_options": "configurable_pricing_inventory_images_options",
-      "statistics": "real_time_vendor_product_metrics"
-    }
-  },
-  
-  "csv_template_structure": {
-    "required_fields": [
-      "name", "sku", "description", "short_description", "category_name", "base_price"
-    ],
-    "optional_fields": [
-      "sale_price", "cost_price", "finish", "tags", "room_types", "mount_types",
-      "control_types", "light_filtering", "energy_efficiency", "child_safety_certified",
-      "warranty_years", "custom_width_min", "custom_width_max", "custom_height_min", 
-      "custom_height_max", "notes", "meta_title", "meta_description"
-    ],
-    "validation_rules": {
-      "name": "required_max_255_characters",
-      "sku": "required_unique_per_vendor",
-      "category_name": "required_auto_creates_if_missing",
-      "base_price": "required_valid_decimal_number",
-      "boolean_fields": "accepts_true_false_or_1_0",
-      "numeric_fields": "proper_validation_with_defaults"
-    }
-  },
-  
-  "import_process_flow": {
-    "step_1": "csv_upload_with_file_validation",
-    "step_2": "job_creation_with_uuid",
-    "step_3": "async_processing_start",
-    "step_4": "header_validation_against_required_fields",
-    "step_5": "row_by_row_processing_with_error_tracking",
-    "step_6": "category_lookup_or_creation",
-    "step_7": "product_existence_check_via_sku_vendor_lookup",
-    "step_8a": "update_existing_product_and_vendor_products_table",
-    "step_8b": "create_new_product_and_vendor_products_relationship",
-    "step_9": "success_error_count_tracking",
-    "step_10": "job_completion_with_final_status"
-  },
-  
-  "export_functionality": {
-    "basic_export": "name_sku_descriptions_categories",
-    "pricing_export": "base_price_sale_price_cost_price_optional",
-    "inventory_export": "stock_levels_thresholds_backorder_settings_optional",
-    "image_export": "product_image_urls_optional",
-    "advanced_options": "category_filtering_active_inactive_products",
-    "file_format": "csv_with_utf8_bom_excel_compatible",
-    "filename_generation": "timestamp_based_automatic_naming"
-  },
-  
-  "job_processing_system": {
-    "status_lifecycle": [
-      "pending_job_created_waiting_to_start",
-      "processing_actively_processing_rows", 
-      "completed_all_rows_processed_successfully",
-      "failed_critical_error_stopped_processing",
-      "completed_with_errors_partial_success_with_row_errors"
-    ],
-    "error_handling": {
-      "row_level_errors": "specific_line_number_and_field_identification",
-      "validation_messages": "clear_error_descriptions_for_each_issue",
-      "error_limits": "maximum_100_errors_stored_prevent_memory_issues",
-      "detailed_logging": "complete_error_context_for_debugging"
-    }
-  },
-  
-  "security_performance": {
-    "security_measures": [
-      "file_type_validation_only_csv_accepted",
-      "vendor_isolation_strict_data_separation",
-      "input_sanitization_proper_escaping_validation",
-      "authentication_required_jwt_token_validation"
-    ],
-    "performance_features": [
-      "async_processing_large_files_background",
-      "progress_tracking_real_time_updates",
-      "memory_management_streaming_processing_large_datasets",
-      "database_optimization_efficient_queries_proper_indexing"
-    ]
-  },
-  
-  "database_connection_patterns": {
-    "correct_pattern_used": "pool.execute() for non-transactional queries",
-    "connection_management": "proper_pool_usage_no_connection_leaks",
-    "transaction_handling": "getConnection() only for multi-step transactions",
-    "schema_validation": "queries_match_actual_database_structure",
-    "vendor_products_relationship": "proper_junction_table_usage"
-  },
-  
-  "production_readiness_assessment": {
-    "ready_components": [
-      "template_system_complete_and_working",
-      "job_management_robust_tracking_error_handling",
-      "user_interface_professional_vendor_friendly",
-      "security_proper_authentication_data_isolation",
-      "file_handling_secure_upload_processing",
-      "error_management_comprehensive_validation_reporting"
-    ],
-    "environment_validation_needed": [
-      "database_schema_ensure_referenced_columns_exist_production",
-      "performance_testing_large_csv_files_1000_plus_products",
-      "error_recovery_test_system_behavior_various_conditions"
-    ]
-  },
-  
-  "business_value_delivered": {
-    "for_vendors": [
-      "bulk_operations_import_hundreds_products_efficiently",
-      "data_management_export_catalogs_for_analysis",
-      "error_tracking_clear_feedback_import_issues",
-      "self_service_complete_vendor_control_product_data"
-    ],
-    "for_platform": [
-      "scalability_handle_large_vendor_catalogs",
-      "data_quality_validation_ensures_clean_product_data",
-      "vendor_adoption_easy_onboarding_new_vendors",
-      "operational_efficiency_reduced_manual_data_entry"
-    ]
-  },
-  
-  "integration_points": {
-    "frontend_integration": [
-      "react_components_modern_ui_proper_state_management",
-      "file_upload_drag_drop_interface_progress_indication",
-      "real_time_updates_job_status_polling_automatic_refresh",
-      "error_display_user_friendly_messages_validation_feedback"
-    ],
-    "backend_architecture": [
-      "restful_apis_consistent_endpoint_design",
-      "database_transactions_proper_error_handling_rollback",
-      "queue_system_background_job_processing", 
-      "logging_comprehensive_error_activity_logging"
-    ]
-  },
-  
-  "testing_conclusion": {
-    "status": "COMPREHENSIVE_END_TO_END_WORKFLOW_TESTED",
-    "achievements": [
-      "complete_workflow_functionality_verified",
-      "professional_ui_ux_implementation_confirmed",
-      "robust_error_handling_job_tracking_validated",
-      "secure_vendor_data_isolation_tested",
-      "template_system_vendor_onboarding_ready",
-      "export_capabilities_data_analysis_confirmed"
-    ],
-    "system_classification": "PRODUCTION_READY_WITH_MINOR_ENV_VALIDATION"
-  }
-}
-```
-
----
-
-This README serves as a comprehensive reference for understanding the BlindsCommerce application architecture, business logic, pricing systems, and development patterns. Update this document as the application evolves and new features are added.

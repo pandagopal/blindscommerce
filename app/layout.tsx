@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
 import { AuthProvider } from "@/context/AuthContext";
+import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import { defaultMetadata } from './config';
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -37,19 +38,21 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ErrorBoundary>
-          <AuthProvider>
-            <CartProvider>
-              <RecentlyViewedProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                  <LiveChat />
-                </div>
-                <Toaster richColors />
-              </RecentlyViewedProvider>
-            </CartProvider>
-          </AuthProvider>
+          <NextAuthProvider>
+            <AuthProvider>
+              <CartProvider>
+                <RecentlyViewedProvider>
+                  <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                    <LiveChat />
+                  </div>
+                  <Toaster richColors />
+                </RecentlyViewedProvider>
+              </CartProvider>
+            </AuthProvider>
+          </NextAuthProvider>
         </ErrorBoundary>
       </body>
     </html>

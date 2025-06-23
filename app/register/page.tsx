@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -336,6 +337,10 @@ export default function RegisterPage() {
             </Link>
           </div>
         </form>
+
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <SocialLoginButtons />
+        </div>
       </div>
     </div>
   );
