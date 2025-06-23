@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -51,59 +53,56 @@ interface CommissionItem {
 
 export default function VendorPaymentsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [dateRange, setDateRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/vendor/payments');
-          return;
-        }
-        const data = await res.json();
-        if (data.user.role !== 'vendor') {
-          router.push('/');
-          return;
-        }
-        setUser(data.user);
-      } catch (error) {
-        console.error('Auth check failed:', error);
+    if (!authLoading) {
+      if (!user) {
         router.push('/login?redirect=/vendor/payments');
+        return;
       }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchPaymentData();
+      if (user.role !== 'vendor' && user.role !== 'admin') {
+        router.push('/');
+        return;
+      }
     }
-  }, [user, dateRange]);
+  }, [user, authLoading, router]);
 
+  // Lazy load payment data only when this route is active
   const fetchPaymentData = async () => {
     try {
-      setLoading(true);
       const res = await fetch(`/api/vendor/payments?range=${dateRange}`);
       if (res.ok) {
         const data = await res.json();
-        setPaymentData(data);
+        return data;
       } else {
         console.error('Failed to fetch payment data:', res.status);
-        setPaymentData(null);
+        return null;
       }
     } catch (error) {
       console.error('Error fetching payment data:', error);
-      setPaymentData(null);
-    } finally {
-      setLoading(false);
+      return null;
     }
   };
+
+  const { 
+    data: fetchedData, 
+    loading, 
+    error, 
+    refetch 
+  } = useLazyLoad(fetchPaymentData, {
+    targetPath: '/vendor/payments',
+    dependencies: [dateRange]
+  });
+
+  useEffect(() => {
+    if (fetchedData) {
+      setPaymentData(fetchedData);
+    }
+  }, [fetchedData]);
 
   const exportData = async (type: string) => {
     try {
@@ -155,7 +154,7 @@ export default function VendorPaymentsPage() {
     );
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
@@ -173,7 +172,7 @@ export default function VendorPaymentsPage() {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Payment Data</h2>
           <p className="text-gray-600 mb-4">Please check your connection and try again.</p>
-          <Button onClick={() => fetchPaymentData()} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={() => refetch()} className="bg-purple-600 hover:bg-purple-700">
             Retry
           </Button>
         </div>

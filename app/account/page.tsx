@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,11 @@ interface Address {
 
 export default function AccountPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const adminViewUserId = searchParams.get('admin_view');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [viewedCustomer, setViewedCustomer] = useState<UserProfile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -64,14 +68,60 @@ export default function AccountPage() {
         }
         const userData = await response.json();
 
-        // Format the data to match our interface
-        setUser({
-          userId: userData.userId,
-          email: userData.email,
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          phone: userData.phone || ''
-        });
+        // Check if admin is viewing another user's dashboard
+        if (adminViewUserId && userData.role === 'admin') {
+          setIsAdminView(true);
+          setUser({
+            userId: userData.userId,
+            email: userData.email,
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            phone: userData.phone || ''
+          }); // Keep admin user for permissions
+          
+          // Store AdminViewId in session
+          sessionStorage.setItem('AdminViewId', adminViewUserId);
+          
+          // Fetch the customer being viewed
+          const customerRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+          if (customerRes.ok) {
+            const customerData = await customerRes.json();
+            if (customerData.user.role !== 'customer') {
+              alert('Selected user is not a customer');
+              router.push('/admin/users');
+              return;
+            }
+            setViewedCustomer({
+              userId: customerData.user.user_id,
+              email: customerData.user.email,
+              firstName: customerData.user.first_name || '',
+              lastName: customerData.user.last_name || '',
+              phone: customerData.user.phone || ''
+            });
+          } else {
+            alert('Failed to fetch customer information');
+            router.push('/admin/users');
+            return;
+          }
+        } else {
+          // Format the data to match our interface
+          setUser({
+            userId: userData.userId,
+            email: userData.email,
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            phone: userData.phone || ''
+          });
+          setViewedCustomer({
+            userId: userData.userId,
+            email: userData.email,
+            firstName: userData.firstName || '',
+            lastName: userData.lastName || '',
+            phone: userData.phone || ''
+          });
+          // Clear admin view session if not in admin mode
+          sessionStorage.removeItem('AdminViewId');
+        }
 
         // We would also fetch addresses in a real application
         // Mock addresses for now

@@ -28,12 +28,15 @@ export async function GET(request: NextRequest) {
     }
 
     const pool = await getPool();
-    const userId = user.userId;
+    
+    // Check for AdminViewId header (for admin viewing another user's dashboard)
+    const adminViewId = request.headers.get('x-admin-view-id');
+    const effectiveUserId = (user.role === 'admin' && adminViewId) ? parseInt(adminViewId) : user.userId;
 
     // Get vendor_id from vendor_info table
     const [vendorData] = await pool.execute<RowDataPacket[]>(
       `SELECT vendor_info_id as vendor_id FROM vendor_info WHERE user_id = ?`,
-      [userId]
+      [effectiveUserId]
     );
     
     if (!vendorData[0]) {

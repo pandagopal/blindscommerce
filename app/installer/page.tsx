@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Calendar, Clock, MapPin, Package, Wrench, Truck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,11 @@ interface Material {
 
 export default function InstallerDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const adminViewUserId = searchParams.get('admin_view');
   const [user, setUser] = useState<User | null>(null);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [viewedInstaller, setViewedInstaller] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
@@ -69,11 +73,39 @@ export default function InstallerDashboard() {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          if (data.user.role !== 'installer') {
+          
+          // Check if admin is viewing another user's dashboard
+          if (adminViewUserId && data.user.role === 'admin') {
+            setIsAdminView(true);
+            setUser(data.user); // Keep admin user for permissions
+            
+            // Store AdminViewId in session
+            sessionStorage.setItem('AdminViewId', adminViewUserId);
+            
+            // Fetch the installer being viewed
+            const installerRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+            if (installerRes.ok) {
+              const installerData = await installerRes.json();
+              if (installerData.user.role !== 'installer') {
+                alert('Selected user is not an installer');
+                router.push('/admin/users');
+                return;
+              }
+              setViewedInstaller(installerData.user);
+            } else {
+              alert('Failed to fetch installer information');
+              router.push('/admin/users');
+              return;
+            }
+          } else if (data.user.role !== 'installer') {
             router.push('/');
             return;
+          } else {
+            setUser(data.user);
+            setViewedInstaller(data.user);
+            // Clear admin view session if not in admin mode
+            sessionStorage.removeItem('AdminViewId');
           }
-          setUser(data.user);
         } else {
           router.push('/login?redirect=/installer');
         }

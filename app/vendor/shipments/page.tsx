@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,8 +44,7 @@ interface ShipmentItem {
 
 export default function VendorShipmentsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,39 +52,23 @@ export default function VendorShipmentsPage() {
   const [filterCarrier, setFilterCarrier] = useState<string>('all');
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/vendor/shipments');
-          return;
-        }
-        const data = await res.json();
-        if (data.user.role !== 'vendor' && data.user.role !== 'admin') {
-          router.push('/');
-          return;
-        }
-        setUser(data.user);
-      } catch (error) {
-        console.error('Auth check failed:', error);
+    if (!authLoading) {
+      if (!user) {
         router.push('/login?redirect=/vendor/shipments');
+        return;
       }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchShipments();
+      if (user.role !== 'vendor' && user.role !== 'admin') {
+        router.push('/');
+        return;
+      }
     }
-  }, [user]);
+  }, [user, authLoading, router]);
 
-  const fetchShipments = async () => {
-    try {
-      setLoading(true);
-      // Mock data since API might not exist yet
-      const mockShipments: Shipment[] = [
+  // Lazy load shipments data only when this route is active
+  const fetchShipmentsData = async () => {
+    // TODO: Replace with actual API call
+    // For now, using mock data
+    const mockShipments: Shipment[] = [
         {
           id: 'SHIP-001',
           order_id: 'ORD-12345',
@@ -161,19 +146,30 @@ export default function VendorShipmentsPage() {
           shipping_cost: 85.00
         }
       ];
-      setShipments(mockShipments);
-    } catch (error) {
-      console.error('Error fetching shipments:', error);
-      setShipments([]);
-    } finally {
-      setLoading(false);
+      
+      return { shipments: mockShipments };
+    };
+
+  const { 
+    data: fetchedData, 
+    loading, 
+    error, 
+    refetch 
+  } = useLazyLoad(fetchShipmentsData, {
+    targetPath: '/vendor/shipments',
+    dependencies: []
+  });
+
+  useEffect(() => {
+    if (fetchedData) {
+      setShipments(fetchedData.shipments || []);
     }
-  };
+  }, [fetchedData]);
 
   const updateShipmentStatus = async (shipmentId: string, status: Shipment['status']) => {
     try {
       // Mock API call
-      fetchShipments(); // Refresh data
+      refetch(); // Refresh data
     } catch (error) {
       console.error('Error updating shipment status:', error);
     }
@@ -242,7 +238,7 @@ export default function VendorShipmentsPage() {
     return true;
   });
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">

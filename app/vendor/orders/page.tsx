@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 
 const ORDER_STATUSES = [
   'All',
@@ -25,46 +27,48 @@ interface Order {
 
 export default function VendorOrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalOrders, setTotalOrders] = useState(0);
   const [limit, setLimit] = useState(10);
 
-  useEffect(() => {
-    fetchOrders();
-    // eslint-disable-next-line
-  }, [currentPage, status, limit]);
-
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const offset = (currentPage - 1) * limit;
-      const params = new URLSearchParams();
-      params.set('limit', String(limit));
-      params.set('offset', String(offset));
-      if (status && status !== 'All') params.set('status', status);
-      if (search) params.set('search', search);
-      const response = await fetch(`/api/vendor/orders?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
-      const data = await response.json();
-      setOrders(data.orders || []);
-      setTotalOrders(data.total || 0);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch orders');
-    } finally {
-      setLoading(false);
-    }
+  // Lazy load orders data only when this route is active
+  const fetchOrdersData = async () => {
+    const offset = (currentPage - 1) * limit;
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('offset', String(offset));
+    if (status && status !== 'All') params.set('status', status);
+    if (search) params.set('search', search);
+    
+    const response = await fetch(`/api/vendor/orders?${params.toString()}`);
+    if (!response.ok) throw new Error('Failed to fetch orders');
+    const data = await response.json();
+    
+    return {
+      orders: data.orders || [],
+      total: data.total || 0
+    };
   };
+
+  const { 
+    data: ordersData, 
+    loading, 
+    error, 
+    refetch 
+  } = useLazyLoad(fetchOrdersData, {
+    targetPath: '/vendor/orders',
+    dependencies: [currentPage, status, limit, search]
+  });
+
+  const orders = ordersData?.orders || [];
+  const totalOrders = ordersData?.total || 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setCurrentPage(1);
-    fetchOrders();
+    refetch();
   };
 
   const totalPages = Math.ceil(totalOrders / limit);

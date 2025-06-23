@@ -57,7 +57,17 @@ export default function AdminSettingsPage() {
       // Braintree Configuration
       braintree_merchant_id: '',
       braintree_public_key: '',
-      braintree_private_key: ''
+      braintree_private_key: '',
+      // Klarna Configuration
+      klarna_api_key: '',
+      klarna_username: '',
+      klarna_password: '',
+      // Afterpay Configuration
+      afterpay_merchant_id: '',
+      afterpay_secret_key: '',
+      // Affirm Configuration
+      affirm_public_api_key: '',
+      affirm_private_api_key: ''
     },
     security: {
       two_factor_required: false,
@@ -509,8 +519,47 @@ export default function AdminSettingsPage() {
                   </div>
                   
                   {settings.payments.klarna_enabled && (
-                    <div className="mt-4 pl-13">
-                      <p className="text-sm text-gray-600">Klarna configuration coming soon. Contact support for setup assistance.</p>
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            API Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.klarna_api_key}
+                            onChange={(e) => handleSettingChange('payments', 'klarna_api_key', e.target.value)}
+                            placeholder="Enter Klarna API Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Username *
+                          </label>
+                          <Input
+                            value={settings.payments.klarna_username}
+                            onChange={(e) => handleSettingChange('payments', 'klarna_username', e.target.value)}
+                            placeholder="Enter Klarna Username"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Password *
+                        </label>
+                        <Input
+                          type="password"
+                          value={settings.payments.klarna_password}
+                          onChange={(e) => handleSettingChange('payments', 'klarna_password', e.target.value)}
+                          placeholder="Enter Klarna Password"
+                          className="font-mono text-sm"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your credentials from the <a href="https://developers.klarna.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Klarna Developer Portal</a>
+                      </p>
                     </div>
                   )}
                 </div>
@@ -534,8 +583,35 @@ export default function AdminSettingsPage() {
                   </div>
                   
                   {settings.payments.afterpay_enabled && (
-                    <div className="mt-4 pl-13">
-                      <p className="text-sm text-gray-600">Afterpay configuration coming soon. Contact support for setup assistance.</p>
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Merchant ID *
+                          </label>
+                          <Input
+                            value={settings.payments.afterpay_merchant_id}
+                            onChange={(e) => handleSettingChange('payments', 'afterpay_merchant_id', e.target.value)}
+                            placeholder="Enter Afterpay Merchant ID"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Secret Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.afterpay_secret_key}
+                            onChange={(e) => handleSettingChange('payments', 'afterpay_secret_key', e.target.value)}
+                            placeholder="Enter Afterpay Secret Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your credentials from the <a href="https://developers.afterpay.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Afterpay Developer Portal</a>
+                      </p>
                     </div>
                   )}
                 </div>
@@ -559,8 +635,35 @@ export default function AdminSettingsPage() {
                   </div>
                   
                   {settings.payments.affirm_enabled && (
-                    <div className="mt-4 pl-13">
-                      <p className="text-sm text-gray-600">Affirm configuration coming soon. Contact support for setup assistance.</p>
+                    <div className="mt-4 space-y-4 pl-13">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Public API Key *
+                          </label>
+                          <Input
+                            value={settings.payments.affirm_public_api_key}
+                            onChange={(e) => handleSettingChange('payments', 'affirm_public_api_key', e.target.value)}
+                            placeholder="Enter Affirm Public API Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Private API Key *
+                          </label>
+                          <Input
+                            type="password"
+                            value={settings.payments.affirm_private_api_key}
+                            onChange={(e) => handleSettingChange('payments', 'affirm_private_api_key', e.target.value)}
+                            placeholder="Enter Affirm Private API Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Get your credentials from the <a href="https://docs.affirm.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Affirm Developer Documentation</a>
+                      </p>
                     </div>
                   )}
                 </div>

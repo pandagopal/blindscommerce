@@ -70,10 +70,10 @@ export async function GET(request: NextRequest) {
         // Map database keys to frontend structure
         if (config_key.startsWith('general_')) {
           settings.general[config_key.replace('general_', '') as keyof typeof settings.general] = parsedValue;
-        } else if (config_key.startsWith('notification_')) {
-          settings.notifications[config_key.replace('notification_', '') as keyof typeof settings.notifications] = parsedValue;
-        } else if (config_key.startsWith('payment_')) {
-          settings.payments[config_key.replace('payment_', '') as keyof typeof settings.payments] = parsedValue;
+        } else if (config_key.startsWith('notifications_')) {
+          settings.notifications[config_key.replace('notifications_', '') as keyof typeof settings.notifications] = parsedValue;
+        } else if (config_key.startsWith('payments_')) {
+          settings.payments[config_key.replace('payments_', '') as keyof typeof settings.payments] = parsedValue;
         } else if (config_key.startsWith('security_')) {
           settings.security[config_key.replace('security_', '') as keyof typeof settings.security] = parsedValue;
         } else if (config_key.startsWith('integrations_')) {
@@ -172,6 +172,25 @@ function validateSetting(category: string, key: string, value: any): { valid: bo
             return { valid: false, error: 'Braintree credentials must be at least 5 characters' };
           }
           break;
+        case 'klarna_api_key':
+        case 'klarna_username':
+        case 'klarna_password':
+          if (value && (typeof value !== 'string' || value.length < 3)) {
+            return { valid: false, error: 'Klarna credentials must be at least 3 characters' };
+          }
+          break;
+        case 'afterpay_merchant_id':
+        case 'afterpay_secret_key':
+          if (value && (typeof value !== 'string' || value.length < 5)) {
+            return { valid: false, error: 'Afterpay credentials must be at least 5 characters' };
+          }
+          break;
+        case 'affirm_public_api_key':
+        case 'affirm_private_api_key':
+          if (value && (typeof value !== 'string' || value.length < 10)) {
+            return { valid: false, error: 'Affirm API keys must be at least 10 characters' };
+          }
+          break;
       }
       break;
     case 'security':
@@ -267,7 +286,10 @@ export async function PUT(request: NextRequest) {
     try {
       // Update or insert settings for the specified category
       for (const [key, value] of Object.entries(categorySettings)) {
-        const dbKey = `${category}_${key}`;
+        // Use correct prefix for notifications and payments  
+        const prefix = category === 'notifications' ? 'notifications' : 
+                      category === 'payments' ? 'payments' : category;
+        const dbKey = `${prefix}_${key}`;
         let dbValue: string;
         let dbType: string;
 
@@ -354,7 +376,10 @@ export async function PATCH(request: NextRequest) {
       for (const [category, categorySettings] of Object.entries(settings)) {
         if (typeof categorySettings === 'object' && categorySettings !== null) {
           for (const [key, value] of Object.entries(categorySettings)) {
-            const dbKey = `${category}_${key}`;
+            // Use correct prefix for notifications and payments
+            const prefix = category === 'notifications' ? 'notifications' : 
+                          category === 'payments' ? 'payments' : category;
+            const dbKey = `${prefix}_${key}`;
             let dbValue: string;
             let dbType: string;
 

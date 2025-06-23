@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   DollarSign, Users, Phone, Mail,
   ArrowUpRight, TrendingUp, Calendar,
-  BarChart3, ShoppingCart, Clock
+  BarChart3, ShoppingCart, Clock, Shield
 } from 'lucide-react';
 
 // Types for the leads and sales data
@@ -62,7 +62,11 @@ interface Customer {
 
 export default function SalesDashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const adminViewUserId = searchParams.get('admin_view');
   const [user, setUser] = useState<User | null>(null);
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [viewedSalesPerson, setViewedSalesPerson] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
@@ -89,11 +93,39 @@ export default function SalesDashboard() {
         const res = await fetch('/api/auth/me');
         if (res.ok) {
           const data = await res.json();
-          if (data.user.role !== 'sales') {
+          
+          // Check if admin is viewing another user's dashboard
+          if (adminViewUserId && data.user.role === 'admin') {
+            setIsAdminView(true);
+            setUser(data.user); // Keep admin user for permissions
+            
+            // Store AdminViewId in session
+            sessionStorage.setItem('AdminViewId', adminViewUserId);
+            
+            // Fetch the sales person being viewed
+            const salesRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+            if (salesRes.ok) {
+              const salesData = await salesRes.json();
+              if (salesData.user.role !== 'sales') {
+                alert('Selected user is not a sales person');
+                router.push('/admin/users');
+                return;
+              }
+              setViewedSalesPerson(salesData.user);
+            } else {
+              alert('Failed to fetch sales person information');
+              router.push('/admin/users');
+              return;
+            }
+          } else if (data.user.role !== 'sales') {
             router.push('/');
             return;
+          } else {
+            setUser(data.user);
+            setViewedSalesPerson(data.user);
+            // Clear admin view session if not in admin mode
+            sessionStorage.removeItem('AdminViewId');
           }
-          setUser(data.user);
         } else {
           router.push('/login?redirect=/sales');
         }
@@ -304,7 +336,9 @@ export default function SalesDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Sales Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8">
+        {isAdminView ? `${viewedSalesPerson?.first_name} ${viewedSalesPerson?.last_name}'s ` : ''}Sales Dashboard
+      </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Quick Stats */}

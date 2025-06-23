@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,59 +33,41 @@ interface VendorAnalytics {
 
 export default function VendorAnalyticsPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [analyticsData, setAnalyticsData] = useState<VendorAnalytics | null>(null);
+  const { user, loading } = useAuth();
   const [dateRange, setDateRange] = useState('30d');
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/vendor/analytics');
-          return;
-        }
-        const data = await res.json();
-        if (data.user.role !== 'vendor') {
-          router.push('/');
-          return;
-        }
-        setUser(data.user);
-      } catch (error) {
-        console.error('Auth check failed:', error);
+    if (!loading) {
+      if (!user) {
         router.push('/login?redirect=/vendor/analytics');
+        return;
       }
-    };
-
-    checkAuth();
-  }, [router]);
-
-  useEffect(() => {
-    if (user) {
-      fetchAnalytics();
-    }
-  }, [user, dateRange]);
-
-  const fetchAnalytics = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/vendor/analytics?range=${dateRange}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAnalyticsData(data);
-      } else {
-        console.error('Failed to fetch analytics data');
-        setAnalyticsData(null);
+      if (user.role !== 'vendor' && user.role !== 'admin') {
+        router.push('/');
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      setAnalyticsData(null);
-    } finally {
-      setLoading(false);
     }
+  }, [user, loading, router]);
+
+  // Lazy load analytics data only when this route is active
+  const fetchAnalyticsData = async () => {
+    const res = await fetch(`/api/vendor/analytics?range=${dateRange}`);
+    if (!res.ok) {
+      throw new Error('Failed to fetch analytics data');
+    }
+    return res.json();
   };
+
+  const { 
+    data: analyticsData, 
+    loading: analyticsLoading, 
+    error: analyticsError, 
+    refetch 
+  } = useLazyLoad(fetchAnalyticsData, {
+    targetPath: '/vendor/analytics',
+    dependencies: [dateRange]
+  });
 
   const exportData = async (type: string) => {
     try {
@@ -121,7 +105,7 @@ export default function VendorAnalyticsPage() {
     );
   };
 
-  if (loading) {
+  if (loading || analyticsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Copy, Calendar, BarChart3, Save, AlertCircle, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Search, Filter, MoreHorizontal, Edit, Copy, Calendar, BarChart3, Save, AlertCircle, Eye, ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface VendorDiscount {
   discount_id: number;
@@ -74,6 +76,8 @@ export default function VendorDiscountsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [activeTab, setActiveTab] = useState('discounts');
+  const [editingItem, setEditingItem] = useState<VendorDiscount | VendorCoupon | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -82,26 +86,36 @@ export default function VendorDiscountsPage() {
     totalPages: 0
   });
 
+  // Lazy load discounts/coupons data only when this route is active
+  const fetchDiscountsData = async () => {
+    const endpoint = activeTab === 'discounts' ? '/api/vendor/discounts' : '/api/vendor/coupons';
+    const params = new URLSearchParams({
+      page: currentPage.toString(),
+      limit: pagination.limit.toString(),
+      ...(searchTerm && { search: searchTerm }),
+      ...(statusFilter !== 'all' && { status: statusFilter }),
+      ...(typeFilter !== 'all' && { type: typeFilter })
+    });
+
+    const response = await fetch(`${endpoint}?${params}`);
+    if (!response.ok) throw new Error('Failed to fetch data');
+    
+    return response.json();
+  };
+
+  const { 
+    data: fetchedData, 
+    loading, 
+    error: fetchError, 
+    refetch 
+  } = useLazyLoad(fetchDiscountsData, {
+    targetPath: '/vendor/discounts',
+    dependencies: [currentPage, searchTerm, statusFilter, typeFilter, activeTab]
+  });
+
   useEffect(() => {
-    fetchData();
-  }, [currentPage, searchTerm, statusFilter, typeFilter, activeTab]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const endpoint = activeTab === 'discounts' ? '/api/vendor/discounts' : '/api/vendor/coupons';
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        limit: pagination.limit.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter !== 'all' && { status: statusFilter }),
-        ...(typeFilter !== 'all' && { type: typeFilter })
-      });
-
-      const response = await fetch(`${endpoint}?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch data');
-      
-      const data = await response.json();
+    if (fetchedData) {
+      const data = fetchedData;
       
       if (activeTab === 'discounts') {
         setDiscounts(data.discounts || []);
@@ -114,12 +128,8 @@ export default function VendorDiscountsPage() {
         total: data.total || 0,
         totalPages: Math.ceil((data.total || 0) / prev.limit)
       }));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [fetchedData, activeTab]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -144,6 +154,63 @@ export default function VendorDiscountsPage() {
       return `${item.discount_value}%`;
     }
     return `$${item.discount_value}`;
+  };
+
+  const handleEdit = (item: VendorDiscount | VendorCoupon) => {
+    setEditingItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEdit = async (updatedData: Partial<VendorDiscount | VendorCoupon>) => {
+    if (!editingItem) return;
+
+    try {
+      const endpoint = activeTab === 'discounts' 
+        ? `/api/vendor/discounts/${(editingItem as VendorDiscount).discount_id}`
+        : `/api/vendor/coupons/${(editingItem as VendorCoupon).coupon_id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update item');
+      }
+
+      setIsEditModalOpen(false);
+      setEditingItem(null);
+      refetch(); // Refresh the list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update item');
+    }
+  };
+
+  const handleToggleStatus = async (item: VendorDiscount | VendorCoupon) => {
+    try {
+      const endpoint = activeTab === 'discounts' 
+        ? `/api/vendor/discounts/${(item as VendorDiscount).discount_id}`
+        : `/api/vendor/coupons/${(item as VendorCoupon).coupon_id}`;
+
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_active: !item.is_active }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle status');
+      }
+
+      refetch(); // Refresh the list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to toggle status');
+    }
   };
 
   if (loading) {
@@ -273,11 +340,25 @@ export default function VendorDiscountsPage() {
                         {discount.valid_until ? formatDate(discount.valid_until) : 'No expiry'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(discount)}
+                          title="Edit discount"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleToggleStatus(discount)}
+                          title={discount.is_active ? 'Deactivate discount' : 'Activate discount'}
+                        >
+                          {discount.is_active ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
                         </Button>
                       </td>
                     </tr>
@@ -356,11 +437,25 @@ export default function VendorDiscountsPage() {
                         {coupon.valid_until ? formatDate(coupon.valid_until) : 'No expiry'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleEdit(coupon)}
+                          title="Edit coupon"
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleToggleStatus(coupon)}
+                          title={coupon.is_active ? 'Deactivate coupon' : 'Activate coupon'}
+                        >
+                          {coupon.is_active ? (
+                            <ToggleRight className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                          )}
                         </Button>
                       </td>
                     </tr>
@@ -410,6 +505,214 @@ export default function VendorDiscountsPage() {
           </div>
         </div>
       )}
+
+      {/* Edit Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Edit {activeTab === 'discounts' ? 'Discount' : 'Coupon'}
+            </DialogTitle>
+            <DialogDescription>
+              Update the details for this {activeTab === 'discounts' ? 'discount' : 'coupon'}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingItem && (
+            <EditForm
+              item={editingItem}
+              type={activeTab}
+              onSave={handleSaveEdit}
+              onCancel={() => setIsEditModalOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+}
+
+// Edit Form Component
+interface EditFormProps {
+  item: VendorDiscount | VendorCoupon;
+  type: string;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+}
+
+function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
+  const [formData, setFormData] = useState({
+    discount_name: type === 'discounts' ? (item as VendorDiscount).discount_name : (item as VendorCoupon).coupon_name,
+    discount_code: type === 'discounts' ? (item as VendorDiscount).discount_code || '' : (item as VendorCoupon).coupon_code,
+    display_name: item.display_name || '',
+    description: item.description || '',
+    discount_type: item.discount_type,
+    discount_value: item.discount_value,
+    minimum_order_value: item.minimum_order_value,
+    maximum_discount_amount: item.maximum_discount_amount || 0,
+    minimum_quantity: item.minimum_quantity,
+    valid_from: item.valid_from.split('T')[0], // Convert to date input format
+    valid_until: item.valid_until ? item.valid_until.split('T')[0] : '',
+    is_active: item.is_active,
+    usage_limit_total: type === 'discounts' ? (item as VendorDiscount).usage_limit_total || 0 : (item as VendorCoupon).usage_limit_total || 0,
+    usage_limit_per_customer: type === 'discounts' ? (item as VendorDiscount).usage_limit_per_customer || 0 : (item as VendorCoupon).usage_limit_per_customer || 0,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {type === 'discounts' ? 'Discount' : 'Coupon'} Name
+          </label>
+          <Input
+            value={formData.discount_name}
+            onChange={(e) => handleChange('discount_name', e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Code
+          </label>
+          <Input
+            value={formData.discount_code}
+            onChange={(e) => handleChange('discount_code', e.target.value)}
+            placeholder="Optional code"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Display Name
+          </label>
+          <Input
+            value={formData.display_name}
+            onChange={(e) => handleChange('display_name', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Type
+          </label>
+          <Select
+            value={formData.discount_type}
+            onValueChange={(value) => handleChange('discount_type', value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">Percentage</SelectItem>
+              <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+              {type === 'discounts' && <SelectItem value="tiered">Tiered</SelectItem>}
+              {type === 'discounts' && <SelectItem value="bulk_pricing">Bulk Pricing</SelectItem>}
+              {type === 'coupons' && <SelectItem value="free_shipping">Free Shipping</SelectItem>}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Value
+          </label>
+          <Input
+            type="number"
+            step="0.01"
+            value={formData.discount_value}
+            onChange={(e) => handleChange('discount_value', parseFloat(e.target.value) || 0)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Minimum Order Value
+          </label>
+          <Input
+            type="number"
+            step="0.01"
+            value={formData.minimum_order_value}
+            onChange={(e) => handleChange('minimum_order_value', parseFloat(e.target.value) || 0)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valid From
+          </label>
+          <Input
+            type="date"
+            value={formData.valid_from}
+            onChange={(e) => handleChange('valid_from', e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valid Until
+          </label>
+          <Input
+            type="date"
+            value={formData.valid_until}
+            onChange={(e) => handleChange('valid_until', e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Usage Limit (Total)
+          </label>
+          <Input
+            type="number"
+            value={formData.usage_limit_total}
+            onChange={(e) => handleChange('usage_limit_total', parseInt(e.target.value) || 0)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Usage Limit (Per Customer)
+          </label>
+          <Input
+            type="number"
+            value={formData.usage_limit_per_customer}
+            onChange={(e) => handleChange('usage_limit_per_customer', parseInt(e.target.value) || 0)}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <Input
+          value={formData.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          placeholder="Optional description"
+        />
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          checked={formData.is_active}
+          onCheckedChange={(checked) => handleChange('is_active', checked)}
+        />
+        <label className="text-sm font-medium">Active</label>
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-primary-red hover:bg-red-700">
+          <Save className="h-4 w-4 mr-2" />
+          Save Changes
+        </Button>
+      </div>
+    </form>
   );
 }

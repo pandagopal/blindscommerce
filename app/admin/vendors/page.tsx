@@ -328,6 +328,14 @@ export default function AdminVendorsPage() {
                       >
                         Edit
                       </Link>
+                      <Link
+                        href={`/vendor?admin_view=${vendor.id}`}
+                        className="text-green-600 hover:text-green-900 mr-3"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Dashboard
+                      </Link>
                       <button
                         onClick={() => handleStatusToggle(vendor.id, vendor.isActive)}
                         className={`${

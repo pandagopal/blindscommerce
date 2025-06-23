@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import {
   DollarSign, ShoppingBag, ShoppingCart, TrendingUp,
-  Clock, ExternalLink, ChevronRight, Users, Calendar
+  Clock, ExternalLink, ChevronRight, Users, Calendar, Shield
 } from 'lucide-react';
 
 interface User {
@@ -27,8 +28,13 @@ interface RecentOrder {
 
 export default function VendorDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const { user, loading } = useAuth();
+  const adminViewUserId = searchParams.get('admin_view');
+  const [isAdminView, setIsAdminView] = useState(false);
+  const [viewedVendor, setViewedVendor] = useState<User | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [vendorInfoId, setVendorInfoId] = useState<number | null>(null);
   const [stats, setStats] = useState({
     totalSales: 0,
     totalOrders: 0,
@@ -38,41 +44,85 @@ export default function VendorDashboard() {
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user.role !== 'vendor') {
+    if (!loading && user) {
+      const setupVendorView = async () => {
+        try {
+          // Check if admin is viewing another user's dashboard
+          if (adminViewUserId && user.role === 'admin') {
+            setIsAdminView(true);
+            
+            // Store AdminViewId in session
+            sessionStorage.setItem('AdminViewId', adminViewUserId);
+            
+            // Fetch the vendor being viewed
+            const vendorRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+            if (vendorRes.ok) {
+              const vendorData = await vendorRes.json();
+              if (vendorData.user.role !== 'vendor') {
+                alert('Selected user is not a vendor');
+                router.push('/admin/users');
+                return;
+              }
+              setViewedVendor(vendorData.user);
+              
+              // Fetch vendor_info_id for this user
+              const vendorInfoRes = await fetch(`/api/vendor/info?user_id=${adminViewUserId}`);
+              if (vendorInfoRes.ok) {
+                const vendorInfoData = await vendorInfoRes.json();
+                setVendorInfoId(vendorInfoData.vendor_info_id);
+              }
+            } else {
+              alert('Failed to fetch vendor information');
+              router.push('/admin/users');
+              return;
+            }
+          } else if (user.role !== 'vendor') {
             router.push('/');
             return;
+          } else {
+            setViewedVendor(user);
+            // Clear admin view session if not in admin mode
+            sessionStorage.removeItem('AdminViewId');
           }
-          setUser(data.user);
-        } else {
-          router.push('/login?redirect=/vendor');
+        } catch (error) {
+          console.error('Error setting up vendor view:', error);
+        } finally {
+          setDashboardLoading(false);
         }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchUser();
-  }, [router]);
+      setupVendorView();
+    } else if (!loading && !user) {
+      router.push('/login?redirect=/vendor');
+    }
+  }, [user, loading, router, adminViewUserId]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!viewedVendor) return;
+      
       try {
-        setLoading(true);
-        const res = await fetch('/api/vendor/dashboard');
+        setDashboardLoading(true);
+        const apiUrl = '/api/vendor/dashboard';
+          
+        const adminViewId = sessionStorage.getItem('AdminViewId');
+        const headers: HeadersInit = {};
+        if (isAdminView && adminViewId) {
+          headers['x-admin-view-id'] = adminViewId;
+        }
+        
+        const res = await fetch(apiUrl, { headers });
         if (res.ok) {
           const data = await res.json();
-          setStats(data.stats);
-          setRecentOrders(data.recentOrders);
+          setStats(data.stats || {
+            totalSales: 0,
+            totalOrders: 0,
+            totalProducts: 0,
+            pendingOrders: 0,
+          });
+          setRecentOrders(data.recentOrders || []);
         } else {
           console.error('Failed to fetch dashboard data:', res.status);
-          // Set empty state instead of mock data
           setStats({
             totalSales: 0,
             totalOrders: 0,
@@ -83,7 +133,6 @@ export default function VendorDashboard() {
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // Set empty state instead of mock data
         setStats({
           totalSales: 0,
           totalOrders: 0,
@@ -92,12 +141,12 @@ export default function VendorDashboard() {
         });
         setRecentOrders([]);
       } finally {
-        setLoading(false);
+        setDashboardLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+  }, [viewedVendor, isAdminView]);
 
   // Format date
   const formatDate = (dateString: string) => {
@@ -117,7 +166,7 @@ export default function VendorDashboard() {
     }).format(amount);
   };
 
-  if (loading) {
+  if (loading || dashboardLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
@@ -125,13 +174,15 @@ export default function VendorDashboard() {
     );
   }
 
-  if (!user) {
+  if (!user || !viewedVendor) {
     return null;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Vendor Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-8">
+        {isAdminView ? `${viewedVendor.first_name} ${viewedVendor.last_name}'s ` : ''}Vendor Dashboard
+      </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Quick Stats */}

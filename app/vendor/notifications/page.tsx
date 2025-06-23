@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Bell, Package, DollarSign, AlertCircle, Info, Check, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,8 +31,8 @@ interface NotificationSettings {
 }
 
 export default function VendorNotificationsPage() {
+  const { user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<NotificationSettings>({
     emailNotifications: true,
     orderUpdates: true,
@@ -39,8 +41,9 @@ export default function VendorNotificationsPage() {
     systemAlerts: true,
   });
 
-  useEffect(() => {
-    // In a real app, fetch notifications from API
+  // Lazy load notifications data only when this route is active
+  const fetchNotificationsData = async () => {
+    // TODO: Replace with actual API call
     // For now, using mock data
     const mockNotifications: Notification[] = [
       {
@@ -81,9 +84,27 @@ export default function VendorNotificationsPage() {
       },
     ];
     
-    setNotifications(mockNotifications);
-    setLoading(false);
-  }, []);
+    return { notifications: mockNotifications, settings };
+  };
+
+  const { 
+    data: fetchedData, 
+    loading, 
+    error, 
+    refetch 
+  } = useLazyLoad(fetchNotificationsData, {
+    targetPath: '/vendor/notifications',
+    dependencies: []
+  });
+
+  useEffect(() => {
+    if (fetchedData) {
+      setNotifications(fetchedData.notifications || []);
+      if (fetchedData.settings) {
+        setSettings(fetchedData.settings);
+      }
+    }
+  }, [fetchedData]);
 
   const markAsRead = (notificationId: number) => {
     setNotifications(prev =>

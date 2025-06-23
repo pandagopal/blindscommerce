@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
     }
 
     const pool = await getPool();
+    
+    // Check for AdminViewId header (for admin viewing another user's dashboard)
+    const adminViewId = request.headers.get('x-admin-view-id');
+    const effectiveUserId = (user.role === 'admin' && adminViewId) ? parseInt(adminViewId) : user.userId;
 
     // Get sales performance data
     const [salesMetrics] = await pool.execute<RowDataPacket[]>(

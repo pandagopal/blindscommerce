@@ -12,7 +12,8 @@ import {
   SearchIcon,
   FilterIcon,
   CheckCircleIcon,
-  XCircleIcon
+  XCircleIcon,
+  MonitorIcon
 } from 'lucide-react';
 
 interface User {
@@ -152,6 +153,23 @@ export default function AdminUsersPage() {
         return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getDashboardUrl = (role: string, userId: number) => {
+    switch (role) {
+      case 'admin':
+        return `/admin?admin_view=${userId}`;
+      case 'vendor':
+        return `/vendor?admin_view=${userId}`;
+      case 'sales':
+        return `/sales?admin_view=${userId}`;
+      case 'installer':
+        return `/installer?admin_view=${userId}`;
+      case 'customer':
+        return `/account?admin_view=${userId}`;
+      default:
+        return null;
     }
   };
 
@@ -378,6 +396,16 @@ export default function AdminUsersPage() {
                       >
                         Edit
                       </Link>
+                      {getDashboardUrl(user.role, user.user_id) && (
+                        <Link
+                          href={getDashboardUrl(user.role, user.user_id)!}
+                          className="text-green-600 hover:text-green-900 mr-3"
+                          title={`View ${user.role} dashboard`}
+                        >
+                          <MonitorIcon size={16} className="inline mr-1" />
+                          Dashboard
+                        </Link>
+                      )}
                       {currentUser?.user_id !== user.user_id && (
                         <button
                           onClick={() => handleStatusToggle(user.user_id, user.is_active)}
@@ -385,7 +413,7 @@ export default function AdminUsersPage() {
                             user.is_active
                               ? 'text-red-600 hover:text-red-900'
                               : 'text-green-600 hover:text-green-900'
-                          }`}
+                          } ml-3`}
                         >
                           {user.is_active ? 'Deactivate' : 'Activate'}
                         </button>

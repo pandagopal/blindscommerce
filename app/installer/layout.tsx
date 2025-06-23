@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import {
   Home, Calendar, Hammer, Map, CheckSquare,
-  FileText, Settings, LogOut, Users, User, ChevronRight
+  FileText, Settings, LogOut, Users, User, ChevronRight, Shield
 } from 'lucide-react';
 
 interface UserData {
@@ -23,52 +24,25 @@ export default function InstallerLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [user, setUser] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const { user, loading, logout } = useAuth();
+  const isAdminView = searchParams.get('admin_view') !== null;
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.user.role !== 'installer' && data.user.role !== 'admin') {
-            router.push('/');
-            return;
-          }
-          setUser(data.user);
-        } else {
-          router.push('/login?redirect=/installer');
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
+    if (!loading) {
+      if (!user) {
+        router.push('/login?redirect=/installer');
+        return;
       }
-    };
-
-    fetchUser();
-  }, [router]);
+      if (user.role !== 'installer' && user.role !== 'admin') {
+        router.push('/');
+        return;
+      }
+    }
+  }, [user, loading, router]);
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      // Clear user state immediately
-      setUser(null);
-      // Trigger event to notify navbar
-      window.dispatchEvent(new CustomEvent('userLoggedOut'));
-      // Set storage event to notify other tabs
-      localStorage.setItem('auth_logout', Date.now().toString());
-      localStorage.removeItem('auth_logout');
-      // Redirect to home page
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Even if logout fails, clear state and redirect
-      setUser(null);
-      window.dispatchEvent(new CustomEvent('userLoggedOut'));
-      router.push('/');
-    }
+    await logout();
   };
 
   if (loading) {
@@ -104,12 +78,23 @@ export default function InstallerLayout({
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
           <aside className="w-full md:w-64 shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-4 py-4 border-b border-gray-200">
-                <Link href="/installer" className="text-xl font-bold text-primary-red">
-                  Installer Portal
-                </Link>
-                <div className="mt-3 flex items-center justify-between">
+            <div className={`rounded-lg shadow-sm border border-gray-200 overflow-hidden ${isAdminView ? 'bg-purple-50' : 'bg-white'}`}>
+              <div className={`px-4 py-4 border-b border-gray-200 ${isAdminView ? 'bg-purple-100' : ''}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <Link href="/installer" className="text-xl font-bold text-primary-red">
+                    Installer Portal
+                  </Link>
+                  {isAdminView && (
+                    <Link
+                      href="/admin/users"
+                      className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    >
+                      <Shield size={14} className="mr-1" />
+                      ADMIN
+                    </Link>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
                       {user?.firstName && user?.lastName ? (
