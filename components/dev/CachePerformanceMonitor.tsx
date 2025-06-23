@@ -7,21 +7,31 @@ import {
   productsCache, 
   discountsCache, 
   roomsCache,
-  performGlobalCleanup 
+  categoriesCache,
+  pricingCache,
+  getAllCacheStats,
+  refreshAllCaches
 } from '@/lib/cache';
 import { 
   clientCache, 
   productsClientCache, 
   cartClientCache, 
-  vendorClientCache 
+  vendorClientCache,
+  refreshClientCaches
 } from '@/lib/cache/clientCache';
 
 interface CacheStats {
   totalEntries: number;
-  expiredEntries: number;
   activeEntries: number;
   maxSize: number;
-  defaultTTL: number;
+  oldestEntry: number;
+  newestEntry: number;
+}
+
+interface ClientCacheStats {
+  totalEntries: number;
+  oldestEntry: number;
+  newestEntry: number;
 }
 
 export default function CachePerformanceMonitor() {
@@ -32,6 +42,8 @@ export default function CachePerformanceMonitor() {
     products: CacheStats;
     discounts: CacheStats;
     rooms: CacheStats;
+    categories: CacheStats;
+    pricing: CacheStats;
   } | null>(null);
 
   const [clientStats, setClientStats] = useState<{
@@ -41,27 +53,45 @@ export default function CachePerformanceMonitor() {
     vendor: any;
   } | null>(null);
 
-  // Only show in development
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+
+  // Show in development or for admin users
   useEffect(() => {
-    setIsVisible(process.env.NODE_ENV === 'development');
+    const checkVisibility = async () => {
+      if (process.env.NODE_ENV === 'development') {
+        setIsVisible(true);
+        return;
+      }
+      
+      // In production, check if user is admin
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const user = await response.json();
+          if (user.role === 'admin' || user.role === 'super_admin') {
+            setIsVisible(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+    
+    checkVisibility();
   }, []);
 
   const updateStats = () => {
     // Server-side cache stats
-    setServerStats({
-      cache: cache.getStats(),
-      homepage: homepageCache.getStats(),
-      products: productsCache.getStats(),
-      discounts: discountsCache.getStats(),
-      rooms: roomsCache.getStats()
-    });
+    const stats = getAllCacheStats();
+    setServerStats(stats);
 
-    // Client-side cache stats (simplified)
+    // Client-side cache stats
     setClientStats({
-      client: { entries: (clientCache as any).cache?.size || 0 },
-      products: { entries: (productsClientCache as any).cache?.size || 0 },
-      cart: { entries: (cartClientCache as any).cache?.size || 0 },
-      vendor: { entries: (vendorClientCache as any).cache?.size || 0 }
+      client: (clientCache as any).getStats ? (clientCache as any).getStats() : { totalEntries: 0 },
+      products: (productsClientCache as any).getStats ? (productsClientCache as any).getStats() : { totalEntries: 0 },
+      cart: (cartClientCache as any).getStats ? (cartClientCache as any).getStats() : { totalEntries: 0 },
+      vendor: (vendorClientCache as any).getStats ? (vendorClientCache as any).getStats() : { totalEntries: 0 }
     });
   };
 
@@ -73,10 +103,48 @@ export default function CachePerformanceMonitor() {
     }
   }, [isVisible]);
 
-  const handleCleanup = () => {
-    const results = performGlobalCleanup();
-    console.log('Cache cleanup results:', results);
-    updateStats();
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      // Call server-side cache refresh API
+      const response = await fetch('/api/admin/cache/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Cache refresh result:', result);
+        setLastRefresh(new Date().toLocaleTimeString());
+        
+        // Also refresh local caches
+        refreshAllCaches();
+        refreshClientCaches();
+        
+        // Update stats display
+        updateStats();
+      } else {
+        console.error('Cache refresh failed:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Cache refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const formatAge = (milliseconds: number): string => {
+    if (milliseconds === 0) return '0s';
+    
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) return `${hours}h ${minutes % 60}m`;
+    if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
+    return `${seconds}s`;
   };
 
   if (!isVisible) return null;
@@ -95,43 +163,57 @@ export default function CachePerformanceMonitor() {
       
       <div className="space-y-2">
         <div>
-          <h4 className="font-semibold text-yellow-400">Server Caches:</h4>
+          <h4 className="font-semibold text-yellow-400">Server Caches (No Auto-Expiry):</h4>
           {serverStats && (
             <div className="grid grid-cols-2 gap-1 text-xs">
               <div>Homepage: {serverStats.homepage.activeEntries}/{serverStats.homepage.maxSize}</div>
               <div>Products: {serverStats.products.activeEntries}/{serverStats.products.maxSize}</div>
               <div>Discounts: {serverStats.discounts.activeEntries}/{serverStats.discounts.maxSize}</div>
               <div>Rooms: {serverStats.rooms.activeEntries}/{serverStats.rooms.maxSize}</div>
+              <div>Categories: {serverStats.categories.activeEntries}/{serverStats.categories.maxSize}</div>
+              <div>Pricing: {serverStats.pricing.activeEntries}/{serverStats.pricing.maxSize}</div>
+            </div>
+          )}
+          {serverStats && serverStats.homepage.oldestEntry > 0 && (
+            <div className="text-gray-300 text-xs mt-1">
+              Oldest: {formatAge(serverStats.homepage.oldestEntry)}
             </div>
           )}
         </div>
 
         <div>
-          <h4 className="font-semibold text-blue-400">Client Caches:</h4>
+          <h4 className="font-semibold text-blue-400">Client Caches (No Auto-Expiry):</h4>
           {clientStats && (
             <div className="grid grid-cols-2 gap-1 text-xs">
-              <div>Client: {clientStats.client.entries}</div>
-              <div>Products: {clientStats.products.entries}</div>
-              <div>Cart: {clientStats.cart.entries}</div>
-              <div>Vendor: {clientStats.vendor.entries}</div>
+              <div>Client: {clientStats.client.totalEntries}</div>
+              <div>Products: {clientStats.products.totalEntries}</div>
+              <div>Cart: {clientStats.cart.totalEntries}</div>
+              <div>Vendor: {clientStats.vendor.totalEntries}</div>
             </div>
           )}
         </div>
 
-        <div className="flex gap-2 mt-2">
+        <div className="flex gap-2 mt-2 flex-wrap">
           <button
             onClick={updateStats}
             className="bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded text-xs"
           >
-            Refresh
+            Update Stats
           </button>
           <button
-            onClick={handleCleanup}
-            className="bg-red-600 hover:bg-red-700 px-2 py-1 rounded text-xs"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="bg-green-600 hover:bg-green-700 px-2 py-1 rounded text-xs disabled:opacity-50"
           >
-            Cleanup
+            {refreshing ? 'Refreshing...' : 'Refresh All Caches'}
           </button>
         </div>
+        
+        {lastRefresh && (
+          <div className="text-green-400 text-xs">
+            Last refreshed: {lastRefresh}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -238,8 +238,8 @@ export function CartProvider({ children }: CartProviderProps) {
         applied_promotions: data.pricing.applied_promotions
       };
 
-      // Cache the pricing data (shorter TTL since cart data changes frequently)
-      cartClientCache.set(cacheKey, pricingData, 30 * 1000); // 30 seconds
+      // Cache the pricing data (manual refresh required for updates)
+      cartClientCache.set(cacheKey, pricingData);
 
       setPricing(pricingData);
 

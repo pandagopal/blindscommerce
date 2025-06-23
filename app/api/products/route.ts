@@ -50,9 +50,8 @@ export async function GET(request: NextRequest) {
 
     const responseData = { products, count: products.length };
     
-    // Cache the results (shorter TTL for filtered results to keep data fresh)
-    const cacheTTL = search || minPrice || maxPrice ? 2 * 60 * 1000 : undefined; // 2 min for searches
-    productsCache.set(cacheKey, responseData, cacheTTL);
+    // Cache the results (manual refresh required to update data)
+    productsCache.set(cacheKey, responseData);
 
     return NextResponse.json({ 
       ...responseData,

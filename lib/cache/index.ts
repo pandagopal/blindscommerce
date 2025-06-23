@@ -1,42 +1,37 @@
 /**
  * Application-level caching utility for BlindsCommerce
- * Provides in-memory caching with configurable TTL and cache invalidation
+ * Provides in-memory caching with manual invalidation (no automatic TTL expiry)
  */
 
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
-  ttl: number; // Time to live in milliseconds
 }
 
 interface CacheOptions {
-  ttl?: number; // Default TTL in milliseconds
   maxSize?: number; // Maximum number of entries
 }
 
 class ApplicationCache {
   private cache = new Map<string, CacheEntry<any>>();
-  private defaultTTL: number;
   private maxSize: number;
 
   constructor(options: CacheOptions = {}) {
-    this.defaultTTL = options.ttl || 5 * 60 * 1000; // 5 minutes default
     this.maxSize = options.maxSize || 1000; // 1000 entries max
   }
 
   /**
    * Set a value in the cache
    */
-  set<T>(key: string, data: T, ttl?: number): void {
-    // Clean up expired entries if we're at max size
+  set<T>(key: string, data: T): void {
+    // If we're at max size, remove oldest entries
     if (this.cache.size >= this.maxSize) {
-      this.cleanup();
+      this.removeOldestEntries(Math.floor(this.maxSize * 0.1)); // Remove 10% of oldest entries
     }
 
     const entry: CacheEntry<T> = {
       data,
-      timestamp: Date.now(),
-      ttl: ttl || this.defaultTTL
+      timestamp: Date.now()
     };
 
     this.cache.set(key, entry);
@@ -52,20 +47,14 @@ class ApplicationCache {
       return null;
     }
 
-    // Check if entry has expired
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
-      return null;
-    }
-
     return entry.data as T;
   }
 
   /**
-   * Check if a key exists and is not expired
+   * Check if a key exists
    */
   has(key: string): boolean {
-    return this.get(key) !== null;
+    return this.cache.has(key);
   }
 
   /**
@@ -100,42 +89,65 @@ class ApplicationCache {
   }
 
   /**
-   * Clean up expired entries
+   * Remove oldest entries (used when hitting max size)
    */
-  cleanup(): number {
-    let deletedCount = 0;
-    const now = Date.now();
+  private removeOldestEntries(count: number): void {
+    // Sort entries by timestamp and remove oldest
+    const sortedEntries = Array.from(this.cache.entries())
+      .sort(([, a], [, b]) => a.timestamp - b.timestamp);
     
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.cache.delete(key);
-        deletedCount++;
-      }
+    for (let i = 0; i < Math.min(count, sortedEntries.length); i++) {
+      this.cache.delete(sortedEntries[i][0]);
     }
-    
-    return deletedCount;
   }
 
   /**
    * Get cache statistics
    */
   getStats() {
+    return {
+      totalEntries: this.cache.size,
+      activeEntries: this.cache.size,
+      maxSize: this.maxSize,
+      oldestEntry: this.getOldestEntryAge(),
+      newestEntry: this.getNewestEntryAge()
+    };
+  }
+
+  /**
+   * Get age of oldest cache entry in milliseconds
+   */
+  private getOldestEntryAge(): number {
+    if (this.cache.size === 0) return 0;
+    
     const now = Date.now();
-    let expiredCount = 0;
+    let oldest = now;
     
     for (const entry of this.cache.values()) {
-      if (now - entry.timestamp > entry.ttl) {
-        expiredCount++;
+      if (entry.timestamp < oldest) {
+        oldest = entry.timestamp;
       }
     }
     
-    return {
-      totalEntries: this.cache.size,
-      expiredEntries: expiredCount,
-      activeEntries: this.cache.size - expiredCount,
-      maxSize: this.maxSize,
-      defaultTTL: this.defaultTTL
-    };
+    return now - oldest;
+  }
+
+  /**
+   * Get age of newest cache entry in milliseconds
+   */
+  private getNewestEntryAge(): number {
+    if (this.cache.size === 0) return 0;
+    
+    const now = Date.now();
+    let newest = 0;
+    
+    for (const entry of this.cache.values()) {
+      if (entry.timestamp > newest) {
+        newest = entry.timestamp;
+      }
+    }
+    
+    return now - newest;
   }
 
   /**
@@ -143,8 +155,7 @@ class ApplicationCache {
    */
   async getOrSet<T>(
     key: string, 
-    factory: () => Promise<T>, 
-    ttl?: number
+    factory: () => Promise<T>
   ): Promise<T> {
     const cached = this.get<T>(key);
     
@@ -153,39 +164,44 @@ class ApplicationCache {
     }
     
     const data = await factory();
-    this.set(key, data, ttl);
+    this.set(key, data);
     return data;
   }
 }
 
 // Cache instances with different configurations
 export const cache = new ApplicationCache({
-  ttl: 5 * 60 * 1000, // 5 minutes
   maxSize: 1000
 });
 
-// Homepage cache - longer TTL since data changes less frequently
+// Homepage cache - for homepage data (categories, featured products, etc.)
 export const homepageCache = new ApplicationCache({
-  ttl: 15 * 60 * 1000, // 15 minutes
   maxSize: 100
 });
 
-// Products cache - medium TTL for product listings
+// Products cache - for product listings and details
 export const productsCache = new ApplicationCache({
-  ttl: 10 * 60 * 1000, // 10 minutes
   maxSize: 500
 });
 
-// Discounts/Coupons cache - shorter TTL for dynamic pricing
+// Discounts/Coupons cache - for dynamic pricing data
 export const discountsCache = new ApplicationCache({
-  ttl: 2 * 60 * 1000, // 2 minutes
   maxSize: 200
 });
 
-// Room types cache - long TTL since room types rarely change
+// Room types cache - for room types data
 export const roomsCache = new ApplicationCache({
-  ttl: 30 * 60 * 1000, // 30 minutes
   maxSize: 50
+});
+
+// Categories cache - for category data
+export const categoriesCache = new ApplicationCache({
+  maxSize: 100
+});
+
+// Pricing cache - for pricing calculations
+export const pricingCache = new ApplicationCache({
+  maxSize: 300
 });
 
 /**
@@ -234,19 +250,28 @@ export const CacheKeys = {
  */
 export const CacheInvalidation = {
   homepage: () => {
-    homepageCache.deleteByPattern('homepage:.*');
+    homepageCache.clear();
+    categoriesCache.clear();
   },
   
   products: () => {
-    productsCache.deleteByPattern('products:.*');
+    productsCache.clear();
+    pricingCache.clear();
   },
   
   productDetail: (slug: string) => {
     productsCache.deleteByPattern(`products:.*:${slug}`);
+    pricingCache.deleteByPattern(`pricing:.*:${slug}`);
+  },
+  
+  discounts: () => {
+    discountsCache.clear();
+    pricingCache.clear();
   },
   
   vendor: (vendorId: number) => {
     discountsCache.deleteByPattern(`vendor:${vendorId}:.*`);
+    pricingCache.clear();
   },
   
   rooms: () => {
@@ -254,28 +279,52 @@ export const CacheInvalidation = {
   },
   
   categories: () => {
+    categoriesCache.clear();
     homepageCache.deleteByPattern('categories:.*');
     productsCache.deleteByPattern('categories:.*');
+  },
+
+  pricing: () => {
+    pricingCache.clear();
+  },
+
+  all: () => {
+    cache.clear();
+    homepageCache.clear();
+    productsCache.clear();
+    discountsCache.clear();
+    roomsCache.clear();
+    categoriesCache.clear();
+    pricingCache.clear();
   }
 };
 
 /**
- * Global cache cleanup - run periodically
+ * Get all cache statistics
  */
-export const performGlobalCleanup = () => {
-  const stats = {
-    cache: cache.cleanup(),
-    homepage: homepageCache.cleanup(),
-    products: productsCache.cleanup(),
-    discounts: discountsCache.cleanup(),
-    rooms: roomsCache.cleanup()
+export const getAllCacheStats = () => {
+  return {
+    cache: cache.getStats(),
+    homepage: homepageCache.getStats(),
+    products: productsCache.getStats(),
+    discounts: discountsCache.getStats(),
+    rooms: roomsCache.getStats(),
+    categories: categoriesCache.getStats(),
+    pricing: pricingCache.getStats()
   };
-  
-  console.log('Cache cleanup completed:', stats);
-  return stats;
 };
 
-// Automatic cleanup every 10 minutes
-if (typeof global !== 'undefined') {
-  setInterval(performGlobalCleanup, 10 * 60 * 1000);
-}
+/**
+ * Manual cache refresh - clears all caches
+ */
+export const refreshAllCaches = () => {
+  const statsBeforeClear = getAllCacheStats();
+  CacheInvalidation.all();
+  
+  console.log('All caches refreshed. Previous stats:', statsBeforeClear);
+  return {
+    message: 'All caches cleared successfully',
+    previousStats: statsBeforeClear,
+    clearedEntries: Object.values(statsBeforeClear).reduce((total, stat) => total + stat.totalEntries, 0)
+  };
+};

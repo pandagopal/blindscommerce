@@ -28,11 +28,14 @@ import {
   Package,
   UserCheck,
   AlertTriangle,
-  Clock
+  Clock,
+  Database,
+  Zap
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCcw } from 'lucide-react';
 import { useSocket } from '@/lib/hooks/useSocket';
+import { toast } from 'sonner';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -52,11 +55,14 @@ interface DashboardStats {
   }[];
 }
 
+// Cache Management Dashboard
 export default function AdminDashboard() {
   const { data: session } = useSession();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
+  const [refreshingCache, setRefreshingCache] = useState(false);
+  const [cacheStats, setCacheStats] = useState<any>(null);
   const socket = useSocket();
 
   const fetchDashboardStats = async () => {
@@ -75,6 +81,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (session?.user) {
       fetchDashboardStats();
+      fetchCacheStats();
     }
   }, [session]);
 
@@ -105,6 +112,46 @@ export default function AdminDashboard() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error exporting dashboard data:', error);
+    }
+  };
+
+  const handleRefreshCache = async () => {
+    setRefreshingCache(true);
+    try {
+      const response = await fetch('/api/admin/cache/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        toast.success('All caches refreshed successfully!', {
+          description: `Cleared ${result.refreshResult.clearedEntries} cache entries`
+        });
+        setCacheStats(result.currentStats);
+        console.log('Cache refresh result:', result);
+      } else {
+        toast.error('Failed to refresh caches');
+      }
+    } catch (error) {
+      console.error('Cache refresh error:', error);
+      toast.error('Error refreshing caches');
+    } finally {
+      setRefreshingCache(false);
+    }
+  };
+
+  const fetchCacheStats = async () => {
+    try {
+      const response = await fetch('/api/admin/cache/refresh');
+      if (response.ok) {
+        const data = await response.json();
+        setCacheStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error fetching cache stats:', error);
     }
   };
 
@@ -143,6 +190,60 @@ export default function AdminDashboard() {
           </Button>
         </div>
       </div>
+
+      {/* Cache Management Section - Prominently at top */}
+      <Card className="mb-6 border-2 border-blue-200 bg-blue-50/50">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Database className="h-6 w-6 text-blue-600" />
+                Cache Management System
+              </CardTitle>
+              <CardDescription className="text-base mt-1">
+                Manual cache refresh for Products, Categories, Pricing, Discounts & Coupons
+              </CardDescription>
+            </div>
+            <Button
+              onClick={handleRefreshCache}
+              disabled={refreshingCache}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              size="lg"
+              variant={refreshingCache ? "secondary" : "default"}
+            >
+              <Zap className={`h-5 w-5 ${refreshingCache ? 'animate-spin' : ''}`} />
+              {refreshingCache ? 'Refreshing...' : 'Refresh All Caches'}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {cacheStats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-sm text-gray-600">Homepage Cache</p>
+                <p className="text-lg font-semibold text-blue-600">{cacheStats.homepage?.totalEntries || 0} entries</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-sm text-gray-600">Products Cache</p>
+                <p className="text-lg font-semibold text-blue-600">{cacheStats.products?.totalEntries || 0} entries</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-sm text-gray-600">Pricing Cache</p>
+                <p className="text-lg font-semibold text-blue-600">{cacheStats.pricing?.totalEntries || 0} entries</p>
+              </div>
+              <div className="bg-white p-3 rounded-lg">
+                <p className="text-sm text-gray-600">Discounts Cache</p>
+                <p className="text-lg font-semibold text-blue-600">{cacheStats.discounts?.totalEntries || 0} entries</p>
+              </div>
+            </div>
+          )}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              <strong>⚡ Important:</strong> Caches no longer expire automatically. Click the "Refresh All Caches" button above after making changes to products, categories, pricing, or discounts to see the updates on your website.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -228,6 +329,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+
 
       {/* Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

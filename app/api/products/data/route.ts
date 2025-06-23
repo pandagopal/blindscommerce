@@ -153,9 +153,8 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // Cache the response data (shorter TTL for search results)
-    const cacheTTL = searchParam || minPrice || maxPrice ? 2 * 60 * 1000 : undefined; // 2 min for filtered searches
-    productsCache.set(cacheKey, responseData, cacheTTL);
+    // Cache the response data (manual refresh required to update)
+    productsCache.set(cacheKey, responseData);
 
     return NextResponse.json({
       success: true,

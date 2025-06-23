@@ -1,27 +1,25 @@
 /**
  * Client-side caching utility for React components
  * Provides in-memory caching for API responses on the frontend
+ * Uses manual invalidation (no automatic TTL expiry)
  */
 
 interface ClientCacheEntry<T> {
   data: T;
   timestamp: number;
-  ttl: number;
 }
 
 class ClientCache {
   private cache = new Map<string, ClientCacheEntry<any>>();
-  private defaultTTL: number;
 
-  constructor(defaultTTL = 5 * 60 * 1000) { // 5 minutes default
-    this.defaultTTL = defaultTTL;
+  constructor() {
+    // No TTL needed - manual refresh only
   }
 
-  set<T>(key: string, data: T, ttl?: number): void {
+  set<T>(key: string, data: T): void {
     const entry: ClientCacheEntry<T> = {
       data,
-      timestamp: Date.now(),
-      ttl: ttl || this.defaultTTL
+      timestamp: Date.now()
     };
     this.cache.set(key, entry);
   }
@@ -30,12 +28,6 @@ class ClientCache {
     const entry = this.cache.get(key);
     
     if (!entry) {
-      return null;
-    }
-
-    // Check if expired
-    if (Date.now() - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
       return null;
     }
 
@@ -54,18 +46,51 @@ class ClientCache {
     this.cache.clear();
   }
 
-  cleanup(): number {
-    let deletedCount = 0;
-    const now = Date.now();
+  /**
+   * Get cache statistics
+   */
+  getStats() {
+    return {
+      totalEntries: this.cache.size,
+      oldestEntry: this.getOldestEntryAge(),
+      newestEntry: this.getNewestEntryAge()
+    };
+  }
+
+  /**
+   * Get age of oldest cache entry in milliseconds
+   */
+  private getOldestEntryAge(): number {
+    if (this.cache.size === 0) return 0;
     
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > entry.ttl) {
-        this.cache.delete(key);
-        deletedCount++;
+    const now = Date.now();
+    let oldest = now;
+    
+    for (const entry of this.cache.values()) {
+      if (entry.timestamp < oldest) {
+        oldest = entry.timestamp;
       }
     }
     
-    return deletedCount;
+    return now - oldest;
+  }
+
+  /**
+   * Get age of newest cache entry in milliseconds
+   */
+  private getNewestEntryAge(): number {
+    if (this.cache.size === 0) return 0;
+    
+    const now = Date.now();
+    let newest = 0;
+    
+    for (const entry of this.cache.values()) {
+      if (entry.timestamp > newest) {
+        newest = entry.timestamp;
+      }
+    }
+    
+    return now - newest;
   }
 
   /**
@@ -73,8 +98,7 @@ class ClientCache {
    */
   async getOrFetch<T>(
     key: string,
-    fetcher: () => Promise<T>,
-    ttl?: number
+    fetcher: () => Promise<T>
   ): Promise<T> {
     const cached = this.get<T>(key);
     
@@ -83,26 +107,25 @@ class ClientCache {
     }
     
     const data = await fetcher();
-    this.set(key, data, ttl);
+    this.set(key, data);
     return data;
   }
 }
 
-// Create cache instances for different types of data
-export const clientCache = new ClientCache(5 * 60 * 1000); // 5 minutes
+// Create cache instances for different types of data (no TTL - manual refresh only)
+export const clientCache = new ClientCache();
 
-// Specialized caches
-export const productsClientCache = new ClientCache(10 * 60 * 1000); // 10 minutes
-export const cartClientCache = new ClientCache(1 * 60 * 1000); // 1 minute for frequently changing cart data
-export const vendorClientCache = new ClientCache(5 * 60 * 1000); // 5 minutes
+// Specialized caches for different data types
+export const productsClientCache = new ClientCache();
+export const cartClientCache = new ClientCache();
+export const vendorClientCache = new ClientCache();
 
 /**
  * Cached fetch function that automatically caches responses
  */
 export async function cachedFetch<T = any>(
   url: string,
-  options: RequestInit = {},
-  ttl?: number
+  options: RequestInit = {}
 ): Promise<T> {
   const cacheKey = `fetch:${url}:${JSON.stringify(options)}`;
   
@@ -116,8 +139,7 @@ export async function cachedFetch<T = any>(
       }
       
       return response.json();
-    },
-    ttl
+    }
   );
 }
 
@@ -148,12 +170,18 @@ export const ClientCacheKeys = {
   }
 };
 
-// Cleanup expired entries every 5 minutes
-if (typeof window !== 'undefined') {
-  setInterval(() => {
-    clientCache.cleanup();
-    productsClientCache.cleanup();
-    cartClientCache.cleanup();
-    vendorClientCache.cleanup();
-  }, 5 * 60 * 1000);
-}
+/**
+ * Manual cache refresh function for client-side caches
+ */
+export const refreshClientCaches = () => {
+  clientCache.clear();
+  productsClientCache.clear();
+  cartClientCache.clear();
+  vendorClientCache.clear();
+  
+  console.log('All client-side caches cleared');
+  return {
+    message: 'Client caches refreshed successfully',
+    timestamp: new Date().toISOString()
+  };
+};
