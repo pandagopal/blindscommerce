@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -17,7 +17,7 @@ interface UserData {
   role: string;
 }
 
-export default function SalesLayout({
+function SalesLayoutContent({
   children,
 }: {
   children: React.ReactNode;
@@ -179,5 +179,27 @@ export default function SalesLayout({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SalesLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-12 flex justify-center">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-64 mb-4"></div>
+          <div className="h-4 bg-gray-200 rounded w-32 mb-8"></div>
+          <div className="h-64 bg-gray-200 rounded w-full max-w-md"></div>
+        </div>
+      </div>
+    }>
+      <SalesLayoutContent>
+        {children}
+      </SalesLayoutContent>
+    </Suspense>
   );
 }

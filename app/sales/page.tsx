@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -60,7 +60,7 @@ interface Customer {
   phone: string;
 }
 
-export default function SalesDashboard() {
+function SalesDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const adminViewUserId = searchParams.get('admin_view');
@@ -366,5 +366,17 @@ export default function SalesDashboard() {
         )}
       </section>
     </div>
+  );
+}
+
+export default function SalesDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
+      </div>
+    }>
+      <SalesDashboardContent />
+    </Suspense>
   );
 }

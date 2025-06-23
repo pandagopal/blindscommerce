@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -26,7 +26,7 @@ interface RecentOrder {
   items: number;
 }
 
-export default function VendorDashboard() {
+function VendorDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
@@ -357,5 +357,17 @@ export default function VendorDashboard() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VendorDashboard() {
+  return (
+    <Suspense fallback={
+      <div className="flex justify-center items-center min-h-[70vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
+      </div>
+    }>
+      <VendorDashboardContent />
+    </Suspense>
   );
 }
