@@ -9,6 +9,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
 import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 // Stripe promise will be initialized dynamically
 let stripePromise: Promise<any> | null = null;
@@ -812,13 +813,13 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Phone Number *</label>
-                      <input
-                        type="tel"
-                        name="phone"
+                      <PhoneInput
                         value={formData.phone}
-                        onChange={handleInputChange}
+                        onChange={(value) => setFormData({ ...formData, phone: value })}
+                        country="US"
+                        showCountrySelector={false}
                         required
-                        className="w-full p-2 text-sm border border-gray-300 rounded-md"
+                        className="w-full text-sm"
                       />
                     </div>
                   </div>

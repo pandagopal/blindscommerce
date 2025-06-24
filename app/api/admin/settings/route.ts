@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
     // Populate with actual database values
     if (Array.isArray(rows)) {
       rows.forEach((row: any) => {
-        const { config_key, config_value, config_type } = row;
-        
-        let parsedValue;
-        switch (config_type) {
+        try {
+          const { config_key, config_value, config_type } = row;
+          
+          let parsedValue;
+          switch (config_type) {
           case 'boolean':
             parsedValue = config_value === 'true';
             break;
@@ -59,11 +60,17 @@ export async function GET(request: NextRequest) {
               try {
                 parsedValue = safeDecrypt(config_value);
               } catch (error) {
-                console.error(`Failed to decrypt ${config_key}:`, error);
+                console.warn(`Failed to decrypt ${config_key}, using empty string:`, error instanceof Error ? error.message : 'Unknown error');
                 parsedValue = ''; // Return empty string for failed decryption
               }
             } else {
-              parsedValue = config_value;
+              // For non-sensitive data, still try safeDecrypt in case it's accidentally encrypted
+              try {
+                parsedValue = safeDecrypt(config_value);
+              } catch (error) {
+                // If decryption fails on non-sensitive data, just use the raw value
+                parsedValue = config_value;
+              }
             }
         }
 
@@ -78,6 +85,10 @@ export async function GET(request: NextRequest) {
           settings.security[config_key.replace('security_', '') as keyof typeof settings.security] = parsedValue;
         } else if (config_key.startsWith('integrations_')) {
           settings.integrations[config_key.replace('integrations_', '') as keyof typeof settings.integrations] = parsedValue;
+        }
+        } catch (rowError) {
+          console.warn(`Skipping corrupted setting ${row?.config_key}:`, rowError instanceof Error ? rowError.message : 'Unknown error');
+          // Skip this row and continue with the next one
         }
       });
     }
@@ -106,9 +117,10 @@ function validateSetting(category: string, key: string, value: any): { valid: bo
           }
           break;
         case 'phone':
-          const phoneRegex = /^\+?[\d\s\-\(\)]{10,20}$/;
+          // Accept formatted phone numbers like (555) 123-4567 or +1 (555) 123-4567
+          const phoneRegex = /^(\+?1\s?)?(\(?\d{3}\)?\s?[\-.]?\s?\d{3}[\-.]?\s?\d{4})$/;
           if (value && !phoneRegex.test(value)) {
-            return { valid: false, error: 'Valid phone number is required' };
+            return { valid: false, error: 'Valid phone number is required (e.g., (555) 123-4567)' };
           }
           break;
         case 'tax_rate':

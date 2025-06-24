@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
         lastName: row.last_name,
         email: row.email,
         phone: row.phone,
+        phoneCountry: 'US', // Default to US for existing records
         territory: row.territory,
         commissionRate: parseFloat(row.commission_rate),
         targetSales: parseFloat(row.target_sales),
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
       firstName,
       lastName,
       phone,
+      phoneCountry,
       territory,
       commissionRate,
       targetSales,

@@ -6,13 +6,15 @@ import { getProducts, createProduct } from '@/lib/services/products';
 export async function GET(request: NextRequest) {
   try {
     const user = await getCurrentUser();
+    
     if (!user || user.role !== 'vendor') {
       return NextResponse.json({ error: 'Vendor access required' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
     
-    const result = await getProducts({
+    // NO CACHING FOR DASHBOARDS - Always fetch fresh data
+    const filters = {
       search: searchParams.get('search') || undefined,
       category: searchParams.get('category') || undefined,
       status: searchParams.get('status') || undefined,
@@ -20,7 +22,9 @@ export async function GET(request: NextRequest) {
       offset: parseInt(searchParams.get('offset') || '0'),
       sortBy: 'created_at',
       sortOrder: 'desc'
-    }, user.userId, user.role);
+    };
+    
+    const result = await getProducts(filters, user.userId, user.role);
 
     // Format response to match vendor component expectations
     const formattedProducts = result.products.map((product: any) => ({
@@ -46,7 +50,9 @@ export async function GET(request: NextRequest) {
       updatedAt: product.updated_at
     }));
 
-    return NextResponse.json({
+    console.log('📦 Formatted products:', formattedProducts.length);
+
+    const responseData = {
       products: formattedProducts,
       pagination: {
         total: result.total,
@@ -54,12 +60,15 @@ export async function GET(request: NextRequest) {
         offset: parseInt(searchParams.get('offset') || '0'),
         hasMore: result.page < result.totalPages
       }
-    });
+    };
+
+    // NO CACHING FOR DASHBOARDS - Return fresh data directly
+    return NextResponse.json(responseData);
 
   } catch (error) {
-    // Error fetching vendor products
+    console.error('❌ Error fetching vendor products:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch products' },
+      { error: 'Failed to fetch products', details: error.message },
       { status: 500 }
     );
   }

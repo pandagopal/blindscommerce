@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import PhoneInput from "@/components/ui/PhoneInput";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -217,14 +218,13 @@ export default function RegisterPage() {
             >
               Phone Number (Optional)
             </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
+            <PhoneInput
               value={formData.phone}
-              onChange={handleChange}
-              autoComplete="tel"
-              className={`w-full p-2 border ${errors.phone ? 'border-red-500' : 'border-gray-300'} rounded-md focus:ring-primary-red focus:border-primary-red`}
+              onChange={(value) => setFormData({ ...formData, phone: value })}
+              country="US"
+              showCountrySelector={false}
+              className="w-full"
+              error={errors.phone}
             />
             {errors.phone && (
               <p className="text-red-500 text-xs mt-1">{errors.phone}</p>

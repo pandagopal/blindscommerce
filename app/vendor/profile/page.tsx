@@ -19,6 +19,8 @@ import {
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
+import { CountryCode } from '@/lib/utils/phoneFormatter';
 
 interface VendorProfile {
   userId: number;
@@ -26,9 +28,11 @@ interface VendorProfile {
   firstName: string;
   lastName: string;
   phone: string;
+  phoneCountry: CountryCode;
   companyName: string;
   contactEmail: string;
   contactPhone: string;
+  contactPhoneCountry: CountryCode;
   businessDescription: string;
   taxId: string;
   businessLicense: string;
@@ -109,9 +113,11 @@ export default function VendorProfilePage() {
           firstName: profile.firstName || '',
           lastName: profile.lastName || '',
           phone: profile.phone || '',
+          phoneCountry: (profile.phoneCountry || 'US') as CountryCode,
           companyName: profile.businessName || '',
           contactEmail: profile.businessEmail || '',
           contactPhone: profile.businessPhone || '',
+          contactPhoneCountry: (profile.contactPhoneCountry || 'US') as CountryCode,
           businessDescription: profile.businessDescription || '',
           taxId: profile.taxId || '',
           businessLicense: '', // Not in current API
@@ -167,9 +173,11 @@ export default function VendorProfilePage() {
           firstName: profile.firstName,
           lastName: profile.lastName,
           phone: profile.phone,
+          phoneCountry: profile.phoneCountry,
           businessName: profile.companyName,
           businessEmail: profile.contactEmail,
           businessPhone: profile.contactPhone,
+          contactPhoneCountry: profile.contactPhoneCountry,
           businessDescription: profile.businessDescription,
           taxId: profile.taxId,
           address: profile.address
@@ -390,15 +398,20 @@ export default function VendorProfilePage() {
 
                 <div>
                   <Label htmlFor="contactPhone">Business Phone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                    <Input
-                      id="contactPhone"
-                      value={profile.contactPhone}
-                      onChange={(e) => setProfile({ ...profile, contactPhone: e.target.value })}
-                      className="pl-10"
-                    />
-                  </div>
+                  <PhoneInput
+                    value={profile.contactPhone}
+                    onChange={(value, country) => setProfile({ 
+                      ...profile, 
+                      contactPhone: value,
+                      contactPhoneCountry: country || profile.contactPhoneCountry
+                    })}
+                    onCountryChange={(country) => setProfile({ 
+                      ...profile, 
+                      contactPhoneCountry: country 
+                    })}
+                    country={profile.contactPhoneCountry}
+                    showCountrySelector={true}
+                  />
                 </div>
 
                 <div>

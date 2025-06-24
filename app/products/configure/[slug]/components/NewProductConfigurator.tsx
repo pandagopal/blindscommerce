@@ -56,6 +56,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     height: '',
     fabricType: '',
     colorOption: '',
+    controlOption: '',
     liftSystem: '',
     valanceOption: '',
     bottomRailOption: '',
@@ -217,24 +218,18 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       mountType: !config.mountType ? 'Please select mount type' : '',
       width: !config.width ? 'Please enter width' : validateDimension(config.width, 'width'),
       height: !config.height ? 'Please enter height' : validateDimension(config.height, 'height'),
+      fabricType: !config.fabricType ? 'Please select a fabric type' : '',
+      controlOption: !config.controlOption ? 'Please select a control option' : '',
+      valanceOption: !config.valanceOption ? 'Please select a valance option' : '',
+      bottomRailOption: !config.bottomRailOption ? 'Please select a bottom rail option' : '',
     };
 
     return mandatoryErrors;
   };
 
-  // Complete form validation including mandatory and optional fields
+  // Complete form validation - all fields are now mandatory
   const validateForm = () => {
-    const mandatoryErrors = validateMandatoryFields();
-    
-    // Optional fields validation (can be empty but if filled must be valid)
-    const optionalErrors = {
-      fabricType: !config.fabricType ? 'Please select a fabric type' : '',
-      liftSystem: !config.liftSystem ? 'Please select a lift system' : '',
-      valanceOption: !config.valanceOption ? 'Please select a valance option' : '',
-      bottomRailOption: !config.bottomRailOption ? 'Please select a bottom rail option' : '',
-    };
-
-    const allErrors = { ...mandatoryErrors, ...optionalErrors };
+    const allErrors = validateMandatoryFields();
     setErrors(allErrors);
     
     return !Object.values(allErrors).some(error => error !== '');
@@ -362,7 +357,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
   // Check if mandatory steps are completed (for progress tracking)
   const isMandatoryStepCompleted = (step: string) => {
-    const mandatorySteps = ['room', 'mount', 'dimensions'];
+    const mandatorySteps = ['room', 'mount', 'dimensions', 'fabric', 'controls', 'rails'];
     return mandatorySteps.includes(step) ? isStepCompleted(step) : true;
   };
 
@@ -668,7 +663,10 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               onFocus={() => setActiveSection('fabric')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">Choose Fabric</h2>
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Choose Fabric
+                <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
+              </h2>
               
               {fabricTypes.length > 0 ? (
                 <div>
@@ -808,7 +806,10 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               onFocus={() => setActiveSection('controls')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">Choose Control Option</h2>
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Choose Control Option
+                <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
+              </h2>
               <p className="text-sm text-gray-600 mb-4">Select one control option for your blind</p>
               
               {product?.controlTypes ? (
@@ -935,10 +936,10 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 </div>
               )}
               
-              {errors.liftSystem && (
+              {errors.controlOption && (
                 <p className="text-red-500 text-sm mt-3 flex items-center">
                   <Info size={14} className="mr-1" />
-                  {errors.liftSystem}
+                  {errors.controlOption}
                 </p>
               )}
             </div>
@@ -950,7 +951,10 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               onFocus={() => setActiveSection('rails')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">Rail Options</h2>
+              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                Rail Options
+                <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
+              </h2>
               
               <div className="space-y-4">
                 {/* Valance Options */}
@@ -1004,7 +1008,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
               {/* Add to Cart Button */}
               <button
-                onClick={() => onAddToCart(config)}
+                onClick={handleAddToCart}
                 disabled={!areMandatoryFieldsComplete()}
                 className={`w-full md:flex-1 font-semibold py-4 px-4 md:px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
                   areMandatoryFieldsComplete()

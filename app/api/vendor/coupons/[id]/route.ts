@@ -3,7 +3,8 @@ import { getPool } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { validateVendorAccess } from '@/lib/security/validation';
 import { RowDataPacket } from 'mysql2';
-import { CacheInvalidation } from '@/lib/cache';
+// NO CACHING FOR DASHBOARDS - Dashboard data must always be fresh
+// import { CacheInvalidation } from '@/lib/cache';
 
 // GET - Get specific vendor coupon
 export async function GET(
@@ -257,7 +258,7 @@ export async function PUT(
     await pool.execute(updateQuery, updateParams);
 
     // Invalidate vendor coupon cache
-    CacheInvalidation.vendor(vendorValidation.vendorId);
+    // NO CACHING FOR DASHBOARDS - Cache invalidation not needed
 
     return NextResponse.json({ message: 'Coupon updated successfully' });
 

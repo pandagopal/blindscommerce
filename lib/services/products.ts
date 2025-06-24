@@ -56,12 +56,17 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     // For vendors, we need to get their vendor_id first
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
+      console.log('🔍 Looking up vendor_info for userId:', userId);
       const [vendorInfo] = await pool.query<RowDataPacket[]>(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
+      console.log('📊 Vendor info result:', vendorInfo);
       if (vendorInfo.length > 0) {
         vendorId = vendorInfo[0].vendor_info_id;
+        console.log('✅ Found vendor_info_id:', vendorId);
+      } else {
+        console.log('❌ No vendor_info found for userId:', userId);
       }
     }
 
@@ -173,7 +178,10 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     values.push(limit, offset);
 
     // Execute query using query() instead of execute() to handle LIMIT/OFFSET properly
+    console.log('🔍 Executing query:', query);
+    console.log('🔍 Query values:', values);
     const [rows] = await pool.query(query, values);
+    console.log('📊 Query result rows:', Array.isArray(rows) ? rows.length : 'not array');
 
     // Get total count
     let countQuery: string;
@@ -204,8 +212,11 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
       }
     }
 
+    console.log('🔍 Executing count query:', countQuery);
+    console.log('🔍 Count values:', countValues);
     const [countRows] = await pool.query(countQuery, countValues);
     const total = (countRows as any)[0]?.total || 0;
+    console.log('📊 Total count:', total);
 
     // Format products
     const products = (rows as any[] || []).map(product => ({

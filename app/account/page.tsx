@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import PhoneInput from "@/components/ui/PhoneInput";
 import {
   UserCircle, KeyRound, MapPin, ShoppingBag, Ruler,
   BookmarkIcon, Save, AlertTriangle, CheckCircle2
@@ -379,13 +380,12 @@ function AccountPageContent() {
                   </div>
                   <div>
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
+                    <PhoneInput
                       value={user.phone || ''}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUser({ ...user, phone: e.target.value })}
+                      onChange={(value) => setUser({ ...user, phone: value })}
+                      country="US"
+                      showCountrySelector={false}
                       className="mt-1"
-                      placeholder="(xxx) xxx-xxxx"
                     />
                   </div>
                 </div>

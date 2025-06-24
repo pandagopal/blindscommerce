@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductBySlug, getProductsBySlugPattern, getPool } from '@/lib/db';
+import { productsCache, CacheKeys } from '@/lib/cache';
 
 export async function GET(
   request: NextRequest,

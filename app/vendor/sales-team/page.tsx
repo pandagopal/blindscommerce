@@ -19,6 +19,8 @@ import {
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
+import { CountryCode } from '@/lib/utils/phoneFormatter';
 
 interface SalesPerson {
   salesStaffId: number;
@@ -27,6 +29,7 @@ interface SalesPerson {
   lastName: string;
   email: string;
   phone?: string;
+  phoneCountry?: CountryCode;
   territory?: string;
   commissionRate: number;
   targetSales: number;
@@ -48,6 +51,7 @@ export default function VendorSalesTeamPage() {
     firstName: '',
     lastName: '',
     phone: '',
+    phoneCountry: 'US' as CountryCode,
     territory: '',
     commissionRate: 5.0,
     targetSales: 50000,
@@ -121,6 +125,7 @@ export default function VendorSalesTeamPage() {
       firstName: person.firstName,
       lastName: person.lastName,
       phone: person.phone || '',
+      phoneCountry: person.phoneCountry || 'US',
       territory: person.territory || '',
       commissionRate: person.commissionRate,
       targetSales: person.targetSales,
@@ -178,6 +183,7 @@ export default function VendorSalesTeamPage() {
       firstName: '',
       lastName: '',
       phone: '',
+      phoneCountry: 'US' as CountryCode,
       territory: '',
       commissionRate: 5.0,
       targetSales: 50000,
@@ -246,10 +252,19 @@ export default function VendorSalesTeamPage() {
                 </div>
                 <div>
                   <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
+                  <PhoneInput
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(value, country) => setFormData({ 
+                      ...formData, 
+                      phone: value,
+                      phoneCountry: country || formData.phoneCountry
+                    })}
+                    onCountryChange={(country) => setFormData({ 
+                      ...formData, 
+                      phoneCountry: country 
+                    })}
+                    country={formData.phoneCountry}
+                    showCountrySelector={true}
                   />
                 </div>
                 <div>

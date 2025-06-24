@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { MapPin, Plus, Edit3, Trash2, Check, Star, Truck } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 interface ShippingAddress {
   id: number;
@@ -522,12 +523,12 @@ export default function ShippingAddressManager() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone (optional)
                 </label>
-                <input
-                  type="tel"
-                  name="phone"
+                <PhoneInput
                   value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(value) => setFormData({ ...formData, phone: value })}
+                  country="US"
+                  showCountrySelector={false}
+                  className="w-full"
                 />
               </div>
 

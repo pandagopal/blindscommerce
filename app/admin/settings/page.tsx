@@ -13,6 +13,7 @@ import {
   Settings, Shield, Bell, Mail, DollarSign, Globe, 
   Database, Key, AlertTriangle, Save, Upload, CreditCard 
 } from 'lucide-react';
+import PhoneInput from '@/components/ui/PhoneInput';
 
 export default function AdminSettingsPage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function AdminSettingsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [testingTaxJar, setTestingTaxJar] = useState(false);
   const [taxJarTestResult, setTaxJarTestResult] = useState<{success: boolean; message: string} | null>(null);
+
 
   const [settings, setSettings] = useState({
     general: {
@@ -399,10 +401,11 @@ export default function AdminSettingsPage() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Phone Number
                       </label>
-                      <Input
+                      <PhoneInput
                         value={settings.general.phone}
-                        onChange={(e) => handleSettingChange('general', 'phone', e.target.value)}
-                        placeholder="Enter phone number"
+                        onChange={(value) => handleSettingChange('general', 'phone', value)}
+                        country="US"
+                        showCountrySelector={false}
                         className="w-full"
                       />
                     </div>
