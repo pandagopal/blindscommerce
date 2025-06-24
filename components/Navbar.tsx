@@ -40,7 +40,10 @@ const Navbar = () => {
   useEffect(() => {
     const fetchCompanyInfo = async () => {
       try {
-        const response = await fetch('/api/company-info');
+        // Add cache busting to prevent browser caching
+        const response = await fetch(`/api/company-info?t=${Date.now()}`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.companyInfo) {
@@ -57,6 +60,17 @@ const Navbar = () => {
     };
 
     fetchCompanyInfo();
+
+    // Listen for settings updates
+    const handleSettingsUpdate = () => {
+      fetchCompanyInfo();
+    };
+
+    window.addEventListener('settingsUpdated', handleSettingsUpdate);
+
+    return () => {
+      window.removeEventListener('settingsUpdated', handleSettingsUpdate);
+    };
   }, []);
 
   // Fetch user data

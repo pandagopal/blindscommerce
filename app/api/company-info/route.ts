@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
+import { getPlatformSettings } from '@/lib/settings';
+import { cache, CacheKeys } from '@/lib/cache';
 
 // Default company info if none is set in database
 const DEFAULT_COMPANY_INFO = {
@@ -23,92 +24,48 @@ const DEFAULT_COMPANY_INFO = {
 // GET - Get public company information
 export async function GET(request: NextRequest) {
   try {
-    const pool = await getPool();
-
-    try {
-      // Get company info from new company_settings table
-      const [rows] = await pool.execute(`
-        SELECT setting_key, setting_value, setting_type 
-        FROM company_settings 
-        WHERE is_public = TRUE
-      `).catch(() => [[]]);
-
-      let companyInfo = { ...DEFAULT_COMPANY_INFO };
-
-      if (Array.isArray(rows) && rows.length > 0) {
-        // Convert flat settings to company info structure
-        rows.forEach((row: any) => {
-          const { setting_key, setting_value, setting_type } = row;
-          
-          let parsedValue;
-          switch (setting_type) {
-            case 'boolean':
-              parsedValue = setting_value === 'true';
-              break;
-            case 'number':
-              parsedValue = parseFloat(setting_value);
-              break;
-            case 'json':
-              try {
-                parsedValue = JSON.parse(setting_value);
-              } catch {
-                parsedValue = setting_value;
-              }
-              break;
-            default:
-              parsedValue = setting_value;
-          }
-          
-          // Only override defaults with non-null, non-empty values
-          if (parsedValue !== null && parsedValue !== undefined && parsedValue !== '') {
-            // Map database keys to company info structure
-            switch (setting_key) {
-              case 'company_name':
-                companyInfo.companyName = parsedValue;
-                break;
-              case 'emergency_hotline':
-                companyInfo.emergencyHotline = parsedValue;
-                break;
-              case 'contact_phone':
-                companyInfo.customerService = parsedValue;
-                break;
-              case 'contact_email':
-                companyInfo.supportEmail = parsedValue;
-                break;
-              case 'sales_email':
-                companyInfo.salesEmail = parsedValue;
-                break;
-              case 'info_email':
-                companyInfo.mainEmail = parsedValue;
-                break;
-              case 'website_url':
-                companyInfo.website = parsedValue;
-                break;
-              case 'business_hours':
-                companyInfo.businessHours = parsedValue;
-                break;
-            }
-          }
-        });
-      }
-
+    const cacheKey = CacheKeys.companyInfo.public();
+    
+    // Check cache first
+    const cachedInfo = cache.get(cacheKey);
+    if (cachedInfo) {
       return NextResponse.json({
         success: true,
-        companyInfo
-      });
-
-    } catch (dbError) {
-      console.error('Database query error:', dbError);
-      // Return default info if database query fails
-      return NextResponse.json({
-        success: true,
-        companyInfo: DEFAULT_COMPANY_INFO
+        companyInfo: cachedInfo,
+        cached: true
       });
     }
 
+    // Get settings from admin settings system
+    const settings = await getPlatformSettings();
+    
+    // Build company info from general settings with fallbacks to defaults
+    const companyInfo = {
+      companyName: settings.general.site_name || DEFAULT_COMPANY_INFO.companyName,
+      emergencyHotline: settings.general.phone || DEFAULT_COMPANY_INFO.emergencyHotline,
+      customerService: settings.general.phone || DEFAULT_COMPANY_INFO.customerService,
+      salesPhone: settings.general.phone || DEFAULT_COMPANY_INFO.salesPhone,
+      techSupport: settings.general.phone || DEFAULT_COMPANY_INFO.techSupport,
+      mainEmail: settings.general.contact_email || DEFAULT_COMPANY_INFO.mainEmail,
+      salesEmail: settings.general.contact_email || DEFAULT_COMPANY_INFO.salesEmail,
+      supportEmail: settings.general.contact_email || DEFAULT_COMPANY_INFO.supportEmail,
+      website: DEFAULT_COMPANY_INFO.website,
+      tagline: DEFAULT_COMPANY_INFO.tagline,
+      businessHours: DEFAULT_COMPANY_INFO.businessHours
+    };
+
+    // Cache the company info
+    cache.set(cacheKey, companyInfo);
+
+    return NextResponse.json({
+      success: true,
+      companyInfo,
+      cached: false
+    });
+
   } catch (error) {
     console.error('Get company info error:', error);
-    // Return default info if database fails
+    // Return default info if settings fail
     return NextResponse.json({
       success: true,
       companyInfo: DEFAULT_COMPANY_INFO

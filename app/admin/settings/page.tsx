@@ -19,13 +19,24 @@ export default function AdminSettingsPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('notifications');
+  const [activeTab, setActiveTab] = useState('general');
   const [errors, setErrors] = useState<{[key: string]: string[]}>({});
   const [successMessage, setSuccessMessage] = useState('');
   const [testingTaxJar, setTestingTaxJar] = useState(false);
   const [taxJarTestResult, setTaxJarTestResult] = useState<{success: boolean; message: string} | null>(null);
 
   const [settings, setSettings] = useState({
+    general: {
+      site_name: 'Smart Blinds Hub',
+      site_description: 'Premium window treatments and smart home solutions',
+      contact_email: 'support@smartblindshub.com',
+      phone: '+1 (555) 123-4567',
+      address: '123 Business Ave, Austin, TX 78701',
+      timezone: 'America/Chicago',
+      currency: 'USD',
+      tax_rate: '8.25',
+      maintenance_mode: false
+    },
     notifications: {
       email_notifications: true,
       sms_notifications: false,
@@ -207,6 +218,17 @@ export default function AdminSettingsPage() {
 
       setSuccessMessage(result.message || 'Settings saved successfully!');
       
+      // Dispatch event to notify other components (like Navbar) to refresh
+      window.dispatchEvent(new CustomEvent('settingsUpdated'));
+      
+      // If general settings were saved, also clear company info cache
+      if (category === 'general') {
+        // Clear cache by calling the cache refresh API
+        fetch('/api/admin/cache/refresh', { method: 'POST' }).catch(() => {
+          // Ignore errors - cache will expire naturally
+        });
+      }
+      
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
       
@@ -316,6 +338,10 @@ export default function AdminSettingsPage() {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white border border-purple-100">
+            <TabsTrigger value="general">
+              <Settings className="h-4 w-4 mr-2" />
+              General
+            </TabsTrigger>
             <TabsTrigger value="notifications">
               <Bell className="h-4 w-4 mr-2" />
               Notifications
@@ -334,6 +360,162 @@ export default function AdminSettingsPage() {
             </TabsTrigger>
           </TabsList>
 
+          <TabsContent value="general">
+            <Card className="border-purple-100 shadow-lg">
+              <CardHeader>
+                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  General Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Site Name
+                      </label>
+                      <Input
+                        value={settings.general.site_name}
+                        onChange={(e) => handleSettingChange('general', 'site_name', e.target.value)}
+                        placeholder="Enter site name"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Contact Email
+                      </label>
+                      <Input
+                        type="email"
+                        value={settings.general.contact_email}
+                        onChange={(e) => handleSettingChange('general', 'contact_email', e.target.value)}
+                        placeholder="Enter contact email"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Phone Number
+                      </label>
+                      <Input
+                        value={settings.general.phone}
+                        onChange={(e) => handleSettingChange('general', 'phone', e.target.value)}
+                        placeholder="Enter phone number"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Address
+                      </label>
+                      <Textarea
+                        value={settings.general.address}
+                        onChange={(e) => handleSettingChange('general', 'address', e.target.value)}
+                        placeholder="Enter company address"
+                        className="w-full"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Site Description
+                      </label>
+                      <Textarea
+                        value={settings.general.site_description}
+                        onChange={(e) => handleSettingChange('general', 'site_description', e.target.value)}
+                        placeholder="Enter site description"
+                        className="w-full"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Timezone
+                      </label>
+                      <Select 
+                        value={settings.general.timezone} 
+                        onValueChange={(value) => handleSettingChange('general', 'timezone', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select timezone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                          <SelectItem value="America/Chicago">Central Time</SelectItem>
+                          <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                          <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                          <SelectItem value="UTC">UTC</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Currency
+                      </label>
+                      <Select 
+                        value={settings.general.currency} 
+                        onValueChange={(value) => handleSettingChange('general', 'currency', value)}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select currency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                          <SelectItem value="CAD">Canadian Dollar (CAD)</SelectItem>
+                          <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                          <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Tax Rate (%)
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={settings.general.tax_rate}
+                        onChange={(e) => handleSettingChange('general', 'tax_rate', e.target.value)}
+                        placeholder="Enter tax rate"
+                        className="w-full"
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div>
+                        <h4 className="font-medium">Maintenance Mode</h4>
+                        <p className="text-sm text-gray-600">
+                          Enable to put the site in maintenance mode
+                        </p>
+                      </div>
+                      <Switch
+                        checked={settings.general.maintenance_mode}
+                        onCheckedChange={(checked) => handleSettingChange('general', 'maintenance_mode', checked)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => saveSettings('general')}
+                  disabled={saving}
+                  className="bg-primary-red hover:bg-primary-red-dark text-white px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-red focus:ring-offset-2 disabled:opacity-50 transition-colors"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save General Settings
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           <TabsContent value="notifications">
             <Card className="border-purple-100 shadow-lg">

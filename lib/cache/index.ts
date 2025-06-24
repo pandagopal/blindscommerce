@@ -252,6 +252,10 @@ export const CacheKeys = {
   heroBanner: {
     active: () => 'hero-banners:active',
     admin: () => 'hero-banners:admin'
+  },
+  
+  companyInfo: {
+    public: () => 'company-info:public'
   }
 };
 
@@ -262,6 +266,7 @@ export const CacheInvalidation = {
   homepage: () => {
     homepageCache.clear();
     categoriesCache.clear();
+    cache.deleteByPattern('company-info:.*'); // Clear company info when homepage changes
   },
   
   products: () => {
@@ -301,6 +306,10 @@ export const CacheInvalidation = {
   heroBanners: () => {
     heroBannerCache.clear();
     homepageCache.clear(); // Clear homepage cache too since it displays hero banners
+  },
+
+  companyInfo: () => {
+    cache.deleteByPattern('company-info:.*');
   },
 
   all: () => {

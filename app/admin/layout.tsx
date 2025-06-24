@@ -115,7 +115,6 @@ export default function AdminLayout({
     { href: '/admin/database', label: 'Database', icon: <Database size={18} /> },
     { href: '/admin/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },
     { href: '/admin/logs', label: 'System Logs', icon: <AlertTriangle size={18} /> },
-    { href: '/admin/profiles', label: 'Company Profile', icon: <Settings size={18} /> },
     { href: '/admin/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
