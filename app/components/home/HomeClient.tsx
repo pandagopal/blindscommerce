@@ -186,8 +186,8 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         <section className="relative h-[400px] md:h-[500px]">
           {/* Coming Soon Banner */}
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50">
-            <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-4 py-2 rounded-full shadow-lg animate-pulse">
-              <span className="font-semibold text-sm">Coming Soon!</span>
+            <div className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white px-6 py-3 rounded-full shadow-lg animate-pulse">
+              <span className="font-semibold text-2xl">Coming Soon!</span>
             </div>
           </div>
           {/* Hero Slideshow */}

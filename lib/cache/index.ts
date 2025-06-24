@@ -204,6 +204,11 @@ export const pricingCache = new ApplicationCache({
   maxSize: 300
 });
 
+// Hero banner cache - for hero banner data
+export const heroBannerCache = new ApplicationCache({
+  maxSize: 50
+});
+
 /**
  * Cache key builders for consistent naming
  */
@@ -242,6 +247,11 @@ export const CacheKeys = {
     all: () => 'categories:all',
     featured: () => 'categories:featured',
     withProducts: () => 'categories:with-products'
+  },
+  
+  heroBanner: {
+    active: () => 'hero-banners:active',
+    admin: () => 'hero-banners:admin'
   }
 };
 
@@ -288,6 +298,11 @@ export const CacheInvalidation = {
     pricingCache.clear();
   },
 
+  heroBanners: () => {
+    heroBannerCache.clear();
+    homepageCache.clear(); // Clear homepage cache too since it displays hero banners
+  },
+
   all: () => {
     cache.clear();
     homepageCache.clear();
@@ -296,6 +311,7 @@ export const CacheInvalidation = {
     roomsCache.clear();
     categoriesCache.clear();
     pricingCache.clear();
+    heroBannerCache.clear();
   }
 };
 
@@ -310,7 +326,8 @@ export const getAllCacheStats = () => {
     discounts: discountsCache.getStats(),
     rooms: roomsCache.getStats(),
     categories: categoriesCache.getStats(),
-    pricing: pricingCache.getStats()
+    pricing: pricingCache.getStats(),
+    heroBanners: heroBannerCache.getStats()
   };
 };
 

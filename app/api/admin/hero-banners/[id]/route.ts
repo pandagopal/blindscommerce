@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { CacheInvalidation } from '@/lib/cache';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin authentication
@@ -27,7 +28,7 @@ export async function PUT(
       display_order,
       is_active 
     } = body;
-    const bannerId = params.id;
+    const { id: bannerId } = await params;
 
     const pool = await getPool();
     await pool.execute(
@@ -52,6 +53,9 @@ export async function PUT(
       ]
     );
 
+    // Invalidate hero banner caches
+    CacheInvalidation.heroBanners();
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating hero banner:', error);
@@ -61,7 +65,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin authentication
@@ -70,13 +74,16 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const bannerId = params.id;
+    const { id: bannerId } = await params;
     const pool = await getPool();
 
     await pool.execute(
       `DELETE FROM hero_banners WHERE banner_id = ?`,
       [bannerId]
     );
+
+    // Invalidate hero banner caches
+    CacheInvalidation.heroBanners();
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
+import { CacheInvalidation } from '@/lib/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -66,6 +67,9 @@ export async function POST(request: NextRequest) {
         is_active ? 1 : 0
       ]
     );
+
+    // Invalidate hero banner caches
+    CacheInvalidation.heroBanners();
 
     return NextResponse.json({ 
       success: true, 

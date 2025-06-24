@@ -47,6 +47,7 @@ const RETRY_INTERVAL = 2000;
 let dbConnectionFailed = false;
 let lastFailureTime = 0;
 const RECOVERY_INTERVAL = 30000; // 30 seconds recovery period
+let poolStatsInterval: NodeJS.Timeout | null = null;
 
 // Generic execute query function with proper typing
 export async function executeQuery<T extends RowDataPacket>(
@@ -97,15 +98,9 @@ export const resetConnectionState = (): void => {
 
 // Function to get the database connection pool
 export const getPool = async (): Promise<mysql.Pool> => {
-  console.log('🔌 Attempting to get database pool...');
-  
-  if (pool) {
-    console.log('✅ Returning existing pool');
-    return pool;
-  }
+  if (pool) return pool;
 
   if (isConnecting) {
-    console.log('⏳ Already connecting, waiting...');
     await new Promise(resolve => setTimeout(resolve, 100));
     return getPool();
   }
@@ -116,27 +111,19 @@ export const getPool = async (): Promise<mysql.Pool> => {
   if (dbConnectionFailed && !shouldAttemptRecovery()) {
     const timeSinceFailure = Date.now() - lastFailureTime;
     const nextRetryIn = Math.min(RECOVERY_INTERVAL * Math.pow(2, connectionRetries), 300000) - timeSinceFailure;
-    console.log(`❌ Database connection is not available. Next retry in ${Math.ceil(nextRetryIn / 1000)} seconds`);
     throw new Error(`Database connection is not available. Next retry in ${Math.ceil(nextRetryIn / 1000)} seconds`);
   }
 
   isConnecting = true;
-  console.log('🔄 Starting database connection process...');
 
   try {
     // Validate required environment variables
     const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
-    console.log('🔍 Checking environment variables...');
-    
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) {
-        console.log(`❌ Missing environment variable: ${envVar}`);
         throw new Error(`Required environment variable ${envVar} is not set`);
       }
     }
-    console.log('✅ All required environment variables are set');
-
-    console.log(`📊 Creating pool with config: host=${process.env.DB_HOST}, port=${process.env.DB_PORT}, user=${process.env.DB_USER}, database=${process.env.DB_NAME}`);
     
     pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
@@ -151,23 +138,15 @@ export const getPool = async (): Promise<mysql.Pool> => {
       multipleStatements: false
     });
 
-    console.log('🔗 Testing database connection...');
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
-    console.log('✅ Database connection successful!');
     
     connectionRetries = 0;
     isConnecting = false;
     dbConnectionFailed = false;
     return pool;
   } catch (error) {
-    // Safe error logging
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Failed to create database pool:', error);
-    } else {
-      console.error('Database connection failed');
-    }
     pool = null;
     isConnecting = false;
 
@@ -201,12 +180,6 @@ export const comparePassword = async (password: string, hash: string): Promise<b
   try {
     return await bcrypt.compare(password, hash);
   } catch (error) {
-    // Safe error logging without exposing details
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('Error during password comparison:', error);
-    } else {
-      console.error('Password comparison failed');
-    }
     return false;
   }
 };
@@ -336,7 +309,7 @@ export const getUserOrders = async (userId: string | number, limit: number = 10,
   try {
     const pool = await getPool();
     
-    // ✅ CORRECT Pattern: Use string interpolation for LIMIT/OFFSET (validated integers)
+    // Use string interpolation for LIMIT/OFFSET (validated integers)
     // Only use parameters for user data, not pagination
     const [rows] = await pool.execute<RowDataPacket[]>(
       `SELECT 
@@ -352,12 +325,11 @@ export const getUserOrders = async (userId: string | number, limit: number = 10,
       WHERE user_id = ? 
       ORDER BY created_at DESC 
       LIMIT ${limit} OFFSET ${offset}`,
-      [userId]  // Only user parameters, not pagination
+      [userId]
     );
 
     return rows || [];
   } catch (error) {
-    console.error('Error fetching user orders:', error);
     return [];
   }
 };
@@ -373,7 +345,6 @@ export const getUserOrdersCount = async (userId: string | number): Promise<numbe
     
     return rows[0]?.total || 0;
   } catch (error) {
-    console.error('Error getting user orders count:', error);
     return 0;
   }
 };
@@ -673,6 +644,23 @@ export const getProducts = async (params: GetProductsParams): Promise<any[]> => 
 export const getConnection = async () => {
   const pool = await getPool();
   return pool.getConnection();
+};
+
+// Helper function to get pool info
+export const getPoolInfo = async () => {
+  if (!pool) return null;
+  
+  try {
+    const poolObj = (pool as any).pool;
+    return {
+      total: poolObj.config.connectionConfig.connectionLimit,
+      free: poolObj._freeConnections.length,
+      used: poolObj._allConnections.length - poolObj._freeConnections.length,
+      queued: poolObj._connectionQueue.length
+    };
+  } catch (error) {
+    return null;
+  }
 };
 
 // Export db object with execute method for direct queries
