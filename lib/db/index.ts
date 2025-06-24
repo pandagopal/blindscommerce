@@ -97,9 +97,15 @@ export const resetConnectionState = (): void => {
 
 // Function to get the database connection pool
 export const getPool = async (): Promise<mysql.Pool> => {
-  if (pool) return pool;
+  console.log('🔌 Attempting to get database pool...');
+  
+  if (pool) {
+    console.log('✅ Returning existing pool');
+    return pool;
+  }
 
   if (isConnecting) {
+    console.log('⏳ Already connecting, waiting...');
     await new Promise(resolve => setTimeout(resolve, 100));
     return getPool();
   }
@@ -110,20 +116,28 @@ export const getPool = async (): Promise<mysql.Pool> => {
   if (dbConnectionFailed && !shouldAttemptRecovery()) {
     const timeSinceFailure = Date.now() - lastFailureTime;
     const nextRetryIn = Math.min(RECOVERY_INTERVAL * Math.pow(2, connectionRetries), 300000) - timeSinceFailure;
+    console.log(`❌ Database connection is not available. Next retry in ${Math.ceil(nextRetryIn / 1000)} seconds`);
     throw new Error(`Database connection is not available. Next retry in ${Math.ceil(nextRetryIn / 1000)} seconds`);
   }
 
   isConnecting = true;
+  console.log('🔄 Starting database connection process...');
 
   try {
     // Validate required environment variables
     const requiredEnvVars = ['DB_HOST', 'DB_PORT', 'DB_USER', 'DB_PASSWORD', 'DB_NAME'];
+    console.log('🔍 Checking environment variables...');
+    
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) {
+        console.log(`❌ Missing environment variable: ${envVar}`);
         throw new Error(`Required environment variable ${envVar} is not set`);
       }
     }
+    console.log('✅ All required environment variables are set');
 
+    console.log(`📊 Creating pool with config: host=${process.env.DB_HOST}, port=${process.env.DB_PORT}, user=${process.env.DB_USER}, database=${process.env.DB_NAME}`);
+    
     pool = mysql.createPool({
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT || '3306'),
@@ -137,9 +151,11 @@ export const getPool = async (): Promise<mysql.Pool> => {
       multipleStatements: false
     });
 
+    console.log('🔗 Testing database connection...');
     const connection = await pool.getConnection();
     await connection.ping();
     connection.release();
+    console.log('✅ Database connection successful!');
     
     connectionRetries = 0;
     isConnecting = false;
