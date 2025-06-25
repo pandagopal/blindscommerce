@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
-import { pusher } from '@/lib/pusher';
+// import { pusher } from '@/lib/pusher'; // Disabled - chat functionality removed
 
 // POST - Sales staff accepts assistance request using PIN
 export async function POST(request: NextRequest) {
@@ -145,12 +145,12 @@ export async function POST(request: NextRequest) {
 
       // Commit handling needs review with pool
 
-      // Notify customer that their request has been accepted
-      await pusher.trigger(`customer-${assistanceSession.customer_user_id}`, 'assistance-accepted', {
-        sessionId: assistanceSession.session_id,
-        salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        acceptedAt: new Date().toISOString()
-      });
+      // Notify customer that their request has been accepted - DISABLED (chat functionality removed)
+      // await pusher.trigger(`customer-${assistanceSession.customer_user_id}`, 'assistance-accepted', {
+      //   sessionId: assistanceSession.session_id,
+      //   salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      //   acceptedAt: new Date().toISOString()
+      // });
 
       // Log the access
       await pool.execute(

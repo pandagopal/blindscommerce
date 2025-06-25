@@ -13,7 +13,6 @@ import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import { defaultMetadata } from './config';
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import LiveChat from "@/app/components/chat/LiveChat";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -46,7 +45,6 @@ export default function RootLayout({
                     <Navbar />
                     <main className="flex-1">{children}</main>
                     <Footer />
-                    <LiveChat />
                   </div>
                   <Toaster richColors />
                 </RecentlyViewedProvider>

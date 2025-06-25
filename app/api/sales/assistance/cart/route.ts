@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
-import { pusher } from '@/lib/pusher';
+// import { pusher } from '@/lib/pusher'; // Disabled - chat functionality removed
 
 // Helper function to verify assistance session permissions
 async function verifySessionPermissions(connection: any, sessionId: number, salesStaffId: number, requiredPermission: string) {
@@ -398,13 +398,13 @@ export async function POST(request: NextRequest) {
 
       // Commit handling needs review with pool
 
-      // Notify customer of cart changes
-      await pusher.trigger(`customer-cart-${assistanceSession.customer_user_id}`, 'cart-updated', {
-        action,
-        sessionId,
-        salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        timestamp: new Date().toISOString()
-      });
+      // Notify customer of cart changes - DISABLED (chat functionality removed)
+      // await pusher.trigger(`customer-cart-${assistanceSession.customer_user_id}`, 'cart-updated', {
+      //   action,
+      //   sessionId,
+      //   salesStaffName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+      //   timestamp: new Date().toISOString()
+      // });
 
       return NextResponse.json({
         success: true,

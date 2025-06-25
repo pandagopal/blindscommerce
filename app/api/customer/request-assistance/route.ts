@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
-import { pusher } from '@/lib/pusher';
+// import { pusher } from '@/lib/pusher'; // Disabled - chat functionality removed
 
 // Generate random 8-digit PIN
 function generatePIN(): string {
@@ -127,19 +127,19 @@ export async function POST(request: NextRequest) {
           createdAt: new Date().toISOString()
         };
 
-        // Notify all available sales staff
-        for (const staff of onlineStaff as any[]) {
-          await pusher.trigger(`sales-staff-${staff.sales_staff_id}`, 'assistance-request', {
-            ...assistanceRequest,
-            vendorCompany: staff.company_name
-          });
-        }
+        // Notify all available sales staff - DISABLED (chat functionality removed)
+        // for (const staff of onlineStaff as any[]) {
+        //   await pusher.trigger(`sales-staff-${staff.sales_staff_id}`, 'assistance-request', {
+        //     ...assistanceRequest,
+        //     vendorCompany: staff.company_name
+        //   });
+        // }
 
-        // Also send a general notification to all sales staff channel
-        await pusher.trigger('sales-staff-notifications', 'new-assistance-request', {
-          ...assistanceRequest,
-          availableStaffCount: onlineStaff.length
-        });
+        // Also send a general notification to all sales staff channel - DISABLED
+        // await pusher.trigger('sales-staff-notifications', 'new-assistance-request', {
+        //   ...assistanceRequest,
+        //   availableStaffCount: onlineStaff.length
+        // });
       }
 
       return NextResponse.json({
