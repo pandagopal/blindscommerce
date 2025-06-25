@@ -3,16 +3,6 @@ import { verifyJWT } from '@/lib/auth/jwt';
 import { smsService } from '@/lib/sms/smsService';
 import { getPool } from '@/lib/db';
 
-// Database connection configuration
-let pool: mysql.Pool | null = null;
-
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -53,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has opted out of SMS
-    const db = getPool();
+    const pool = await getPool();
     const [optOutCheck] = await pool.execute(
       'SELECT id FROM sms_optouts WHERE phone_number = ?',
       [cleanPhone]
@@ -250,7 +240,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Filter out opted-out numbers
-    const db = getPool();
+    const pool = await getPool();
     const [optedOutNumbers] = await pool.execute(
       'SELECT phone_number FROM sms_optouts WHERE phone_number IN (?)',
       [recipients]

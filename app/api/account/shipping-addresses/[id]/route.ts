@@ -129,6 +129,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 // PUT /api/account/shipping-addresses/[id] - Update shipping address
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+  const pool = await getPool();
   let connection;
   
   try {
@@ -150,7 +151,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     const body: UpdateAddressRequest = await req.json();
 
-    const pool = await getPool();
     connection = await pool.getConnection();
 
     // Verify address belongs to user
@@ -307,6 +307,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 // DELETE /api/account/shipping-addresses/[id] - Delete shipping address
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const pool = await getPool();
   let connection;
   
   try {
@@ -326,7 +327,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       );
     }
 
-    const pool = await getPool();
     connection = await pool.getConnection();
 
     // Verify address belongs to user and get current info

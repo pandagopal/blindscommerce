@@ -15,21 +15,26 @@ export async function GET(request: NextRequest) {
     // Check admin settings for payment method availability
     const [
       stripeEnabled,
-      paypalEnabled, 
+      paypalEnabled,
+      braintreeEnabled,
       klarnaEnabled,
       afterpayEnabled,
       affirmEnabled
     ] = await Promise.all([
       isPaymentMethodEnabled('stripe'),
       isPaymentMethodEnabled('paypal'),
+      isPaymentMethodEnabled('braintree'),
       isPaymentMethodEnabled('klarna'),
       isPaymentMethodEnabled('afterpay'),
       isPaymentMethodEnabled('affirm')
     ]);
 
-    // Base payment methods with admin settings check
-    const paymentMethods = [
-      {
+    // Base payment methods with admin settings check - only show what's explicitly enabled
+    const paymentMethods = [];
+
+    // Only add payment methods that are explicitly enabled in admin settings
+    if (stripeEnabled) {
+      paymentMethods.push({
         id: 'stripe_card',
         name: 'Credit/Debit Card',
         type: 'card',
@@ -46,40 +51,13 @@ export async function GET(request: NextRequest) {
           percentage: 2.9,
           fixed: 0.30
         },
-        available: stripeEnabled,
+        available: true,
         recommended: true
-      },
-      {
-        id: 'stripe_apple_pay',
-        name: 'Apple Pay',
-        type: 'digital_wallet',
-        provider: 'stripe',
-        description: 'Pay securely with Touch ID or Face ID',
-        icon: 'apple',
-        min_amount: 0.50,
-        max_amount: 999999,
-        currencies: ['USD', 'EUR', 'GBP', 'CAD'],
-        countries: ['US', 'CA', 'GB', 'AU'],
-        processing_time: 'instant',
-        device_requirements: ['iOS', 'macOS', 'Safari'],
-        available: stripeEnabled
-      },
-      {
-        id: 'stripe_google_pay',
-        name: 'Google Pay',
-        type: 'digital_wallet',
-        provider: 'stripe',
-        description: 'Pay quickly with your Google account',
-        icon: 'google',
-        min_amount: 0.50,
-        max_amount: 999999,
-        currencies: ['USD', 'EUR', 'GBP', 'CAD'],
-        countries: ['US', 'CA', 'GB', 'AU'],
-        processing_time: 'instant',
-        device_requirements: ['Android', 'Chrome'],
-        available: stripeEnabled
-      },
-      {
+      });
+    }
+
+    if (paypalEnabled) {
+      paymentMethods.push({
         id: 'paypal',
         name: 'PayPal',
         type: 'digital_wallet',
@@ -96,13 +74,13 @@ export async function GET(request: NextRequest) {
           percentage: 3.49,
           fixed: 0.49
         },
-        available: paypalEnabled && process.env.BRAINTREE_MERCHANT_ID ? true : false
-      }
-    ];
+        available: true
+      });
+    }
 
-    // Buy Now, Pay Later options
-    const bnplMethods = [
-      {
+    // Add BNPL options only if enabled in admin settings
+    if (klarnaEnabled && amount >= 1 && amount <= 10000) {
+      paymentMethods.push({
         id: 'klarna',
         name: 'Klarna',
         type: 'bnpl',
@@ -119,10 +97,13 @@ export async function GET(request: NextRequest) {
         interest_rate: 0,
         late_fees: true,
         credit_check: 'soft',
-        available: klarnaEnabled && amount >= 1 && amount <= 10000 && process.env.KLARNA_USERNAME ? true : false,
+        available: true,
         popular: true
-      },
-      {
+      });
+    }
+
+    if (afterpayEnabled && amount >= 1 && amount <= 4000) {
+      paymentMethods.push({
         id: 'afterpay',
         name: 'Afterpay',
         type: 'bnpl',
@@ -139,9 +120,12 @@ export async function GET(request: NextRequest) {
         interest_rate: 0,
         late_fees: true,
         credit_check: 'soft',
-        available: afterpayEnabled && amount >= 1 && amount <= 4000 && process.env.AFTERPAY_MERCHANT_ID ? true : false
-      },
-      {
+        available: true
+      });
+    }
+
+    if (affirmEnabled && amount >= 50 && amount <= 17500) {
+      paymentMethods.push({
         id: 'affirm',
         name: 'Affirm',
         type: 'bnpl',
@@ -158,13 +142,13 @@ export async function GET(request: NextRequest) {
         interest_rate_range: [0, 36],
         credit_check: 'soft',
         prequalification: true,
-        available: affirmEnabled && amount >= 50 && amount <= 17500 && process.env.AFFIRM_PUBLIC_API_KEY ? true : false
-      }
-    ];
+        available: true
+      });
+    }
 
-    // Bank transfer options
-    const bankMethods = [
-      {
+    // Add bank transfer if Stripe is enabled and user is in US
+    if (stripeEnabled && country === 'US') {
+      paymentMethods.push({
         id: 'stripe_ach',
         name: 'Bank Transfer (ACH)',
         type: 'bank_transfer',
@@ -180,19 +164,12 @@ export async function GET(request: NextRequest) {
         fees: {
           fixed: 0.80
         },
-        available: country === 'US'
-      }
-    ];
+        available: true
+      });
+    }
 
     // Filter methods based on amount, currency, and country
-    const availableMethods = [
-      ...paymentMethods,
-      ...bnplMethods,
-      ...bankMethods
-    ].filter(method => {
-      // Check if method is available
-      if (!method.available) return false;
-      
+    const availableMethods = paymentMethods.filter(method => {
       // Check amount limits
       if (amount < method.min_amount || amount > method.max_amount) return false;
       

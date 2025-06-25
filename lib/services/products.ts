@@ -57,7 +57,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
       console.log('🔍 Looking up vendor_info for userId:', userId);
-      const [vendorInfo] = await pool.query<RowDataPacket[]>(
+      const [vendorInfo] = await pool.execute<RowDataPacket[]>(
         'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
@@ -177,10 +177,10 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     query += ' LIMIT ? OFFSET ?';
     values.push(limit, offset);
 
-    // Execute query using query() instead of execute() to handle LIMIT/OFFSET properly
+    // Execute query using execute() for better connection management
     console.log('🔍 Executing query:', query);
     console.log('🔍 Query values:', values);
-    const [rows] = await pool.query(query, values);
+    const [rows] = await pool.execute(query, values);
     console.log('📊 Query result rows:', Array.isArray(rows) ? rows.length : 'not array');
 
     // Get total count
@@ -214,7 +214,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
 
     console.log('🔍 Executing count query:', countQuery);
     console.log('🔍 Count values:', countValues);
-    const [countRows] = await pool.query(countQuery, countValues);
+    const [countRows] = await pool.execute(countQuery, countValues);
     const total = (countRows as any)[0]?.total || 0;
     console.log('📊 Total count:', total);
 
@@ -367,7 +367,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     // Handle vendor assignment
     if (role === 'admin' && vendorId && vendorId !== '' && vendorId !== 'marketplace') {
       // Admin creating product and assigning to vendor
-      await pool.query(
+      await pool.execute(
         `INSERT INTO vendor_products (
           vendor_id,
           product_id,

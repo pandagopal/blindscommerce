@@ -58,10 +58,7 @@ class EmailService {
     recipientName: string | null,
     variables: Record<string, any>
   ): Promise<boolean> {
-    const pool = await getPool();
-
     try {
-
       // Get the email template
       const template = await this.getTemplate(templateName);
       if (!template) {
@@ -73,6 +70,7 @@ class EmailService {
       const body = this.replaceVariables(template.body, variables);
 
       // Queue the email
+      const pool = await getPool();
       await pool.execute(
         `INSERT INTO email_queue (
           template_id,
@@ -102,9 +100,9 @@ class EmailService {
   }
 
   async processEmailQueue(): Promise<void> {
-    const pool = await getPool();
-
     try {
+      const pool = await getPool();
+      
       // Get pending emails that are ready to be sent
       const [emails] = await pool.execute<QueuedEmail[]>(
         `SELECT * FROM email_queue 

@@ -2,16 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 import { verifyJWT } from '@/lib/auth/jwt';
 
-// Database connection configuration
-let pool: mysql.Pool | null = null;
-
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -83,7 +73,7 @@ export async function POST(request: NextRequest) {
       // User not logged in, continue as guest
     }
 
-    const db = getPool();
+    const pool = await getPool();
     
     // Insert price match request
     const [result] = await pool.execute(
@@ -163,7 +153,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = getPool();
+    const pool = await getPool();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');

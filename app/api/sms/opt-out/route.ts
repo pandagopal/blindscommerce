@@ -1,16 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPool } from '@/lib/db';
 
-// Database connection configuration
-let pool: mysql.Pool | null = null;
-
-function getPool() {
-  if (!pool) {
-    pool = mysql.createPool(dbConfig);
-  }
-  return pool;
-}
-
 // Handle SMS opt-out requests
 export async function POST(request: NextRequest) {
   try {
@@ -35,7 +25,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const db = getPool();
+    const pool = await getPool();
 
     // Check if already opted out
     const [existing] = await pool.execute(
@@ -109,7 +99,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const db = getPool();
+    const pool = await getPool();
 
     // Remove from opt-out list
     await pool.execute(
@@ -165,7 +155,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const db = getPool();
+    const pool = await getPool();
 
     // Check opt-out status
     const [optOutRecord] = await pool.execute(

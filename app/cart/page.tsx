@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import HelpButton from "@/components/customer/HelpButton";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal, clearCart, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
   const [promoCode, setPromoCode] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
@@ -213,7 +213,7 @@ export default function CartPage() {
 
                       {/* Total */}
                       <div className="col-span-2 text-right font-medium">
-                        ${Number(item.totalPrice ?? 0).toFixed(2)}
+                        ${Number((item.unit_price * item.quantity) ?? 0).toFixed(2)}
                       </div>
                     </div>
                     
@@ -361,13 +361,7 @@ export default function CartPage() {
                 </div>
               ))}
 
-              <div className="p-4 flex justify-between items-center">
-                <button
-                  onClick={() => clearCart()}
-                  className="text-sm text-gray-600 hover:text-gray-800"
-                >
-                  Clear Cart
-                </button>
+              <div className="p-4 flex justify-end items-center">
                 <Link
                   href="/products"
                   className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
@@ -386,7 +380,7 @@ export default function CartPage() {
               <div className="space-y-4">
                 <div className="flex justify-between border-b pb-4">
                   <span>Subtotal</span>
-                  <span>${Number(pricing?.subtotal || 0).toFixed(2)}</span>
+                  <span>${Number(subtotal || 0).toFixed(2)}</span>
                 </div>
 
                 {/* Promo Code */}
@@ -451,13 +445,13 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between">
                     <span>Tax</span>
-                    <span>${Number(pricing?.tax || 0).toFixed(2)}</span>
+                    <span>Calculated at checkout</span>
                   </div>
                 </div>
 
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${Number(pricing?.total || 0).toFixed(2)}</span>
+                  <span>${Number(subtotal + (pricing?.shipping || 0) - (pricing?.total_discount_amount || 0)).toFixed(2)}</span>
                 </div>
 
                 <button
