@@ -64,11 +64,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Determine redirect URL based on role
-    let redirectUrl = '/account';
+    let redirectUrl = '/'; // Default to homepage for customers
     if (user.role === 'admin') redirectUrl = '/admin';
     else if (user.role === 'vendor') redirectUrl = '/vendor';
     else if (user.role === 'sales') redirectUrl = '/sales';
     else if (user.role === 'installer') redirectUrl = '/installer';
+    else if (user.role === 'customer') redirectUrl = '/?login=success';
 
     return NextResponse.json({
       user: {

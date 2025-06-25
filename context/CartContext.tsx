@@ -302,6 +302,18 @@ export function CartProvider({ children }: CartProviderProps) {
   // Add an item to cart
   const addItem = async (newItem: CartItem) => {
     try {
+      // Check user role - only customers and guests can add to cart
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user && data.user.role !== 'customer') {
+          // User is logged in but not a customer
+          alert('Only customers can add items to cart. Please log in with a customer account.');
+          return;
+        }
+      }
+      // If response is not ok, user is not authenticated (guest user) - allow them to proceed
+      
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
@@ -354,6 +366,17 @@ export function CartProvider({ children }: CartProviderProps) {
   // Remove an item from cart
   const removeItem = async (cart_item_id: number) => {
     try {
+      // Check user role - only customers and guests can modify cart
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user && data.user.role !== 'customer') {
+          alert('Only customers can modify cart items. Please log in with a customer account.');
+          return;
+        }
+      }
+      // If response is not ok, user is not authenticated (guest user) - allow them to proceed
+      
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
@@ -381,6 +404,17 @@ export function CartProvider({ children }: CartProviderProps) {
       if (quantity <= 0) {
         return; // Don't remove item, just prevent zero quantities
       }
+
+      // Check user role - only customers and guests can modify cart
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user && data.user.role !== 'customer') {
+          alert('Only customers can modify cart items. Please log in with a customer account.');
+          return;
+        }
+      }
+      // If response is not ok, user is not authenticated (guest user) - allow them to proceed
 
       const authenticated = await isAuthenticated();
       
@@ -412,6 +446,17 @@ export function CartProvider({ children }: CartProviderProps) {
   // Clear cart
   const clearCart = async () => {
     try {
+      // Check user role - only customers and guests can modify cart
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user && data.user.role !== 'customer') {
+          alert('Only customers can modify cart items. Please log in with a customer account.');
+          return;
+        }
+      }
+      // If response is not ok, user is not authenticated (guest user) - allow them to proceed
+      
       const authenticated = await isAuthenticated();
       
       if (authenticated) {

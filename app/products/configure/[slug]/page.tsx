@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { Product } from "./components/ConfigurationContext";
 import NewProductConfigurator from "./components/NewProductConfigurator";
 import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
@@ -16,6 +17,7 @@ export default function ProductConfiguratorPage() {
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const { addItem, updateQuantity, removeItem, items } = useCart();
+  const { user } = useAuth();
   const editCartItemId = searchParams.get('edit');
 
   const [product, setProduct] = useState<Product | null>(null);
@@ -145,6 +147,7 @@ export default function ProductConfiguratorPage() {
         onAddToCart={handleAddToCart}
         initialConfig={getInitialConfig()}
         isEditMode={!!editCartItemId}
+        userRole={user?.role}
       />
       
       {/* Guarantees and Features */}

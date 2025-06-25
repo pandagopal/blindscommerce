@@ -50,7 +50,7 @@ function LoginForm() {
         const userRes = await fetch('/api/auth/me', { credentials: 'include' });
         if (userRes.ok) {
           const userData = await userRes.json();
-          switch (userData.role) {
+          switch (userData.user.role) {
             case 'admin':
               targetUrl = '/admin';
               break;
@@ -63,11 +63,14 @@ function LoginForm() {
             case 'installer':
               targetUrl = '/installer';
               break;
+            case 'customer':
+              targetUrl = '/?login=success';
+              break;
             default:
-              targetUrl = '/account';
+              targetUrl = '/';
           }
       } else {
-          targetUrl = '/account';
+          targetUrl = '/';
         }
       }
 

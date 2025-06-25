@@ -7,9 +7,9 @@ async function getHomePageData() {
     // Fetch homepage data, hero banners, and rooms in parallel
     // Using cached APIs for better performance
     const [homepageResponse, heroBannersResponse, roomsResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/pages/homepage`, { next: { revalidate: 900 } }), // 15 min cache
+      fetch(`${baseUrl}/api/pages/homepage`), // Manual cache refresh only
       fetch(`${baseUrl}/api/hero-banners`, { cache: 'no-store' }), // Use application cache instead
-      fetch(`${baseUrl}/api/rooms`, { next: { revalidate: 1800 } }) // 30 min cache
+      fetch(`${baseUrl}/api/rooms`) // Manual cache refresh only
     ]);
 
     let homepageData = { categories: [], products: [], reviews: [] };

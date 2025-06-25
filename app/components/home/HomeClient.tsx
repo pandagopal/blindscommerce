@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from "next/image";
 import Link from "next/link";
-import { Star } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Star, CheckCircle, X } from 'lucide-react';
 
 interface Category {
   id: number;
@@ -63,6 +64,20 @@ interface HomeClientProps {
 
 export default function HomeClient({ categories, products, rooms = [], reviews = [], heroBanners = [] }: HomeClientProps) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Check for login success parameter
+  useEffect(() => {
+    if (searchParams.get('login') === 'success') {
+      setShowSuccessMessage(true);
+      // Auto-hide after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccessMessage(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   // State for dynamic content
   const [heroSlides, setHeroSlides] = React.useState([
@@ -182,6 +197,20 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        {/* Success Message */}
+        {showSuccessMessage && (
+          <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-2 animate-in slide-in-from-right">
+            <CheckCircle size={20} />
+            <span className="font-medium">Login successful! Welcome back.</span>
+            <button 
+              onClick={() => setShowSuccessMessage(false)}
+              className="ml-2 hover:bg-green-600 p-1 rounded"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Hero Section with Multiple Slides */}
         <section className="relative h-[400px] md:h-[500px]">
           {/* Coming Soon Banner */}

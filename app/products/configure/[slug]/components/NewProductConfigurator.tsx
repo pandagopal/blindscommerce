@@ -27,9 +27,10 @@ interface ProductConfiguratorProps {
   onAddToCart: (config: any) => void;
   initialConfig?: any;
   isEditMode?: boolean;
+  userRole?: string;
 }
 
-export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false }: ProductConfiguratorProps) {
+export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole }: ProductConfiguratorProps) {
   const { itemCount } = useCart();
   
   
@@ -1006,35 +1007,48 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
             {/* Action Buttons - Mobile Responsive */}
             <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
-              {/* Add to Cart Button */}
-              <button
-                onClick={handleAddToCart}
-                disabled={!areMandatoryFieldsComplete()}
-                className={`w-full md:flex-1 font-semibold py-4 px-4 md:px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
-                  areMandatoryFieldsComplete()
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-[1.02] hover:shadow-xl cursor-pointer'
-                    : 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                <Sparkles size={18} className="mr-1 md:mr-2 flex-shrink-0" />
-                <span className="truncate">
-                  {areMandatoryFieldsComplete() 
-                    ? isEditMode 
-                      ? `Update Cart - $${calculatePrice().toFixed(2)}`
-                      : `Add to Cart - $${calculatePrice().toFixed(2)}` 
-                    : 'Complete Required Fields'
-                  }
-                </span>
-              </button>
-
-              {/* View Cart Button */}
-              <Link href="/cart" className="block w-full md:w-auto">
-                <button className="w-full md:w-auto font-semibold py-4 px-4 md:px-6 rounded-xl transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
-                  <ShoppingCart size={16} className="mr-1 md:mr-2 flex-shrink-0" />
-                  <span>View Cart</span>
-                  {itemCount > 0 && <span className="ml-1 md:ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-1 flex-shrink-0">({itemCount})</span>}
+              {/* Add to Cart Button - Only show for customers or guests */}
+              {(!userRole || userRole === 'customer') ? (
+                <button
+                  onClick={handleAddToCart}
+                  disabled={!areMandatoryFieldsComplete()}
+                  className={`w-full md:flex-1 font-semibold py-4 px-4 md:px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
+                    areMandatoryFieldsComplete()
+                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-[1.02] hover:shadow-xl cursor-pointer'
+                      : 'bg-gray-400 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  <Sparkles size={18} className="mr-1 md:mr-2 flex-shrink-0" />
+                  <span className="truncate">
+                    {areMandatoryFieldsComplete() 
+                      ? isEditMode 
+                        ? `Update Cart - $${calculatePrice().toFixed(2)}`
+                        : `Add to Cart - $${calculatePrice().toFixed(2)}` 
+                      : 'Complete Required Fields'
+                    }
+                  </span>
                 </button>
-              </Link>
+              ) : (
+                <div className="w-full md:flex-1 bg-gray-100 border border-gray-300 rounded-xl py-4 px-4 md:px-6 text-center">
+                  <p className="text-gray-600 font-medium">
+                    Only customers can add items to cart
+                  </p>
+                  <Link href="/login" className="text-blue-600 hover:text-blue-700 text-sm underline">
+                    Log in as customer
+                  </Link>
+                </div>
+              )}
+
+              {/* View Cart Button - Only show for customers or guests */}
+              {(!userRole || userRole === 'customer') && (
+                <Link href="/cart" className="block w-full md:w-auto">
+                  <button className="w-full md:w-auto font-semibold py-4 px-4 md:px-6 rounded-xl transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
+                    <ShoppingCart size={16} className="mr-1 md:mr-2 flex-shrink-0" />
+                    <span>View Cart</span>
+                    {itemCount > 0 && <span className="ml-1 md:ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-1 flex-shrink-0">({itemCount})</span>}
+                  </button>
+                </Link>
+              )}
             </div>
 
             {/* Mandatory Fields Notice */}

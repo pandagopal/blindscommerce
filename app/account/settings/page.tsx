@@ -206,6 +206,7 @@ export default function AccountSettingsPage() {
         <TabsList>
           <TabsTrigger value="profile">Personal Info</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="addresses">Addresses</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile">
@@ -376,6 +377,36 @@ export default function AccountSettingsPage() {
                   )}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="addresses">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <MapPin className="w-5 h-5 mr-2" />
+                Manage Addresses
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="font-medium text-gray-900 mb-2">Default Shipping Address</h4>
+                  <p className="text-sm text-gray-600">No shipping address saved yet.</p>
+                  <Button className="mt-2 bg-primary-red hover:bg-primary-red-dark text-white">
+                    Add Shipping Address
+                  </Button>
+                </div>
+                
+                <div className="border rounded-lg p-4 bg-gray-50">
+                  <h4 className="font-medium text-gray-900 mb-2">Default Billing Address</h4>
+                  <p className="text-sm text-gray-600">No billing address saved yet.</p>
+                  <Button className="mt-2 bg-primary-red hover:bg-primary-red-dark text-white">
+                    Add Billing Address
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

@@ -72,8 +72,7 @@ export async function generateMetadata({
   };
 }
 
-// Enable caching for better performance
-export const revalidate = 600; // 10 minutes
+// Caching disabled - manual refresh only from Admin dashboard
 
 // Dynamic metadata will be generated in generateMetadata function
 
@@ -166,9 +165,7 @@ export default async function ProductsPage({
     if (saleParam) apiUrl.searchParams.set('sale', saleParam);
     if (featureIds.length > 0) apiUrl.searchParams.set('features', featureIds.join(','));
 
-    const response = await fetch(apiUrl.toString(), {
-      next: { revalidate: 600 }, // 10 minutes cache for products
-    });
+    const response = await fetch(apiUrl.toString()); // Manual cache refresh only
 
     if (response.ok) {
       const data = await response.json();

@@ -10,6 +10,7 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
+  phone?: string;
   isAdmin: boolean;
   role?: string;
 }
@@ -120,6 +121,7 @@ export async function getCurrentUser(): Promise<User | null> {
         u.email,
         u.first_name as firstName,
         u.last_name as lastName,
+        u.phone,
         u.is_admin as isAdmin,
         u.role as role
       FROM
