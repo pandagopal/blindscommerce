@@ -1,59 +1,60 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/auth';
-import { getProducts, createProduct } from '@/lib/services/products';
+import { NextRequest } from 'next/server';
+import { AdminProductsHandler } from '@/lib/api/handlers/AdminProductsHandler';
+import { MigrationTracker, MigrationStatus } from '@/lib/api/migration';
 
-export async function GET(request: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+// Enhanced Consolidated Admin Products API
+const handler = new AdminProductsHandler();
 
-    const { searchParams } = new URL(request.url);
-    
-    const result = await getProducts({
-      search: searchParams.get('search') || undefined,
-      category: searchParams.get('category') || undefined,
-      status: searchParams.get('status') || undefined,
-      limit: parseInt(searchParams.get('limit') || '10'),
-      offset: parseInt(searchParams.get('offset') || '0'),
-      sortBy: searchParams.get('sortBy') || 'created_at',
-      sortOrder: searchParams.get('sortOrder') || 'desc'
-    }, user.userId, user.role);
-
-    return NextResponse.json(result);
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return NextResponse.json({
-      products: [],
-      total: 0,
-      page: 1,
-      totalPages: 0,
-      error: 'Failed to fetch products'
-    }, { status: 500 });
+// Register and track this migration
+MigrationTracker.registerMigration({
+  id: 'admin-products-consolidation',
+  consolidatedEndpoint: '/api/admin/products',
+  oldEndpoints: [
+    '/api/admin/products',
+    '/api/admin/products/[id]',
+    '/api/admin/products/create',
+    '/api/admin/products/[id]/edit',
+    '/api/admin/products/approve',
+    '/api/admin/products/reject',
+    '/api/admin/products/bulk',
+    '/api/admin/products/duplicate',
+    '/api/admin/products/import',
+    '/api/admin/products/export',
+    '/api/admin/products/analytics'
+  ],
+  description: 'Consolidate admin product management into single comprehensive endpoint',
+  expectedBenefits: [
+    'Single endpoint for all product operations',
+    'Complete product lifecycle management',
+    'Bulk operations and import/export',
+    'Advanced analytics and reporting',
+    'Inventory management integration',
+    'Multi-vendor product support'
+  ],
+  metadata: {
+    version: '1.0',
+    tags: ['admin', 'products', 'phase2'],
+    priority: 'high',
+    complexity: 'high',
+    riskLevel: 'medium',
+    consolidationRatio: 11
   }
+});
+
+MigrationTracker.updateStatus('admin-products-consolidation', MigrationStatus.IN_PROGRESS);
+
+export async function GET(req: NextRequest) {
+  return handler.handle(req);
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const user = await getCurrentUser();
-    if (!user || user.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function POST(req: NextRequest) {
+  return handler.handle(req);
+}
 
-    const body = await request.json();
-    const result = await createProduct(body, user.userId, user.role);
+export async function PUT(req: NextRequest) {
+  return handler.handle(req);
+}
 
-    return NextResponse.json({
-      message: result.message,
-      product_id: result.productId,
-      vendor_assigned: !!(body.basicInfo?.vendorId && body.basicInfo.vendorId !== 'marketplace')
-    });
-  } catch (error) {
-    console.error('Error creating product:', error);
-    return NextResponse.json(
-      { error: 'Failed to create product' },
-      { status: 500 }
-    );
-  }
+export async function DELETE(req: NextRequest) {
+  return handler.handle(req);
 }
