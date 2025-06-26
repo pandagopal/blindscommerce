@@ -18,10 +18,10 @@ export function useRoleAuth(requiredRole: string) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
+          const result = await res.json();
+        const data = result.data || result;setUser(data.user);
           
           // Check role authorization
           const userRole = data.user.role;

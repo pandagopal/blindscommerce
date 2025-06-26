@@ -80,7 +80,7 @@ export const useAbandonedCartTracking = (options: TrackingOptions = {}) => {
     }
 
     try {
-      const response = await fetch('/api/cart/abandoned', {
+      const response = await fetch('/api/v2/commerce/cart/abandoned', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ export const useAbandonedCartTracking = (options: TrackingOptions = {}) => {
     const recoveryToken = localStorage.getItem('recovery_token');
     if (recoveryToken) {
       try {
-        await fetch(`/api/cart/recover/${recoveryToken}`, {
+        await fetch(`/api/v2/commerce/cart/recover/${recoveryToken}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -58,10 +58,10 @@ export default function AdminOrdersPage() {
     // Fetch current user
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/v2/auth/me');
         if (response.ok) {
-          const data = await response.json();
-          setCurrentUser(data.user);
+          const result = await response.json();
+        const data = result.data || result;setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);

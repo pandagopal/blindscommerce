@@ -58,7 +58,7 @@ export default function MeasurementsPage() {
       params.append('order', sortOrder);
 
       // Fetch from API
-      const res = await fetch(`/api/account/measurements?${params.toString()}`);
+      const res = await fetch(`/api/v2/users/measurements?${params.toString()}`);
 
       if (!res.ok) {
         throw new Error('Failed to fetch measurements');
@@ -162,7 +162,7 @@ export default function MeasurementsPage() {
 
     try {
       // Call API to delete measurement
-      const res = await fetch(`/api/account/measurements?id=${measurementToDelete.id}`, {
+      const res = await fetch(`/api/v2/users/measurements?id=${measurementToDelete.id}`, {
         method: 'DELETE'
       });
 
@@ -236,7 +236,7 @@ export default function MeasurementsPage() {
 
     try {
       // Call API to save measurement
-      const res = await fetch('/api/account/measurements', {
+      const res = await fetch('/api/v2/users/measurements', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

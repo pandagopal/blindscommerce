@@ -30,7 +30,7 @@ export default function OrdersPage() {
     try {
       setLoading(true);
       const offset = (currentPage - 1) * ordersPerPage;
-      const res = await fetch(`/api/account/orders?limit=${ordersPerPage}&offset=${offset}`);
+      const res = await fetch(`/api/v2/commerce/orders?limit=${ordersPerPage}&offset=${offset}`);
 
       if (!res.ok) {
         throw new Error('Failed to fetch orders');

@@ -398,7 +398,7 @@ test.describe('Security Testing', () => {
     });
 
     test('Rate limiting', async ({ request }) => {
-      const endpoint = 'http://localhost:3000/api/auth/login';
+      const endpoint = 'http://localhost:3000/api/v2/auth/login';
       const requests = [];
 
       // Send multiple rapid requests

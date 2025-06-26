@@ -48,7 +48,7 @@ export default function NewUserPage() {
     // Get current user's role and available roles they can create
     const fetchUserRole = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/v2/auth/me');
         if (response.ok) {
           const userData = await response.json();
           const userRole = userData.role as UserRole;

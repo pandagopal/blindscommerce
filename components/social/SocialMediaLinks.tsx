@@ -46,8 +46,11 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
       const data = await response.json();
       
       if (data.success) {
+        // Extract accounts from V2 API response format
+        const accountsData = data.data?.accounts || data.accounts || [];
+        
         // Filter accounts based on position
-        const filteredAccounts = data.accounts.filter((account: any) => {
+        const filteredAccounts = accountsData.filter((account: any) => {
           if (position === 'header') {
             return account.showInHeader;
           } else {

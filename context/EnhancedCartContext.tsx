@@ -250,7 +250,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Helper function to check if user is authenticated
   const isAuthenticated = async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       return response.ok;
     } catch {
       return false;
@@ -261,7 +261,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const trackCartAction = async (action: string, productId?: number, metadata?: any) => {
     try {
       if (await isAuthenticated()) {
-        await fetch('/api/cart/analytics', {
+        await fetch('/api/v2/commerce/cart/analytics', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -288,7 +288,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const loadCart = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/cart/enhanced');
+      const response = await fetch('/api/v2/commerce/cart/enhanced');
       if (response.ok) {
         const data = await response.json();
         const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
@@ -317,7 +317,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const loadSavedCarts = async () => {
     try {
       if (await isAuthenticated()) {
-        const response = await fetch('/api/cart/saved');
+        const response = await fetch('/api/v2/commerce/cart/saved');
         if (response.ok) {
           const data = await response.json();
           setSavedCarts(data.saved_carts || []);
@@ -332,7 +332,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const loadShippingAddresses = async () => {
     try {
       if (await isAuthenticated()) {
-        const response = await fetch('/api/account/addresses');
+        const response = await fetch('/api/v2/users/addresses');
         if (response.ok) {
           const data = await response.json();
           setShippingAddresses(data.addresses || []);
@@ -349,7 +349,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/cart/enhanced', {
+        const response = await fetch('/api/v2/commerce/cart/enhanced', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
@@ -406,7 +406,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -437,7 +437,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity })
@@ -468,7 +468,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/save-for-later`, {
+        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/save-for-later`, {
           method: 'POST'
         });
         if (response.ok) {
@@ -502,7 +502,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/move-to-cart`, {
+        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/move-to-cart`, {
           method: 'POST'
         });
         if (response.ok) {
@@ -539,7 +539,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -564,7 +564,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/cart/enhanced', {
+        const response = await fetch('/api/v2/commerce/cart/enhanced', {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -631,7 +631,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Create saved cart
   const createSavedCart = async (name: string, description?: string, project_type: string = 'residential') => {
     try {
-      const response = await fetch('/api/cart/saved', {
+      const response = await fetch('/api/v2/commerce/cart/saved', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -654,7 +654,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Load saved cart
   const loadSavedCart = async (saved_cart_id: number) => {
     try {
-      const response = await fetch(`/api/cart/saved/${saved_cart_id}/load`, {
+      const response = await fetch(`/api/v2/commerce/cart/saved/${saved_cart_id}/load`, {
         method: 'POST'
       });
       if (response.ok) {
@@ -668,7 +668,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Delete saved cart
   const deleteSavedCart = async (saved_cart_id: number) => {
     try {
-      const response = await fetch(`/api/cart/saved/${saved_cart_id}`, {
+      const response = await fetch(`/api/v2/commerce/cart/saved/${saved_cart_id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -684,7 +684,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
     try {
       if (items.length > 0) {
         const productIds = items.map(item => item.product_id);
-        const response = await fetch('/api/cart/recommendations', {
+        const response = await fetch('/api/v2/commerce/cart/recommendations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ product_ids: productIds })
@@ -704,7 +704,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Add recommendation to cart
   const addRecommendation = async (product_id: number) => {
     try {
-      const response = await fetch(`/api/products/${product_id}/quick-add`, {
+      const response = await fetch(`/api/v2/commerce/products/${product_id}/quick-add`, {
         method: 'POST'
       });
       if (response.ok) {
@@ -719,7 +719,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Create price alert
   const createPriceAlert = async (product_id: number, target_price?: number, alert_type: string = 'price_drop') => {
     try {
-      const response = await fetch('/api/cart/price-alerts', {
+      const response = await fetch('/api/v2/commerce/cart/price-alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ product_id, target_price, alert_type })
@@ -736,7 +736,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Remove price alert
   const removePriceAlert = async (alert_id: number) => {
     try {
-      const response = await fetch(`/api/cart/price-alerts/${alert_id}`, {
+      const response = await fetch(`/api/v2/commerce/cart/price-alerts/${alert_id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -750,7 +750,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Assign shipping address
   const assignShippingAddress = async (cart_item_id: number, address_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/shipping`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/shipping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address_id })
@@ -766,7 +766,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Add shipping address
   const addShippingAddress = async (address: Omit<ShippingAddress, 'address_id'>) => {
     try {
-      const response = await fetch('/api/account/addresses', {
+      const response = await fetch('/api/v2/users/addresses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(address)
@@ -783,7 +783,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const shareCart = async (share_type: 'view' | 'edit' = 'view', expires_hours: number = 24) => {
     setSharingLoading(true);
     try {
-      const response = await fetch('/api/cart/share', {
+      const response = await fetch('/api/v2/commerce/cart/share', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ share_type, expires_hours })
@@ -805,7 +805,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Gift options
   const markAsGift = async (cart_item_id: number, gift_message?: string) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/gift`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/gift`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_gift: true, gift_message })
@@ -820,7 +820,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeGiftMarking = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/gift`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/gift`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_gift: false, gift_message: null })
@@ -836,7 +836,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Installation services
   const addInstallation = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/installation`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/installation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ installation_requested: true })
@@ -851,7 +851,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeInstallation = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/installation`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/installation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ installation_requested: false })
@@ -867,7 +867,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Sample requests
   const requestSample = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/sample`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/sample`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sample_requested: true })
@@ -882,7 +882,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const cancelSample = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/sample`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/sample`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sample_requested: false })
@@ -898,7 +898,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Cart notes
   const addItemNote = async (cart_item_id: number, note: string) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/notes`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: note })
@@ -913,7 +913,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeItemNote = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/notes`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/notes`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -927,7 +927,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Scheduled delivery
   const scheduleDelivery = async (cart_item_id: number, delivery_date: string) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/delivery`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/delivery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scheduled_delivery_date: delivery_date })
@@ -942,7 +942,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeScheduledDelivery = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/cart/enhanced/items/${cart_item_id}/delivery`, {
+      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/delivery`, {
         method: 'DELETE'
       });
       if (response.ok) {

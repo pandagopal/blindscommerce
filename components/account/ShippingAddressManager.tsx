@@ -86,7 +86,7 @@ export default function ShippingAddressManager() {
 
   const fetchAddresses = async () => {
     try {
-      const response = await fetch('/api/account/shipping-addresses');
+      const response = await fetch('/api/v2/users/shipping-addresses');
       const data = await response.json();
       
       if (data.success) {
@@ -119,8 +119,8 @@ export default function ShippingAddressManager() {
 
     try {
       const endpoint = editingAddress 
-        ? `/api/account/shipping-addresses/${editingAddress.id}`
-        : '/api/account/shipping-addresses';
+        ? `/api/v2/users/shipping-addresses/${editingAddress.id}`
+        : '/api/v2/users/shipping-addresses';
       
       const method = editingAddress ? 'PUT' : 'POST';
 
@@ -187,7 +187,7 @@ export default function ShippingAddressManager() {
 
   const handleSetDefault = async (addressId: number) => {
     try {
-      const response = await fetch(`/api/account/shipping-addresses/${addressId}/default`, {
+      const response = await fetch(`/api/v2/users/shipping-addresses/${addressId}/default`, {
         method: 'POST',
       });
 
@@ -210,7 +210,7 @@ export default function ShippingAddressManager() {
     }
 
     try {
-      const response = await fetch(`/api/account/shipping-addresses/${addressId}`, {
+      const response = await fetch(`/api/v2/users/shipping-addresses/${addressId}`, {
         method: 'DELETE',
       });
 

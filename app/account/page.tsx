@@ -43,11 +43,12 @@ function AccountPageContent() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/v2/auth/me');
         if (!response.ok) {
           throw new Error('Authentication required');
         }
-        const userData = await response.json();
+        const result = await response.json();
+        const userData = result.data || result;
 
         // Check if admin is viewing another user's dashboard
         if (adminViewUserId && userData.user.role === 'admin') {

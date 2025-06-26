@@ -113,10 +113,10 @@ export default function TradeDashboard() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
-          if (data.user.role !== 'trade_professional') {
+          const result = await res.json();
+        const data = result.data || result;if (data.user.role !== 'trade_professional') {
             router.push('/');
             return;
           }

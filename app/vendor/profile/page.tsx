@@ -99,7 +99,7 @@ export default function VendorProfilePage() {
   useEffect(() => {
     const fetchVendorProfile = async () => {
       try {
-        const response = await fetch('/api/vendor/profile');
+        const response = await fetch('/api/v2/vendors/profile');
         if (!response.ok) {
           throw new Error('Authentication required');
         }
@@ -165,7 +165,7 @@ export default function VendorProfilePage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/vendor/profile', {
+      const response = await fetch('/api/v2/vendors/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -246,7 +246,7 @@ export default function VendorProfilePage() {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/auth/change-password', {
+      const response = await fetch('/api/v2/auth/change-password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

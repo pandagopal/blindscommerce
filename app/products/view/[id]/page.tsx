@@ -18,7 +18,7 @@ export default function ViewProductPage() {
     const checkAuthAndLoadProduct = async () => {
       try {
         // Check authentication
-        const authRes = await fetch('/api/auth/me');
+        const authRes = await fetch('/api/v2/auth/me');
         if (!authRes.ok) {
           router.push('/login?redirect=/products/view/' + productId);
           return;

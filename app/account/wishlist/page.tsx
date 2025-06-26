@@ -16,14 +16,14 @@ export default function WishlistPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/account/wishlist')
+    fetch('/api/v2/users/wishlist')
       .then(res => res.json())
       .then(data => setWishlist(data.wishlist || []))
       .finally(() => setLoading(false));
   }, []);
 
   const removeItem = async (id: number) => {
-    await fetch('/api/account/wishlist', {
+    await fetch('/api/v2/users/wishlist', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id })
@@ -34,7 +34,7 @@ export default function WishlistPage() {
   // Demo: Add a product by ID (in real app, this would come from product page)
   const addItem = async () => {
     if (!newProductId) return;
-    const res = await fetch('/api/account/wishlist', {
+    const res = await fetch('/api/v2/users/wishlist', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

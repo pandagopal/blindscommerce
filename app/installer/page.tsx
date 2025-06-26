@@ -70,11 +70,10 @@ function InstallerDashboardContent() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
-          
-          // Check if admin is viewing another user's dashboard
+          const result = await res.json();
+        const data = result.data || result;// Check if admin is viewing another user's dashboard
           if (adminViewUserId && data.user.role === 'admin') {
             setIsAdminView(true);
             setUser(data.user); // Keep admin user for permissions
@@ -128,7 +127,7 @@ function InstallerDashboardContent() {
   const fetchDashboardData = async () => {
     try {
       // Fetch appointments
-      const appointmentsRes = await fetch('/api/installer/appointments');
+      const appointmentsRes = await fetch('/api/v2/users/installer/appointments');
       if (appointmentsRes.ok) {
         const appointmentsData = await appointmentsRes.json();
         // Handle both array and object responses
@@ -147,7 +146,7 @@ function InstallerDashboardContent() {
       }
 
       // Fetch jobs
-      const jobsRes = await fetch('/api/installer/jobs');
+      const jobsRes = await fetch('/api/v2/users/installer/jobs');
       if (jobsRes.ok) {
         const jobsResponse = await jobsRes.json();
         // Handle both array and object responses
@@ -169,7 +168,7 @@ function InstallerDashboardContent() {
           job.status === 'completed'
         ).length;
 
-        const todayApps = (await fetch('/api/installer/appointments').then(res => res.json()).catch(() => [])) || [];
+        const todayApps = (await fetch('/api/v2/users/installer/appointments').then(res => res.json()).catch(() => [])) || [];
         
         setStats({
           completedToday,
@@ -182,7 +181,7 @@ function InstallerDashboardContent() {
       }
 
       // Fetch materials
-      const materialsRes = await fetch('/api/installer/materials');
+      const materialsRes = await fetch('/api/v2/users/installer/materials');
       if (materialsRes.ok) {
         const materialsData = await materialsRes.json();
         // Handle both array and object responses
@@ -237,7 +236,7 @@ function InstallerDashboardContent() {
 
   const handleMaterialDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/installer/materials/${id}`, {
+      const res = await fetch(`/api/v2/users/installer/materials/${id}`, {
         method: 'DELETE'
       });
 
@@ -251,7 +250,7 @@ function InstallerDashboardContent() {
 
   const handleAppointmentStatus = async (id: string, status: Appointment['status']) => {
     try {
-      const res = await fetch(`/api/installer/appointments/${id}`, {
+      const res = await fetch(`/api/v2/users/installer/appointments/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -267,7 +266,7 @@ function InstallerDashboardContent() {
 
   const handleJobStatus = async (id: string, status: Job['status']) => {
     try {
-      const res = await fetch(`/api/installer/jobs/${id}`, {
+      const res = await fetch(`/api/v2/users/installer/jobs/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

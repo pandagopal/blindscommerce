@@ -75,13 +75,13 @@ export default function SalesOrdersPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (!res.ok) {
           router.push('/login?redirect=/sales/orders');
           return;
         }
-        const data = await res.json();
-        if (data.user.role !== 'sales' && data.user.role !== 'admin') {
+        const result = await res.json();
+        const data = result.data || result;if (data.user.role !== 'sales' && data.user.role !== 'admin') {
           router.push('/');
           return;
         }

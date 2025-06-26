@@ -120,7 +120,7 @@ export default function TradeRegistrationPage() {
         }
       });
 
-      const response = await fetch('/api/auth/trade-application', {
+      const response = await fetch('/api/v2/auth/trade-application', {
         method: 'POST',
         body: submitData,
       });

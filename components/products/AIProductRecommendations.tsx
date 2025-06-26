@@ -68,7 +68,7 @@ export default function AIProductRecommendations({
         recommendationType: type
       };
 
-      const response = await fetch('/api/recommendations', {
+      const response = await fetch('/api/v2/commerce/recommendations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -124,7 +124,7 @@ export default function AIProductRecommendations({
 
   const addToWishlist = async (productId: number) => {
     try {
-      const response = await fetch('/api/account/wishlist', {
+      const response = await fetch('/api/v2/users/wishlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -142,7 +142,7 @@ export default function AIProductRecommendations({
 
   const addToCart = async (productId: number) => {
     try {
-      const response = await fetch('/api/account/cart', {
+      const response = await fetch('/api/v2/commerce/cart', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

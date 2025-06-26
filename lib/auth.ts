@@ -1,8 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import * as jose from 'jose';
-import { getPool, hashPassword, comparePassword } from './db';
-import { RowDataPacket } from 'mysql2';
 
 // Types for user data
 export interface User {
@@ -114,30 +112,33 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // Get user from database with role
-    const query = `
-      SELECT
-        u.user_id as userId,
-        u.email,
-        u.first_name as firstName,
-        u.last_name as lastName,
-        u.phone,
-        u.is_admin as isAdmin,
-        u.role as role
-      FROM
-        users u
-      WHERE
-        u.user_id = ? AND u.is_active = TRUE
-    `;
+    // Use V2 API to get user info
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/users/${decoded.userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      cache: 'no-store'
+    });
 
-    const pool = await getPool();
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [decoded.userId]);
-
-    if (rows.length === 0) {
+    if (!response.ok) {
       return null;
     }
 
-    return rows[0] as User;
+    const result = await response.json();
+    const userData = result.data || result;
+
+    // Transform to expected format
+    return {
+      userId: userData.user_id || userData.userId,
+      email: userData.email,
+      firstName: userData.first_name || userData.firstName,
+      lastName: userData.last_name || userData.lastName,
+      phone: userData.phone,
+      isAdmin: userData.is_admin || userData.isAdmin || userData.role === 'admin',
+      role: userData.role
+    };
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;
@@ -213,47 +214,33 @@ export async function logoutUser(): Promise<boolean> {
 // Login user with email and password
 export async function loginUser(email: string, password: string): Promise<User | null> {
   try {
-    // Get user by email
-    const query = `
-      SELECT
-        u.user_id as userId,
-        u.email,
-        u.password_hash as passwordHash,
-        u.first_name as firstName,
-        u.last_name as lastName,
-        u.is_admin as isAdmin,
-        u.role as role
-      FROM
-        users u
-      WHERE
-        u.email = ? AND u.is_active = TRUE
-    `;
+    // Use V2 API to login
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+      cache: 'no-store'
+    });
 
-    const pool = await getPool();
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [email]);
-
-    if (rows.length === 0) {
+    if (!response.ok) {
       return null;
     }
 
-    const user = rows[0];
+    const result = await response.json();
+    const data = result.data || result;
 
-    // Verify password
-    const isValid = await comparePassword(password, user.passwordHash);
-    if (!isValid) {
-      return null;
-    }
-
-    // Update last login timestamp
-    await pool.execute(
-      'UPDATE users SET last_login = NOW() WHERE user_id = ?',
-      [user.userId]
-    );
-
-    // Remove passwordHash from user object
-    delete user.passwordHash;
-
-    return user as User;
+    // Transform to expected format
+    return {
+      userId: data.user.userId || data.user.user_id,
+      email: data.user.email,
+      firstName: data.user.firstName || data.user.first_name,
+      lastName: data.user.lastName || data.user.last_name,
+      phone: data.user.phone,
+      isAdmin: data.user.isAdmin || data.user.is_admin || data.user.role === 'admin',
+      role: data.user.role
+    };
   } catch (error) {
     console.error('Login error:', error);
     return null;
@@ -270,62 +257,40 @@ export async function registerUser(
   role?: string
 ): Promise<User | null> {
   try {
-    // Hash password
-    const hashedPassword = await hashPassword(password);
-
-    // Use pool directly without manual connection management
-    const pool = await getPool();
-
-    // Insert new user
-    const query = `
-      INSERT INTO users (
+    // Use V2 API to register
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
         email,
-        password_hash,
-        first_name,
-        last_name,
+        password,
+        firstName,
+        lastName,
         phone,
-        role,
-        is_admin,
-        is_active,
-        is_verified
-      )
-      VALUES (?, ?, ?, ?, ?, ?, FALSE, TRUE, FALSE)
-    `;
+        role: role || 'customer'
+      }),
+      cache: 'no-store'
+    });
 
-    const [result] = await pool.execute(query, [
-      email,
-      hashedPassword,
-      firstName,
-      lastName,
-      phone || null,
-      role || 'customer'
-    ]);
+    if (!response.ok) {
+      return null;
+    }
 
-    const userId = (result as any).insertId;
+    const result = await response.json();
+    const data = result.data || result;
 
-    // Get the inserted user
-    const [userRows] = await pool.execute<RowDataPacket[]>(
-      `SELECT 
-        user_id as userId,
-        email,
-        first_name as firstName,
-        last_name as lastName,
-        role,
-        is_admin as isAdmin
-      FROM users 
-      WHERE user_id = ?`,
-      [userId]
-    );
-
-    const user = userRows[0] as User;
-
-    // Create empty wishlist for user
-    const wishlistQuery = `
-      INSERT INTO wishlist (user_id) VALUES (?)
-    `;
-    await pool.execute(wishlistQuery, [userId]);
-
-    return user;
+    // Transform to expected format
+    return {
+      userId: data.user.userId || data.user.user_id,
+      email: data.user.email,
+      firstName: data.user.firstName || data.user.first_name,
+      lastName: data.user.lastName || data.user.last_name,
+      phone: data.user.phone,
+      isAdmin: data.user.isAdmin || data.user.is_admin || data.user.role === 'admin',
+      role: data.user.role
+    };
   } catch (error) {
     console.error('Error registering user:', error);
     return null;

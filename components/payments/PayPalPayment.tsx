@@ -84,7 +84,7 @@ const PayPalPayment = ({
         
         createOrder: async () => {
           try {
-            const response = await fetch('/api/payments/paypal/create-order', {
+            const response = await fetch('/api/v2/commerce/payments/paypal/create-order', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const PayPalPayment = ({
 
         onApprove: async (data) => {
           try {
-            const response = await fetch('/api/payments/paypal/capture-order', {
+            const response = await fetch('/api/v2/commerce/payments/paypal/capture-order', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

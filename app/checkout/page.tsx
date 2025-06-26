@@ -100,7 +100,7 @@ export default function CheckoutPage() {
     const initializeCheckout = async () => {
       try {
         // Check authentication and load user info
-        const authResponse = await fetch('/api/auth/me');
+        const authResponse = await fetch('/api/v2/auth/me');
         console.log('Auth response status:', authResponse.status);
         if (!authResponse.ok) {
           setIsGuest(true);
@@ -120,7 +120,7 @@ export default function CheckoutPage() {
             
             // Load default address
             try {
-              const addressResponse = await fetch('/api/account/shipping-addresses');
+              const addressResponse = await fetch('/api/v2/users/shipping-addresses');
               console.log('Address response status:', addressResponse.status);
               if (addressResponse.ok) {
                 const addressData = await addressResponse.json();
@@ -153,7 +153,7 @@ export default function CheckoutPage() {
         // Load available payment methods based on order total
         const amount = total || 100; // Use 100 as default if total is 0
         console.log('Fetching payment methods for amount:', amount);
-        const paymentResponse = await fetch(`/api/payments/methods?amount=${amount}&currency=USD&country=US`);
+        const paymentResponse = await fetch(`/api/v2/commerce/payments/methods?amount=${amount}&currency=USD&country=US`);
         console.log('Payment response status:', paymentResponse.status);
         
         if (paymentResponse.ok) {
@@ -232,7 +232,7 @@ export default function CheckoutPage() {
       try {
         let customerId = undefined;
         try {
-          const authResponse = await fetch('/api/auth/me');
+          const authResponse = await fetch('/api/v2/auth/me');
           if (authResponse.ok) {
             const authData = await authResponse.json();
             if (authData.user?.role === 'customer') {
@@ -256,7 +256,7 @@ export default function CheckoutPage() {
           zip_code: value.trim()
         };
 
-        const response = await fetch('/api/pricing/calculate', {
+        const response = await fetch('/api/v2/commerce/pricing/calculate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pricingRequest)
@@ -310,7 +310,7 @@ export default function CheckoutPage() {
       };
 
       // Process payment
-      const paymentResponse = await fetch('/api/payments/methods', {
+      const paymentResponse = await fetch('/api/v2/commerce/payments/methods', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -372,7 +372,7 @@ export default function CheckoutPage() {
         special_instructions: formData.specialInstructions
       };
 
-      const apiEndpoint = isGuest ? '/api/orders/guest' : '/api/orders/create';
+      const apiEndpoint = isGuest ? '/api/v2/commerce/orders/guest' : '/api/v2/commerce/orders/create';
       
       const finalOrderData = isGuest ? {
         ...orderData,

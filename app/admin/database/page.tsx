@@ -44,13 +44,13 @@ export default function AdminDatabasePage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (!res.ok) {
           router.push('/login?redirect=/admin/database');
           return;
         }
-        const data = await res.json();
-        if (data.user.role !== 'admin') {
+        const result = await res.json();
+        const data = result.data || result;if (data.user.role !== 'admin') {
           router.push('/');
           return;
         }

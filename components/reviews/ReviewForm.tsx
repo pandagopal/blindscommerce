@@ -25,7 +25,7 @@ export default function ReviewForm({ productSlug, onClose, onSubmitted }: Review
   useState(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/v2/auth/me');
         setIsGuest(!response.ok);
       } catch {
         setIsGuest(true);

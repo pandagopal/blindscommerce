@@ -76,9 +76,10 @@ const Navbar = () => {
   // Fetch user data
   const fetchUser = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         setUser(data.user);
       } else {
         setUser(null);
@@ -139,7 +140,7 @@ const Navbar = () => {
   // Handle logout
   const handleLogout = async () => {
     try {
-      const response = await fetch('/api/auth/logout', {
+      const response = await fetch('/api/v2/auth/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

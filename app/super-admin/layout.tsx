@@ -95,10 +95,10 @@ export default function SuperAdminLayout({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
-          if (data.user.role !== 'super_admin') {
+          const result = await res.json();
+        const data = result.data || result;if (data.user.role !== 'super_admin') {
             router.push('/');
             return;
           }

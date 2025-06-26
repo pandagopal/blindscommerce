@@ -67,7 +67,7 @@ export default function AdminDashboard() {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard/stats');
+      const response = await fetch('/api/v2/admin/dashboard/stats');
       const data = await response.json();
       setStats(data);
       setLastUpdated(new Date());
@@ -101,7 +101,7 @@ export default function AdminDashboard() {
 
   const handleExport = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard/export');
+      const response = await fetch('/api/v2/admin/dashboard/export');
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   const handleRefreshCache = async () => {
     setRefreshingCache(true);
     try {
-      const response = await fetch('/api/admin/cache/refresh', {
+      const response = await fetch('/api/v2/admin/cache/refresh', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
 
   const fetchCacheStats = async () => {
     try {
-      const response = await fetch('/api/admin/cache/refresh');
+      const response = await fetch('/api/v2/admin/cache/refresh');
       if (response.ok) {
         const data = await response.json();
         setCacheStats(data.stats);

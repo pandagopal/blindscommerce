@@ -65,7 +65,7 @@ export default function TradeApplicationsPage() {
         params.append('status', selectedStatus);
       }
       
-      const response = await fetch(`/api/auth/trade-application?${params}`);
+      const response = await fetch(`/api/v2/auth/trade-application?${params}`);
       if (response.ok) {
         const data = await response.json();
         setApplications(data.applications || []);

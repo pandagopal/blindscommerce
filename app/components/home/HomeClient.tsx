@@ -378,7 +378,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
           <h2 className="text-3xl font-bold text-center mb-12">Browse Categories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {Array.isArray(categories) && categories.map((category) => (
-              <Link href={`/products?category=${category.id}`} key={category.id}>
+              <Link href={`/products?category=${category.id}`} key={category.category_id || category.id}>
                 <div className="group relative h-64 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
                   {category.image && category.image.trim() !== '' ? (
                     <Image

@@ -152,10 +152,10 @@ export function CartProvider({ children }: CartProviderProps) {
   // Helper function to check if user is authenticated and is a customer
   const isAuthenticated = async (): Promise<boolean> => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
-        // Only allow customers to use the cart
+        const result = await response.json();
+        const data = result.data || result;// Only allow customers to use the cart
         if (data.user?.role === 'customer') {
           setCustomerData({ 
             id: data.user?.user_id, 
@@ -199,7 +199,7 @@ export function CartProvider({ children }: CartProviderProps) {
       // Create cache key based on request content
       // Calculate pricing without cache
 
-      const response = await fetch('/api/pricing/calculate', {
+      const response = await fetch('/api/v2/commerce/pricing/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pricingRequest)
@@ -210,7 +210,8 @@ export function CartProvider({ children }: CartProviderProps) {
         throw new Error(error.error || 'Failed to calculate pricing');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      const data = result.data || result;
       
       const pricingData = {
         subtotal: data.pricing.subtotal,
@@ -254,7 +255,7 @@ export function CartProvider({ children }: CartProviderProps) {
         const authenticated = await isAuthenticated();
         
         if (authenticated) {
-          const response = await fetch('/api/account/cart');
+          const response = await fetch('/api/v2/commerce/cart');
           if (response.ok) {
             const data = await response.json();
             setItems(data.items || []);
@@ -292,9 +293,10 @@ export function CartProvider({ children }: CartProviderProps) {
   const addItem = async (newItem: CartItem) => {
     try {
       // Check user role - only customers and guests can add to cart
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         if (data.user && data.user.role !== 'customer') {
           // User is logged in but not a customer
           alert('Only customers can add items to cart. Please log in with a customer account.');
@@ -306,7 +308,7 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/account/cart', {
+        const response = await fetch('/api/v2/commerce/cart', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
@@ -356,9 +358,10 @@ export function CartProvider({ children }: CartProviderProps) {
   const removeItem = async (cart_item_id: number) => {
     try {
       // Check user role - only customers and guests can modify cart
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         if (data.user && data.user.role !== 'customer') {
           alert('Only customers can modify cart items. Please log in with a customer account.');
           return;
@@ -369,7 +372,7 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/account/cart/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
@@ -395,9 +398,10 @@ export function CartProvider({ children }: CartProviderProps) {
       }
 
       // Check user role - only customers and guests can modify cart
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         if (data.user && data.user.role !== 'customer') {
           alert('Only customers can modify cart items. Please log in with a customer account.');
           return;
@@ -408,7 +412,7 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/account/cart/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity })
@@ -436,9 +440,10 @@ export function CartProvider({ children }: CartProviderProps) {
   const clearCart = async () => {
     try {
       // Check user role - only customers and guests can modify cart
-      const response = await fetch('/api/auth/me');
+      const response = await fetch('/api/v2/auth/me');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         if (data.user && data.user.role !== 'customer') {
           alert('Only customers can modify cart items. Please log in with a customer account.');
           return;
@@ -449,7 +454,7 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/account/cart', {
+        const response = await fetch('/api/v2/commerce/cart', {
           method: 'DELETE'
         });
         if (response.ok) {

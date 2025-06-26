@@ -91,7 +91,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('/api/v2/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +105,8 @@ export default function RegisterPage() {
         }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
+      const data = result.data || result;
 
       if (response.ok) {
         // Redirect to login page with success message

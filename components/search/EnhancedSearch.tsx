@@ -80,7 +80,7 @@ export default function EnhancedSearch({
   const fetchSuggestions = async (searchQuery: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`/api/products/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`);
+      const response = await fetch(`/api/v2/commerce/products/search/suggestions?q=${encodeURIComponent(searchQuery)}&limit=8`);
       
       if (response.ok) {
         const data = await response.json();

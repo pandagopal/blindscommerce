@@ -15,6 +15,7 @@ import { AdminHandler } from '@/lib/api/v2/handlers/AdminHandler';
 import { AnalyticsHandler } from '@/lib/api/v2/handlers/AnalyticsHandler';
 import { AuthHandler } from '@/lib/api/v2/handlers/AuthHandler';
 import { ContentHandler } from '@/lib/api/v2/handlers/ContentHandler';
+import { SettingsHandler } from '@/lib/api/v2/handlers/SettingsHandler';
 
 // Service handler mapping
 const serviceHandlers: Record<string, any> = {
@@ -25,6 +26,7 @@ const serviceHandlers: Record<string, any> = {
   analytics: new AnalyticsHandler(),
   auth: new AuthHandler(),
   content: new ContentHandler(),
+  settings: new SettingsHandler(),
 };
 
 // Standard API response format
@@ -89,11 +91,11 @@ function successResponse<T>(
 // Main route handler
 async function handleRequest(
   req: NextRequest,
-  params: { service: string; action: string[] },
+  params: Promise<{ service: string; action: string[] }>,
   method: string
 ): Promise<NextResponse> {
   const startTime = Date.now();
-  const { service, action } = params;
+  const { service, action } = await params;
   const actionPath = action.join('/');
 
   try {
@@ -157,35 +159,35 @@ async function handleRequest(
 // Export route handlers
 export async function GET(
   req: NextRequest,
-  { params }: { params: { service: string; action: string[] } }
+  { params }: { params: Promise<{ service: string; action: string[] }> }
 ) {
   return handleRequest(req, params, 'GET');
 }
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { service: string; action: string[] } }
+  { params }: { params: Promise<{ service: string; action: string[] }> }
 ) {
   return handleRequest(req, params, 'POST');
 }
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { service: string; action: string[] } }
+  { params }: { params: Promise<{ service: string; action: string[] }> }
 ) {
   return handleRequest(req, params, 'PUT');
 }
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { service: string; action: string[] } }
+  { params }: { params: Promise<{ service: string; action: string[] }> }
 ) {
   return handleRequest(req, params, 'PATCH');
 }
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { service: string; action: string[] } }
+  { params }: { params: Promise<{ service: string; action: string[] }> }
 ) {
   return handleRequest(req, params, 'DELETE');
 }

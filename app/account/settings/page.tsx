@@ -49,9 +49,10 @@ export default function AccountSettingsPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/v2/auth/me');
       if (!res.ok) throw new Error('Failed to fetch profile');
-      const data = await res.json();
+      const result = await res.json();
+      const data = result.data || result;
       setProfile(data.user);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -69,7 +70,7 @@ export default function AccountSettingsPage() {
     setMessage(null);
 
     try {
-      const res = await fetch('/api/account/profile', {
+      const res = await fetch('/api/v2/users/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +133,7 @@ export default function AccountSettingsPage() {
     setMessage(null);
 
     try {
-      const res = await fetch('/api/auth/change-password', {
+      const res = await fetch('/api/v2/auth/change-password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

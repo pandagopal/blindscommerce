@@ -11,11 +11,12 @@ export interface User {
 // Get current user from API endpoint
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await fetch('/api/auth/me');
+    const response = await fetch('/api/v2/auth/me');
     if (!response.ok) {
       return null;
     }
-    const data = await response.json();
+    const result = await response.json();
+    const data = result.data || result;
     return data.user;
   } catch (error) {
     console.error('Error getting current user:', error);

@@ -43,9 +43,10 @@ export default function AdminLayout({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
+          const result = await res.json();
+          const data = result.data || result;
           if (data.user.role !== 'admin') {
             router.push('/');
             return;
@@ -66,7 +67,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/v2/auth/logout', { method: 'POST' });
       // Clear user state immediately
       setUser(null);
       // Trigger event to notify navbar

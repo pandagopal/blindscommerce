@@ -28,13 +28,13 @@ export default function WarrantyRegisterPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (!res.ok) {
           router.push('/login?redirect=/account/warranty/register');
           return;
         }
-        const data = await res.json();
-        setUser(data.user);
+        const result = await res.json();
+        const data = result.data || result;setUser(data.user);
       } catch (error) {
         console.error('Auth check failed:', error);
         router.push('/login?redirect=/account/warranty/register');

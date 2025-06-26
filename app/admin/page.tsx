@@ -20,7 +20,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await fetch('/api/auth/me', {
+        const response = await fetch('/api/v2/auth/me', {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -29,7 +29,8 @@ export default function AdminDashboard() {
           },
         });
 
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
 
         if (!response.ok) {
           throw new Error(data.error || 'Authentication failed');

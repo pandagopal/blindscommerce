@@ -3,12 +3,13 @@
  * Handles authentication and authorization
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
 import { UserService } from '@/lib/services';
 import { comparePassword, hashPassword } from '@/lib/db';
 import { z } from 'zod';
 import { sign } from 'jsonwebtoken';
+import { cookies } from 'next/headers';
 
 // Validation schemas
 const LoginSchema = z.object({
@@ -64,12 +65,14 @@ export class AuthHandler extends BaseHandler {
     }
 
     return {
-      userId: user.user_id,
-      email: user.email,
-      firstName: user.first_name,
-      lastName: user.last_name,
-      role: user.role,
-      isVerified: user.is_verified,
+      user: {
+        userId: user.user_id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        role: user.role,
+        isVerified: user.is_verified,
+      }
     };
   }
 
@@ -106,12 +109,46 @@ export class AuthHandler extends BaseHandler {
 
     // Update last login
     await this.userService.raw(
-      'UPDATE users SET last_login_at = NOW() WHERE user_id = ?',
+      'UPDATE users SET last_login = NOW() WHERE user_id = ?',
       [user.user_id]
     );
 
+    // Set JWT cookie
+    const cookieStore = await cookies();
+    cookieStore.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24, // 24 hours
+      path: '/',
+    });
+
+    // Determine redirect URL based on role
+    let redirectUrl = '/';
+    switch (user.role) {
+      case 'super_admin':
+        redirectUrl = '/super-admin';
+        break;
+      case 'admin':
+        redirectUrl = '/admin';
+        break;
+      case 'vendor':
+        redirectUrl = '/vendor';
+        break;
+      case 'sales_representative':
+        redirectUrl = '/sales';
+        break;
+      case 'installer':
+        redirectUrl = '/installer';
+        break;
+      case 'customer':
+        redirectUrl = '/account';
+        break;
+    }
+
     return {
       token,
+      redirectUrl,
       user: {
         userId: user.user_id,
         email: user.email,
@@ -173,11 +210,9 @@ export class AuthHandler extends BaseHandler {
   }
 
   private async logout(user: any) {
-    if (!user) {
-      return { message: 'Not logged in' };
-    }
-
-    // TODO: Invalidate token if using token blacklist
+    // Clear the auth cookie
+    const cookieStore = await cookies();
+    cookieStore.delete('auth_token');
 
     return { message: 'Logged out successfully' };
   }

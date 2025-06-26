@@ -29,9 +29,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/v2/auth/me');
       if (res.ok) {
-        const data = await res.json();
+        const result = await res.json();
+        const data = result.data || result;
         setUser(data.user);
       } else {
         setUser(null);
@@ -51,7 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/v2/auth/logout', { method: 'POST' });
       setUser(null);
       
       // Trigger event to notify other components

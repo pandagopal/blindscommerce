@@ -443,10 +443,25 @@
   },
   
   "critical_fixes_summary": {
+    "database_connection_policy_2025": {
+      "strict_rule": "NEVER make direct database calls outside service layer",
+      "allowed_locations": [
+        "/lib/db/* - Database layer only",
+        "/lib/services/* - Service layer only", 
+        "/lib/api/v2/handlers/* - V2 handlers only"
+      ],
+      "forbidden": "Direct pool.execute() in pages, components, middleware",
+      "correct_pattern": "Component → V2 API → Handler → Service → DB",
+      "violations_fixed": [
+        "/app/page.tsx - migrated to V2 content API",
+        "/lib/auth.ts - migrated to V2 auth API",
+        "/lib/settings.ts - migrated to V2 settings API"
+      ]
+    },
     "database_connection_leak": {
       "issue": "152/10 connections causing failures",
-      "root_cause": "disabled cache + excessive queries",
-      "solution": "re-enabled caching + connection pooling",
+      "root_cause": "disabled cache + direct DB calls in components",
+      "solution": "V2 API architecture + connection pooling",
       "impact": "92% reduction in connections"
     },
     "mysql_parameter_binding": {

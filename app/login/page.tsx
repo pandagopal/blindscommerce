@@ -24,7 +24,7 @@ function LoginForm() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('/api/v2/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,11 +33,14 @@ function LoginForm() {
         credentials: 'include',
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(result.error || 'Login failed');
       }
+
+      // Extract data from V2 API response format
+      const data = result.data || result;
 
       // Wait a moment to ensure cookie is set
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -47,10 +50,14 @@ function LoginForm() {
       if (!targetUrl) {
         // If not provided by backend, determine by user role
         // Fetch user info
-        const userRes = await fetch('/api/auth/me', { credentials: 'include' });
+        const userRes = await fetch('/api/v2/auth/me', { credentials: 'include' });
         if (userRes.ok) {
-          const userData = await userRes.json();
+          const userResult = await userRes.json();
+          const userData = userResult.data || userResult;
           switch (userData.user.role) {
+            case 'super_admin':
+              targetUrl = '/super-admin';
+              break;
             case 'admin':
               targetUrl = '/admin';
               break;
@@ -58,6 +65,7 @@ function LoginForm() {
               targetUrl = '/vendor';
               break;
             case 'sales':
+            case 'sales_representative':
               targetUrl = '/sales';
               break;
             case 'installer':

@@ -90,11 +90,10 @@ function SalesDashboardContent() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
-          const data = await res.json();
-          
-          // Check if admin is viewing another user's dashboard
+          const result = await res.json();
+        const data = result.data || result;// Check if admin is viewing another user's dashboard
           if (adminViewUserId && data.user.role === 'admin') {
             setIsAdminView(true);
             setUser(data.user); // Keep admin user for permissions
@@ -143,7 +142,7 @@ function SalesDashboardContent() {
     const fetchDashboardData = async () => {
       try {
         // Fetch dashboard data from API
-        const response = await fetch('/api/sales/dashboard');
+        const response = await fetch('/api/v2/users/sales/dashboard');
         if (response.ok) {
           const data = await response.json();
           setLeads(data.leads || []);

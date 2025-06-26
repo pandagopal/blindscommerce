@@ -49,10 +49,10 @@ export default function AdminUsersPage() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/v2/auth/me');
         if (response.ok) {
-          const data = await response.json();
-          setCurrentUser(data.user);
+          const result = await response.json();
+        const data = result.data || result;setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -95,8 +95,8 @@ export default function AdminUsersPage() {
         throw new Error(data.error || 'Failed to fetch users');
       }
 
-      const data = await response.json();
-      setUsers(data.users);
+      const result = await response.json();
+        const data = result.data || result;setUsers(data.users);
       setTotalUsers(data.total);
     } catch (error) {
       console.error('Error fetching users:', error);

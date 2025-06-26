@@ -48,7 +48,7 @@ export default function ReorderButton({
   const fetchPreview = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/orders/reorder?order_id=${orderId}&customer_id=${customerId}`);
+      const response = await fetch(`/api/v2/commerce/orders/reorder?order_id=${orderId}&customer_id=${customerId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -67,7 +67,7 @@ export default function ReorderButton({
   const handleReorder = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/orders/reorder', {
+      const response = await fetch('/api/v2/commerce/orders/reorder', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
