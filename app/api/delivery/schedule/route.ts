@@ -267,6 +267,8 @@ export async function POST(req: NextRequest) {
       );
 
       const schedule = newSchedule[0];
+      connection.release();
+
       return NextResponse.json({
         success: true,
         message: isReschedule ? 'Delivery rescheduled successfully' : 'Delivery scheduled successfully',
@@ -295,11 +297,17 @@ export async function POST(req: NextRequest) {
 
     } catch (transactionError) {
       await connection.rollback();
+      if (connection && connection.connection && !connection.connection.destroyed) {
+        connection.release();
+      }
       throw transactionError;
     }
 
   } catch (error) {
     console.error('Error scheduling delivery:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     
     if (error instanceof Error) {
       return NextResponse.json(
@@ -312,10 +320,6 @@ export async function POST(req: NextRequest) {
       { error: 'Failed to schedule delivery' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }
 

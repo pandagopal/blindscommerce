@@ -104,44 +104,50 @@ export async function POST(request: NextRequest) {
 
     const captureResult = await captureResponse.json();
 
-    // Update payment intent status to completed
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'completed',
-        transaction_id = ?,
-        captured_amount = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `, [
-      charge_id,
-      captureResult.amount / 100,
-      JSON.stringify({
-        authorize_result: authorizeResult,
-        capture_result: captureResult
-      }),
-      paymentIntent.id
-    ]);
+    // Execute update and insert operations in parallel to reduce connection time
+    const [
+      [updateResult],
+      [insertResult]
+    ] = await Promise.all([
+      // Update payment intent status to completed
+      pool.execute(`
+        UPDATE payment_intents 
+        SET 
+          status = 'completed',
+          transaction_id = ?,
+          captured_amount = ?,
+          processor_response = ?,
+          updated_at = NOW()
+        WHERE id = ?
+      `, [
+        charge_id,
+        captureResult.amount / 100,
+        JSON.stringify({
+          authorize_result: authorizeResult,
+          capture_result: captureResult
+        }),
+        paymentIntent.id
+      ]),
 
-    // Create payment record
-    await pool.execute(`
-      INSERT INTO payments (
-        user_id, order_id, payment_method, transaction_id, 
-        amount, currency, status, processor_response, created_at
-      ) VALUES (?, ?, 'affirm', ?, ?, ?, 'completed', ?, NOW())
-    `, [
-      user?.userId,
-      authorizeResult.order_id,
-      charge_id,
-      captureResult.amount / 100,
-      paymentIntent.currency,
-      JSON.stringify({
-        affirm_charge_id: charge_id,
-        fee: captureResult.fee / 100,
-        provider_type: authorizeResult.provider_type,
-        events: captureResult.events
-      })
+      // Create payment record
+      pool.execute(`
+        INSERT INTO payments (
+          user_id, order_id, payment_method, transaction_id, 
+          amount, currency, status, processor_response, created_at
+        ) VALUES (?, ?, 'affirm', ?, ?, ?, 'completed', ?, NOW())
+      `, [
+        user?.userId,
+        authorizeResult.order_id,
+        charge_id,
+        captureResult.amount / 100,
+        paymentIntent.currency,
+        JSON.stringify({
+          affirm_charge_id: charge_id,
+          fee: captureResult.fee / 100,
+          provider_type: authorizeResult.provider_type,
+          events: captureResult.events
+        })
+      ])
     ]);
 
     return NextResponse.json({

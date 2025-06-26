@@ -350,69 +350,79 @@ function buildSortClause(sortBy: string, sortOrder: string): string {
 // Helper function to get search facets
 async function getSearchFacets(filters: SearchFilters, pool: any) {
   try {
-    // Get available categories with counts
-    const [categories] = await pool.execute<RowDataPacket[]>(`
-      SELECT c.category_id, c.name, COUNT(DISTINCT p.product_id) as count
-      FROM categories c
-      LEFT JOIN product_categories pc ON c.category_id = pc.category_id
-      LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
-      GROUP BY c.category_id, c.name
-      HAVING count > 0
-      ORDER BY c.name
-    `);
+    // Execute all facet queries in parallel to reduce connection time
+    const [
+      [categories],
+      [brands],
+      [priceRanges],
+      [colors],
+      [materials],
+      [features]
+    ] = await Promise.all([
+      // Get available categories with counts
+      pool.execute<RowDataPacket[]>(`
+        SELECT c.category_id, c.name, COUNT(DISTINCT p.product_id) as count
+        FROM categories c
+        LEFT JOIN product_categories pc ON c.category_id = pc.category_id
+        LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
+        GROUP BY c.category_id, c.name
+        HAVING count > 0
+        ORDER BY c.name
+      `),
 
-    // Get available brands (vendor business names) with counts
-    const [brands] = await pool.execute<RowDataPacket[]>(`
-      SELECT vi.vendor_info_id as brand_id, vi.business_name as name, COUNT(DISTINCT p.product_id) as count
-      FROM vendor_info vi
-      LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
-      LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
-      WHERE vi.is_active = TRUE
-      GROUP BY vi.vendor_info_id, vi.business_name
-      HAVING count > 0
-      ORDER BY vi.business_name
-    `);
+      // Get available brands (vendor business names) with counts
+      pool.execute<RowDataPacket[]>(`
+        SELECT vi.vendor_info_id as brand_id, vi.business_name as name, COUNT(DISTINCT p.product_id) as count
+        FROM vendor_info vi
+        LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
+        LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
+        WHERE vi.is_active = TRUE
+        GROUP BY vi.vendor_info_id, vi.business_name
+        HAVING count > 0
+        ORDER BY vi.business_name
+      `),
 
-    // Get price ranges
-    const [priceRanges] = await pool.execute<RowDataPacket[]>(`
-      SELECT 
-        MIN(base_price) as min_price,
-        MAX(base_price) as max_price,
-        AVG(base_price) as avg_price
-      FROM products
-      WHERE is_active = TRUE
-    `);
+      // Get price ranges
+      pool.execute<RowDataPacket[]>(`
+        SELECT 
+          MIN(base_price) as min_price,
+          MAX(base_price) as max_price,
+          AVG(base_price) as avg_price
+        FROM products
+        WHERE is_active = TRUE
+      `),
 
-    // Get available colors
-    const [colors] = await pool.execute<RowDataPacket[]>(`
-      SELECT DISTINCT color_name, COUNT(*) as count
-      FROM product_colors pc
-      JOIN products p ON pc.product_id = p.product_id
-      WHERE p.is_active = TRUE
-      GROUP BY color_name
-      ORDER BY count DESC, color_name
-    `);
+      // Get available colors
+      pool.execute<RowDataPacket[]>(`
+        SELECT DISTINCT color_name, COUNT(*) as count
+        FROM product_colors pc
+        JOIN products p ON pc.product_id = p.product_id
+        WHERE p.is_active = TRUE
+        GROUP BY color_name
+        ORDER BY count DESC, color_name
+      `),
 
-    // Get available materials
-    const [materials] = await pool.execute<RowDataPacket[]>(`
-      SELECT DISTINCT material_name, COUNT(*) as count
-      FROM product_materials pm
-      JOIN products p ON pm.product_id = p.product_id
-      WHERE p.is_active = TRUE
-      GROUP BY material_name
-      ORDER BY count DESC, material_name
-    `);
+      // Get available materials
+      pool.execute<RowDataPacket[]>(`
+        SELECT DISTINCT material_name, COUNT(*) as count
+        FROM product_materials pm
+        JOIN products p ON pm.product_id = p.product_id
+        WHERE p.is_active = TRUE
+        GROUP BY material_name
+        ORDER BY count DESC, material_name
+      `),
 
-    // Get available features
-    const [features] = await pool.execute<RowDataPacket[]>(`
-      SELECT f.feature_id, f.name, f.description, COUNT(pf.product_id) as count
-      FROM features f
-      LEFT JOIN product_features pf ON f.feature_id = pf.feature_id
-      LEFT JOIN products p ON pf.product_id = p.product_id AND p.is_active = TRUE
-      GROUP BY f.feature_id, f.name, f.description
-      HAVING count > 0
-      ORDER BY count DESC, f.name
-    `);
+      // Get available features
+      pool.execute<RowDataPacket[]>(`
+        SELECT f.feature_id, f.name, f.description, COUNT(pf.product_id) as count
+        FROM features f
+        LEFT JOIN product_features pf ON f.feature_id = pf.feature_id
+        LEFT JOIN products p ON pf.product_id = p.product_id AND p.is_active = TRUE
+        GROUP BY f.feature_id, f.name, f.description
+        HAVING count > 0
+        ORDER BY count DESC, f.name
+      `)
+    ]);
 
     return {
       categories: categories.map(cat => ({

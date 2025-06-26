@@ -7,8 +7,6 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Product } from "./components/ConfigurationContext";
 import NewProductConfigurator from "./components/NewProductConfigurator";
-import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
-import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
 import NoDrillHighlight from "@/components/ui/NoDrillHighlight";
 import { toast } from "sonner";
 
@@ -152,8 +150,6 @@ export default function ProductConfiguratorPage() {
       
       {/* Guarantees and Features */}
       <div className="container mx-auto px-4 py-8 space-y-4">
-        <SatisfactionGuarantee variant="banner" />
-        <PriceMatchGuarantee variant="banner" productId={product?.id?.toString()} />
         <NoDrillHighlight variant="banner" />
       </div>
     </div>

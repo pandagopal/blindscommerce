@@ -41,18 +41,6 @@ export async function GET(request: NextRequest) {
     }
 
     const pool = await getPool();
-    
-    // Fetch categories
-    const [categoryRows] = await pool.execute(
-      `SELECT 
-        category_id as id, 
-        name, 
-        slug, 
-        description,
-        image_url as image
-      FROM categories 
-      ORDER BY display_order ASC, name ASC`
-    );
 
     // Build product query with filters (no parameters)
     let productQuery = `
@@ -103,11 +91,6 @@ export async function GET(request: NextRequest) {
       countQuery += ` AND (p.name LIKE '%${escapedSearch}%' OR p.short_description LIKE '%${escapedSearch}%')`;
     }
     
-    // Get total count for pagination
-    const [countRows] = await pool.execute(countQuery);
-    const totalItems = Array.isArray(countRows) && countRows.length > 0 ? (countRows[0] as any).total : 0;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-
     // Group by product for main query
     productQuery += ` GROUP BY p.product_id`;
     
@@ -125,21 +108,48 @@ export async function GET(request: NextRequest) {
     
     // Add pagination
     productQuery += ` LIMIT ${itemsPerPage} OFFSET ${offset}`;
-    
-    const [productRows] = await pool.execute(productQuery);
 
-    // Fetch product features
-    const [featureRows] = await pool.execute(
-      `SELECT 
-        feature_id as id,
-        name,
-        description,
-        icon,
-        category
-      FROM features
-      WHERE is_active = 1
-      ORDER BY display_order ASC, name ASC`
-    );
+    // Execute all queries in parallel to reduce connection time
+    const [
+      [categoryRows],
+      [countRows],
+      [productRows],
+      [featureRows]
+    ] = await Promise.all([
+      // Fetch categories
+      pool.execute(
+        `SELECT 
+          category_id as id, 
+          name, 
+          slug, 
+          description,
+          image_url as image
+        FROM categories 
+        ORDER BY display_order ASC, name ASC`
+      ),
+      
+      // Get total count for pagination
+      pool.execute(countQuery),
+      
+      // Get products
+      pool.execute(productQuery),
+      
+      // Fetch product features
+      pool.execute(
+        `SELECT 
+          feature_id as id,
+          name,
+          description,
+          icon,
+          category
+        FROM features
+        WHERE is_active = 1
+        ORDER BY display_order ASC, name ASC`
+      )
+    ]);
+
+    const totalItems = Array.isArray(countRows) && countRows.length > 0 ? (countRows[0] as any).total : 0;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
 
     const responseData = {
       categories: Array.isArray(categoryRows) ? categoryRows : [],

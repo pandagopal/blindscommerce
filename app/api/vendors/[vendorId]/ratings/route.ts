@@ -58,25 +58,31 @@ export async function GET(
     query += ' ORDER BY vr.created_at DESC LIMIT ? OFFSET ?';
     queryParams.push(limit, offset);
 
-    const [ratings] = await pool.execute<VendorRating[]>(query, queryParams);
-
-    // Get summary statistics
-    const [stats] = await pool.execute<RowDataPacket[]>(
-      `SELECT 
-        COUNT(*) as total_reviews,
-        AVG(overall_rating) as avg_overall_rating,
-        AVG(service_quality) as avg_service_quality,
-        AVG(communication) as avg_communication,
-        AVG(delivery) as avg_delivery,
-        SUM(CASE WHEN overall_rating = 5 THEN 1 ELSE 0 END) as five_star,
-        SUM(CASE WHEN overall_rating = 4 THEN 1 ELSE 0 END) as four_star,
-        SUM(CASE WHEN overall_rating = 3 THEN 1 ELSE 0 END) as three_star,
-        SUM(CASE WHEN overall_rating = 2 THEN 1 ELSE 0 END) as two_star,
-        SUM(CASE WHEN overall_rating = 1 THEN 1 ELSE 0 END) as one_star
-      FROM vendor_ratings 
-      WHERE vendor_id = ? AND is_approved = 1`,
-      [vendorId]
-    );
+    // Execute ratings and stats queries in parallel to reduce connection time
+    const [
+      [ratings],
+      [stats]
+    ] = await Promise.all([
+      pool.execute<VendorRating[]>(query, queryParams),
+      
+      // Get summary statistics
+      pool.execute<RowDataPacket[]>(
+        `SELECT 
+          COUNT(*) as total_reviews,
+          AVG(overall_rating) as avg_overall_rating,
+          AVG(service_quality) as avg_service_quality,
+          AVG(communication) as avg_communication,
+          AVG(delivery) as avg_delivery,
+          SUM(CASE WHEN overall_rating = 5 THEN 1 ELSE 0 END) as five_star,
+          SUM(CASE WHEN overall_rating = 4 THEN 1 ELSE 0 END) as four_star,
+          SUM(CASE WHEN overall_rating = 3 THEN 1 ELSE 0 END) as three_star,
+          SUM(CASE WHEN overall_rating = 2 THEN 1 ELSE 0 END) as two_star,
+          SUM(CASE WHEN overall_rating = 1 THEN 1 ELSE 0 END) as one_star
+        FROM vendor_ratings 
+        WHERE vendor_id = ? AND is_approved = 1`,
+        [vendorId]
+      )
+    ]);
 
     return NextResponse.json({
       ratings: ratings.map(rating => ({

@@ -257,6 +257,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       );
 
       const address = updatedAddress[0];
+      connection.release();
+
       return NextResponse.json({
         success: true,
         message: 'Shipping address updated successfully',
@@ -289,6 +291,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
     } catch (transactionError) {
       await connection.rollback();
+      connection.release();
       throw transactionError;
     }
 
@@ -298,10 +301,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       { error: 'Failed to update shipping address' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }
 
@@ -385,6 +384,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       }
 
       await connection.commit();
+      connection.release();
 
       return NextResponse.json({
         success: true,
@@ -393,18 +393,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 
     } catch (transactionError) {
       await connection.rollback();
+      if (connection && connection.connection && !connection.connection.destroyed) {
+        connection.release();
+      }
       throw transactionError;
     }
 
   } catch (error) {
     console.error('Error deleting shipping address:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     return NextResponse.json(
       { error: 'Failed to delete shipping address' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

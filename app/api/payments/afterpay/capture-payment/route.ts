@@ -71,40 +71,46 @@ export async function POST(request: NextRequest) {
 
     const captureResult = await afterpayResponse.json();
 
-    // Update payment intent status to completed
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'completed',
-        transaction_id = ?,
-        captured_amount = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `, [
-      captureResult.id,
-      captureResult.totalResults?.amount?.amount,
-      JSON.stringify(captureResult),
-      paymentIntent.id
-    ]);
+    // Execute update and insert operations in parallel to reduce connection time
+    const [
+      [updateResult],
+      [insertResult]
+    ] = await Promise.all([
+      // Update payment intent status to completed
+      pool.execute(`
+        UPDATE payment_intents 
+        SET 
+          status = 'completed',
+          transaction_id = ?,
+          captured_amount = ?,
+          processor_response = ?,
+          updated_at = NOW()
+        WHERE id = ?
+      `, [
+        captureResult.id,
+        captureResult.totalResults?.amount?.amount,
+        JSON.stringify(captureResult),
+        paymentIntent.id
+      ]),
 
-    // Create payment record
-    await pool.execute(`
-      INSERT INTO payments (
-        user_id, order_id, payment_method, transaction_id, 
-        amount, currency, status, processor_response, created_at
-      ) VALUES (?, ?, 'afterpay', ?, ?, ?, 'completed', ?, NOW())
-    `, [
-      user?.userId,
-      captureResult.merchantReference,
-      captureResult.id,
-      captureResult.totalResults?.amount?.amount,
-      captureResult.totalResults?.amount?.currency,
-      JSON.stringify({
-        afterpay_order_id: captureResult.orderDetails?.orderNumber,
-        payment_state: captureResult.paymentState,
-        open_to_capture_amount: captureResult.openToCaptureAmount
-      })
+      // Create payment record
+      pool.execute(`
+        INSERT INTO payments (
+          user_id, order_id, payment_method, transaction_id, 
+          amount, currency, status, processor_response, created_at
+        ) VALUES (?, ?, 'afterpay', ?, ?, ?, 'completed', ?, NOW())
+      `, [
+        user?.userId,
+        captureResult.merchantReference,
+        captureResult.id,
+        captureResult.totalResults?.amount?.amount,
+        captureResult.totalResults?.amount?.currency,
+        JSON.stringify({
+          afterpay_order_id: captureResult.orderDetails?.orderNumber,
+          payment_state: captureResult.paymentState,
+          open_to_capture_amount: captureResult.openToCaptureAmount
+        })
+      ])
     ]);
 
     return NextResponse.json({

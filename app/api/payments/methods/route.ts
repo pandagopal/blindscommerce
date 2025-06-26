@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       isPaymentMethodEnabled('affirm')
     ]);
 
+
     // Base payment methods with admin settings check - only show what's explicitly enabled
     const paymentMethods = [];
 
@@ -73,6 +74,28 @@ export async function GET(request: NextRequest) {
         fees: {
           percentage: 3.49,
           fixed: 0.49
+        },
+        available: true
+      });
+    }
+
+    if (braintreeEnabled) {
+      paymentMethods.push({
+        id: 'braintree',
+        name: 'Braintree',
+        type: 'card',
+        provider: 'braintree',
+        description: 'Secure payment processing by Braintree',
+        icon: 'credit-card',
+        min_amount: 0.01,
+        max_amount: 999999,
+        currencies: ['USD', 'EUR', 'GBP', 'CAD', 'AUD'],
+        countries: ['US', 'CA', 'GB', 'AU', 'EU'],
+        processing_time: 'instant',
+        fee_structure: 'percentage',
+        fees: {
+          percentage: 2.9,
+          fixed: 0.30
         },
         available: true
       });
@@ -218,11 +241,11 @@ export async function GET(request: NextRequest) {
       },
       total_methods: sortedMethods.length,
       recommendations: {
-        lowest_fee: sortedMethods.reduce((min, method) => 
+        lowest_fee: sortedMethods.length > 0 ? sortedMethods.reduce((min, method) => 
           method.estimated_fee < min.estimated_fee ? method : min
-        ),
-        fastest: sortedMethods.filter(m => m.processing_time === 'instant')[0],
-        most_flexible: sortedMethods.filter(m => m.type === 'bnpl')[0]
+        ) : null,
+        fastest: sortedMethods.filter(m => m.processing_time === 'instant')[0] || null,
+        most_flexible: sortedMethods.filter(m => m.type === 'bnpl')[0] || null
       }
     });
 
@@ -294,6 +317,21 @@ export async function POST(request: NextRequest) {
           })
         });
         paymentResponse = await paypalResponse.json();
+        break;
+
+      case 'braintree':
+        // Create Braintree transaction
+        const braintreeResponse = await fetch(`${request.nextUrl.origin}/api/payments/braintree/create-transaction`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            currency,
+            order_id,
+            customer_email: user?.email || billing_address?.email
+          })
+        });
+        paymentResponse = await braintreeResponse.json();
         break;
 
       case 'klarna':

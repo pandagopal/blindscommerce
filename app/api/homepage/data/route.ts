@@ -18,35 +18,41 @@ export async function GET(request: NextRequest) {
 
     const pool = await getPool();
     
-    // Fetch categories
-    const [categoryRows] = await pool.execute(
-      `SELECT 
-        category_id as id, 
-        name, 
-        slug, 
-        COALESCE(image_url, '') as image, 
-        COALESCE(description, '') as description 
-      FROM categories 
-      WHERE featured = 1 
-      ORDER BY COALESCE(display_order, 0) ASC`
-    );
-    
-    // Fetch products
-    const [productRows] = await pool.execute(
-      `SELECT 
-        p.product_id, 
-        p.name, 
-        p.slug, 
-        COALESCE(c.name, '') as category_name, 
-        COALESCE(p.base_price, 0) as base_price, 
-        4.5 as rating,
-        COALESCE(p.primary_image_url, '') as primary_image
-      FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
-      WHERE p.is_active = 1
-      ORDER BY p.created_at DESC
-      LIMIT 8`
-    );
+    // Fetch categories and products in parallel to reduce connection time
+    const [
+      [categoryRows],
+      [productRows]
+    ] = await Promise.all([
+      // Fetch categories
+      pool.execute(
+        `SELECT 
+          category_id as id, 
+          name, 
+          slug, 
+          COALESCE(image_url, '') as image, 
+          COALESCE(description, '') as description 
+        FROM categories 
+        WHERE featured = 1 
+        ORDER BY COALESCE(display_order, 0) ASC`
+      ),
+      
+      // Fetch products
+      pool.execute(
+        `SELECT 
+          p.product_id, 
+          p.name, 
+          p.slug, 
+          COALESCE(c.name, '') as category_name, 
+          COALESCE(p.base_price, 0) as base_price, 
+          4.5 as rating,
+          COALESCE(p.primary_image_url, '') as primary_image
+        FROM products p
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        WHERE p.is_active = 1
+        ORDER BY p.created_at DESC
+        LIMIT 8`
+      )
+    ]);
     
     // Fetch reviews (empty for now)
     const reviewRows = [];

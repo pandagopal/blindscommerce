@@ -28,33 +28,98 @@ export async function GET(req: NextRequest) {
     const searchTerm = `%${query}%`;
     const suggestions: SearchSuggestion[] = [];
 
-    // Search for products (top 3)
-    const [products] = await pool.execute<RowDataPacket[]>(`
-      SELECT 
-        p.product_id,
-        p.name,
-        p.slug,
-        p.base_price,
-        GROUP_CONCAT(DISTINCT c.name) as category_name,
-        (
-          SELECT image_url
-          FROM product_images
-          WHERE product_id = p.product_id AND is_primary = TRUE
-          LIMIT 1
-        ) as primary_image
-      FROM products p
-      LEFT JOIN product_categories pc ON p.product_id = pc.product_id
-      LEFT JOIN categories c ON pc.category_id = c.category_id
-      WHERE p.is_active = TRUE
-        AND (p.name LIKE ? OR p.short_description LIKE ?)
-      GROUP BY p.product_id, p.name, p.slug, p.base_price
-      ORDER BY 
-        CASE WHEN p.name LIKE ? THEN 1 ELSE 2 END,
-        p.rating DESC,
-        p.review_count DESC
-      LIMIT 3
-    `, [searchTerm, searchTerm, `${query}%`]);
+    // Execute all search queries in parallel to reduce connection time
+    const [
+      [products],
+      [categories], 
+      [brands],
+      [features]
+    ] = await Promise.all([
+      // Search for products (top 3)
+      pool.execute<RowDataPacket[]>(`
+        SELECT 
+          p.product_id,
+          p.name,
+          p.slug,
+          p.base_price,
+          GROUP_CONCAT(DISTINCT c.name) as category_name,
+          (
+            SELECT image_url
+            FROM product_images
+            WHERE product_id = p.product_id AND is_primary = TRUE
+            LIMIT 1
+          ) as primary_image
+        FROM products p
+        LEFT JOIN product_categories pc ON p.product_id = pc.product_id
+        LEFT JOIN categories c ON pc.category_id = c.category_id
+        WHERE p.is_active = TRUE
+          AND (p.name LIKE ? OR p.short_description LIKE ?)
+        GROUP BY p.product_id, p.name, p.slug, p.base_price
+        ORDER BY 
+          CASE WHEN p.name LIKE ? THEN 1 ELSE 2 END,
+          p.rating DESC,
+          p.review_count DESC
+        LIMIT 3
+      `, [searchTerm, searchTerm, `${query}%`]),
 
+      // Search for categories (top 2)
+      pool.execute<RowDataPacket[]>(`
+        SELECT 
+          c.category_id,
+          c.name,
+          c.slug,
+          COUNT(DISTINCT p.product_id) as product_count
+        FROM categories c
+        LEFT JOIN product_categories pc ON c.category_id = pc.category_id
+        LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
+        WHERE c.is_active = TRUE AND c.name LIKE ?
+        GROUP BY c.category_id, c.name, c.slug
+        HAVING product_count > 0
+        ORDER BY 
+          CASE WHEN c.name LIKE ? THEN 1 ELSE 2 END,
+          product_count DESC
+        LIMIT 2
+      `, [searchTerm, `${query}%`]),
+
+      // Search for brands (vendor business names) (top 2)
+      pool.execute<RowDataPacket[]>(`
+        SELECT 
+          vi.vendor_info_id as brand_id,
+          vi.business_name as name,
+          COUNT(DISTINCT p.product_id) as product_count
+        FROM vendor_info vi
+        LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
+        LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
+        WHERE vi.is_active = TRUE AND vi.business_name LIKE ?
+        GROUP BY vi.vendor_info_id, vi.business_name
+        HAVING product_count > 0
+        ORDER BY 
+          CASE WHEN vi.business_name LIKE ? THEN 1 ELSE 2 END,
+          product_count DESC
+        LIMIT 2
+      `, [searchTerm, `${query}%`]),
+
+      // Search for features (top 1)
+      pool.execute<RowDataPacket[]>(`
+        SELECT 
+          f.feature_id,
+          f.name,
+          f.description,
+          COUNT(pf.product_id) as product_count
+        FROM features f
+        LEFT JOIN product_features pf ON f.feature_id = pf.feature_id
+        LEFT JOIN products p ON pf.product_id = p.product_id AND p.is_active = TRUE
+        WHERE f.is_active = TRUE AND f.name LIKE ?
+        GROUP BY f.feature_id, f.name, f.description
+        HAVING product_count > 0
+        ORDER BY 
+          CASE WHEN f.name LIKE ? THEN 1 ELSE 2 END,
+          product_count DESC
+        LIMIT 1
+      `, [searchTerm, `${query}%`])
+    ]);
+
+    // Process results
     products.forEach(product => {
       suggestions.push({
         type: 'product',
@@ -65,25 +130,6 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // Search for categories (top 2)
-    const [categories] = await pool.execute<RowDataPacket[]>(`
-      SELECT 
-        c.category_id,
-        c.name,
-        c.slug,
-        COUNT(DISTINCT p.product_id) as product_count
-      FROM categories c
-      LEFT JOIN product_categories pc ON c.category_id = pc.category_id
-      LEFT JOIN products p ON pc.product_id = p.product_id AND p.is_active = TRUE
-      WHERE c.is_active = TRUE AND c.name LIKE ?
-      GROUP BY c.category_id, c.name, c.slug
-      HAVING product_count > 0
-      ORDER BY 
-        CASE WHEN c.name LIKE ? THEN 1 ELSE 2 END,
-        product_count DESC
-      LIMIT 2
-    `, [searchTerm, `${query}%`]);
-
     categories.forEach(category => {
       suggestions.push({
         type: 'category',
@@ -93,24 +139,6 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // Search for brands (vendor business names) (top 2)
-    const [brands] = await pool.execute<RowDataPacket[]>(`
-      SELECT 
-        vi.vendor_info_id as brand_id,
-        vi.business_name as name,
-        COUNT(DISTINCT p.product_id) as product_count
-      FROM vendor_info vi
-      LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
-      LEFT JOIN products p ON vp.product_id = p.product_id AND p.is_active = TRUE
-      WHERE vi.is_active = TRUE AND vi.business_name LIKE ?
-      GROUP BY vi.vendor_info_id, vi.business_name
-      HAVING product_count > 0
-      ORDER BY 
-        CASE WHEN vi.business_name LIKE ? THEN 1 ELSE 2 END,
-        product_count DESC
-      LIMIT 2
-    `, [searchTerm, `${query}%`]);
-
     brands.forEach(brand => {
       suggestions.push({
         type: 'brand',
@@ -119,25 +147,6 @@ export async function GET(req: NextRequest) {
         url: `/products?brands=${encodeURIComponent(brand.name)}`
       });
     });
-
-    // Search for features (top 1)
-    const [features] = await pool.execute<RowDataPacket[]>(`
-      SELECT 
-        f.feature_id,
-        f.name,
-        f.description,
-        COUNT(pf.product_id) as product_count
-      FROM features f
-      LEFT JOIN product_features pf ON f.feature_id = pf.feature_id
-      LEFT JOIN products p ON pf.product_id = p.product_id AND p.is_active = TRUE
-      WHERE f.is_active = TRUE AND f.name LIKE ?
-      GROUP BY f.feature_id, f.name, f.description
-      HAVING product_count > 0
-      ORDER BY 
-        CASE WHEN f.name LIKE ? THEN 1 ELSE 2 END,
-        product_count DESC
-      LIMIT 1
-    `, [searchTerm, `${query}%`]);
 
     features.forEach(feature => {
       suggestions.push({

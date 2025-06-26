@@ -48,6 +48,13 @@ export interface PlatformSettings {
     braintree_merchant_id: string;
     braintree_public_key: string;
     braintree_private_key: string;
+    klarna_api_key: string;
+    klarna_username: string;
+    klarna_password: string;
+    afterpay_merchant_id: string;
+    afterpay_secret_key: string;
+    affirm_public_api_key: string;
+    affirm_private_api_key: string;
   };
   security: {
     two_factor_required: boolean;
@@ -88,6 +95,7 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
       'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = TRUE'
     );
 
+
     // Default settings structure
     const settings: PlatformSettings = {
       general: {
@@ -112,12 +120,12 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         system_alerts: true
       },
       payments: {
-        stripe_enabled: true,
-        paypal_enabled: true,
-        klarna_enabled: true,
-        afterpay_enabled: true,
-        affirm_enabled: true,
-        braintree_enabled: true,
+        stripe_enabled: false,
+        paypal_enabled: false,
+        klarna_enabled: false,
+        afterpay_enabled: false,
+        affirm_enabled: false,
+        braintree_enabled: false,
         payment_processing_fee: '2.9',
         minimum_order_amount: '25.00',
         free_shipping_threshold: '100.00',
@@ -130,7 +138,14 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         paypal_client_secret: '',
         braintree_merchant_id: '',
         braintree_public_key: '',
-        braintree_private_key: ''
+        braintree_private_key: '',
+        klarna_api_key: '',
+        klarna_username: '',
+        klarna_password: '',
+        afterpay_merchant_id: '',
+        afterpay_secret_key: '',
+        affirm_public_api_key: '',
+        affirm_private_api_key: ''
       },
       security: {
         two_factor_required: false,
@@ -196,8 +211,8 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         } else if (config_key.startsWith('notification_')) {
           const key = config_key.replace('notification_', '') as keyof typeof settings.notifications;
           (settings.notifications as any)[key] = parsedValue;
-        } else if (config_key.startsWith('payment_')) {
-          const key = config_key.replace('payment_', '') as keyof typeof settings.payments;
+        } else if (config_key.startsWith('payments_')) {
+          const key = config_key.replace('payments_', '') as keyof typeof settings.payments;
           (settings.payments as any)[key] = parsedValue;
         } else if (config_key.startsWith('security_')) {
           const key = config_key.replace('security_', '') as keyof typeof settings.security;
@@ -240,15 +255,32 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
         system_alerts: true
       },
       payments: {
-        stripe_enabled: true,
-        paypal_enabled: true,
-        klarna_enabled: true,
-        afterpay_enabled: true,
-        affirm_enabled: true,
+        stripe_enabled: false,
+        paypal_enabled: false,
+        klarna_enabled: false,
+        afterpay_enabled: false,
+        affirm_enabled: false,
+        braintree_enabled: false,
         payment_processing_fee: '2.9',
         minimum_order_amount: '25.00',
         free_shipping_threshold: '100.00',
-        vendor_commission_rate: '15.0'
+        vendor_commission_rate: '15.0',
+        // Payment Provider Credentials
+        stripe_secret_key: '',
+        stripe_publishable_key: '',
+        stripe_webhook_secret: '',
+        paypal_client_id: '',
+        paypal_client_secret: '',
+        braintree_merchant_id: '',
+        braintree_public_key: '',
+        braintree_private_key: '',
+        klarna_api_key: '',
+        klarna_username: '',
+        klarna_password: '',
+        afterpay_merchant_id: '',
+        afterpay_secret_key: '',
+        affirm_public_api_key: '',
+        affirm_private_api_key: ''
       },
       security: {
         two_factor_required: false,

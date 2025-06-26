@@ -202,6 +202,7 @@ export async function POST(request: NextRequest) {
       }
 
       await connection.query('COMMIT');
+      connection.release();
 
       // Determine success message
       let message = 'Product created successfully';
@@ -224,14 +225,16 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
       await connection.query('ROLLBACK');
-      throw error;
-    } finally {
-      if (connection) {
+      if (connection && connection.connection && !connection.connection.destroyed) {
         connection.release();
       }
+      throw error;
     }
   } catch (error) {
     console.error('Error creating product:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     return NextResponse.json(
       { error: 'Failed to create product' },
       { status: 500 }

@@ -64,6 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       );
 
       await connection.commit();
+      connection.release();
 
       return NextResponse.json({
         success: true,
@@ -72,18 +73,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     } catch (transactionError) {
       await connection.rollback();
+      if (connection && connection.connection && !connection.connection.destroyed) {
+        connection.release();
+      }
       throw transactionError;
     }
 
   } catch (error) {
     console.error('Error setting default address:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     return NextResponse.json(
       { error: 'Failed to set default address' },
       { status: 500 }
     );
-  } finally {
-    if (connection) {
-      connection.release();
-    }
   }
 }

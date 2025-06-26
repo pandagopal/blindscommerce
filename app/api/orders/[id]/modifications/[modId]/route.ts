@@ -216,6 +216,7 @@ export async function PUT(
       );
 
       await connection.commit();
+      connection.release();
 
       return NextResponse.json({
         success: true,
@@ -224,13 +225,17 @@ export async function PUT(
 
     } catch (error) {
       await connection.rollback();
+      if (connection && connection.connection && !connection.connection.destroyed) {
+        connection.release();
+      }
       throw error;
-    } finally {
-      connection.release();
     }
 
   } catch (error) {
     console.error('Error updating modification status:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update modification' },
       { status: 500 }

@@ -59,13 +59,42 @@ export async function GET(
 
     const storefront = storefrontRows[0] as any;
 
-    // Get homepage content
-    const [pageRows] = await pool.execute(
-      `SELECT * FROM vendor_pages 
-       WHERE vendor_id = ? AND page_type = 'homepage' AND is_published = 1 
-       ORDER BY created_at DESC LIMIT 1`,
-      [storefront.vendor_id]
-    );
+    // Execute homepage and products queries in parallel since they both use vendor_id
+    const [
+      [pageRows],
+      [productRows]
+    ] = await Promise.all([
+      // Get homepage content
+      pool.execute(
+        `SELECT * FROM vendor_pages 
+         WHERE vendor_id = ? AND page_type = 'homepage' AND is_published = 1 
+         ORDER BY created_at DESC LIMIT 1`,
+        [storefront.vendor_id]
+      ),
+
+      // Get featured products for this vendor
+      pool.execute(
+        `SELECT 
+          p.product_id,
+          p.name,
+          p.slug,
+          p.short_description,
+          p.base_price,
+          p.primary_image_url,
+          c.name as category_name,
+          COALESCE(AVG(pr.rating), 0) as rating,
+          COUNT(pr.review_id) as review_count
+         FROM vendor_products vp
+         JOIN products p ON vp.product_id = p.product_id
+         LEFT JOIN categories c ON p.category_id = c.category_id
+         LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
+         WHERE vp.vendor_id = ? AND vp.status = 'active' AND p.is_active = 1
+         GROUP BY p.product_id
+         ORDER BY p.created_at DESC
+         LIMIT 8`,
+        [storefront.vendor_id]
+      )
+    ]);
 
     let homepage: PageData | null = null;
     if (Array.isArray(pageRows) && pageRows.length > 0) {
@@ -82,29 +111,6 @@ export async function GET(
         displayOrder: page.display_order
       };
     }
-
-    // Get featured products for this vendor
-    const [productRows] = await pool.execute(
-      `SELECT 
-        p.product_id,
-        p.name,
-        p.slug,
-        p.short_description,
-        p.base_price,
-        p.primary_image_url,
-        c.name as category_name,
-        COALESCE(AVG(pr.rating), 0) as rating,
-        COUNT(pr.review_id) as review_count
-       FROM vendor_products vp
-       JOIN products p ON vp.product_id = p.product_id
-       LEFT JOIN categories c ON p.category_id = c.category_id
-       LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
-       WHERE vp.vendor_id = ? AND vp.status = 'active' AND p.is_active = 1
-       GROUP BY p.product_id
-       ORDER BY p.created_at DESC
-       LIMIT 8`,
-      [storefront.vendor_id]
-    );
 
     const featuredProducts: FeaturedProduct[] = Array.isArray(productRows) 
       ? (productRows as any[]).map(product => ({

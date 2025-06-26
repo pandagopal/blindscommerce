@@ -5,8 +5,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, CreditCard, Truck, ShieldCheck, Lock, User, MapPin, Loader2 } from "lucide-react";
-import SatisfactionGuarantee from "@/components/ui/SatisfactionGuarantee";
-import PriceMatchGuarantee from "@/components/ui/PriceMatchGuarantee";
 import PhoneInput from "@/components/ui/PhoneInput";
 
 // Payment Method Icons
@@ -28,6 +26,9 @@ const PaymentIcon = ({ type, provider }: { type: string; provider: string }) => 
   if (provider === 'affirm') {
     return <div className={`${iconClass} bg-blue-400 text-white rounded flex items-center justify-center text-xs font-bold`}>AF</div>;
   }
+  if (provider === 'braintree') {
+    return <div className={`${iconClass} bg-gray-600 text-white rounded flex items-center justify-center text-xs font-bold`}>BT</div>;
+  }
   
   return <CreditCard className={iconClass} />;
 };
@@ -38,10 +39,23 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState<'success' | 'failed' | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
+  const [paymentData, setPaymentData] = useState({
+    // Credit Card fields
+    cardNumber: '',
+    expiryDate: '',
+    cvc: '',
+    cardholderName: '',
+    // Bank Transfer fields
+    routingNumber: '',
+    accountNumber: '',
+    accountType: 'checking',
+    accountHolderName: '',
+  });
 
   // Compact form state
   const [formData, setFormData] = useState({
@@ -202,6 +216,14 @@ export default function CheckoutPage() {
     }
   };
 
+  const handlePaymentDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setPaymentData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   // Calculate tax when ZIP code changes
   const handleZipCodeBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -269,6 +291,40 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      // First, process the payment
+      const paymentRequest = {
+        payment_method_id: selectedPaymentMethod,
+        amount: pricing.total,
+        currency: 'USD',
+        payment_data: paymentData,
+        billing_address: {
+          email: formData.email,
+          firstName: formData.sameAsShipping ? formData.firstName : formData.firstName,
+          lastName: formData.sameAsShipping ? formData.lastName : formData.lastName,
+          address: formData.sameAsShipping ? formData.address : formData.billingAddress,
+          city: formData.sameAsShipping ? formData.city : formData.billingCity,
+          state: formData.sameAsShipping ? formData.state : formData.billingState,
+          zipCode: formData.sameAsShipping ? formData.zipCode : formData.billingZipCode,
+          country: formData.sameAsShipping ? formData.country : formData.billingCountry
+        }
+      };
+
+      // Process payment
+      const paymentResponse = await fetch('/api/payments/methods', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentRequest),
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error('Payment failed. Please check your payment details and try again.');
+      }
+
+      const paymentResult = await paymentResponse.json();
+      
+      // If payment succeeds, create the order
       const orderData = {
         items: items.map(item => ({
           id: item.product_id || 0,
@@ -305,7 +361,8 @@ export default function CheckoutPage() {
         },
         payment: {
           method: selectedPaymentMethod,
-          id: 'test_payment_id'
+          transaction_id: paymentResult.provider_response?.id || 'payment_success',
+          status: 'completed'
         },
         subtotal: pricing.subtotal,
         shipping_cost: pricing.shipping,
@@ -338,11 +395,13 @@ export default function CheckoutPage() {
 
       const data = await response.json();
       setOrderNumber(data.orderNumber);
+      setPaymentStatus('success');
       setOrderCompleted(true);
       clearCart();
     } catch (error) {
-      console.error('Error processing order:', error);
-      alert('There was an error processing your order. Please try again.');
+      console.error('Error processing payment:', error);
+      setPaymentStatus('failed');
+      setOrderCompleted(true);
     } finally {
       setLoading(false);
     }
@@ -353,24 +412,65 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-purple-100 p-8 text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShieldCheck className="h-8 w-8 text-green-600" />
-          </div>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Order Confirmed!</h1>
-          <p className="text-gray-600 mb-6">Thank you for your purchase. Your order has been received.</p>
+          {paymentStatus === 'success' ? (
+            <>
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck className="h-8 w-8 text-green-600" />
+              </div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Payment Successful!</h1>
+              <p className="text-gray-600 mb-6">Thank you for your purchase. Your payment has been processed successfully.</p>
 
-          <div className="bg-gray-50 p-4 rounded-lg mb-6 inline-block">
-            <p className="text-sm text-gray-500">Order Number</p>
-            <p className="text-lg font-medium text-gray-900">{orderNumber}</p>
-          </div>
+              <div className="bg-gray-50 p-4 rounded-lg mb-6 inline-block">
+                <p className="text-sm text-gray-500">Order Number</p>
+                <p className="text-lg font-medium text-gray-900">{orderNumber}</p>
+              </div>
 
-          <p className="text-gray-600 mb-8">
-            We've sent a confirmation email to <span className="font-medium">{formData.email}</span> with all the details of your order.
-          </p>
+              <p className="text-gray-600 mb-8">
+                We've sent a confirmation email to <span className="font-medium">{formData.email}</span> with all the details of your order and payment.
+              </p>
 
-          <Link href="/" className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
-            Continue Shopping
-          </Link>
+              <Link href="/" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
+                Continue Shopping
+              </Link>
+            </>
+          ) : (
+            <>
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">Payment Failed</h1>
+              <p className="text-gray-600 mb-6">There was an issue processing your payment. Please try again.</p>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-800">
+                  <strong>What happened?</strong> Your payment could not be processed. This could be due to:
+                </p>
+                <ul className="text-xs text-red-700 mt-2 text-left list-disc list-inside">
+                  <li>Invalid card details</li>
+                  <li>Insufficient funds</li>
+                  <li>Bank declined the transaction</li>
+                  <li>Network connectivity issues</li>
+                </ul>
+              </div>
+
+              <div className="space-x-4">
+                <button
+                  onClick={() => {
+                    setOrderCompleted(false);
+                    setPaymentStatus(null);
+                  }}
+                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
+                >
+                  Try Again
+                </button>
+                <Link href="/cart" className="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
+                  Back to Cart
+                </Link>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -640,36 +740,174 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="space-y-3">
                       {paymentMethods.map((method) => (
-                        <label key={method.id} className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value={method.id}
-                            checked={selectedPaymentMethod === method.id}
-                            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <div className="ml-3 flex items-center flex-1">
-                            <PaymentIcon type={method.type} provider={method.provider} />
-                            <div className="ml-3 flex-1">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {method.name}
-                                    {method.recommended && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Recommended</span>}
-                                    {method.popular && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Popular</span>}
-                                  </p>
-                                  <p className="text-xs text-gray-500">{method.description}</p>
+                        <div key={method.id} className={`border border-gray-200 rounded-lg ${selectedPaymentMethod === method.id ? 'ring-2 ring-blue-500 border-blue-200' : ''}`}>
+                          <label className="flex items-center p-4 hover:bg-gray-50 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value={method.id}
+                              checked={selectedPaymentMethod === method.id}
+                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <div className="ml-3 flex items-center flex-1">
+                              <PaymentIcon type={method.type} provider={method.provider} />
+                              <div className="ml-3 flex-1">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">
+                                      {method.name}
+                                      {method.recommended && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Recommended</span>}
+                                      {method.popular && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Popular</span>}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{method.description}</p>
+                                  </div>
+                                  {method.estimated_fee > 0 && (
+                                    <p className="text-xs text-gray-500">
+                                      Fee: ${method.estimated_fee.toFixed(2)}
+                                    </p>
+                                  )}
                                 </div>
-                                {method.estimated_fee > 0 && (
-                                  <p className="text-xs text-gray-500">
-                                    Fee: ${method.estimated_fee.toFixed(2)}
-                                  </p>
-                                )}
                               </div>
                             </div>
-                          </div>
-                        </label>
+                          </label>
+                          
+                          {/* Inline Payment Form */}
+                          {selectedPaymentMethod === method.id && (
+                            <div className="border-t border-gray-200 p-4 bg-gray-50">
+                              {method.provider === 'stripe' && method.type === 'card' && (
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-gray-900">Card Details</h4>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                                      <input
+                                        type="text"
+                                        name="cardNumber"
+                                        value={paymentData.cardNumber}
+                                        onChange={handlePaymentDataChange}
+                                        placeholder="1234 5678 9012 3456"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                      <input
+                                        type="text"
+                                        name="expiryDate"
+                                        value={paymentData.expiryDate}
+                                        onChange={handlePaymentDataChange}
+                                        placeholder="MM/YY"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                                      <input
+                                        type="text"
+                                        name="cvc"
+                                        value={paymentData.cvc}
+                                        onChange={handlePaymentDataChange}
+                                        placeholder="123"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div className="col-span-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                                      <input
+                                        type="text"
+                                        name="cardholderName"
+                                        value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
+                                        onChange={handlePaymentDataChange}
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {method.provider === 'stripe' && method.type === 'bank_transfer' && (
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-gray-900">Bank Account Details</h4>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="col-span-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                                      <input
+                                        type="text"
+                                        name="accountHolderName"
+                                        value={paymentData.accountHolderName || `${formData.firstName} ${formData.lastName}`.trim()}
+                                        onChange={handlePaymentDataChange}
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Routing Number</label>
+                                      <input
+                                        type="text"
+                                        name="routingNumber"
+                                        value={paymentData.routingNumber}
+                                        onChange={handlePaymentDataChange}
+                                        placeholder="123456789"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                      <input
+                                        type="text"
+                                        name="accountNumber"
+                                        value={paymentData.accountNumber}
+                                        onChange={handlePaymentDataChange}
+                                        placeholder="123456789012"
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      />
+                                    </div>
+                                    <div className="col-span-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+                                      <select 
+                                        name="accountType"
+                                        value={paymentData.accountType}
+                                        onChange={handlePaymentDataChange}
+                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      >
+                                        <option value="checking">Checking</option>
+                                        <option value="savings">Savings</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {method.provider === 'paypal' && (
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-gray-900">PayPal Payment</h4>
+                                  <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                                    <div className="text-blue-600 mb-2">
+                                      <svg className="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.583c-1.106-1.266-3.114-1.809-5.690-1.809H9.558c-.524 0-.969.382-1.05.901l-2.416 15.312a.641.641 0 0 0 .633.741h4.25l1.123-7.107c.082-.518.526-.9 1.05-.9h2.19c4.298 0 7.664-1.747 8.647-6.797.03-.149.054-.294.077-.437.078-.495.097-.98.06-1.321z"/>
+                                      </svg>
+                                    </div>
+                                    <p className="text-sm text-gray-600">Click "Pay Now" to continue with PayPal</p>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {method.type === 'bnpl' && (
+                                <div className="space-y-4">
+                                  <h4 className="font-medium text-gray-900">{method.name} Payment</h4>
+                                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                                    <p className="text-sm text-purple-800 mb-2">
+                                      <strong>Pay in installments:</strong> {method.installments} payments
+                                    </p>
+                                    <p className="text-xs text-purple-600">
+                                      You'll be redirected to {method.name} to complete your application and payment setup.
+                                    </p>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
@@ -700,12 +938,12 @@ export default function CheckoutPage() {
                     {loading ? (
                       <>
                         <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                        Processing...
+                        Processing Payment...
                       </>
                     ) : (
                       <>
                         <Lock className="mr-2 h-4 w-4" />
-                        Complete Order - ${Number(total ?? 0).toFixed(2)}
+                        Pay Now - ${Number(total ?? 0).toFixed(2)}
                       </>
                     )}
                   </button>
@@ -785,10 +1023,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
-                <SatisfactionGuarantee variant="banner" />
-                <PriceMatchGuarantee variant="banner" />
-              </div>
             </div>
           </div>
         </div>

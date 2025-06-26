@@ -64,26 +64,32 @@ async function handleOrderPending(event: any, pool: any) {
 async function handleOrderCaptured(event: any, pool: any) {
   const { order_id, order_amount, purchase_currency, captured_amount } = event.order;
 
-  // Update payment intent status to completed
-  await pool.execute(`
-    UPDATE payment_intents 
-    SET 
-      status = 'completed',
-      captured_amount = ?,
-      processor_response = ?,
-      updated_at = NOW()
-    WHERE provider_order_id = ? AND provider = 'klarna'
-  `, [
-    captured_amount / 100,
-    JSON.stringify(event),
-    order_id
-  ]);
+  // Execute update and select in parallel, then use result for insert
+  const [
+    [updateResult],
+    [paymentIntents]
+  ] = await Promise.all([
+    // Update payment intent status to completed
+    pool.execute(`
+      UPDATE payment_intents 
+      SET 
+        status = 'completed',
+        captured_amount = ?,
+        processor_response = ?,
+        updated_at = NOW()
+      WHERE provider_order_id = ? AND provider = 'klarna'
+    `, [
+      captured_amount / 100,
+      JSON.stringify(event),
+      order_id
+    ]),
 
-  // Get payment intent details
-  const [paymentIntents] = await pool.execute(`
-    SELECT * FROM payment_intents 
-    WHERE provider_order_id = ? AND provider = 'klarna'
-  `, [order_id]);
+    // Get payment intent details
+    pool.execute(`
+      SELECT * FROM payment_intents 
+      WHERE provider_order_id = ? AND provider = 'klarna'
+    `, [order_id])
+  ]);
 
   if (paymentIntents && (paymentIntents as any[]).length > 0) {
     const paymentIntent = (paymentIntents as any[])[0];

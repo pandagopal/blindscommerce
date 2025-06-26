@@ -360,6 +360,7 @@ export async function POST(
       }
 
       await connection.commit();
+      connection.release();
 
       return NextResponse.json({
         success: true,
@@ -372,13 +373,17 @@ export async function POST(
 
     } catch (error) {
       await connection.rollback();
+      if (connection && connection.connection && !connection.connection.destroyed) {
+        connection.release();
+      }
       throw error;
-    } finally {
-      connection.release();
     }
 
   } catch (error) {
     console.error('Error creating order modification:', error);
+    if (connection && connection.connection && !connection.connection.destroyed) {
+      connection.release();
+    }
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create modification request' },
       { status: 500 }

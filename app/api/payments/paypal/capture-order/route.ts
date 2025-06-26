@@ -80,46 +80,52 @@ export async function POST(request: NextRequest) {
 
     const transaction = transactionResult.transaction;
 
-    // Update payment intent status to completed
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'completed',
-        transaction_id = ?,
-        captured_amount = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `, [
-      transaction?.id,
-      transaction?.amount,
-      JSON.stringify({
-        status: transaction?.status,
-        type: transaction?.type,
-        processor_response_code: transaction?.processorResponseCode,
-        processor_response_text: transaction?.processorResponseText,
-        paypal_details: transaction?.paypalDetails
-      }),
-      paymentIntent.id
-    ]);
+    // Execute update and insert operations in parallel, then handle payment method save
+    const [
+      [updateResult],
+      [insertResult]
+    ] = await Promise.all([
+      // Update payment intent status to completed
+      pool.execute(`
+        UPDATE payment_intents 
+        SET 
+          status = 'completed',
+          transaction_id = ?,
+          captured_amount = ?,
+          processor_response = ?,
+          updated_at = NOW()
+        WHERE id = ?
+      `, [
+        transaction?.id,
+        transaction?.amount,
+        JSON.stringify({
+          status: transaction?.status,
+          type: transaction?.type,
+          processor_response_code: transaction?.processorResponseCode,
+          processor_response_text: transaction?.processorResponseText,
+          paypal_details: transaction?.paypalDetails
+        }),
+        paymentIntent.id
+      ]),
 
-    // Create payment record
-    await pool.execute(`
-      INSERT INTO payments (
-        user_id, order_id, payment_method, transaction_id, 
-        amount, currency, status, processor_response, created_at
-      ) VALUES (?, ?, 'paypal', ?, ?, ?, 'completed', ?, NOW())
-    `, [
-      user?.userId,
-      order_id,
-      transaction?.id,
-      transaction?.amount,
-      paymentIntent.currency,
-      JSON.stringify({
-        paypal_email: transaction?.paypalDetails?.payerEmail,
-        transaction_fee: transaction?.paypalDetails?.transactionFeeAmount,
-        authorization_id: transaction?.paypalDetails?.authorizationId
-      })
+      // Create payment record
+      pool.execute(`
+        INSERT INTO payments (
+          user_id, order_id, payment_method, transaction_id, 
+          amount, currency, status, processor_response, created_at
+        ) VALUES (?, ?, 'paypal', ?, ?, ?, 'completed', ?, NOW())
+      `, [
+        user?.userId,
+        order_id,
+        transaction?.id,
+        transaction?.amount,
+        paymentIntent.currency,
+        JSON.stringify({
+          paypal_email: transaction?.paypalDetails?.payerEmail,
+          transaction_fee: transaction?.paypalDetails?.transactionFeeAmount,
+          authorization_id: transaction?.paypalDetails?.authorizationId
+        })
+      ])
     ]);
 
     // Save PayPal account as payment method if user is logged in
