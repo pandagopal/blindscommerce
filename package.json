@@ -87,7 +87,7 @@
     "zod": "^3.24.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "^1.9.4",
     "@eslint/eslintrc": "^3",
     "@types/node": "^20.17.47",
     "@types/node-cron": "^3.0.11",

@@ -37,7 +37,7 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
   const fetchSocialAccounts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/social/accounts');
+      const response = await fetch('/api/v2/content/social-accounts');
       
       if (!response.ok) {
         throw new Error('Failed to fetch social accounts');

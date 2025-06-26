@@ -116,48 +116,27 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     'Free Cordless Upgrade'
   ]);
 
-  // Fetch dynamic content on component mount
+  // Update hero slides with data from props if available
   React.useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        const res = await fetch('/api/homepage/content');
-        if (res.ok) {
-          const data = await res.json();
-          
-          // Update hero slides with API data while keeping structure
-          if (data.heroSlides && data.heroSlides.length > 0) {
-            const updatedSlides = heroSlides.map((slide, index) => {
-              const apiSlide = data.heroSlides[index];
-              if (apiSlide) {
-                return {
-                  ...slide,
-                  title: apiSlide.title || slide.title,
-                  subtitle: apiSlide.subtitle || slide.subtitle,
-                  description: apiSlide.description || slide.description,
-                  primaryCta: {
-                    ...slide.primaryCta,
-                    text: apiSlide.cta || slide.primaryCta.text
-                  }
-                };
-              }
-              return slide;
-            });
-            setHeroSlides(updatedSlides);
-          }
-          
-          // Update promo banners
-          if (data.promoBanners && data.promoBanners.length > 0) {
-            setPromoBanners(data.promoBanners);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching homepage content:', error);
-        // Keep default content if API fails
-      }
-    };
-
-    fetchContent();
-  }, []);
+    if (heroBanners && heroBanners.length > 0) {
+      const updatedSlides = heroBanners.map((banner) => ({
+        id: banner.banner_id,
+        image: banner.image_url || '/images/hero/hero-1.jpg',
+        title: banner.title,
+        subtitle: banner.subtitle,
+        description: banner.description,
+        primaryCta: {
+          text: banner.button_text || 'Shop Now',
+          href: banner.button_link || '/products'
+        },
+        secondaryCta: banner.secondary_cta_text ? {
+          text: banner.secondary_cta_text,
+          href: banner.secondary_cta_link || '/products'
+        } : undefined
+      }));
+      setHeroSlides(updatedSlides);
+    }
+  }, [heroBanners]);
 
   // Transform database hero banners to match slide format
   const dynamicSlides = heroBanners.map(banner => ({
@@ -189,9 +168,9 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
 
   // Transform database rooms to match display format
   const displayRooms = Array.isArray(rooms) ? rooms.map(room => ({
-    id: room.id,
+    id: room.room_type_id || room.id,
     name: room.name,
-    image: room.image || '/images/rooms/default-room.jpg',
+    image: room.image_url || room.image || '/images/rooms/default-room.jpg',
     link: `/products?room=${room.name.toLowerCase().replace(/\s+/g, '-')}`
   })) : [];
 

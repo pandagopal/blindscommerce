@@ -14,6 +14,7 @@ import { VendorsHandler } from '@/lib/api/v2/handlers/VendorsHandler';
 import { AdminHandler } from '@/lib/api/v2/handlers/AdminHandler';
 import { AnalyticsHandler } from '@/lib/api/v2/handlers/AnalyticsHandler';
 import { AuthHandler } from '@/lib/api/v2/handlers/AuthHandler';
+import { ContentHandler } from '@/lib/api/v2/handlers/ContentHandler';
 
 // Service handler mapping
 const serviceHandlers: Record<string, any> = {
@@ -23,6 +24,7 @@ const serviceHandlers: Record<string, any> = {
   admin: new AdminHandler(),
   analytics: new AnalyticsHandler(),
   auth: new AuthHandler(),
+  content: new ContentHandler(),
 };
 
 // Standard API response format

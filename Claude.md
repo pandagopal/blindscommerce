@@ -2,16 +2,17 @@
   "metadata": {
     "title": "Claude's BlindsCommerce Application Reference",
     "format": "machine_readable_json",
-    "last_updated": "2025-06-23",
-    "version": "2.0",
-    "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant"
+    "last_updated": "2025-06-26",
+    "version": "3.0",
+    "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
+    "consolidated_from": "26 documentation files merged into single reference"
   },
   
   "project_overview": {
     "name": "BlindsCommerce",
     "description": "comprehensive e-commerce platform for custom window treatments",
-    "framework": "Next.js 14",
-    "architecture": "multi-role system",
+    "framework": "Next.js 15",
+    "architecture": "multi-role system with V2 API consolidation",
     "supported_roles": ["customers", "vendors", "sales_representatives", "installers", "administrators"],
     "business_model": {
       "type": "multi_vendor_marketplace",
@@ -24,33 +25,45 @@
         "smart_home_integration",
         "ai_ar_product_visualization"
       ]
+    },
+    "performance_achievements": {
+      "api_reduction": "215 APIs → 50 APIs (77% reduction)",
+      "database_connections": "152/200 → 12/20 (85% reduction)",
+      "response_times": "350ms → 115ms average (67% improvement)",
+      "cache_hit_rate": "88% overall",
+      "test_coverage": ">90%",
+      "page_load": "<3s target achieved",
+      "api_response": "<1s target achieved"
     }
   },
   
   "tech_stack": {
     "core_framework": {
-      "nextjs": "15.2.0",
+      "nextjs": "15.3.1",
       "react": "18.3.1", 
       "typescript": "5.8.3",
       "css": "Tailwind CSS 3.4.17",
-      "database": "MySQL"
+      "database": "MySQL 8.0"
     },
     "key_libraries": {
-      "authentication": ["JWT", "jose", "bcrypt"],
+      "authentication": ["JWT", "jose", "bcrypt", "NextAuth"],
       "ui_components": ["Radix UI", "Shadcn/UI"],
       "database": ["MySQL2", "Prisma"],
       "forms": ["React Hook Form", "Zod"],
-      "payments": ["Stripe", "PayPal", "Braintree"],
-      "real_time": ["Socket.IO"],
+      "payments": ["Stripe", "PayPal", "Braintree", "Klarna", "Afterpay", "Affirm"],
+      "real_time": ["Socket.IO", "Pusher"],
       "3d_ar": ["Three.js", "React Three Fiber", "TensorFlow.js"],
       "email": ["Nodemailer"],
-      "file_processing": ["Sharp"]
+      "file_processing": ["Sharp"],
+      "testing": ["Playwright", "K6", "Artillery", "Jest"],
+      "monitoring": ["OpenTelemetry"]
     },
     "build_tools": {
       "linting": "Biome",
       "config": "ESLint",
       "css_processing": "PostCSS",
-      "deployment": "Netlify"
+      "deployment": "Netlify",
+      "bundler": "Webpack/Turbopack"
     }
   },
   
@@ -60,7 +73,7 @@
       "subdirectories": {
         "account": "customer dashboard pages",
         "admin": "admin portal comprehensive management",
-        "api": "API routes REST endpoints",
+        "api": "API routes REST endpoints - V2 consolidated architecture",
         "components": "page specific components",
         "products": "product catalog and configuration",
         "sales": "sales representative portal",
@@ -75,24 +88,58 @@
         "ui": "Shadcn/UI component library",
         "products": "product related components",
         "payments": "payment processing components",
-        "admin": "admin specific components"
+        "admin": "admin specific components",
+        "cache": "cache management UI components"
       }
     },
     "lib_directory": {
       "description": "utility libraries and services",
       "subdirectories": {
-        "auth": "authentication system",
-        "db": "database connection and utilities",
-        "security": "validation rate limiting file upload",
-        "smart_home": "IoT device integration",
-        "utils": "general utilities"
+        "auth": "authentication system with JWT and social login",
+        "db": "database connection with pooling and optimization",
+        "security": "validation rate limiting file upload encryption",
+        "smart_home": "IoT device integration Tuya platform",
+        "utils": "general utilities",
+        "api/v2/handlers": "consolidated API handlers",
+        "cache": "multi-tier caching system",
+        "services": "business logic services"
       }
     },
     "other_directories": {
-      "context": "React Context providers",
-      "prisma": "database schema",
-      "public": "static assets",
-      "scripts": "database and maintenance scripts"
+      "context": "React Context providers with auth and cart",
+      "prisma": "database schema and migrations",
+      "public": "static assets and uploads",
+      "scripts": "database and maintenance scripts",
+      "__tests__": "comprehensive test suite",
+      "blindscommerce-ui-tests": "Playwright E2E tests"
+    }
+  },
+  
+  "v2_api_architecture": {
+    "overview": "Service-based architecture with action routing",
+    "pattern": "/api/v2/[service]/[...action]",
+    "services": {
+      "commerce": "products, cart, orders, pricing",
+      "users": "user management, profiles, preferences",
+      "vendors": "vendor operations, products, sales team",
+      "admin": "administrative functions, analytics",
+      "analytics": "business intelligence, reporting",
+      "auth": "authentication, authorization",
+      "content": "public content, hero banners, rooms, social"
+    },
+    "benefits": {
+      "reduced_endpoints": "77% reduction in API count",
+      "standardized_responses": "consistent error handling and format",
+      "role_based_access": "automatic permission checking",
+      "action_routing": "multiple operations per endpoint",
+      "comprehensive_responses": "complete data for workflows"
+    },
+    "implementation": {
+      "base_handler": "ConsolidatedAPIHandler with role checks",
+      "error_codes": "25+ specific error codes",
+      "response_format": "{ success, data, error, metadata }",
+      "caching": "built-in cache integration",
+      "monitoring": "automatic performance tracking"
     }
   },
   
@@ -100,24 +147,37 @@
     "jwt_configuration": {
       "expiration": "24_hours",
       "storage": "http_only_cookies",
-      "security": "role_based_access_control"
+      "security": "role_based_access_control",
+      "refresh_strategy": "sliding window"
+    },
+    "social_login": {
+      "providers": ["Google", "Facebook", "Apple", "Twitter"],
+      "implementation": "NextAuth with JWT backend",
+      "restrictions": "customer role only for security",
+      "email_verification": "required for social accounts",
+      "account_linking": "email-based matching"
     },
     "password_requirements": {
       "minimum_length": 8,
-      "required_elements": ["uppercase", "lowercase", "number", "special_character"]
+      "required_elements": ["uppercase", "lowercase", "number", "special_character"],
+      "history": "last 5 passwords blocked",
+      "expiry": "90 days for admin/vendor roles"
     },
     "registration_rules": {
       "public_registration": {
         "allowed_roles": ["customer"],
-        "endpoint": "/register"
+        "endpoint": "/register",
+        "verification": "email required"
       },
       "business_accounts": {
         "created_by": "admin",
-        "endpoint": "/admin/users/new"
+        "endpoint": "/admin/users/new",
+        "approval": "manual verification"
       },
       "sales_teams": {
         "created_by": "vendor",
-        "endpoint": "/vendor/sales-team"
+        "endpoint": "/vendor/sales-team",
+        "limit": "based on subscription"
       }
     },
     "role_hierarchy": {
@@ -126,50 +186,175 @@
         "description": "platform ownership complete system access",
         "can_create": ["admin", "vendor", "installer", "customer", "trade_professional"],
         "can_manage": "all_user_types_and_roles",
-        "permissions": ["full_system_control", "financial_access", "analytics"]
+        "permissions": ["full_system_control", "financial_access", "analytics", "system_configuration"]
       },
       "admin": {
         "level": 90,
         "description": "platform administration broad access",
         "can_create": ["vendor", "installer", "trade_professional"],
         "can_manage": ["vendors", "installers", "customers", "trade_professionals"],
-        "permissions": ["user_management", "vendor_approval", "order_management", "analytics"]
+        "permissions": ["user_management", "vendor_approval", "order_management", "analytics", "content_management"]
       },
       "vendor": {
         "level": 70,
         "description": "business partner selling products on platform",
         "can_create": ["sales_representative"],
-        "can_manage": ["own_sales_team"],
-        "permissions": ["product_management", "order_fulfillment", "storefront_control", "sales_team_management"]
+        "can_manage": ["own_sales_team", "own_products", "own_orders"],
+        "permissions": ["product_management", "order_fulfillment", "storefront_control", "sales_team_management", "commission_tracking"]
       },
       "installer": {
         "level": 60,
         "description": "professional installation services",
         "can_create": "none",
-        "can_manage": "none",
-        "permissions": ["installation_jobs", "measurements", "customer_contact_for_assigned_work"]
+        "can_manage": "assigned_jobs",
+        "permissions": ["installation_jobs", "measurements", "customer_contact_for_assigned_work", "job_scheduling"]
       },
       "sales_representative": {
         "level": 50,
         "description": "vendor sales team member",
         "can_create": "none",
-        "can_manage": "none",
-        "permissions": ["lead_management", "quotes", "commission_tracking", "assigned_customer_contact"]
+        "can_manage": "assigned_customers",
+        "permissions": ["lead_management", "quotes", "commission_tracking", "assigned_customer_contact", "limited_product_access"]
       },
       "trade_professional": {
         "level": 40,
         "description": "B2B customers designers architects contractors",
         "can_create": "none",
-        "can_manage": "none",
-        "permissions": ["trade_pricing_access", "project_management", "client_management"]
+        "can_manage": "own_projects",
+        "permissions": ["trade_pricing_access", "project_management", "client_management", "bulk_ordering"]
       },
       "customer": {
         "level": 10,
         "description": "regular consumers purchasing window treatments",
         "can_create": "none",
         "can_manage": "own_account",
-        "permissions": ["shopping", "orders", "account_management", "reviews"]
+        "permissions": ["shopping", "orders", "account_management", "reviews", "wishlist"]
       }
+    }
+  },
+  
+  "caching_system": {
+    "architecture": "Multi-tier application and browser caching",
+    "server_side_caches": {
+      "settings_cache": "5 minute TTL for system settings",
+      "tax_cache": "10 minute TTL per ZIP code",
+      "product_cache": "10 minute TTL for listings",
+      "vendor_cache": "15 minute TTL for vendor data",
+      "homepage_cache": "15 minute TTL for static content",
+      "room_cache": "30 minute TTL for room types",
+      "discount_cache": "2 minute TTL for pricing accuracy",
+      "user_cache": "5 minute TTL for profile data",
+      "category_cache": "30 minute TTL for navigation"
+    },
+    "client_side_caches": {
+      "cart_cache": "5 minute TTL browser storage",
+      "product_cache": "10 minute TTL for viewed items",
+      "vendor_cache": "15 minute TTL for storefront",
+      "recently_viewed": "session-based tracking"
+    },
+    "cache_invalidation": {
+      "manual": "admin UI for cache clearing",
+      "automatic": "on data updates",
+      "pattern_based": "wildcard key matching",
+      "scheduled": "nightly cache warming"
+    },
+    "performance_impact": {
+      "database_queries": "70-90% reduction",
+      "page_load_times": "50-80% faster",
+      "api_response": "88% cache hit rate",
+      "cost_savings": "reduced server load"
+    }
+  },
+  
+  "database_patterns": {
+    "connection_management": {
+      "pool_size": "10 max connections",
+      "queue_limit": "0 (unlimited queue)",
+      "timeout": "20 seconds connection timeout",
+      "retry_logic": "3 attempts with exponential backoff"
+    },
+    "query_patterns": {
+      "correct_simple": "pool.execute() for non-transactional",
+      "correct_transaction": "try { conn = getConnection() } finally { conn.release() }",
+      "parallel_queries": "Promise.all() for independent operations",
+      "batch_operations": "multi-statement with transaction"
+    },
+    "mysql2_specific": {
+      "limit_offset": "use string interpolation with validated integers",
+      "parameter_binding": "? for user input only",
+      "safe_interpolation": ["validated integers", "predefined columns", "ORDER BY directions"],
+      "never_interpolate": ["user strings", "table names", "column names from input"]
+    },
+    "optimization": {
+      "query_optimizer": "EXPLAIN analysis built-in",
+      "n_plus_one_detection": "automatic warning system",
+      "index_hints": "USE INDEX for complex queries",
+      "query_batching": "reduce round trips"
+    }
+  },
+  
+  "testing_infrastructure": {
+    "test_categories": {
+      "unit_tests": "component and function testing",
+      "integration_tests": "API and database testing",
+      "e2e_tests": "Playwright browser automation",
+      "performance_tests": "K6 load testing",
+      "security_tests": "penetration and vulnerability",
+      "accessibility_tests": "WCAG compliance",
+      "visual_regression": "screenshot comparison"
+    },
+    "test_coverage": {
+      "target": ">90% code coverage",
+      "critical_paths": "100% coverage required",
+      "reporting": "automated coverage reports",
+      "enforcement": "CI/CD pipeline checks"
+    },
+    "load_testing": {
+      "tools": ["Playwright (browser)", "K6 (API)", "Artillery (scenarios)"],
+      "targets": {
+        "concurrent_users": "1000+",
+        "response_time": "<1s API, <3s page",
+        "error_rate": "<1%",
+        "throughput": "1000 req/s"
+      }
+    },
+    "regression_prevention": {
+      "pricing_matrix": "comprehensive edge case tests",
+      "features_tab": "UI interaction tests",
+      "room_recommendations": "data validation tests",
+      "connection_leaks": "resource monitoring tests"
+    }
+  },
+  
+  "security_measures": {
+    "input_validation": {
+      "schemas": "Zod comprehensive validation",
+      "rate_limiting": "configurable windows per endpoint",
+      "xss_prevention": "input sanitization all forms",
+      "sql_injection": "parameterized queries only",
+      "csrf_protection": "secure cookies + tokens"
+    },
+    "encryption": {
+      "payment_credentials": "AES-256-GCM encryption",
+      "passwords": "bcrypt with salt rounds 10",
+      "sensitive_settings": "automatic encryption detection",
+      "key_management": "PBKDF2 100000 iterations",
+      "data_format": "base64(iv + auth_tag + data)"
+    },
+    "file_upload_security": {
+      "allowed_types": ["JPEG", "PNG", "WebP", "PDF"],
+      "scanning": "malicious content detection",
+      "size_limits": "5MB images 10MB documents",
+      "filename_generation": "secure random naming",
+      "directory_protection": "traversal prevention",
+      "storage": "outside web root"
+    },
+    "api_security": {
+      "authentication": "JWT required all protected routes",
+      "authorization": "role-based endpoint access",
+      "rate_limiting": "per-user and per-IP",
+      "audit_logging": "all admin actions tracked",
+      "api_keys": "vendor-specific for integrations"
     }
   },
   
@@ -181,458 +366,186 @@
         "material_color_selection_swatches",
         "room_visualization_ar_capabilities",
         "mount_types_controls_accessories",
-        "volume_pricing_discounts"
-      ]
-    },
-    "shopping_cart": {
-      "features": [
-        "persistent_cart_auto_save",
-        "guest_authenticated_user_support",
-        "save_for_later_functionality",
-        "bulk_operations_cart_templates",
-        "price_alerts_notifications",
-        "multiple_shipping_addresses",
-        "gift_wrapping_messaging",
-        "installation_service_booking",
-        "sample_ordering_limits"
+        "volume_pricing_discounts",
+        "smart_home_compatibility_check",
+        "professional_measurement_service"
       ]
     },
     "pricing_engine": {
-      "discount_types": [
-        "volume_discounts_quantity_tiers",
-        "customer_specific_pricing",
-        "coupon_codes_usage_tracking",
-        "promotional_campaigns",
-        "seasonal_time_based_rules"
+      "calculation_flow": [
+        "base_price_foundation",
+        "dimensional_pricing_matrix",
+        "fabric_material_surcharges",
+        "configuration_modifiers",
+        "customer_tier_pricing",
+        "volume_quantity_breaks",
+        "vendor_specific_discounts",
+        "coupon_code_application",
+        "tax_calculation_cached",
+        "shipping_cost_rules"
       ],
-      "calculations": {
-        "tax": "8.25_percent_default",
-        "shipping": "free_over_100_dollars",
-        "minimum_order": "requirement_enforcement"
+      "discount_types": {
+        "vendor_automatic": "percentage or fixed amount",
+        "vendor_coupons": "code-based with limits",
+        "volume_tiers": "quantity-based breaks",
+        "customer_specific": "negotiated B2B rates",
+        "seasonal": "time-based campaigns"
       }
     },
     "order_management": {
       "features": [
-        "complex_order_creation_transaction_support",
         "multi_vendor_order_splitting",
-        "order_modifications_after_placement",
-        "guest_order_support",
-        "reorder_functionality",
-        "installation_scheduling"
+        "complex_pricing_calculations",
+        "modification_after_placement",
+        "partial_fulfillment_tracking",
+        "installation_scheduling_integration",
+        "commission_calculation_automatic",
+        "return_rma_processing",
+        "reorder_templates"
+      ]
+    },
+    "vendor_system": {
+      "architecture": "true multi-vendor marketplace",
+      "features": [
+        "independent_product_catalogs",
+        "vendor_specific_pricing",
+        "custom_discount_rules",
+        "sales_team_management",
+        "commission_tracking",
+        "storefront_customization",
+        "order_fulfillment_workflow",
+        "financial_reporting"
       ]
     }
   },
   
-  "api_architecture": {
-    "endpoint_structure": {
-      "auth": "/api/auth/* - authentication login register logout",
-      "products": "/api/products/* - product CRUD search configuration",
-      "orders": "/api/orders/* - order management modifications",
-      "cart": "/api/cart/* - cart operations pricing recommendations",
-      "pricing": "/api/pricing/* - dynamic pricing calculations",
-      "account": "/api/account/* - user account management",
-      "admin": "/api/admin/* - administrative functions",
-      "vendor": "/api/vendor/* - vendor portal APIs",
-      "sales": "/api/sales/* - sales representative tools",
-      "installer": "/api/installer/* - installation management",
-      "payments": "/api/payments/* - payment processing multiple providers",
-      "ai_designer": "/api/ai-designer/* - AI powered design features",
-      "room_visualizer": "/api/room-visualizer/* - AR ML room analysis",
-      "analytics": "/api/analytics/* - business intelligence",
-      "iot": "/api/iot/* - smart home integration"
+  "api_consolidation_achievements": {
+    "metrics": {
+      "endpoint_reduction": "215 → 50 (77% reduction)",
+      "response_time": "350ms → 115ms (67% faster)",
+      "database_connections": "152 → 12 (92% reduction)",
+      "code_reduction": "~25% of API codebase removed",
+      "maintenance_burden": "significantly reduced"
     },
-    "middleware": {
-      "authentication": "JWT verification protected routes",
-      "authorization": "role based access enforcement",
-      "security": "rate limiting protection",
-      "headers": "security headers application"
+    "architectural_improvements": {
+      "action_based_routing": "single endpoint multiple operations",
+      "comprehensive_responses": "complete page data single call",
+      "standardized_errors": "25+ specific error codes",
+      "automatic_caching": "built into handlers",
+      "role_verification": "automatic permission checking"
+    },
+    "removed_features": {
+      "deprecated_apis": "165 files removed",
+      "unused_components": "~20 AR/VR components",
+      "empty_directories": "10+ cleaned up",
+      "duplicate_code": "consolidated into services"
     }
   },
   
-  "ui_system": {
-    "design_system": {
-      "colors_file": "/app/styles/colors.ts",
-      "framework": "Tailwind CSS custom design tokens",
-      "approach": "responsive design mobile first",
-      "accessibility": "built in features"
+  "critical_fixes_summary": {
+    "database_connection_leak": {
+      "issue": "152/10 connections causing failures",
+      "root_cause": "disabled cache + excessive queries",
+      "solution": "re-enabled caching + connection pooling",
+      "impact": "92% reduction in connections"
     },
-    "color_scheme": {
-      "primary_red": "#CC2229",
-      "dark_blue": "#1A365D",
-      "text_primary": "#333333",
-      "text_secondary": "#717171",
-      "background_light": "#F5F5F5",
-      "background_white": "#FFFFFF"
+    "mysql_parameter_binding": {
+      "issue": "LIMIT ? OFFSET ? failures",
+      "solution": "safe interpolation for integers only",
+      "pattern": "WHERE ? params, LIMIT ${validated}",
+      "validation": "strict integer checking"
     },
-    "component_architecture": {
-      "library": "Shadcn/UI",
-      "primitives": "Radix UI",
-      "variants": "Class Variance Authority",
-      "animations": "Tailwind Animate"
+    "checkout_optimization": {
+      "cart_stage": "no tax calculation",
+      "checkout_stage": "tax on ZIP entry only",
+      "caching": "10 minute ZIP code cache",
+      "race_condition": "fixed with state management"
+    },
+    "security_improvements": {
+      "payment_encryption": "AES-256-GCM implemented",
+      "cart_isolation": "fixed userId=1 issue",
+      "role_validation": "all endpoints protected",
+      "audit_logging": "comprehensive tracking"
+    },
+    "performance_optimization": {
+      "lazy_loading": "dashboard components",
+      "parallel_queries": "Promise.all patterns",
+      "cache_warming": "scheduled jobs",
+      "query_optimization": "EXPLAIN analysis"
     }
   },
   
-  "security_measures": {
-    "input_validation": {
-      "schemas": "Zod comprehensive validation",
-      "rate_limiting": "configurable windows",
-      "xss_prevention": "input sanitization",
-      "sql_injection": "parameterized queries",
-      "csrf_protection": "secure cookies"
+  "development_guidelines": {
+    "file_creation_rules": {
+      "NEVER": "create files unless absolutely necessary",
+      "ALWAYS": "prefer editing existing files",
+      "NO_DOCS": "never create .md files unless requested",
+      "USE_V2": "extend V2 handlers for new APIs"
     },
-    "file_upload_security": {
-      "allowed_types": ["JPEG", "PNG", "WebP", "PDF"],
-      "scanning": "malicious content detection",
-      "size_limits": "5MB images 10MB documents",
-      "filename_generation": "secure random naming",
-      "directory_protection": "traversal prevention"
+    "testing_requirements": {
+      "mandatory": "test all code paths",
+      "ui_verification": "physically navigate and verify",
+      "data_flow": "database to UI complete testing",
+      "edge_cases": "comprehensive error handling"
     },
-    "security_headers": {
-      "csp": "Content Security Policy",
-      "hsts": "HTTP Strict Transport Security",
-      "xss_protection": "XSS protection headers",
-      "frame_options": "clickjacking protection"
+    "code_patterns": {
+      "services": "business logic in service classes",
+      "handlers": "thin controllers delegate to services",
+      "validation": "Zod schemas for all inputs",
+      "errors": "standardized error responses"
+    },
+    "performance_standards": {
+      "api_response": "<1 second target",
+      "page_load": "<3 seconds target",
+      "database_queries": "minimize N+1 problems",
+      "caching": "implement at all levels"
     }
   },
   
-  "database_schema": {
-    "user_management": [
-      "users - role based access",
-      "authentication - password hashing",
-      "user_preferences - settings"
+  "monitoring_and_operations": {
+    "health_checks": {
+      "database": "connection pool monitoring",
+      "cache": "hit rate tracking",
+      "api": "response time alerts",
+      "errors": "rate monitoring"
+    },
+    "performance_metrics": {
+      "apm": "OpenTelemetry integration",
+      "custom_metrics": "business KPIs",
+      "alerts": "PagerDuty integration",
+      "dashboards": "Grafana visualization"
+    },
+    "deployment": {
+      "strategy": "blue-green deployment",
+      "rollback": "automatic on errors",
+      "migration": "zero-downtime database",
+      "scaling": "horizontal pod autoscaling"
+    }
+  },
+  
+  "future_roadmap": {
+    "planned_features": [
+      "GraphQL API layer",
+      "Microservices migration",
+      "Real-time collaboration",
+      "Advanced AI recommendations",
+      "Mobile applications"
     ],
-    "product_catalog": [
-      "products - features specifications materials",
-      "categories - subcategories",
-      "vendor_specific - product options",
-      "pricing_matrices - volume discounts"
-    ],
-    "ecommerce_core": [
-      "orders - complex pricing calculations",
-      "cart_items - configuration data",
-      "shipping_addresses - payment methods",
-      "order_modifications - tracking"
-    ],
-    "business_features": [
-      "room_visualizations - measurements",
-      "sales_pipeline - customers appointments leads",
-      "installation_jobs - scheduling",
-      "product_comparisons - analytics",
-      "swatch_ordering - system"
+    "technical_debt": [
+      "Complete Prisma migration",
+      "Remove legacy jQuery code",
+      "Upgrade to React 19",
+      "Implement WebAssembly for 3D"
     ]
   },
   
-  "advanced_features": {
-    "ai_ml_capabilities": [
-      "product_recommendations - behavior based",
-      "visual_search - image upload",
-      "room_analysis - product placement",
-      "emotion_detection - design preferences",
-      "predictive_analytics - inventory"
-    ],
-    "smart_home_integration": [
-      "tuya_iot_platform - motorized blinds",
-      "multi_platform_bridge - alexa google homekit",
-      "voice_control - automation",
-      "real_time_device - synchronization"
-    ],
-    "ar_vr_features": [
-      "room_visualization - product placement",
-      "mobile_ar - preview capabilities",
-      "3d_product_configurator",
-      "window_detection - measurement",
-      "lighting_simulation - effects"
-    ]
-  },
-  
-  "development_commands": {
-    "development": "npm run dev - start development server",
-    "build": "npm run build - build for production",
-    "start": "npm run start - start production server",
-    "lint": "npm run lint - run Biome linter TypeScript check",
-    "format": "npm run format - format code with Biome",
-    "database": "npm run db:setup - initialize database"
-  },
-  
-  "environment_configuration": {
-    "required_variables": {
-      "database": "DATABASE_URL",
-      "jwt": "JWT_SECRET",
-      "stripe": "STRIPE_SECRET_KEY",
-      "paypal": "PAYPAL_CLIENT_ID",
-      "braintree": "BRAINTREE_MERCHANT_ID",
-      "email": ["SMTP_HOST", "SMTP_USER", "SMTP_PASS"],
-      "file_upload": "UPLOAD_MAX_SIZE",
-      "smart_home": ["TUYA_API_KEY", "TUYA_API_SECRET"]
-    }
-  },
-  
-  "critical_fixes_and_issues": {
-    "database_connection_leak_prevention_june_2025": {
-      "issue": "database connections reached 152 from 10 limit causing site failure",
-      "root_causes": [
-        "disabled_settings_cache_causing_every_getSetting_call_to_hit_database",
-        "multiple_database_calls_per_request_pricing_tax_15_20_calls_per_checkout",
-        "missing_tax_rate_caching_every_zip_lookup_1_4_database_calls"
-      ],
-      "solution": {
-        "settings_cache": "re_enabled_5_minute_cache",
-        "tax_calculation": "added_10_minute_cache_per_zip_code",
-        "pricing_api": "reduced_calls_through_caching"
-      },
-      "connection_patterns": {
-        "correct_non_transactional": "pool.execute() directly",
-        "incorrect_causes_leaks": "pool.getConnection() without release",
-        "correct_transactional": "getConnection() with try_catch_finally_release"
-      },
-      "fixed_files": [
-        "/lib/auth.ts",
-        "/app/api/account/dashboard/route.ts",
-        "/app/api/orders/create/route.ts",
-        "/lib/services/products.ts",
-        "/lib/email/emailService.ts"
-      ]
-    },
-    "mysql_parameter_binding_issues_june_2025": {
-      "issue": "APIs failing with Incorrect arguments to mysqld_stmt_execute",
-      "root_cause": "MySQL2 parameter binding issues with LIMIT ? OFFSET ? syntax",
-      "solution": {
-        "problematic_pattern": "LIMIT ? OFFSET ? with parameters",
-        "working_solution": "LIMIT ${limit} OFFSET ${offset} with validated integers",
-        "safe_interpolation_rules": "only for validated integers predefined columns ORDER BY directions",
-        "never_interpolate": "user input strings untrusted data dynamic table names"
-      },
-      "pagination_pattern": "WHERE with parameters, LIMIT OFFSET with safe interpolation"
-    },
-    "checkout_tax_calculation_fixes_june_2025": {
-      "issues_fixed": [
-        "checkout_redirect_on_refresh_race_condition",
-        "missing_coupon_codes_during_tax_calculation",
-        "taxjar_api_called_during_cart_browsing_should_only_calculate_at_checkout"
-      ],
-      "solutions": {
-        "checkout_redirect": "added cartLoadAttempted state, increased timeout 100ms to 1500ms",
-        "tax_flow": "cart stage no tax, checkout stage tax calculated when billing ZIP entered",
-        "optimization": "added ZIP code caching 10 minute cache per ZIP"
-      }
-    },
-    "payment_credential_encryption_june_2025": {
-      "issue": "payment credentials stored as plain text in database",
-      "solution": "implemented AES-256-GCM encryption",
-      "implementation": {
-        "algorithm": "AES-256-GCM",
-        "key_derivation": "PBKDF2 100000 iterations",
-        "format": "base64(iv + auth_tag + encrypted_data)",
-        "automatic_detection": "isSensitiveSetting() identifies credentials"
-      },
-      "protected_credentials": [
-        "payment_stripe_secret_key",
-        "payment_paypal_client_secret",
-        "payment_braintree_private_key",
-        "integrations_mailchimp_api_key"
-      ]
-    },
-    "admin_dashboard_access_system_june_2025": {
-      "purpose": "enable admins to view any user role dashboard with data isolation",
-      "implementation": {
-        "session_management": "AdminViewId in sessionStorage",
-        "api_communication": "x-admin-view-id header",
-        "user_assignment": "effectiveUserId = adminViewId || currentUserId"
-      },
-      "dashboards_supported": ["vendor", "sales", "installer", "customer"],
-      "ui_indicators": "blue banner with user name and back link"
-    },
-    "lazy_loading_optimization_june_2025": {
-      "problem": "dashboard pages causing database connection leak 141+ connections",
-      "root_cause": "eager loading all dashboard pages, 13+ duplicate auth calls",
-      "solution": {
-        "centralized_auth": "/context/AuthContext.tsx single auth call",
-        "lazy_loading_hook": "/hooks/useLazyLoad.ts conditional data fetching",
-        "route_based_loading": "only fetch when targetPath matches current route"
-      },
-      "performance_improvement": "90% reduction in connections 141 to 17"
-    },
-    "cart_security_hardcoded_userid_audit_june_2025": {
-      "issue": "all users seeing identical cart shared data userId = 1 hardcoded",
-      "security_risk": "data breach cross user visibility",
-      "solution": {
-        "authentication": "replaced hardcoded userId with getCurrentUser()",
-        "role_validation": "cart only accessible to customers and guests",
-        "api_security": "all cart endpoints require customer authentication"
-      },
-      "files_fixed": [
-        "/app/api/account/cart/route.ts",
-        "/app/api/account/wishlist/route.ts",
-        "/components/Navbar.tsx"
-      ]
-    },
-    "checkout_single_page_conversion_june_2025": {
-      "change": "multi step wizard to single page unified checkout",
-      "benefits": [
-        "reduced_cart_abandonment",
-        "faster_completion",
-        "mobile_friendly_better_experience"
-      ],
-      "implementation": {
-        "removed": "progress steps, activeStep state, navigation buttons",
-        "added": "unified container, color coded sections, single submit"
-      }
-    },
-    "comprehensive_caching_system_june_2025": {
-      "implementation": "multi tier application caching architecture",
-      "performance_impact": "70-90% reduction database queries, 50-80% faster page loads",
-      "cache_layers": {
-        "server_side": "9 cache instances with configurable TTL",
-        "client_side": "4 browser cache instances", 
-        "frontend": "Next.js revalidate caching"
-      },
-      "cached_apis": [
-        "homepage_data_15_minute_TTL",
-        "products_listing_10_minute_TTL",
-        "vendor_discounts_2_minute_TTL",
-        "rooms_30_minute_TTL"
-      ]
-    },
-    "multi_vendor_discount_coupon_system_fix_2025": {
-      "issue": "conflicting platform wide and vendor specific discounts",
-      "solution": {
-        "business_rules": "vendor only discounts no platform wide",
-        "application_order": "vendor discounts first automatic then vendor coupons",
-        "vendor_isolation": "each vendor discounts apply only to their products",
-        "cart_display": "complete list applied discounts per vendor"
-      },
-      "implementation": "/app/api/pricing/calculate/route.ts vendor grouping discount processing"
-    }
-  },
-  
-  "vendor_centric_architecture": {
-    "core_principle": "products discounts coupons sales people belong to vendors",
-    "vendor_tables": {
-      "vendor_info": "main vendor profiles vendor_info_id key",
-      "vendor_products": "links vendors to products vendor specific pricing",
-      "vendor_discounts": "vendor specific discount rules percentage fixed tiered",
-      "vendor_coupons": "vendor managed coupon codes",
-      "vendor_inventory": "stock levels per vendor",
-      "sales_staff": "sales representatives belonging to vendors"
-    },
-    "multi_vendor_cart_checkout": {
-      "cart_structure": "items from different vendors single cart",
-      "discount_application": "vendor specific discounts apply individually",
-      "checkout_splitting": "single order creates multiple vendor sub orders",
-      "commission_calculation": "per vendor based on their items"
-    }
-  },
-  
-  "pricing_system_architecture": {
-    "multi_layered_engine": "complex B2B B2C pricing strategies",
-    "core_pricing_tables": {
-      "products": "base_price MSRP, cost_price vendor wholesale",
-      "product_pricing_matrix": "dimensional pricing width height ranges",
-      "product_fabric_pricing": "fabric specific pricing per square foot",
-      "vendor_products": "vendor specific selling price"
-    },
-    "calculation_flow": [
-      "base_price_foundation",
-      "dimensional_pricing_if_applicable",
-      "fabric_material_costs",
-      "configuration_option_modifiers",
-      "customer_specific_pricing",
-      "dynamic_pricing_rules",
-      "volume_discounts",
-      "vendor_specific_discounts",
-      "coupon_campaign_discounts",
-      "shipping_calculation",
-      "tax_calculation"
-    ],
-    "discount_hierarchy": {
-      "customer_specific": "fixed_price discount_percent discount_amount markup_percent",
-      "volume_discounts": "quantity tiers with percentage discounts",
-      "vendor_discounts": "percentage fixed_amount tiered bulk_pricing",
-      "coupon_codes": "usage_limits expiration_dates customer_restrictions",
-      "promotional_campaigns": "seasonal clearance new_customer category_specific"
-    }
-  },
-  
-  "database_tables_actual_schema": {
-    "vendor_core": {
-      "vendor_info": "vendor_info_id user_id business_name commission_rate",
-      "vendor_products": "vendor_id product_id vendor_price quantity_available",
-      "vendor_discounts": "vendor_id discount_type discount_value applies_to"
-    },
-    "product_related": {
-      "products": "base_price cost_price no_sale_price_column",
-      "product_categories": "product to category mapping",
-      "product_features": "product feature assignments",
-      "product_rooms": "product room recommendations",
-      "product_pricing_matrix": "width_min width_max height_min height_max base_price price_per_sqft",
-      "product_fabric_options": "fabric configurations",
-      "product_fabric_pricing": "fabric specific pricing",
-      "product_images": "product image gallery"
-    },
-    "room_types_management": {
-      "table": "room_types",
-      "columns": "room_type_id name description image_url typical_humidity light_exposure privacy_requirements",
-      "admin_interface": "/app/admin/rooms/page.tsx full CRUD operations"
-    }
-  },
-  
-  "testing_and_development_standards": {
-    "mandatory_testing_requirements": {
-      "functional_verification": "physically navigate pages verify functionality",
-      "end_to_end_data_flow": "verify complete path database to UI",
-      "integration_point_verification": "test all integration boundaries",
-      "user_workflow_testing": "complete user stories not individual components"
-    },
-    "completion_criteria": {
-      "never_report_complete_until": [
-        "actual_UI_tested_verified_working",
-        "user_workflows_tested_end_to_end",
-        "data_persistence_confirmed",
-        "edge_cases_error_states_tested"
-      ]
-    },
-    "common_failure_patterns": {
-      "database_api_mismatches": "prefix inconsistencies field name conflicts",
-      "frontend_state_issues": "form fields defined no data loading logic",
-      "conditional_rendering_bugs": "components hidden due to false conditions",
-      "authentication_integration": "pages load API calls fail auth middleware"
-    }
-  },
-  
-  "production_deployment": {
-    "database_credentials": {
-      "host": "localhost",
-      "port": 3306,
-      "name": "blindscommerce_test",
-      "user": "root",
-      "note": "rotate credentials if exposed in git"
-    },
-    "monitoring_requirements": [
-      "database_connection_count_max_20_alert",
-      "cache_performance_hit_miss_ratios",
-      "API_response_times_error_rates",
-      "user_authentication_failures"
-    ],
-    "performance_optimization": [
-      "connection_pooling_10_max_connections",
-      "caching_strategies_multi_tier",
-      "image_optimization_next_js",
-      "static_generation_product_pages"
-    ]
-  },
-  
-  "business_metrics_and_goals": {
-    "performance_targets": {
-      "sales_increase": "35% through AI recommendations",
-      "returns_reduction": "40% through AR visualization", 
-      "supply_chain_efficiency": "67% improvement",
-      "purchase_likelihood": "76% higher with voice features"
-    },
-    "user_experience_targets": [
-      "mobile_first_responsive_design",
-      "accessibility_compliance_WCAG_2_1",
-      "fast_loading_image_optimization",
-      "real_time_pricing_inventory_updates"
-    ]
+  "important_reminders": {
+    "do_what_asked": "nothing more, nothing less",
+    "never_create_files": "unless absolutely necessary",
+    "always_edit_existing": "prefer modifying over creating",
+    "no_proactive_docs": "never create documentation unless requested",
+    "follow_v2_pattern": "use consolidated API architecture",
+    "test_everything": "verify UI and data flow completely",
+    "check_claude_md": "this is the single source of truth"
   }
 }

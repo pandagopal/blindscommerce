@@ -1,7 +1,6 @@
 'use client';
 
 import { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import { cartClientCache, ClientCacheKeys } from '@/lib/cache/clientCache';
 
 export interface CartItem {
   cart_item_id: number;
@@ -198,16 +197,7 @@ export function CartProvider({ children }: CartProviderProps) {
       };
 
       // Create cache key based on request content
-      const cacheKey = ClientCacheKeys.cart.pricing(customerData?.id) + 
-        ':' + JSON.stringify(pricingRequest);
-      
-      // Try to get cached pricing first
-      const cachedPricing = cartClientCache.get(cacheKey);
-      if (cachedPricing) {
-        setPricing(cachedPricing);
-        setIsLoading(false);
-        return;
-      }
+      // Calculate pricing without cache
 
       const response = await fetch('/api/pricing/calculate', {
         method: 'POST',
@@ -238,8 +228,7 @@ export function CartProvider({ children }: CartProviderProps) {
         applied_promotions: data.pricing.applied_promotions
       };
 
-      // Cache the pricing data (manual refresh required for updates)
-      cartClientCache.set(cacheKey, pricingData);
+      // Pricing data calculated successfully
 
       setPricing(pricingData);
 

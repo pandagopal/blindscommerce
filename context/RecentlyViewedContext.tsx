@@ -98,7 +98,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
 
       abortControllerRef.current = new AbortController();
 
-      const response = await fetch(`/api/recently-viewed?sessionId=${sessionId}&limit=20`, {
+      const response = await fetch(`/api/v2/content/recently-viewed?sessionId=${sessionId}&limit=20`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
