@@ -1,66 +1,99 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useCache } from '@/context/CacheContext';
+import { getCacheStats, useCacheInvalidator } from '@/hooks/useCache';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Database, Zap, RefreshCw, CheckCircle } from 'lucide-react';
+import { 
+  Database, 
+  RefreshCw, 
+  Trash2, 
+  Activity,
+  HardDrive,
+  Clock,
+  AlertCircle,
+  Zap
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CacheManagementPage() {
-  const [refreshingCache, setRefreshingCache] = useState(false);
-  const [cacheStats, setCacheStats] = useState<any>(null);
-  const [lastRefresh, setLastRefresh] = useState<string | null>(null);
+  const {
+    invalidateProducts,
+    invalidateCart,
+    invalidateUser,
+    invalidateVendor,
+    invalidateOrders,
+    invalidateAll,
+    lastInvalidated
+  } = useCache();
 
-  const fetchCacheStats = async () => {
-    try {
-      const response = await fetch('/api/admin/cache/refresh');
-      if (response.ok) {
-        const data = await response.json();
-        setCacheStats(data.stats);
-      }
-    } catch (error) {
-      console.error('Error fetching cache stats:', error);
-    }
-  };
-
-  const handleRefreshCache = async () => {
-    setRefreshingCache(true);
-    try {
-      const response = await fetch('/api/admin/cache/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        toast.success('All caches refreshed successfully!', {
-          description: `Cleared ${result.refreshResult.clearedEntries} cache entries`
-        });
-        setCacheStats(result.currentStats);
-        setLastRefresh(new Date().toLocaleString());
-        console.log('Cache refresh result:', result);
-      } else {
-        toast.error('Failed to refresh caches');
-      }
-    } catch (error) {
-      console.error('Cache refresh error:', error);
-      toast.error('Error refreshing caches');
-    } finally {
-      setRefreshingCache(false);
-    }
-  };
+  const { invalidatePattern } = useCacheInvalidator();
+  const [stats, setStats] = useState(getCacheStats());
+  const [customPattern, setCustomPattern] = useState('');
+  const [refreshing, setRefreshing] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCacheStats();
+    const interval = setInterval(() => {
+      setStats(getCacheStats());
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const getCacheEntryCount = () => {
-    if (!cacheStats) return 0;
-    return Object.values(cacheStats).reduce((total: number, cache: any) => {
-      return total + (cache.totalEntries || 0);
-    }, 0);
+  const handleInvalidate = async (
+    name: string,
+    action: () => void | Promise<void>
+  ) => {
+    setRefreshing(name);
+    try {
+      await action();
+      setStats(getCacheStats());
+      toast.success(`${name} cache cleared successfully!`);
+    } catch (error) {
+      toast.error(`Failed to clear ${name} cache`);
+      console.error('Cache invalidation error:', error);
+    } finally {
+      setRefreshing(null);
+    }
+  };
+
+  const handleCustomInvalidate = () => {
+    if (!customPattern) return;
+    
+    try {
+      const count = invalidatePattern(customPattern);
+      setStats(getCacheStats());
+      toast.success(`Cleared ${count} entries matching "${customPattern}"`);
+      setCustomPattern('');
+    } catch (error) {
+      toast.error(`Failed to clear pattern "${customPattern}"`);
+    }
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const formatLastInvalidated = (key: string) => {
+    const date = lastInvalidated[key];
+    if (!date) return 'Never';
+    
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    
+    return date.toLocaleDateString();
   };
 
   return (
@@ -75,112 +108,221 @@ export default function CacheManagementPage() {
         </p>
       </div>
 
-      {/* Main Cache Control Card */}
-      <Card className="mb-8 border-2 border-blue-200 bg-blue-50/50">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Memory Cache</CardTitle>
+              <Activity className="w-5 h-5 text-blue-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.memoryCacheSize}</p>
+            <p className="text-sm text-gray-500">Active entries</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Local Storage</CardTitle>
+              <HardDrive className="w-5 h-5 text-green-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.localStorageEntries}</p>
+            <p className="text-sm text-gray-500">Persisted entries</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-gray-600">Total Size</CardTitle>
+              <Database className="w-5 h-5 text-purple-500" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{formatBytes(stats.totalSizeBytes)}</p>
+            <p className="text-sm text-gray-500">Storage used</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cache Controls */}
+      <Card className="mb-8">
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-2xl">Manual Cache Refresh</CardTitle>
-              <CardDescription className="text-base mt-2">
-                Clear all cached data for Products, Categories, Pricing, Discounts & Coupons
-              </CardDescription>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-600 mb-2">Total Cache Entries</p>
-              <p className="text-3xl font-bold text-blue-600">{getCacheEntryCount()}</p>
-            </div>
-          </div>
+          <CardTitle className="text-xl">Cache Controls</CardTitle>
+          <CardDescription>
+            Manually invalidate specific cache categories
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <Button
-              onClick={handleRefreshCache}
-              disabled={refreshingCache}
-              size="lg"
-              className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
-            >
-              {refreshingCache ? (
-                <>
-                  <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-                  Refreshing All Caches...
-                </>
-              ) : (
-                <>
-                  <Zap className="h-5 w-5 mr-2" />
-                  Refresh All Caches
-                </>
-              )}
-            </Button>
-            {lastRefresh && (
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="h-5 w-5" />
-                <span className="text-sm">Last refreshed: {lastRefresh}</span>
-              </div>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <CacheControl
+              name="Products"
+              description="Product listings, details, and pricing"
+              lastInvalidated={formatLastInvalidated('products')}
+              onInvalidate={() => handleInvalidate('Products', invalidateProducts)}
+              isRefreshing={refreshing === 'Products'}
+            />
+            
+            <CacheControl
+              name="Shopping Cart"
+              description="Cart items and calculations"
+              lastInvalidated={formatLastInvalidated('cart')}
+              onInvalidate={() => handleInvalidate('Cart', invalidateCart)}
+              isRefreshing={refreshing === 'Cart'}
+            />
+            
+            <CacheControl
+              name="User Data"
+              description="User profiles and preferences"
+              lastInvalidated={formatLastInvalidated('user')}
+              onInvalidate={() => handleInvalidate('User', invalidateUser)}
+              isRefreshing={refreshing === 'User'}
+            />
+            
+            <CacheControl
+              name="Vendor Data"
+              description="Vendor information and settings"
+              lastInvalidated={formatLastInvalidated('vendor')}
+              onInvalidate={() => handleInvalidate('Vendor', invalidateVendor)}
+              isRefreshing={refreshing === 'Vendor'}
+            />
+            
+            <CacheControl
+              name="Orders"
+              description="Order history and details"
+              lastInvalidated={formatLastInvalidated('orders')}
+              onInvalidate={() => handleInvalidate('Orders', invalidateOrders)}
+              isRefreshing={refreshing === 'Orders'}
+            />
+            
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h3 className="font-semibold text-red-900 mb-2">Clear All Cache</h3>
+              <p className="text-sm text-red-700 mb-3">
+                Remove all cached data from memory and storage
+              </p>
+              <Button
+                onClick={() => handleInvalidate('All', invalidateAll)}
+                disabled={refreshing === 'All'}
+                variant="destructive"
+                className="w-full"
+              >
+                {refreshing === 'All' ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Clearing...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear Everything
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Cache Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {cacheStats && Object.entries(cacheStats).map(([name, stats]: [string, any]) => (
-          <Card key={name} className="border-gray-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg capitalize">{name} Cache</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Entries:</span>
-                  <span className="font-semibold">{stats.totalEntries || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Max Size:</span>
-                  <span className="font-semibold">{stats.maxSize || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Usage:</span>
-                  <span className="font-semibold">
-                    {stats.maxSize ? Math.round((stats.totalEntries / stats.maxSize) * 100) : 0}%
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Custom Pattern Invalidation */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-xl">Pattern-Based Invalidation</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customPattern}
+              onChange={(e) => setCustomPattern(e.target.value)}
+              placeholder="Enter cache key pattern (e.g., cache:product:123)"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <Button
+              onClick={handleCustomInvalidate}
+              disabled={!customPattern}
+            >
+              Invalidate Pattern
+            </Button>
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Use partial strings or regex patterns to match cache keys
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Information Card */}
       <Card className="bg-yellow-50 border-yellow-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-yellow-800">
-            <Zap className="h-5 w-5" />
-            Important Information
+            <AlertCircle className="h-5 w-5" />
+            Frontend Cache Management
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 text-yellow-800">
             <p>
-              <strong>No Automatic Expiry:</strong> Caches no longer expire automatically. 
-              You must manually refresh caches after making changes to see updates on your website.
+              <strong>Manual Invalidation Only:</strong> Frontend caches are stored in the browser 
+              and must be manually cleared. No automatic expiry.
             </p>
             <p>
-              <strong>When to Refresh:</strong>
+              <strong>When to Clear Cache:</strong>
             </p>
             <ul className="list-disc list-inside ml-4 space-y-1">
               <li>After updating product information or prices</li>
-              <li>After modifying categories or collections</li>
-              <li>After changing discount rules or coupon codes</li>
+              <li>After modifying vendor settings or discounts</li>
+              <li>After changing user roles or permissions</li>
               <li>After bulk imports or major data changes</li>
-              <li>If you notice outdated information on the website</li>
+              <li>If users report seeing outdated information</li>
             </ul>
             <p>
-              <strong>Performance Note:</strong> Refreshing caches will temporarily increase 
-              database load as new data is fetched. Best done during low-traffic periods.
+              <strong>Performance Note:</strong> Clearing cache will cause temporary slower load times 
+              as data is re-fetched from the API.
             </p>
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+interface CacheControlProps {
+  name: string;
+  description: string;
+  lastInvalidated: string;
+  onInvalidate: () => void;
+  isRefreshing: boolean;
+}
+
+function CacheControl({ name, description, lastInvalidated, onInvalidate, isRefreshing }: CacheControlProps) {
+  return (
+    <div className="p-4 bg-gray-50 rounded-lg">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900">{name}</h3>
+          <p className="text-sm text-gray-600 mt-1">{description}</p>
+          <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            Last cleared: {lastInvalidated}
+          </p>
+        </div>
+        <Button
+          onClick={onInvalidate}
+          disabled={isRefreshing}
+          size="sm"
+          variant="outline"
+        >
+          {isRefreshing ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

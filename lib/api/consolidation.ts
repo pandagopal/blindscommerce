@@ -6,7 +6,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getPool } from '@/lib/db';
-import { cache, CacheKeys } from '@/lib/cache';
 import { logError } from '@/lib/errorHandling';
 
 // Standard response format for all consolidated APIs
@@ -16,7 +15,6 @@ interface ConsolidatedResponse<T = any> {
   error?: string;
   pagination?: PaginationInfo;
   metadata?: ResponseMetadata;
-  cache?: CacheInfo;
 }
 
 interface PaginationInfo {
@@ -34,12 +32,6 @@ interface ResponseMetadata {
   dataSource: 'cache' | 'database';
 }
 
-interface CacheInfo {
-  cached: boolean;
-  cacheKey?: string;
-  cacheAge?: number;
-  ttl?: number;
-}
 
 // Role-based access control for consolidated APIs
 export const ROLE_PERMISSIONS = {
@@ -121,7 +113,7 @@ export abstract class ConsolidatedAPIHandler {
         version: this.version,
         endpoint: this.endpoint,
         executionTime: Date.now() - this.startTime,
-        dataSource: response.cache?.cached ? 'cache' : 'database'
+        dataSource: 'database'
       };
 
       return NextResponse.json(response);
@@ -198,46 +190,14 @@ export abstract class ConsolidatedAPIHandler {
     return NextResponse.json(response, { status });
   }
 
-  protected successResponse<T>(data: T, cacheInfo?: CacheInfo, pagination?: PaginationInfo): ConsolidatedResponse<T> {
+  protected successResponse<T>(data: T, pagination?: PaginationInfo): ConsolidatedResponse<T> {
     return {
       success: true,
       data,
-      cache: cacheInfo,
       pagination,
     };
   }
 
-  // Cache utilities
-  protected async getFromCacheOrDatabase<T>(
-    cacheKey: string,
-    databaseFetcher: () => Promise<T>,
-    cacheInstance = cache
-  ): Promise<{ data: T; fromCache: boolean; cacheAge?: number }> {
-    // Try cache first
-    const cached = cacheInstance.get<{ data: T; timestamp: number }>(cacheKey);
-    
-    if (cached) {
-      return {
-        data: cached.data,
-        fromCache: true,
-        cacheAge: Date.now() - cached.timestamp
-      };
-    }
-
-    // Fetch from database
-    const data = await databaseFetcher();
-    
-    // Cache the result
-    cacheInstance.set(cacheKey, {
-      data,
-      timestamp: Date.now()
-    });
-
-    return {
-      data,
-      fromCache: false
-    };
-  }
 
   // Database utilities
   protected async executeParallelQueries<T extends Record<string, any>>(
