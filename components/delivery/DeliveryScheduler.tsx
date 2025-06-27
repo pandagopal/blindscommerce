@@ -85,10 +85,11 @@ export default function DeliveryScheduler({
 
   const fetchExistingSchedule = async () => {
     try {
-      const response = await fetch(`/api/delivery/schedule?order_id=${orderId}`);
-      const data = await response.json();
+      const response = await fetch(`/api/v2/commerce/delivery/schedule?order_id=${orderId}`);
+      const result = await response.json();
       
-      if (data.success && data.schedule) {
+      if (result.success && result.data.schedule) {
+        const data = result.data;
         setExistingSchedule(data.schedule);
         
         // Pre-fill form with existing data
@@ -119,14 +120,14 @@ export default function DeliveryScheduler({
       endDate.setDate(today.getDate() + 30); // Next 30 days
 
       const response = await fetch(
-        `/api/delivery/slots?start_date=${today.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`
+        `/api/v2/commerce/delivery/slots?start_date=${today.toISOString().split('T')[0]}&end_date=${endDate.toISOString().split('T')[0]}`
       );
-      const data = await response.json();
+      const result = await response.json();
       
-      if (data.success) {
-        setDeliveryDates(data.deliverySlots);
+      if (result.success) {
+        setDeliveryDates(result.data.deliverySlots);
       } else {
-        setError(data.error || 'Failed to fetch delivery slots');
+        setError(result.message || 'Failed to fetch delivery slots');
       }
     } catch (error) {
       console.error('Error fetching delivery slots:', error);
@@ -146,7 +147,7 @@ export default function DeliveryScheduler({
     setError(null);
 
     try {
-      const response = await fetch('/api/delivery/schedule', {
+      const response = await fetch('/api/v2/commerce/delivery/schedule', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,20 +173,20 @@ export default function DeliveryScheduler({
         }),
       });
 
-      const data = await response.json();
+      const result = await response.json();
       
-      if (data.success) {
-        setSuccessMessage(data.message);
-        setExistingSchedule(data.schedule);
+      if (result.success) {
+        setSuccessMessage(result.message);
+        setExistingSchedule(result.data.schedule);
         
         if (onScheduleComplete) {
-          onScheduleComplete(data.schedule);
+          onScheduleComplete(result.data.schedule);
         }
         
         // Refresh available slots to update capacity
         await fetchAvailableSlots();
       } else {
-        setError(data.error || 'Failed to schedule delivery');
+        setError(result.message || 'Failed to schedule delivery');
       }
     } catch (error) {
       console.error('Error scheduling delivery:', error);

@@ -104,9 +104,11 @@ export default function SalesOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/sales/orders');
+      const res = await fetch('/api/v2/sales/orders');
       if (res.ok) {
-        const data = await res.json();
+        const result = await res.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const data = result.data;
         setOrders(data.orders || []);
         setStats(data.stats || {
           total_orders: 0,
@@ -137,7 +139,7 @@ export default function SalesOrdersPage() {
 
   const handleUpdateOrderStatus = async (orderId: string, status: SalesOrder['status']) => {
     try {
-      const res = await fetch(`/api/sales/orders/${orderId}`, {
+      const res = await fetch(`/api/v2/sales/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -153,7 +155,7 @@ export default function SalesOrdersPage() {
 
   const exportOrders = async (type: string) => {
     try {
-      const res = await fetch(`/api/sales/orders/export?type=${type}`);
+      const res = await fetch(`/api/v2/sales/orders/export?type=${type}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

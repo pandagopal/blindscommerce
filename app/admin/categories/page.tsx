@@ -42,7 +42,7 @@ export default function AdminCategoriesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/admin/categories');
+      const response = await fetch('/api/v2/admin/categories');
       
       if (!response.ok) {
         const errorData = await response.text();
@@ -67,7 +67,7 @@ export default function AdminCategoriesPage() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/upload/categories', {
+      const response = await fetch('/api/v2/admin/upload/categories', {
         method: 'POST',
         body: formData
       });

@@ -103,7 +103,7 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
   const trackSocialClick = async (account: SocialAccount) => {
     try {
       // Track the social media click for analytics
-      await fetch('/api/social/interactions', {
+      const response = await fetch('/api/v2/content/social/interactions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -116,6 +116,11 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
           referrerUrl: window.location.href
         }),
       });
+      
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to track interaction');
+      }
     } catch (error) {
       // Silently fail - don't let tracking errors affect user experience
       console.warn('Failed to track social media click:', error);

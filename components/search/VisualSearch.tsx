@@ -227,7 +227,7 @@ export default function VisualSearch({ trigger, onResultSelect }: VisualSearchPr
     setSearchResults([]);
 
     try {
-      const response = await fetch('/api/search/visual', {
+      const response = await fetch('/api/v2/search/visual', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

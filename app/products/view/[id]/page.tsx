@@ -23,7 +23,9 @@ export default function ViewProductPage() {
           router.push('/login?redirect=/products/view/' + productId);
           return;
         }
-        const authData = await authRes.json();
+        const authResult = await authRes.json();
+        if (!authResult.success) throw new Error(authResult.message || 'API request failed');
+        const authData = authResult.data;
         setUser(authData.user);
 
         // Load product data
@@ -43,15 +45,17 @@ export default function ViewProductPage() {
     try {
       
       // Try vendor products API first, then fall back to general products API
-      let res = await fetch(`/api/vendor/products/${id}`);
+      let res = await fetch(`/api/v2/vendor/products/${id}`);
       
       if (!res.ok) {
         // If vendor API fails, try general products API
-        res = await fetch(`/api/products/${id}`);
+        res = await fetch(`/api/v2/commerce/products/${id}`);
       }
       
       if (res.ok) {
-        const data = await res.json();
+        const result = await res.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const data = result.data;
         
         if (data && data.product) {
           setProductData(data.product);

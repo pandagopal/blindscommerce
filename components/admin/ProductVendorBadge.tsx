@@ -25,10 +25,11 @@ export default function ProductVendorBadge({ productId, className = '' }: Produc
 
   const fetchVendorAssignments = async () => {
     try {
-      const response = await fetch(`/api/admin/products/${productId}/vendors`);
+      const response = await fetch(`/api/v2/admin/products/${productId}/vendors`);
       if (response.ok) {
         const data = await response.json();
-        setVendors(data.vendors || []);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setVendors(data.data?.vendors || []);
       }
     } catch (error) {
       console.error('Failed to fetch vendor assignments:', error);

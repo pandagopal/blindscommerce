@@ -130,7 +130,7 @@ const PaymentTester = () => {
   };
 
   const testStripeMethod = async (method: string, amount: number) => {
-    const response = await fetch('/api/payments/stripe/create-payment-intent', {
+    const response = await fetch('/api/v2/payments/stripe/create-payment-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -154,7 +154,7 @@ const PaymentTester = () => {
   };
 
   const testPayPalMethod = async (method: string, amount: number) => {
-    const response = await fetch('/api/payments/paypal/create-order', {
+    const response = await fetch('/api/v2/payments/paypal/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -182,7 +182,7 @@ const PaymentTester = () => {
   };
 
   const testKlarnaMethod = async (method: string, amount: number) => {
-    const response = await fetch('/api/payments/klarna/create-session', {
+    const response = await fetch('/api/v2/payments/klarna/create-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -220,7 +220,7 @@ const PaymentTester = () => {
   };
 
   const testAfterpayMethod = async (method: string, amount: number) => {
-    const response = await fetch('/api/payments/afterpay/create-checkout', {
+    const response = await fetch('/api/v2/payments/afterpay/create-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -254,7 +254,7 @@ const PaymentTester = () => {
   };
 
   const testAffirmMethod = async (method: string, amount: number) => {
-    const response = await fetch('/api/payments/affirm/create-checkout', {
+    const response = await fetch('/api/v2/payments/affirm/create-checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

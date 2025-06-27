@@ -153,7 +153,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
         throw new Error('No session ID available');
       }
 
-      const response = await fetch('/api/recently-viewed', {
+      const response = await fetch('/api/v2/content/recently-viewed', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,6 +172,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
       }
 
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
       if (data.success) {
         // Optimistically update the products list
@@ -215,7 +216,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
       // Optimistically update UI
       setProducts(prev => prev.filter(p => p.id !== productId));
 
-      const response = await fetch(`/api/recently-viewed?productId=${productId}&sessionId=${sessionId}`, {
+      const response = await fetch(`/api/v2/content/recently-viewed?productId=${productId}&sessionId=${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -230,6 +231,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
       }
 
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
       if (!data.success) {
         // Revert optimistic update if server operation failed
@@ -261,7 +263,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
       // Optimistically clear the list
       setProducts([]);
 
-      const response = await fetch(`/api/recently-viewed?sessionId=${sessionId}`, {
+      const response = await fetch(`/api/v2/content/recently-viewed?sessionId=${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -276,6 +278,7 @@ export const RecentlyViewedProvider: React.FC<RecentlyViewedProviderProps> = ({ 
       }
 
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
       if (!data.success) {
         // Revert optimistic update if server operation failed

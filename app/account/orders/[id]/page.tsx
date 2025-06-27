@@ -89,7 +89,7 @@ export default function CustomerOrderDetailPage() {
     if (!order) return;
     
     try {
-      const response = await fetch('/api/account/orders/reorder', {
+      const response = await fetch('/api/v2/commerce/orders/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: order.order_id })

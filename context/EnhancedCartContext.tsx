@@ -288,16 +288,19 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   const loadCart = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/v2/commerce/cart/enhanced');
+      const response = await fetch('/api/v2/commerce/cart');
       if (response.ok) {
-        const data = await response.json();
-        const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-        const savedItems = data.items.filter((item: CartItem) => item.saved_for_later);
-        
-        setItems(activeItems);
-        setSavedForLaterItems(savedItems);
-        setRecommendations(data.recommendations || []);
-        setPriceAlerts(data.price_alerts || []);
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data || result;
+          const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+          const savedItems = (data.items || []).filter((item: CartItem) => item.saved_for_later);
+          
+          setItems(activeItems);
+          setSavedForLaterItems(savedItems);
+          setRecommendations(data.recommendations || []);
+          setPriceAlerts(data.price_alerts || []);
+        }
       } else {
         // Fallback to localStorage for guest users
         const savedCart = localStorage.getItem('guest_cart');
@@ -319,8 +322,11 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       if (await isAuthenticated()) {
         const response = await fetch('/api/v2/commerce/cart/saved');
         if (response.ok) {
-          const data = await response.json();
-          setSavedCarts(data.saved_carts || []);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setSavedCarts(data.saved_carts || []);
+          }
         }
       }
     } catch (error) {
@@ -334,8 +340,11 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       if (await isAuthenticated()) {
         const response = await fetch('/api/v2/users/addresses');
         if (response.ok) {
-          const data = await response.json();
-          setShippingAddresses(data.addresses || []);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setShippingAddresses(Array.isArray(data) ? data : (data.addresses || []));
+          }
         }
       }
     } catch (error) {
@@ -349,16 +358,19 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/v2/commerce/cart/enhanced', {
+        const response = await fetch('/api/v2/commerce/cart/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
         if (response.ok) {
-          const data = await response.json();
-          const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-          setItems(activeItems);
-          await trackCartAction('item_added', newItem.product_id);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+            setItems(activeItems);
+            await trackCartAction('item_added', newItem.product_id);
+          }
         }
       } else {
         // Handle guest cart
@@ -406,14 +418,17 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
-          const data = await response.json();
-          const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-          setItems(activeItems);
-          await trackCartAction('item_removed', undefined, { cart_item_id });
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+            setItems(activeItems);
+            await trackCartAction('item_removed', undefined, { cart_item_id });
+          }
         }
       } else {
         const updatedItems = items.filter(item => item.cart_item_id !== cart_item_id);
@@ -437,16 +452,19 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
-          method: 'PATCH',
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity })
         });
         if (response.ok) {
-          const data = await response.json();
-          const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-          setItems(activeItems);
-          await trackCartAction('quantity_changed', undefined, { cart_item_id, new_quantity: quantity });
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+            setItems(activeItems);
+            await trackCartAction('quantity_changed', undefined, { cart_item_id, new_quantity: quantity });
+          }
         }
       } else {
         const updatedItems = items.map(item => 
@@ -468,16 +486,19 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/save-for-later`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/save-for-later`, {
           method: 'POST'
         });
         if (response.ok) {
-          const data = await response.json();
-          const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-          const savedItems = data.items.filter((item: CartItem) => item.saved_for_later);
-          setItems(activeItems);
-          setSavedForLaterItems(savedItems);
-          await trackCartAction('saved_for_later', undefined, { cart_item_id });
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+            const savedItems = (data.items || []).filter((item: CartItem) => item.saved_for_later);
+            setItems(activeItems);
+            setSavedForLaterItems(savedItems);
+            await trackCartAction('saved_for_later', undefined, { cart_item_id });
+          }
         }
       } else {
         const updatedItems = items.map(item => 
@@ -502,16 +523,19 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/move-to-cart`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/move-to-cart`, {
           method: 'POST'
         });
         if (response.ok) {
-          const data = await response.json();
-          const activeItems = data.items.filter((item: CartItem) => !item.saved_for_later);
-          const savedItems = data.items.filter((item: CartItem) => item.saved_for_later);
-          setItems(activeItems);
-          setSavedForLaterItems(savedItems);
-          await trackCartAction('moved_to_cart', undefined, { cart_item_id });
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const activeItems = (data.items || []).filter((item: CartItem) => !item.saved_for_later);
+            const savedItems = (data.items || []).filter((item: CartItem) => item.saved_for_later);
+            setItems(activeItems);
+            setSavedForLaterItems(savedItems);
+            await trackCartAction('moved_to_cart', undefined, { cart_item_id });
+          }
         }
       } else {
         const allItems = [...items, ...savedForLaterItems];
@@ -539,13 +563,16 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}`, {
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
           method: 'DELETE'
         });
         if (response.ok) {
-          const data = await response.json();
-          const savedItems = data.items.filter((item: CartItem) => item.saved_for_later);
-          setSavedForLaterItems(savedItems);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            const savedItems = (data.items || []).filter((item: CartItem) => item.saved_for_later);
+            setSavedForLaterItems(savedItems);
+          }
         }
       } else {
         const updatedSavedItems = savedForLaterItems.filter(item => item.cart_item_id !== cart_item_id);
@@ -564,13 +591,16 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/v2/commerce/cart/enhanced', {
-          method: 'DELETE'
+        const response = await fetch('/api/v2/commerce/cart/clear', {
+          method: 'POST'
         });
         if (response.ok) {
-          setItems([]);
-          setSavedForLaterItems([]);
-          setSelectedItems([]);
+          const result = await response.json();
+          if (result.success) {
+            setItems([]);
+            setSavedForLaterItems([]);
+            setSelectedItems([]);
+          }
         }
       } else {
         setItems([]);
@@ -690,8 +720,11 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
           body: JSON.stringify({ product_ids: productIds })
         });
         if (response.ok) {
-          const data = await response.json();
-          setRecommendations(data.recommendations || []);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setRecommendations(data.recommendations || []);
+          }
         }
       } else {
         setRecommendations([]);
@@ -708,8 +741,11 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
         method: 'POST'
       });
       if (response.ok) {
-        const data = await response.json();
-        await addItem(data.item);
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data || result;
+          await addItem(data.item);
+        }
       }
     } catch (error) {
       console.error('Error adding recommendation:', error);
@@ -725,8 +761,11 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
         body: JSON.stringify({ product_id, target_price, alert_type })
       });
       if (response.ok) {
-        const data = await response.json();
-        setPriceAlerts(prev => [...prev, data.alert]);
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data || result;
+          setPriceAlerts(prev => [...prev, data.alert]);
+        }
       }
     } catch (error) {
       console.error('Error creating price alert:', error);
@@ -750,7 +789,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Assign shipping address
   const assignShippingAddress = async (cart_item_id: number, address_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/shipping`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/shipping`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ address_id })
@@ -772,7 +811,10 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
         body: JSON.stringify(address)
       });
       if (response.ok) {
-        await loadShippingAddresses();
+        const result = await response.json();
+        if (result.success) {
+          await loadShippingAddresses();
+        }
       }
     } catch (error) {
       console.error('Error adding shipping address:', error);
@@ -789,9 +831,12 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
         body: JSON.stringify({ share_type, expires_hours })
       });
       if (response.ok) {
-        const data = await response.json();
-        await trackCartAction('shared');
-        return { share_url: data.share_url };
+        const result = await response.json();
+        if (result.success) {
+          const data = result.data || result;
+          await trackCartAction('shared');
+          return { share_url: data.share_url };
+        }
       }
       throw new Error('Failed to share cart');
     } catch (error) {
@@ -805,7 +850,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Gift options
   const markAsGift = async (cart_item_id: number, gift_message?: string) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/gift`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/gift`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_gift: true, gift_message })
@@ -820,7 +865,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeGiftMarking = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/gift`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/gift`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_gift: false, gift_message: null })
@@ -836,7 +881,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Installation services
   const addInstallation = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/installation`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/installation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ installation_requested: true })
@@ -851,7 +896,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeInstallation = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/installation`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/installation`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ installation_requested: false })
@@ -867,7 +912,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Sample requests
   const requestSample = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/sample`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/sample`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sample_requested: true })
@@ -882,7 +927,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const cancelSample = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/sample`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/sample`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sample_requested: false })
@@ -898,7 +943,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Cart notes
   const addItemNote = async (cart_item_id: number, note: string) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/notes`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes: note })
@@ -913,7 +958,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeItemNote = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/notes`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/notes`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -927,7 +972,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
   // Scheduled delivery
   const scheduleDelivery = async (cart_item_id: number, delivery_date: string) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/delivery`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/delivery`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ scheduled_delivery_date: delivery_date })
@@ -942,7 +987,7 @@ export function EnhancedCartProvider({ children }: EnhancedCartProviderProps) {
 
   const removeScheduledDelivery = async (cart_item_id: number) => {
     try {
-      const response = await fetch(`/api/v2/commerce/cart/enhanced/items/${cart_item_id}/delivery`, {
+      const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/delivery`, {
         method: 'DELETE'
       });
       if (response.ok) {

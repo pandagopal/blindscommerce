@@ -41,7 +41,7 @@ const Navbar = () => {
     const fetchCompanyInfo = async () => {
       try {
         // Add cache busting to prevent browser caching
-        const response = await fetch(`/api/company-info?t=${Date.now()}`, {
+        const response = await fetch(`/api/v2/settings/company-info?t=${Date.now()}`, {
           cache: 'no-store'
         });
         if (response.ok) {

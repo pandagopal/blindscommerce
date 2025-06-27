@@ -199,7 +199,7 @@ export function CartProvider({ children }: CartProviderProps) {
       // Create cache key based on request content
       // Calculate pricing without cache
 
-      const response = await fetch('/api/v2/commerce/pricing/calculate', {
+      const response = await fetch('/api/v2/pricing/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pricingRequest)
@@ -207,26 +207,30 @@ export function CartProvider({ children }: CartProviderProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to calculate pricing');
+        throw new Error(error.message || error.error || 'Failed to calculate pricing');
       }
 
       const result = await response.json();
-      const data = result.data || result;
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to calculate pricing');
+      }
+      const data = result.data;
       
       const pricingData = {
-        subtotal: data.pricing.subtotal,
-        volume_discount: data.pricing.discounts.volume_discount,
-        coupon_discount: data.pricing.discounts.coupon_discount,
-        campaign_discount: data.pricing.discounts.campaign_discount,
-        total_discount: data.pricing.discounts.total_discount,
-        shipping: data.pricing.shipping,
-        tax: data.pricing.tax,
-        tax_rate: data.pricing.tax_rate,
-        tax_breakdown: data.pricing.tax_breakdown,
-        tax_jurisdiction: data.pricing.tax_jurisdiction,
-        zip_code: data.pricing.zip_code,
-        total: data.pricing.total,
-        applied_promotions: data.pricing.applied_promotions
+        subtotal: data.subtotal || 0,
+        vendor_discounts: data.vendor_discounts || [],
+        vendor_coupons: data.vendor_coupons || [],
+        total_discount_amount: data.total_discount_amount || 0,
+        applied_discounts_list: data.applied_discounts_list || [],
+        shipping: data.shipping || 0,
+        tax: data.tax || 0,
+        tax_rate: data.tax_rate || 0,
+        tax_breakdown: data.tax_breakdown,
+        tax_jurisdiction: data.tax_jurisdiction,
+        zip_code: data.zip_code,
+        total: data.total || 0,
+        vendors_in_cart: data.vendors_in_cart || 0,
+        applied_promotions: data.applied_promotions || {}
       };
 
       // Pricing data calculated successfully
@@ -257,8 +261,11 @@ export function CartProvider({ children }: CartProviderProps) {
         if (authenticated) {
           const response = await fetch('/api/v2/commerce/cart');
           if (response.ok) {
-            const data = await response.json();
-            setItems(data.items || []);
+            const result = await response.json();
+            if (result.success) {
+              const data = result.data || result;
+              setItems(data.items || []);
+            }
           }
         } else {
           const savedCart = localStorage.getItem('guest_cart');
@@ -308,14 +315,17 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/v2/commerce/cart', {
+        const response = await fetch('/api/v2/commerce/cart/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(newItem)
         });
         if (response.ok) {
-          const data = await response.json();
-          setItems(data.items);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setItems(data.items || []);
+          }
         } else {
           // API error adding item
         }
@@ -376,8 +386,11 @@ export function CartProvider({ children }: CartProviderProps) {
           method: 'DELETE'
         });
         if (response.ok) {
-          const data = await response.json();
-          setItems(data.items);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setItems(data.items || []);
+          }
         }
       } else {
         // Handle guest cart
@@ -413,13 +426,16 @@ export function CartProvider({ children }: CartProviderProps) {
       
       if (authenticated) {
         const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ quantity })
         });
         if (response.ok) {
-          const data = await response.json();
-          setItems(data.items);
+          const result = await response.json();
+          if (result.success) {
+            const data = result.data || result;
+            setItems(data.items || []);
+          }
         }
       } else {
         // Handle guest cart
@@ -454,12 +470,15 @@ export function CartProvider({ children }: CartProviderProps) {
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
-        const response = await fetch('/api/v2/commerce/cart', {
-          method: 'DELETE'
+        const response = await fetch('/api/v2/commerce/cart/clear', {
+          method: 'POST'
         });
         if (response.ok) {
-          setItems([]);
-          setAppliedCoupon(null);
+          const result = await response.json();
+          if (result.success) {
+            setItems([]);
+            setAppliedCoupon(null);
+          }
         }
       } else {
         // Handle guest cart

@@ -98,7 +98,7 @@ const OrderModificationModal: React.FC<OrderModificationModalProps> = ({
         modificationData.specialInstructions = specialInstructions;
       }
 
-      const response = await fetch(`/api/orders/${order.id}/modifications`, {
+      const response = await fetch(`/api/v2/commerce/orders/${order.id}/modifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,9 +107,11 @@ const OrderModificationModal: React.FC<OrderModificationModalProps> = ({
       });
 
       const data = await response.json();
-
+      if (!response.ok) {
+        throw new Error(data.message || data.error || 'Failed to submit modification request');
+      }
       if (!data.success) {
-        throw new Error(data.error || 'Failed to submit modification request');
+        throw new Error(data.message || data.error || 'Failed to submit modification request');
       }
 
       onModificationSubmitted();

@@ -8,7 +8,8 @@ import { BaseHandler, ApiError } from '../BaseHandler';
 import { 
   ProductService, 
   CartService, 
-  OrderService 
+  OrderService,
+  CategoryService 
 } from '@/lib/services';
 import { z } from 'zod';
 
@@ -61,12 +62,14 @@ export class CommerceHandler extends BaseHandler {
   private productService = new ProductService();
   private cartService = new CartService();
   private orderService = new OrderService();
+  private categoryService = new CategoryService();
 
   /**
    * Handle GET requests
    */
   async handleGET(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
+      'categories': () => this.getCategories(req),
       'products': () => this.getProducts(req),
       'products/:id': () => this.getProduct(action[1]),
       'products/:id/pricing': () => this.getProductPricing(action[1], req, user),
@@ -116,6 +119,21 @@ export class CommerceHandler extends BaseHandler {
     };
 
     return this.routeAction(action, routes);
+  }
+
+  // Category methods
+  private async getCategories(req: NextRequest) {
+    const searchParams = this.getSearchParams(req);
+    const featured = searchParams.get('featured') === 'true';
+    const limit = this.sanitizeNumber(searchParams.get('limit'), 1, 100);
+
+    const categories = await this.categoryService.getCategories({
+      isActive: true,
+      isFeatured: featured || undefined,
+      limit: limit || undefined,
+    });
+
+    return { categories };
   }
 
   // Product methods

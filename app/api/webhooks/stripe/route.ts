@@ -1,22 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
-import { getPool } from '@/lib/db';
-import { getStripeCredentials } from '@/lib/settings';
+
+// Internal function to call V2 API endpoints
+async function callV2Api(endpoint: string, method: string, data?: any) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const response = await fetch(`${baseUrl}/v2/${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-webhook': 'stripe', // Internal webhook identifier
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'V2 API request failed');
+  }
+  return result.data;
+}
 
 export async function POST(request: NextRequest) {
   try {
-    // Get Stripe credentials from database
-    const stripeCredentials = await getStripeCredentials();
+    // Get Stripe credentials via V2 API
+    const settings = await callV2Api('settings', 'GET');
+    const stripeSettings = settings.payments;
     
-    if (!stripeCredentials.enabled) {
+    if (!stripeSettings.stripe_enabled) {
       return NextResponse.json(
         { error: 'Stripe webhooks are not enabled' },
         { status: 400 }
       );
     }
     
-    if (!stripeCredentials.secretKey || !stripeCredentials.webhookSecret) {
+    if (!stripeSettings.stripe_secret_key || !stripeSettings.stripe_webhook_secret) {
       return NextResponse.json(
         { error: 'Stripe credentials not configured' },
         { status: 500 }
@@ -24,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Initialize Stripe with database credentials
-    const stripe = new Stripe(stripeCredentials.secretKey, {
+    const stripe = new Stripe(stripeSettings.stripe_secret_key, {
       apiVersion: '2024-06-20'
     });
 
@@ -35,7 +53,7 @@ export async function POST(request: NextRequest) {
     let event: Stripe.Event;
 
     try {
-      event = stripe.webhooks.constructEvent(body, sig, stripeCredentials.webhookSecret);
+      event = stripe.webhooks.constructEvent(body, sig, stripeSettings.stripe_webhook_secret);
     } catch (err) {
       console.error('Webhook signature verification failed:', err);
       return NextResponse.json(
@@ -44,28 +62,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pool = await getPool();
-
-    // Handle the event
+    // Handle the event using V2 API
     switch (event.type) {
       case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent, pool);
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
         
       case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent, pool);
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
         break;
         
       case 'payment_method.attached':
-        await handlePaymentMethodAttached(event.data.object as Stripe.PaymentMethod, pool);
+        // Handle payment method attached if needed
         break;
         
       case 'charge.dispute.created':
-        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute, pool, stripe);
+        await handleChargeDisputeCreated(event.data.object as Stripe.Dispute, stripe);
         break;
         
       case 'invoice.payment_succeeded':
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice, pool);
+        // Handle invoice payment succeeded if needed
         break;
         
       default:
@@ -83,168 +99,62 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent, pool: any) {
-  // Payment succeeded
-  
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'completed',
-        transaction_id = ?,
-        captured_amount = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'stripe'
-    `, [
-      paymentIntent.id,
-      paymentIntent.amount_received / 100,
-      JSON.stringify({
-        status: paymentIntent.status,
-        payment_method: paymentIntent.payment_method,
-        charges: paymentIntent.charges.data.length
-      }),
-      paymentIntent.id
-    ]);
-
-    // Create payment record if it doesn't exist
-    const orderRef = paymentIntent.metadata?.order_id || paymentIntent.id;
-    
-    await pool.execute(`
-      INSERT IGNORE INTO payments (
-        order_id, payment_method, transaction_id, amount, currency,
-        status, processor_response, created_at
-      ) VALUES (?, 'stripe', ?, ?, ?, 'completed', ?, NOW())
-    `, [
-      orderRef,
-      paymentIntent.id,
-      paymentIntent.amount_received / 100,
-      paymentIntent.currency.toUpperCase(),
-      JSON.stringify({
-        payment_intent_id: paymentIntent.id,
-        payment_method_types: paymentIntent.payment_method_types
-      })
-    ]);
-
-    // Update payment analytics
-    await updatePaymentAnalytics('stripe', 'stripe', paymentIntent.amount_received / 100, 'success', pool);
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/stripe/payment-succeeded', 'POST', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount_received / 100,
+      currency: paymentIntent.currency.toUpperCase(),
+      orderId: paymentIntent.metadata?.order_id,
+      paymentMethodTypes: paymentIntent.payment_method_types,
+      status: paymentIntent.status,
+      paymentMethod: paymentIntent.payment_method,
+    });
 
   } catch (error) {
     console.error('Error handling payment intent succeeded:', error);
+    throw error;
   }
 }
 
-async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent, pool: any) {
-  // Payment failed
-  
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent) {
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'failed',
-        error_message = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'stripe'
-    `, [
-      paymentIntent.last_payment_error?.message || 'Payment failed',
-      JSON.stringify({
-        status: paymentIntent.status,
-        last_payment_error: paymentIntent.last_payment_error
-      }),
-      paymentIntent.id
-    ]);
-
-    // Update payment analytics
-    await updatePaymentAnalytics('stripe', 'stripe', paymentIntent.amount / 100, 'failed', pool);
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/stripe/payment-failed', 'POST', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount / 100,
+      currency: paymentIntent.currency.toUpperCase(),
+      errorMessage: paymentIntent.last_payment_error?.message || 'Payment failed',
+      lastPaymentError: paymentIntent.last_payment_error,
+      status: paymentIntent.status,
+    });
 
   } catch (error) {
     console.error('Error handling payment intent failed:', error);
+    throw error;
   }
 }
 
-async function handlePaymentMethodAttached(paymentMethod: Stripe.PaymentMethod, pool: any) {
-  // Payment method attached
-  
-  // This could be used to automatically save payment methods for customers
-  // Implementation depends on your business logic
-}
-
-async function handleChargeDisputeCreated(dispute: Stripe.Dispute, pool: any, stripe: Stripe) {
-  // Dispute created
-  
+async function handleChargeDisputeCreated(dispute: Stripe.Dispute, stripe: Stripe) {
   try {
-    // Get payment ID from charge
+    // Get charge details
     const charge = await stripe.charges.retrieve(dispute.charge as string);
     
-    // Find payment record
-    const [payments] = await pool.execute(`
-      SELECT payment_id FROM payments 
-      WHERE transaction_id = ? AND payment_method = 'stripe'
-    `, [charge.payment_intent]);
-
-    if ((payments as any[]).length > 0) {
-      const paymentId = (payments as any[])[0].payment_id;
-      
-      // Create dispute record
-      await pool.execute(`
-        INSERT INTO payment_disputes (
-          payment_id, dispute_id, provider, dispute_type, status,
-          amount, currency, reason_code, reason_description,
-          evidence_due_date, created_at
-        ) VALUES (?, ?, 'stripe', 'chargeback', 'open', ?, ?, ?, ?, ?, NOW())
-      `, [
-        paymentId,
-        dispute.id,
-        dispute.amount / 100,
-        dispute.currency.toUpperCase(),
-        dispute.reason,
-        dispute.reason,
-        dispute.evidence_details?.due_by ? new Date(dispute.evidence_details.due_by * 1000) : null
-      ]);
-    }
+    // Create dispute via V2 API
+    await callV2Api('payments/webhook/stripe/dispute-created', 'POST', {
+      disputeId: dispute.id,
+      chargeId: dispute.charge,
+      paymentIntentId: charge.payment_intent,
+      amount: dispute.amount / 100,
+      currency: dispute.currency.toUpperCase(),
+      reason: dispute.reason,
+      status: 'open',
+      evidenceDueBy: dispute.evidence_details?.due_by ? new Date(dispute.evidence_details.due_by * 1000) : null,
+    });
 
   } catch (error) {
     console.error('Error handling dispute created:', error);
-  }
-}
-
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, pool: any) {
-  // Invoice payment succeeded
-  
-  // Handle subscription or recurring payment success
-  // Implementation depends on your subscription model
-}
-
-async function updatePaymentAnalytics(paymentMethod: string, provider: string, amount: number, status: 'success' | 'failed', pool: any) {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    await pool.execute(`
-      INSERT INTO payment_analytics (
-        date, payment_method, provider, total_transactions, total_amount,
-        successful_transactions, failed_transactions, average_amount, created_at
-      ) VALUES (?, ?, ?, 1, ?, ?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE
-        total_transactions = total_transactions + 1,
-        total_amount = total_amount + VALUES(total_amount),
-        successful_transactions = successful_transactions + VALUES(successful_transactions),
-        failed_transactions = failed_transactions + VALUES(failed_transactions),
-        average_amount = total_amount / total_transactions,
-        updated_at = NOW()
-    `, [
-      today,
-      paymentMethod,
-      provider,
-      status === 'success' ? amount : 0,
-      status === 'success' ? 1 : 0,
-      status === 'failed' ? 1 : 0,
-      amount
-    ]);
-
-  } catch (error) {
-    console.error('Error updating payment analytics:', error);
+    throw error;
   }
 }

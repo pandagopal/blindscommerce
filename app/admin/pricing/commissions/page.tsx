@@ -131,7 +131,7 @@ export default function CommissionManagementPage() {
           setCommissionCalculations(data.calculations);
         }
       } else if (activeTab === 'summary') {
-        const response = await fetch('/api/admin/pricing/commissions/summary');
+        const response = await fetch('/api/v2/admin/pricing/commissions/summary');
         if (response.ok) {
           const data = await response.json();
           setCommissionSummary(data);
@@ -146,7 +146,7 @@ export default function CommissionManagementPage() {
 
   const handleCreateRule = async () => {
     try {
-      const response = await fetch('/api/admin/pricing/commissions/rules', {
+      const response = await fetch('/api/v2/admin/pricing/commissions/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

@@ -14,6 +14,7 @@ export class SettingsHandler extends BaseHandler {
     const routes = {
       '': () => this.getAllSettings(user),
       'category': () => this.getSettingsByCategory(req, user),
+      'company-info': () => this.getCompanyInfo(),
     };
 
     return this.routeAction(action, routes);
@@ -187,5 +188,54 @@ export class SettingsHandler extends BaseHandler {
     }
 
     return categorySettings;
+  }
+
+  private async getCompanyInfo() {
+    try {
+      const pool = await getPool();
+      
+      // Query for company info settings
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT config_key, config_value 
+         FROM upload_security_config 
+         WHERE config_key IN ('general_site_name', 'general_phone', 'general_tagline') 
+         AND is_active = TRUE`
+      );
+
+      const companyInfo = {
+        companyName: 'Smart Blinds Hub',
+        emergencyHotline: '1-800-BLINDS',
+        tagline: 'Expert Help Available'
+      };
+
+      // Override with database values
+      if (Array.isArray(rows)) {
+        rows.forEach((row: any) => {
+          switch (row.config_key) {
+            case 'general_site_name':
+              companyInfo.companyName = row.config_value || companyInfo.companyName;
+              break;
+            case 'general_phone':
+              companyInfo.emergencyHotline = row.config_value || companyInfo.emergencyHotline;
+              break;
+            case 'general_tagline':
+              companyInfo.tagline = row.config_value || companyInfo.tagline;
+              break;
+          }
+        });
+      }
+
+      return { companyInfo };
+    } catch (error) {
+      console.error('Failed to fetch company info:', error);
+      // Return defaults on error
+      return {
+        companyInfo: {
+          companyName: 'Smart Blinds Hub',
+          emergencyHotline: '1-800-BLINDS',
+          tagline: 'Expert Help Available'
+        }
+      };
+    }
   }
 }

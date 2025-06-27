@@ -87,7 +87,7 @@ export default function ReviewForm({ productSlug, onClose, onSubmitted }: Review
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/products/${productSlug}/reviews`, {
+      const response = await fetch(`/api/v2/commerce/products/${productSlug}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -102,10 +102,15 @@ export default function ReviewForm({ productSlug, onClose, onSubmitted }: Review
       });
 
       if (response.ok) {
-        onSubmitted();
+        const data = await response.json();
+        if (!data.success) {
+          setError(data.message || 'Failed to submit review');
+        } else {
+          onSubmitted();
+        }
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to submit review');
+        setError(data.message || data.error || 'Failed to submit review');
       }
     } catch (error) {
       console.error('Error submitting review:', error);

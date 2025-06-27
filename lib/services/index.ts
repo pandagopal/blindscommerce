@@ -9,6 +9,7 @@ export { OrderService } from './OrderService';
 export { UserService } from './UserService';
 export { VendorService } from './VendorService';
 export { CartService } from './CartService';
+export { CategoryService } from './CategoryService';
 
 // Re-export types
 export type { QueryResult, BatchOperationResult } from './BaseService';

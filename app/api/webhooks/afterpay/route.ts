@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPool } from '@/lib/db';
 import crypto from 'crypto';
+
+// Internal function to call V2 API endpoints
+async function callV2Api(endpoint: string, method: string, data?: any) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const response = await fetch(`${baseUrl}/v2/${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-webhook': 'afterpay', // Internal webhook identifier
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'V2 API request failed');
+  }
+  return result.data;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,32 +35,31 @@ export async function POST(request: NextRequest) {
     }
 
     const event = JSON.parse(body);
-    const pool = await getPool();
 
-
-    // Handle different Afterpay events
+    // Handle different Afterpay events using V2 API
     switch (event.eventType) {
       case 'order.approved':
-        await handleOrderApproved(event, pool);
+        await handleOrderApproved(event);
         break;
         
       case 'order.declined':
-        await handleOrderDeclined(event, pool);
+        await handleOrderDeclined(event);
         break;
         
       case 'payment.captured':
-        await handlePaymentCaptured(event, pool);
+        await handlePaymentCaptured(event);
         break;
         
       case 'payment.failed':
-        await handlePaymentFailed(event, pool);
+        await handlePaymentFailed(event);
         break;
         
       case 'refund.completed':
-        await handleRefundCompleted(event, pool);
+        await handleRefundCompleted(event);
         break;
         
       default:
+        console.log(`Unhandled Afterpay event type: ${event.eventType}`);
     }
 
     return NextResponse.json({ status: 'OK' });
@@ -78,192 +95,102 @@ function verifyAfterpaySignature(body: string, signature: string | null): boolea
   }
 }
 
-async function handleOrderApproved(event: any, pool: any) {
+async function handleOrderApproved(event: any) {
   const order = event.data;
   
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'pending',
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'afterpay'
-    `, [
-      JSON.stringify({ status: 'approved', ...order }),
-      order.token
-    ]);
-
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/afterpay/order-approved', 'POST', {
+      token: order.token,
+      orderId: order.merchantReference,
+      amount: order.amount.amount,
+      currency: order.amount.currency,
+      status: 'approved',
+      orderData: order,
+    });
 
   } catch (error) {
     console.error('Error handling Afterpay order approved:', error);
+    throw error;
   }
 }
 
-async function handleOrderDeclined(event: any, pool: any) {
+async function handleOrderDeclined(event: any) {
   const order = event.data;
   
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'failed',
-        error_message = 'Order declined by Afterpay',
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'afterpay'
-    `, [
-      JSON.stringify({ status: 'declined', ...order }),
-      order.token
-    ]);
-
-    // Update analytics
-    await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(order.amount?.amount || 0), 'failed', pool);
-
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/afterpay/order-declined', 'POST', {
+      token: order.token,
+      orderId: order.merchantReference,
+      amount: order.amount.amount,
+      currency: order.amount.currency,
+      errorMessage: 'Order declined',
+      orderData: order,
+    });
 
   } catch (error) {
     console.error('Error handling Afterpay order declined:', error);
+    throw error;
   }
 }
 
-async function handlePaymentCaptured(event: any, pool: any) {
+async function handlePaymentCaptured(event: any) {
   const payment = event.data;
   
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'completed',
-        transaction_id = ?,
-        captured_amount = ?,
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'afterpay'
-    `, [
-      payment.id,
-      parseFloat(payment.amount?.amount || 0),
-      JSON.stringify(payment),
-      payment.orderToken
-    ]);
-
-    // Create payment record
-    await pool.execute(`
-      INSERT IGNORE INTO payments (
-        order_id, payment_method, transaction_id, amount, currency,
-        status, processor_response, created_at
-      ) VALUES (?, 'afterpay', ?, ?, ?, 'completed', ?, NOW())
-    `, [
-      payment.merchantReference,
-      payment.id,
-      parseFloat(payment.amount?.amount || 0),
-      payment.amount?.currency || 'USD',
-      JSON.stringify({
-        afterpay_payment_id: payment.id,
-        order_token: payment.orderToken,
-        installments: 4
-      })
-    ]);
-
-    // Update analytics
-    await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(payment.amount?.amount || 0), 'success', pool);
-
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/afterpay/payment-captured', 'POST', {
+      paymentId: payment.id,
+      orderId: payment.merchantReference,
+      amount: payment.amount.amount,
+      currency: payment.amount.currency,
+      status: 'captured',
+      paymentData: payment,
+    });
 
   } catch (error) {
     console.error('Error handling Afterpay payment captured:', error);
+    throw error;
   }
 }
 
-async function handlePaymentFailed(event: any, pool: any) {
+async function handlePaymentFailed(event: any) {
   const payment = event.data;
   
   try {
-    // Update payment intent status
-    await pool.execute(`
-      UPDATE payment_intents 
-      SET 
-        status = 'failed',
-        error_message = 'Payment failed',
-        processor_response = ?,
-        updated_at = NOW()
-      WHERE provider_order_id = ? AND provider = 'afterpay'
-    `, [
-      JSON.stringify(payment),
-      payment.orderToken
-    ]);
-
-    // Update analytics
-    await updatePaymentAnalytics('afterpay', 'afterpay', parseFloat(payment.amount?.amount || 0), 'failed', pool);
-
+    // Update payment via V2 API
+    await callV2Api('payments/webhook/afterpay/payment-failed', 'POST', {
+      paymentId: payment.id,
+      orderId: payment.merchantReference,
+      amount: payment.amount.amount,
+      currency: payment.amount.currency,
+      errorMessage: payment.errorMessage || 'Payment failed',
+      paymentData: payment,
+    });
 
   } catch (error) {
     console.error('Error handling Afterpay payment failed:', error);
+    throw error;
   }
 }
 
-async function handleRefundCompleted(event: any, pool: any) {
+async function handleRefundCompleted(event: any) {
   const refund = event.data;
   
   try {
-    // Find the original payment
-    const [payments] = await pool.execute(`
-      SELECT payment_id FROM payments 
-      WHERE transaction_id = ? AND payment_method = 'afterpay'
-    `, [refund.paymentId]);
-
-    if ((payments as any[]).length > 0) {
-      const paymentId = (payments as any[])[0].payment_id;
-      
-      // Create refund record
-      await pool.execute(`
-        INSERT INTO payment_refunds (
-          payment_id, refund_id, provider, amount, currency,
-          reason, status, processor_response, created_at
-        ) VALUES (?, ?, 'afterpay', ?, ?, 'requested_by_customer', 'succeeded', ?, NOW())
-      `, [
-        paymentId,
-        refund.refundId,
-        parseFloat(refund.amount?.amount || 0),
-        refund.amount?.currency || 'USD',
-        JSON.stringify(refund)
-      ]);
-    }
-
+    // Create refund via V2 API
+    await callV2Api('payments/webhook/afterpay/refund-completed', 'POST', {
+      refundId: refund.refundId,
+      paymentId: refund.paymentId,
+      amount: refund.amount.amount,
+      currency: refund.amount.currency,
+      reason: refund.reason || 'requested_by_customer',
+      refundData: refund,
+    });
 
   } catch (error) {
-    console.error('Error handling Afterpay refund:', error);
-  }
-}
-
-async function updatePaymentAnalytics(paymentMethod: string, provider: string, amount: number, status: 'success' | 'failed', pool: any) {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-    
-    await pool.execute(`
-      INSERT INTO payment_analytics (
-        date, payment_method, provider, total_transactions, total_amount,
-        successful_transactions, failed_transactions, average_amount, created_at
-      ) VALUES (?, ?, ?, 1, ?, ?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE
-        total_transactions = total_transactions + 1,
-        total_amount = total_amount + VALUES(total_amount),
-        successful_transactions = successful_transactions + VALUES(successful_transactions),
-        failed_transactions = failed_transactions + VALUES(failed_transactions),
-        average_amount = total_amount / total_transactions,
-        updated_at = NOW()
-    `, [
-      today,
-      paymentMethod,
-      provider,
-      status === 'success' ? amount : 0,
-      status === 'success' ? 1 : 0,
-      status === 'failed' ? 1 : 0,
-      amount
-    ]);
-
-  } catch (error) {
-    console.error('Error updating payment analytics:', error);
+    console.error('Error handling Afterpay refund completed:', error);
+    throw error;
   }
 }

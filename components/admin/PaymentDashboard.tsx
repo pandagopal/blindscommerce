@@ -52,17 +52,19 @@ const PaymentDashboard = () => {
       setLoading(true);
       
       // Fetch payment analytics
-      const analyticsResponse = await fetch(`/api/admin/payments/analytics?timeframe=${selectedTimeframe}`);
+      const analyticsResponse = await fetch(`/api/v2/admin/payments/analytics?timeframe=${selectedTimeframe}`);
       if (analyticsResponse.ok) {
         const analyticsData = await analyticsResponse.json();
-        setAnalytics(analyticsData.analytics || []);
+        if (!analyticsData.success) throw new Error(analyticsData.message || 'API request failed');
+        setAnalytics(analyticsData.data?.analytics || []);
       }
 
       // Fetch payment methods
-      const methodsResponse = await fetch('/api/admin/payments/methods');
+      const methodsResponse = await fetch('/api/v2/admin/payments/methods');
       if (methodsResponse.ok) {
         const methodsData = await methodsResponse.json();
-        setPaymentMethods(methodsData.payment_methods || []);
+        if (!methodsData.success) throw new Error(methodsData.message || 'API request failed');
+        setPaymentMethods(methodsData.data?.payment_methods || []);
       }
 
     } catch (error) {

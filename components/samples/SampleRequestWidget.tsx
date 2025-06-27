@@ -83,15 +83,15 @@ export default function SampleRequestWidget({
         params.append('email', userEmail);
       }
 
-      const response = await fetch(`/api/swatches?${params}`);
+      const response = await fetch(`/api/v2/commerce/swatches?${params}`);
+      const result = await response.json();
       
-      if (response.ok) {
-        const data = await response.json();
-        setSwatches(data.swatches);
-        setCategories(data.categories);
-        setUserLimits(data.userLimits);
+      if (result.success) {
+        setSwatches(result.data.swatches);
+        setCategories(result.data.categories);
+        setUserLimits(result.data.userLimits);
       } else {
-        setError('Failed to load swatches');
+        setError(result.message || 'Failed to load swatches');
       }
     } catch (error) {
       console.error('Error loading swatches:', error);
@@ -138,7 +138,7 @@ export default function SampleRequestWidget({
     setSubmitting(true);
 
     try {
-      const response = await fetch('/api/swatches', {
+      const response = await fetch('/api/v2/commerce/swatches', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -150,16 +150,16 @@ export default function SampleRequestWidget({
         })
       });
 
-      const data = await response.json();
+      const result = await response.json();
 
-      if (response.ok) {
-        setSuccess(`Sample request submitted successfully! Order ID: ${data.orderId}`);
+      if (result.success) {
+        setSuccess(`Sample request submitted successfully! Order ID: ${result.data.orderId}`);
         setSelectedSwatches([]);
         setShowRequestForm(false);
         loadData(); // Refresh limits
-        onRequestComplete?.(data.orderId);
+        onRequestComplete?.(result.data.orderId);
       } else {
-        setError(data.error || 'Failed to submit request');
+        setError(result.message || 'Failed to submit request');
       }
     } catch (error) {
       console.error('Error submitting request:', error);

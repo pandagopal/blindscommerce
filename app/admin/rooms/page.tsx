@@ -44,7 +44,7 @@ export default function AdminRoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch('/api/admin/rooms');
+      const response = await fetch('/api/v2/admin/rooms');
       
       if (!response.ok) {
         const errorData = await response.text();
@@ -72,7 +72,7 @@ export default function AdminRoomsPage() {
     formDataUpload.append('file', file);
 
     try {
-      const response = await fetch('/api/upload/rooms', {
+      const response = await fetch('/api/v2/admin/upload/rooms', {
         method: 'POST',
         body: formDataUpload
       });

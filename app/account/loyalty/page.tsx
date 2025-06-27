@@ -83,7 +83,7 @@ const LoyaltyPage: React.FC = () => {
   const fetchLoyaltyAccount = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/loyalty/account');
+      const response = await fetch('/api/v2/users/loyalty/account');
       
       if (!response.ok) {
         throw new Error('Failed to fetch loyalty account');
@@ -107,7 +107,7 @@ const LoyaltyPage: React.FC = () => {
   const fetchRewards = async () => {
     try {
       setRewardsLoading(true);
-      const response = await fetch('/api/loyalty/rewards');
+      const response = await fetch('/api/v2/users/loyalty/rewards');
       
       if (!response.ok) {
         throw new Error('Failed to fetch rewards');
@@ -132,7 +132,7 @@ const LoyaltyPage: React.FC = () => {
     try {
       setRedeemingReward(rewardId);
       
-      const response = await fetch('/api/loyalty/rewards', {
+      const response = await fetch('/api/v2/users/loyalty/rewards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

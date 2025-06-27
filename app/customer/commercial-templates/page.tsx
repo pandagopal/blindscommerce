@@ -63,7 +63,7 @@ export default function CommercialTemplatesPage() {
 
   const loadTemplates = async () => {
     try {
-      const response = await fetch('/api/customer/commercial-templates');
+      const response = await fetch('/api/v2/users/commercial-templates');
       const data = await response.json();
 
       if (response.ok && data.success) {
@@ -84,7 +84,7 @@ export default function CommercialTemplatesPage() {
 
   const loadUploads = async () => {
     try {
-      const response = await fetch('/api/customer/bulk-order');
+      const response = await fetch('/api/v2/commerce/bulk-order');
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -132,7 +132,7 @@ export default function CommercialTemplatesPage() {
       formData.append('templateId', selectedTemplate);
       formData.append('csvFile', file);
 
-      const response = await fetch('/api/customer/bulk-order', {
+      const response = await fetch('/api/v2/commerce/bulk-order', {
         method: 'POST',
         body: formData
       });

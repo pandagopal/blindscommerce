@@ -78,8 +78,8 @@ export class ProductService extends BaseService {
         ${vendorId ? 'AND vp.vendor_id = ?' : ''}
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
         AND vd.is_active = 1
-        AND (vd.start_date IS NULL OR vd.start_date <= NOW())
-        AND (vd.end_date IS NULL OR vd.end_date >= NOW())
+        AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
+        AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
       LEFT JOIN customer_pricing cp ON p.product_id = cp.product_id 
         ${customerId ? 'AND cp.customer_id = ?' : 'AND 1=0'}
       WHERE p.product_id = ? AND p.is_active = 1
@@ -263,9 +263,9 @@ export class ProductService extends BaseService {
         c.name as category_name,
         c.slug as category_slug,
         b.name as brand_name,
-        vp.vendor_price,
-        vd.discount_type,
-        vd.discount_value,
+        MIN(vp.vendor_price) as vendor_price,
+        MIN(vd.discount_type) as discount_type,
+        MIN(vd.discount_value) as discount_value,
         pi.image_url as primary_image_url,
         COALESCE(AVG(pr.rating), 0) as avg_rating,
         COUNT(DISTINCT pr.review_id) as review_count
@@ -275,13 +275,16 @@ export class ProductService extends BaseService {
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
         AND vd.is_active = 1
-        AND (vd.start_date IS NULL OR vd.start_date <= NOW())
-        AND (vd.end_date IS NULL OR vd.end_date >= NOW())
+        AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
+        AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
       LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
       LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
       ${features ? 'LEFT JOIN product_features pf ON p.product_id = pf.product_id' : ''}
       ${whereClause}
-      GROUP BY p.product_id
+      GROUP BY p.product_id, p.name, p.slug, p.sku, p.description, p.short_description, 
+               p.full_description, p.base_price, p.cost_price, p.category_id, p.brand_id, 
+               p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count, 
+               p.created_at, p.updated_at, c.name, c.slug, b.name, pi.image_url
       ${havingClause}
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}

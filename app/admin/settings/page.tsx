@@ -136,7 +136,7 @@ export default function AdminSettingsPage() {
   const loadSettings = async () => {
     try {
       console.log('Loading settings from API...');
-      const res = await fetch('/api/admin/settings', {
+      const res = await fetch('/api/v2/admin/settings', {
         // Add cache-busting headers to ensure fresh data
         headers: {
           'Cache-Control': 'no-cache',
@@ -175,7 +175,7 @@ export default function AdminSettingsPage() {
       
       if (category) {
         // Save specific category
-        response = await fetch('/api/admin/settings', {
+        response = await fetch('/api/v2/admin/settings', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -187,7 +187,7 @@ export default function AdminSettingsPage() {
         });
       } else {
         // Save all settings
-        response = await fetch('/api/admin/settings', {
+        response = await fetch('/api/v2/admin/settings', {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ export default function AdminSettingsPage() {
       // If general settings were saved, also clear company info cache
       if (category === 'general') {
         // Clear cache by calling the cache refresh API
-        fetch('/api/admin/cache/refresh', { method: 'POST' }).catch(() => {
+        fetch('/api/v2/admin/cache/refresh', { method: 'POST' }).catch(() => {
           // Ignore errors - cache will expire naturally
         });
       }
@@ -251,7 +251,7 @@ export default function AdminSettingsPage() {
     
     try {
       // Test with current form values instead of database values
-      const response = await fetch('/api/admin/settings/test-taxjar', {
+      const response = await fetch('/api/v2/admin/settings/test-taxjar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

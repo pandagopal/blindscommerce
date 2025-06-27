@@ -27,7 +27,7 @@ export default function VendorStorefrontPage() {
   const fetchStorefront = async () => {
     try {
       // Get vendor profile first to get company name
-      const profileRes = await fetch('/api/vendor/profile');
+      const profileRes = await fetch('/api/v2/vendor/profile');
       let companyName = 'Your Company';
       
       if (profileRes.ok) {
@@ -37,7 +37,7 @@ export default function VendorStorefrontPage() {
       }
 
       // Get storefront data
-      const res = await fetch('/api/vendor/storefront');
+      const res = await fetch('/api/v2/vendor/storefront');
       const data = await res.json();
       
       if (res.ok && data.hasStorefront) {

@@ -75,7 +75,7 @@ export default function ProductCloneButton({
     setError(null);
 
     try {
-      const response = await fetch('/api/vendor/products/clone', {
+      const response = await fetch('/api/v2/vendor/products/clone', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,14 +94,17 @@ export default function ProductCloneButton({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to clone product');
+        throw new Error(data.message || data.error || 'Failed to clone product');
+      }
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to clone product');
       }
 
       setSuccess(true);
       
       // Call success callback if provided
       if (onCloneSuccess) {
-        onCloneSuccess(data.clonedProduct);
+        onCloneSuccess(data.data?.clonedProduct || data.clonedProduct);
       }
 
       // Auto-close after success

@@ -102,7 +102,7 @@ function SalesDashboardContent() {
             sessionStorage.setItem('AdminViewId', adminViewUserId);
             
             // Fetch the sales person being viewed
-            const salesRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+            const salesRes = await fetch(`/api/v2/admin/users/${adminViewUserId}`);
             if (salesRes.ok) {
               const salesData = await salesRes.json();
               if (salesData.user.role !== 'sales') {

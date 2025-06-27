@@ -108,7 +108,7 @@ export default function TaxRatesPage() {
         formData.append('preview', 'true');
       }
 
-      const response = await fetch('/api/admin/tax-rates/upload', {
+      const response = await fetch('/api/v2/admin/tax-rates/upload', {
         method: 'POST',
         body: formData,
       });
@@ -140,7 +140,7 @@ export default function TaxRatesPage() {
 
   const downloadTemplate = async () => {
     try {
-      const response = await fetch('/api/admin/tax-rates/upload/template');
+      const response = await fetch('/api/v2/admin/tax-rates/upload/template');
       if (!response.ok) throw new Error('Failed to download template');
       
       const blob = await response.blob();

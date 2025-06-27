@@ -53,6 +53,11 @@ export class UsersHandler extends BaseHandler {
    * Handle GET requests
    */
   async handleGET(req: NextRequest, action: string[], user: any): Promise<any> {
+    // Check if action[0] is a numeric ID
+    if (action[0] && !isNaN(Number(action[0]))) {
+      return this.getUserById(action[0], user);
+    }
+
     const routes = {
       'profile': () => this.getProfile(user),
       'profile/full': () => this.getFullProfile(user),
@@ -597,5 +602,34 @@ export class UsersHandler extends BaseHandler {
     });
 
     return { message: 'Account deleted successfully' };
+  }
+
+  /**
+   * Get user by ID - used by system for user lookup
+   */
+  private async getUserById(id: string, requestingUser: any) {
+    const userId = parseInt(id);
+    if (isNaN(userId)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    // Get user from service
+    const user = await this.userService.findById(userId);
+    if (!user) {
+      throw new ApiError('User not found', 404);
+    }
+
+    // Return user data (excluding sensitive fields)
+    return {
+      userId: user.user_id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone,
+      role: user.role,
+      isActive: user.is_active,
+      isVerified: user.is_verified,
+      createdAt: user.created_at,
+    };
   }
 }

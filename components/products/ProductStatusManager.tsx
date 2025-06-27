@@ -111,13 +111,14 @@ export default function ProductStatusManager({
 
   const fetchProductInfo = async () => {
     try {
-      const response = await fetch(`/api/vendor/products/${productId}/activate`);
+      const response = await fetch(`/api/v2/vendor/products/${productId}/activate`);
       const data = await response.json();
       
       if (response.ok) {
-        setProductInfo(data.product);
-        setValidation(data.validation.checks);
-        setStatusHistory(data.statusHistory || []);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setProductInfo(data.data?.product || data.product);
+        setValidation(data.data?.validation?.checks || data.validation?.checks || {});
+        setStatusHistory(data.data?.statusHistory || []);
       }
     } catch (err) {
       console.error('Failed to fetch product info:', err);
@@ -152,7 +153,7 @@ export default function ProductStatusManager({
     setSuccess(null);
 
     try {
-      const response = await fetch(`/api/vendor/products/${productId}/activate`, {
+      const response = await fetch(`/api/v2/vendor/products/${productId}/activate`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -166,7 +167,10 @@ export default function ProductStatusManager({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update status');
+        throw new Error(data.message || data.error || 'Failed to update status');
+      }
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to update status');
       }
 
       setSuccess(`Product status changed to ${selectedStatus}`);

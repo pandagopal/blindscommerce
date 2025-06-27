@@ -205,17 +205,17 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
-      const apiPath = userRole === 'admin' ? '/api/admin/products' : '/api/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}?${params.toString()}`);
       const data = await res.json();
-      
       if (!res.ok) {
-        setError(data.error || `Failed to fetch products: ${res.status}`);
+        setError(data.message || data.error || `Failed to fetch products: ${res.status}`);
         return;
       }
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
-      setProducts(data.products || []);
-      setTotalProducts(data.pagination?.total || 0);
+      setProducts(data.data?.products || []);
+      setTotalProducts(data.data?.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to connect to server');
@@ -229,14 +229,19 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     
     try {
       setLoading(true);
-      const apiPath = userRole === 'admin' ? '/api/admin/products' : '/api/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
       
       // Load basic product data
       const res = await fetch(`${apiPath}/${productId}`);
       const data = await res.json();
+      if (!res.ok) {
+        setError(data.message || 'Failed to load product data');
+        return;
+      }
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
-      if (res.ok && data.product) {
-        const product = data.product;
+      if (data.data?.product) {
+        const product = data.data.product;
         
         // Options and fabric data now come from the main product API response
         let optionsData = product.options;
@@ -342,7 +347,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     formData.append('category', `fabric_${fabricType}`);
     formData.append('productId', currentProductId);
     
-    const uploadResponse = await fetch('/api/vendor/upload', {
+    const uploadResponse = await fetch('/api/v2/vendor/upload', {
       method: 'POST',
       body: formData,
     });
@@ -385,7 +390,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           formData.append('category', 'product');
           formData.append('productId', currentProductId || 'new');
           
-          const uploadResponse = await fetch('/api/vendor/upload', {
+          const uploadResponse = await fetch('/api/v2/vendor/upload', {
             method: 'POST',
             body: formData,
           });
@@ -426,7 +431,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     try {
       setSaving(true);
       
-      const baseEndpoint = userRole === 'admin' ? '/api/admin/products' : '/api/vendor/products';
+      const baseEndpoint = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
       const apiEndpoint = isEditMode ? `${baseEndpoint}/${productId}` : baseEndpoint;
       const method = isEditMode ? 'PUT' : 'POST';
       
@@ -478,6 +483,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       }
 
       const result = await response.json();
+      if (!result.success) throw new Error(result.message || 'API request failed');
       
       // Options and fabric data are now saved through the main API
       
@@ -499,7 +505,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const toggleProductStatus = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/admin/products' : '/api/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -507,8 +513,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       });
 
       const data = await res.json();
+      if (!data.success && res.ok) throw new Error(data.message || 'API request failed');
       
-      if (res.ok) {
+      if (res.ok && data.success) {
         toast.success(data.message || `Product ${!product.is_active ? 'activated' : 'deactivated'} successfully`);
         fetchProducts();
       } else {
@@ -522,14 +529,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const deleteProduct = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/admin/products' : '/api/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'DELETE',
       });
 
       const data = await res.json();
+      if (!data.success && res.ok) throw new Error(data.message || 'API request failed');
       
-      if (res.ok) {
+      if (res.ok && data.success) {
         setShowDeleteModal(false);
         setProductToDelete(null);
         toast.success('Product deleted successfully');
@@ -720,7 +728,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                             <button
                               onClick={async () => {
                                 try {
-                                  const response = await fetch('/api/vendor/products/clone', {
+                                  const response = await fetch('/api/v2/vendor/products/clone', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 
@@ -733,7 +741,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                                     }),
                                   });
                                   const data = await response.json();
-                                  if (response.ok) {
+                                  if (!data.success && response.ok) throw new Error(data.message || 'API request failed');
+                                  if (response.ok && data.success) {
                                     toast.success('Product cloned successfully! The cloned product is inactive and ready for editing.');
                                     fetchProducts();
                                   } else {

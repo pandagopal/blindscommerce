@@ -1,6 +1,3 @@
-import { getPool } from '@/lib/db';
-import { RowDataPacket } from 'mysql2';
-
 interface CartItem {
   id: number;
   name: string;
@@ -31,191 +28,179 @@ interface EmailTemplate {
   templateVariant: string;
 }
 
+// Internal function to call V2 API endpoints
+async function callV2Api(endpoint: string, method: string, data?: any) {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+  const response = await fetch(`${baseUrl}/v2/${endpoint}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-internal-cron': 'abandoned-cart', // Internal cron job identifier
+    },
+    body: data ? JSON.stringify(data) : undefined,
+  });
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.message || 'V2 API request failed');
+  }
+  return result.data;
+}
+
 export class AbandonedCartEmailService {
-  private pool: any;
   private baseUrl: string;
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
   }
 
-  private async getPool() {
-    if (!this.pool) {
-      this.pool = await getPool();
-    }
-    return this.pool;
-  }
-
   // Send first reminder email (24 hours after abandonment)
   async sendFirstReminderEmails() {
-    const pool = await this.getPool();
+    try {
+      // Get carts eligible for first reminder via V2 API
+      const carts = await callV2Api('cart/abandoned/eligible-first-reminder', 'GET');
 
-    // Find carts eligible for first reminder
-    const [carts] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM abandoned_cart_recovery 
-       WHERE recovery_status = 'pending'
-         AND first_email_sent_at IS NULL
-         AND created_at <= DATE_SUB(NOW(), INTERVAL send_first_email_after MINUTE)
-         AND expires_at > NOW()`
-    );
+      for (const cart of carts) {
+        try {
+          await this.sendEmail(cart, 'first_email');
+          
+          // Update cart status via V2 API
+          await callV2Api('cart/abandoned/update-status', 'POST', {
+            cartId: cart.id,
+            status: 'email_sent',
+            firstEmailSentAt: new Date().toISOString(),
+            lastEmailSentAt: new Date().toISOString()
+          });
 
-
-    for (const cart of carts) {
-      try {
-        await this.sendEmail(cart, 'first_email');
-        
-        // Update cart status
-        await pool.execute(
-          'UPDATE abandoned_cart_recovery SET recovery_status = ?, first_email_sent_at = NOW(), last_email_sent_at = NOW() WHERE id = ?',
-          ['email_sent', cart.id]
-        );
-
-      } catch (error) {
-        console.error(`Failed to send first reminder for cart ${cart.id}:`, error);
+        } catch (error) {
+          console.error(`Failed to send first reminder for cart ${cart.id}:`, error);
+        }
       }
-    }
 
-    return carts.length;
+      return carts.length;
+    } catch (error) {
+      console.error('Error getting eligible carts for first reminder:', error);
+      return 0;
+    }
   }
 
   // Send reminder email (72 hours after first email)
   async sendReminderEmails() {
-    const pool = await this.getPool();
+    try {
+      // Get carts eligible for reminder via V2 API
+      const carts = await callV2Api('cart/abandoned/eligible-reminder', 'GET');
 
-    // Find carts eligible for reminder
-    const [carts] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM abandoned_cart_recovery 
-       WHERE recovery_status = 'email_sent'
-         AND reminder_email_sent_at IS NULL
-         AND first_email_sent_at <= DATE_SUB(NOW(), INTERVAL send_reminder_after MINUTE)
-         AND expires_at > NOW()`
-    );
+      for (const cart of carts) {
+        try {
+          await this.sendEmail(cart, 'reminder_email');
+          
+          // Update cart status via V2 API
+          await callV2Api('cart/abandoned/update-status', 'POST', {
+            cartId: cart.id,
+            status: 'reminder_sent',
+            reminderEmailSentAt: new Date().toISOString(),
+            lastEmailSentAt: new Date().toISOString()
+          });
 
-
-    for (const cart of carts) {
-      try {
-        await this.sendEmail(cart, 'reminder_email');
-        
-        // Update cart status
-        await pool.execute(
-          'UPDATE abandoned_cart_recovery SET recovery_status = ?, reminder_email_sent_at = NOW(), last_email_sent_at = NOW() WHERE id = ?',
-          ['reminder_sent', cart.id]
-        );
-
-      } catch (error) {
-        console.error(`Failed to send reminder for cart ${cart.id}:`, error);
+        } catch (error) {
+          console.error(`Failed to send reminder for cart ${cart.id}:`, error);
+        }
       }
-    }
 
-    return carts.length;
+      return carts.length;
+    } catch (error) {
+      console.error('Error getting eligible carts for reminder:', error);
+      return 0;
+    }
   }
 
   // Send final reminder email (24 hours before expiration)
   async sendFinalReminderEmails() {
-    const pool = await this.getPool();
+    try {
+      // Get carts eligible for final reminder via V2 API
+      const carts = await callV2Api('cart/abandoned/eligible-final-reminder', 'GET');
 
-    // Find carts eligible for final reminder
-    const [carts] = await pool.execute<RowDataPacket[]>(
-      `SELECT * FROM abandoned_cart_recovery 
-       WHERE recovery_status = 'reminder_sent'
-         AND expires_at <= DATE_ADD(NOW(), INTERVAL 24 HOUR)
-         AND expires_at > NOW()
-         AND last_email_sent_at <= DATE_SUB(NOW(), INTERVAL 24 HOUR)`
-    );
+      for (const cart of carts) {
+        try {
+          await this.sendEmail(cart, 'final_reminder');
+          
+          // Update last email sent time via V2 API
+          await callV2Api('cart/abandoned/update-status', 'POST', {
+            cartId: cart.id,
+            lastEmailSentAt: new Date().toISOString()
+          });
 
-
-    for (const cart of carts) {
-      try {
-        await this.sendEmail(cart, 'final_reminder');
-        
-        // Update last email sent time
-        await pool.execute(
-          'UPDATE abandoned_cart_recovery SET last_email_sent_at = NOW() WHERE id = ?',
-          [cart.id]
-        );
-
-      } catch (error) {
-        console.error(`Failed to send final reminder for cart ${cart.id}:`, error);
+        } catch (error) {
+          console.error(`Failed to send final reminder for cart ${cart.id}:`, error);
+        }
       }
-    }
 
-    return carts.length;
+      return carts.length;
+    } catch (error) {
+      console.error('Error getting eligible carts for final reminder:', error);
+      return 0;
+    }
   }
 
   // Mark expired carts
   async markExpiredCarts() {
-    const pool = await this.getPool();
-
-    const [result] = await pool.execute(
-      `UPDATE abandoned_cart_recovery 
-       SET recovery_status = 'expired' 
-       WHERE recovery_status NOT IN ('recovered', 'expired', 'opted_out')
-         AND expires_at <= NOW()`
-    );
-
-    const expiredCount = (result as any).affectedRows;
-
-    return expiredCount;
+    try {
+      // Mark expired carts via V2 API
+      const result = await callV2Api('cart/abandoned/mark-expired', 'POST');
+      return result.expiredCount || 0;
+    } catch (error) {
+      console.error('Error marking expired carts:', error);
+      return 0;
+    }
   }
 
   // Send individual email
   private async sendEmail(cart: any, templateType: 'first_email' | 'reminder_email' | 'final_reminder') {
-    const pool = await this.getPool();
+    try {
+      // Get email template via V2 API
+      const template = await callV2Api('cart/abandoned/get-email-template', 'POST', {
+        templateType
+      });
 
-    // Get email template
-    const [templates] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM abandoned_cart_email_templates WHERE template_type = ? AND is_active = 1 ORDER BY RAND() LIMIT 1',
-      [templateType]
-    );
+      if (!template) {
+        throw new Error(`No active template found for ${templateType}`);
+      }
 
-    if (templates.length === 0) {
-      throw new Error(`No active template found for ${templateType}`);
-    }
+      // Parse cart data
+      const cartData = typeof cart.cart_data === 'string' ? JSON.parse(cart.cart_data) : cart.cart_data;
+      
+      // Generate email content
+      const emailContent = await this.generateEmailContent(cart, cartData, template);
+      
+      // Send email via V2 API (which will handle the actual email sending)
+      await callV2Api('cart/abandoned/send-email', 'POST', {
+        to: cart.email,
+        subject: template.subject_line || template.subjectLine,
+        html: emailContent,
+        trackingPixel: `${this.baseUrl}/api/cart/email-tracking/${cart.recovery_token}/opened`,
+        unsubscribeLink: `${this.baseUrl}/api/cart/unsubscribe/${cart.recovery_token}`
+      });
 
-    const template = templates[0];
+      // Update template stats via V2 API
+      await callV2Api('cart/abandoned/update-template-stats', 'POST', {
+        templateId: template.id,
+        sentCount: 1
+      });
 
-    // Parse cart data
-    const cartData = JSON.parse(cart.cart_data);
-    
-    // Generate email content
-    const emailContent = await this.generateEmailContent(cart, cartData, template);
-    
-    // Here you would integrate with your email service (SendGrid, AWS SES, etc.)
-    // For now, we'll just log the email content
-
-    // In a real implementation, you would send the email here:
-    /*
-    await emailService.send({
-      to: cart.email,
-      subject: template.subject_line,
-      html: emailContent,
-      trackingPixel: `${this.baseUrl}/api/cart/email-tracking/${cart.recovery_token}/opened`,
-      unsubscribeLink: `${this.baseUrl}/api/cart/unsubscribe/${cart.recovery_token}`
-    });
-    */
-
-    // Update template stats
-    await pool.execute(
-      'UPDATE abandoned_cart_email_templates SET sent_count = sent_count + 1 WHERE id = ?',
-      [template.id]
-    );
-
-    // Log the interaction
-    await pool.execute(
-      `INSERT INTO cart_recovery_interactions (
-        recovery_id,
-        interaction_type,
-        interaction_data
-      ) VALUES (?, 'email_sent', ?)`,
-      [
-        cart.id,
-        JSON.stringify({
+      // Log the interaction via V2 API
+      await callV2Api('cart/abandoned/log-interaction', 'POST', {
+        recoveryId: cart.id,
+        interactionType: 'email_sent',
+        interactionData: {
           templateType,
           templateId: template.id,
-          templateVariant: template.template_variant
-        })
-      ]
-    );
+          templateVariant: template.template_variant || template.templateVariant
+        }
+      });
+    } catch (error) {
+      console.error('Error sending email:', error);
+      throw error;
+    }
   }
 
   // Generate email content with template variables
@@ -249,41 +234,28 @@ export class AbandonedCartEmailService {
 
   // Track email opens
   async trackEmailOpen(recoveryToken: string) {
-    const pool = await this.getPool();
-
-    await pool.execute(
-      'UPDATE abandoned_cart_recovery SET email_open_count = email_open_count + 1 WHERE recovery_token = ?',
-      [recoveryToken]
-    );
-
-    // Log interaction
-    const [carts] = await pool.execute<RowDataPacket[]>(
-      'SELECT id FROM abandoned_cart_recovery WHERE recovery_token = ?',
-      [recoveryToken]
-    );
-
-    if (carts.length > 0) {
-      await pool.execute(
-        `INSERT INTO cart_recovery_interactions (
-          recovery_id,
-          interaction_type,
-          interaction_data
-        ) VALUES (?, 'email_opened', ?)`,
-        [carts[0].id, JSON.stringify({ action: 'email_opened' })]
-      );
+    try {
+      // Track email open via V2 API
+      await callV2Api('cart/abandoned/track-email-open', 'POST', {
+        recoveryToken
+      });
+    } catch (error) {
+      console.error('Error tracking email open:', error);
     }
   }
 
   // Handle unsubscribe
   async handleUnsubscribe(recoveryToken: string) {
-    const pool = await this.getPool();
-
-    await pool.execute(
-      'UPDATE abandoned_cart_recovery SET recovery_status = ? WHERE recovery_token = ?',
-      ['opted_out', recoveryToken]
-    );
-
-    return true;
+    try {
+      // Handle unsubscribe via V2 API
+      await callV2Api('cart/abandoned/unsubscribe', 'POST', {
+        recoveryToken
+      });
+      return true;
+    } catch (error) {
+      console.error('Error handling unsubscribe:', error);
+      return false;
+    }
   }
 }
 

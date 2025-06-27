@@ -64,7 +64,7 @@ export default function VendorSalesTeamPage() {
 
   const fetchSalesTeam = async () => {
     try {
-      const res = await fetch('/api/vendor/sales-team');
+      const res = await fetch('/api/v2/vendor/sales-team');
       if (!res.ok) throw new Error('Failed to fetch sales team');
       const data = await res.json();
       setSalesTeam(data.salesTeam || []);

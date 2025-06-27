@@ -51,9 +51,11 @@ export default function SalesSettingsPage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch('/api/sales/profile');
+      const res = await fetch('/api/v2/sales/profile');
       if (!res.ok) throw new Error('Failed to fetch profile');
-      const data = await res.json();
+      const result = await res.json();
+      if (!result.success) throw new Error(result.message || 'API request failed');
+      const data = result.data;
       setProfile(data.profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -71,7 +73,7 @@ export default function SalesSettingsPage() {
     setMessage(null);
 
     try {
-      const res = await fetch('/api/sales/profile', {
+      const res = await fetch('/api/v2/sales/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

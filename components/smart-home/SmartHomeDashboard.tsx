@@ -71,24 +71,32 @@ const SmartHomeDashboard: React.FC = () => {
         setLoading(true);
         
         // Fetch overview data
-        const overviewResponse = await fetch('/api/iot/smart-home');
-        const overviewData = await overviewResponse.json();
-        setOverview(overviewData.overview);
+        const overviewResponse = await fetch('/api/v2/iot/smart-home');
+        const overviewResult = await overviewResponse.json();
+        if (overviewResult.success) {
+          setOverview(overviewResult.data.overview);
+        }
         
         // Fetch devices
-        const devicesResponse = await fetch('/api/iot/smart-home?action=devices');
-        const devicesData = await devicesResponse.json();
-        setDevices(devicesData.devices || []);
+        const devicesResponse = await fetch('/api/v2/iot/smart-home?action=devices');
+        const devicesResult = await devicesResponse.json();
+        if (devicesResult.success) {
+          setDevices(devicesResult.data.devices || []);
+        }
         
         // Fetch automations
-        const automationsResponse = await fetch('/api/iot/smart-home?action=automations');
-        const automationsData = await automationsResponse.json();
-        setAutomations(automationsData.automations || []);
+        const automationsResponse = await fetch('/api/v2/iot/smart-home?action=automations');
+        const automationsResult = await automationsResponse.json();
+        if (automationsResult.success) {
+          setAutomations(automationsResult.data.automations || []);
+        }
         
         // Fetch energy report
-        const energyResponse = await fetch('/api/iot/smart-home?action=energy-report');
-        const energyReportData = await energyResponse.json();
-        setEnergyData(energyReportData.energyReport);
+        const energyResponse = await fetch('/api/v2/iot/smart-home?action=energy-report');
+        const energyResult = await energyResponse.json();
+        if (energyResult.success) {
+          setEnergyData(energyResult.data.energyReport);
+        }
         
       } catch (error) {
         console.error('Error fetching smart home data:', error);
@@ -103,7 +111,7 @@ const SmartHomeDashboard: React.FC = () => {
   // Control device
   const controlDevice = async (deviceId: string, command: string, parameters: any) => {
     try {
-      const response = await fetch('/api/iot/smart-home', {
+      const response = await fetch('/api/v2/iot/smart-home', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -114,7 +122,8 @@ const SmartHomeDashboard: React.FC = () => {
         })
       });
       
-      if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
         // Update local device state
         setDevices(prev => prev.map(device => 
           device.id === deviceId 
@@ -130,7 +139,7 @@ const SmartHomeDashboard: React.FC = () => {
   // Create automation
   const createAutomation = async (automationData: any) => {
     try {
-      const response = await fetch('/api/iot/smart-home', {
+      const response = await fetch('/api/v2/iot/smart-home', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -139,9 +148,9 @@ const SmartHomeDashboard: React.FC = () => {
         })
       });
       
-      if (response.ok) {
-        const result = await response.json();
-        setAutomations(prev => [...prev, result.automation]);
+      const result = await response.json();
+      if (result.success) {
+        setAutomations(prev => [...prev, result.data.automation]);
       }
     } catch (error) {
       console.error('Error creating automation:', error);

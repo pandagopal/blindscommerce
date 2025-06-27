@@ -19,10 +19,12 @@ export default function SalesSupportPage() {
   useEffect(() => {
     const fetchCompanyInfo = async () => {
       try {
-        const response = await fetch('/api/company-info');
+        const response = await fetch('/api/v2/settings/company-info');
         if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.companyInfo) {
+          const result = await response.json();
+          if (!result.success) throw new Error(result.message || 'API request failed');
+          const data = result.data;
+          if (data && data.companyInfo) {
             setCompanyInfo({
               emergencyHotline: data.companyInfo.emergencyHotline || '1-800-BLINDS',
               salesEmail: data.companyInfo.salesEmail || 'sales@smartblindshub.com',

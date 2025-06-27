@@ -41,7 +41,7 @@ export default function SavedConfigurationsPage() {
   useEffect(() => {
     const fetchConfigurations = async () => {
       try {
-        const response = await fetch('/api/account/configurations');
+        const response = await fetch('/api/v2/users/configurations');
         if (!response.ok) {
           if (response.status === 401) {
             // Redirect to login if not authenticated

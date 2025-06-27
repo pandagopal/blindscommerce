@@ -95,14 +95,15 @@ export default function AssistanceDashboard() {
 
   const autoSetOnline = async () => {
     try {
-      const response = await fetch('/api/sales/auto-online', {
+      const response = await fetch('/api/v2/sales/auto-online', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
-      if (data.success && data.status) {
-        setStatus(prev => ({ ...prev, ...data.status }));
+      if (data.success && data.data?.status) {
+        setStatus(prev => ({ ...prev, ...data.data.status }));
       }
     } catch (error) {
       console.error('Failed to auto-set online:', error);
@@ -111,12 +112,13 @@ export default function AssistanceDashboard() {
 
   const loadStatus = async () => {
     try {
-      const response = await fetch('/api/sales/status');
+      const response = await fetch('/api/v2/sales/status');
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
       if (data.success) {
-        setStatus(data.status);
-        setActiveSessions(data.activeSessions || []);
+        setStatus(data.data?.status || data.status);
+        setActiveSessions(data.data?.activeSessions || []);
       }
     } catch (error) {
       console.error('Failed to load status:', error);
@@ -126,17 +128,17 @@ export default function AssistanceDashboard() {
   const updateStatus = async (updates: Partial<SalesStatus>) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/sales/status', {
+      const response = await fetch('/api/v2/sales/status', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
 
       const data = await response.json();
-      if (data.success) {
-        setStatus(prev => ({ ...prev, ...updates }));
+      if (!data.success) {
+        setError(data.message || data.error || 'Failed to update status');
       } else {
-        setError(data.error || 'Failed to update status');
+        setStatus(prev => ({ ...prev, ...updates }));
       }
     } catch (error) {
       setError('Failed to update status');
@@ -155,21 +157,25 @@ export default function AssistanceDashboard() {
     setError('');
 
     try {
-      const response = await fetch('/api/sales/assistance/accept', {
+      const response = await fetch('/api/v2/sales/assistance/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessPin: pinInput.trim() }),
       });
 
       const data = await response.json();
+      if (!data.success) {
+        setError(data.message || data.error || 'Failed to accept assistance request');
+        return;
+      }
       
-      if (data.success) {
+      if (data.success && data.data) {
         const newSession: ActiveSession = {
-          sessionId: data.sessionId,
-          customer: data.customer,
-          sessionType: data.sessionType,
-          permissions: data.permissions,
-          cartDetails: data.cartDetails
+          sessionId: data.data.sessionId,
+          customer: data.data.customer,
+          sessionType: data.data.sessionType,
+          permissions: data.data.permissions,
+          cartDetails: data.data.cartDetails
         };
         
         setActiveSessions(prev => [...prev, newSession]);
@@ -178,8 +184,6 @@ export default function AssistanceDashboard() {
           ...prev,
           currentActiveSessions: prev.currentActiveSessions + 1
         }));
-      } else {
-        setError(data.error || 'Failed to accept assistance request');
       }
     } catch (error) {
       setError('Failed to accept assistance request');
@@ -190,13 +194,14 @@ export default function AssistanceDashboard() {
 
   const loadCustomerCart = async (sessionId: number) => {
     try {
-      const response = await fetch(`/api/sales/assistance/cart?sessionId=${sessionId}`);
+      const response = await fetch(`/api/v2/sales/assistance/cart?sessionId=${sessionId}`);
       const data = await response.json();
+      if (!data.success) throw new Error(data.message || 'API request failed');
       
-      if (data.success && data.cart) {
+      if (data.success && data.data?.cart) {
         const updatedSessions = activeSessions.map(session => 
           session.sessionId === sessionId 
-            ? { ...session, cartDetails: data.cart }
+            ? { ...session, cartDetails: data.data.cart }
             : session
         );
         setActiveSessions(updatedSessions);
@@ -213,7 +218,7 @@ export default function AssistanceDashboard() {
   const modifyCart = async (sessionId: number, action: string, params: any = {}) => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/sales/assistance/cart', {
+      const response = await fetch('/api/v2/sales/assistance/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,11 +229,11 @@ export default function AssistanceDashboard() {
       });
 
       const data = await response.json();
-      if (data.success) {
+      if (!data.success) {
+        setError(data.message || data.error || 'Failed to modify cart');
+      } else {
         // Reload cart after modification
         await loadCustomerCart(sessionId);
-      } else {
-        setError(data.error || 'Failed to modify cart');
       }
     } catch (error) {
       setError('Failed to modify cart');

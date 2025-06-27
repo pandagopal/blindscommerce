@@ -106,11 +106,11 @@ export default function InstallerJobsPage() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/installer/jobs');
-      if (res.ok) {
-        const data = await res.json();
-        setJobs(data.jobs);
-        setStats(data.stats);
+      const res = await fetch('/api/v2/installer/jobs');
+      const result = await res.json();
+      if (result.success) {
+        setJobs(result.data.jobs);
+        setStats(result.data.stats);
       } else {
         // Mock data for demonstration
         const mockJobs: InstallerJob[] = [

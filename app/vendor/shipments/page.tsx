@@ -67,7 +67,7 @@ export default function VendorShipmentsPage() {
   // Lazy load shipments data only when this route is active
   const fetchShipmentsData = async () => {
     try {
-      const response = await fetch('/api/vendor/shipments');
+      const response = await fetch('/api/v2/vendor/shipments');
       if (!response.ok) {
         throw new Error('Failed to fetch shipments');
       }

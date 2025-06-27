@@ -136,7 +136,7 @@ export default function NewUserPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/admin/users', {
+      const response = await fetch('/api/v2/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -144,9 +144,9 @@ export default function NewUserPage() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to create user');
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to create user');
       }
 
       router.push('/admin/users');

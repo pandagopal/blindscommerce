@@ -66,7 +66,7 @@ export default function CustomerSamplesPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/customer/sample-orders');
+      const response = await fetch('/api/v2/users/sample-orders');
       if (response.ok) {
         const data = await response.json();
         setOrders(data.orders || []);

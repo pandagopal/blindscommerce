@@ -58,22 +58,24 @@ export default function ProductReviews({
         params.append('rating', filterRating.toString());
       }
 
-      const response = await fetch(`/api/products/${productSlug}/reviews?${params}`);
+      const response = await fetch(`/api/v2/commerce/products/${productSlug}/reviews?${params}`);
       
       if (response.ok) {
         const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        const reviewData = data.data || data;
         
         if (reset || page === 1) {
-          setReviews(data.reviews);
+          setReviews(reviewData.reviews || []);
         } else {
-          setReviews(prev => [...prev, ...data.reviews]);
+          setReviews(prev => [...prev, ...(reviewData.reviews || [])]);
         }
         
-        setCurrentPage(data.pagination.currentPage);
-        setTotalPages(data.pagination.totalPages);
-        setTotalReviews(data.pagination.totalReviews);
-        setAverageRating(data.averageRating);
-        setRatingDistribution(data.ratingDistribution);
+        setCurrentPage(reviewData.pagination?.currentPage || 1);
+        setTotalPages(reviewData.pagination?.totalPages || 1);
+        setTotalReviews(reviewData.pagination?.totalReviews || 0);
+        setAverageRating(reviewData.averageRating || 0);
+        setRatingDistribution(reviewData.ratingDistribution || []);
       }
     } catch (error) {
       console.error('Error loading reviews:', error);

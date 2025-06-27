@@ -51,7 +51,7 @@ export default function AdminHeroBannersPage() {
 
   const fetchBanners = async () => {
     try {
-      const response = await fetch('/api/admin/hero-banners');
+      const response = await fetch('/api/v2/admin/hero-banners');
       
       if (!response.ok) {
         const errorData = await response.text();
@@ -80,7 +80,7 @@ export default function AdminHeroBannersPage() {
     formDataUpload.append('file', file);
 
     try {
-      const response = await fetch('/api/upload/hero-banners', {
+      const response = await fetch('/api/v2/admin/upload/hero-banners', {
         method: 'POST',
         body: formDataUpload
       });

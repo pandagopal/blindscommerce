@@ -53,7 +53,7 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
     setResponse(null);
 
     try {
-      const res = await fetch('/api/customer/request-assistance', {
+      const res = await fetch('/api/v2/users/request-assistance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,13 +64,26 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
         }),
       });
 
-      const data = await res.json();
-      setResponse(data);
+      const result = await res.json();
+      if (result.success) {
+        setResponse({
+          success: true,
+          accessPin: result.data.accessPin,
+          sessionId: result.data.sessionId,
+          expiresAt: result.data.expiresAt,
+          availableStaff: result.data.availableStaff
+        });
 
-      if (data.success && onRequestSubmitted) {
-        onRequestSubmitted({
-          accessPin: data.accessPin,
-          sessionId: data.sessionId
+        if (onRequestSubmitted) {
+          onRequestSubmitted({
+            accessPin: result.data.accessPin,
+            sessionId: result.data.sessionId
+          });
+        }
+      } else {
+        setResponse({
+          success: false,
+          error: result.message || 'Failed to request assistance'
         });
       }
     } catch (error) {

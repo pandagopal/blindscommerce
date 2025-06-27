@@ -160,7 +160,7 @@ export function logError(error: Error | string, context?: any): void {
     // Could also send to your own API endpoint for logging
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
       // Uncomment when ready to implement server-side error logging
-      // fetch('/api/errors/log', {
+      // fetch('/api/v2/admin/errors/log', {
       //   method: 'POST',
       //   headers: { 'Content-Type': 'application/json' },
       //   body: JSON.stringify(errorDetails)

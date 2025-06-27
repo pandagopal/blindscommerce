@@ -84,7 +84,7 @@ const PayPalPayment = ({
         
         createOrder: async () => {
           try {
-            const response = await fetch('/api/v2/commerce/payments/paypal/create-order', {
+            const response = await fetch('/api/v2/payments/paypal/create-order', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -97,13 +97,12 @@ const PayPalPayment = ({
               }),
             });
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to create PayPal order');
+            const result = await response.json();
+            if (!result.success) {
+              throw new Error(result.message || 'Failed to create PayPal order');
             }
 
-            const data = await response.json();
-            return data.order_id;
+            return result.data.order_id;
           } catch (error) {
             console.error('PayPal create order error:', error);
             setError(error instanceof Error ? error.message : 'Failed to create PayPal order');
@@ -113,7 +112,7 @@ const PayPalPayment = ({
 
         onApprove: async (data) => {
           try {
-            const response = await fetch('/api/v2/commerce/payments/paypal/capture-order', {
+            const response = await fetch('/api/v2/payments/paypal/capture-order', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -124,13 +123,12 @@ const PayPalPayment = ({
               }),
             });
 
-            if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.error || 'Failed to capture PayPal payment');
+            const result = await response.json();
+            if (!result.success) {
+              throw new Error(result.message || 'Failed to capture PayPal payment');
             }
 
-            const captureData = await response.json();
-            onSuccess(captureData);
+            onSuccess(result.data);
           } catch (error) {
             console.error('PayPal capture error:', error);
             onError(error);
@@ -161,16 +159,16 @@ const PayPalPayment = ({
 
   const getClientToken = async (): Promise<string> => {
     try {
-      const response = await fetch('/api/payments/paypal/create-order', {
+      const response = await fetch('/api/v2/payments/paypal/create-order', {
         method: 'GET'
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to get client token');
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to get client token');
       }
 
-      const data = await response.json();
-      return data.client_token || '';
+      return result.data.client_token || '';
     } catch (error) {
       console.error('Failed to get PayPal client token:', error);
       return '';

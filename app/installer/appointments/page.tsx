@@ -56,12 +56,12 @@ export default function InstallerAppointmentsPage() {
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/installer/appointments');
-      if (!res.ok) {
-        throw new Error('Failed to fetch appointments');
+      const res = await fetch('/api/v2/installer/appointments');
+      const result = await res.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to fetch appointments');
       }
-      const data = await res.json();
-      setAppointments(data);
+      setAppointments(result.data);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       setError('Failed to load appointments');

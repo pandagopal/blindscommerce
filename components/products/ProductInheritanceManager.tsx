@@ -94,13 +94,14 @@ export default function ProductInheritanceManager({
       const params = new URLSearchParams();
       if (productId) params.append('productId', productId.toString());
       
-      const response = await fetch(`/api/vendor/products/inheritance?${params}`);
+      const response = await fetch(`/api/v2/vendor/products/inheritance?${params}`);
       const data = await response.json();
 
       if (response.ok) {
-        setRelationships(data.inheritanceRelationships);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setRelationships(data.data?.inheritanceRelationships || []);
       } else {
-        setError(data.error || 'Failed to fetch inheritance relationships');
+        setError(data.message || data.error || 'Failed to fetch inheritance relationships');
       }
     } catch (err) {
       setError('Failed to fetch inheritance relationships');
@@ -115,7 +116,7 @@ export default function ProductInheritanceManager({
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/vendor/products/inheritance', {
+      const response = await fetch('/api/v2/vendor/products/inheritance', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -129,14 +130,15 @@ export default function ProductInheritanceManager({
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess(`Product synced successfully. ${data.syncActions.join(', ')}`);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setSuccess(`Product synced successfully. ${data.data?.syncActions?.join(', ') || ''}`);
         await fetchInheritanceRelationships();
         
         if (onInheritanceChange) {
           onInheritanceChange();
         }
       } else {
-        setError(data.error || 'Failed to sync product');
+        setError(data.message || data.error || 'Failed to sync product');
       }
     } catch (err) {
       setError('Failed to sync product');
@@ -154,7 +156,7 @@ export default function ProductInheritanceManager({
       const relationship = relationships.find(r => r.inheritanceId === inheritanceId);
       if (!relationship) return;
 
-      const response = await fetch('/api/vendor/products/inheritance', {
+      const response = await fetch('/api/v2/vendor/products/inheritance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -170,11 +172,13 @@ export default function ProductInheritanceManager({
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'API request failed');
         await fetchInheritanceRelationships();
         setSuccess(`Auto-sync ${syncEnabled ? 'enabled' : 'disabled'} successfully`);
       } else {
         const data = await response.json();
-        setError(data.error || 'Failed to update sync settings');
+        setError(data.message || data.error || 'Failed to update sync settings');
       }
     } catch (err) {
       setError('Failed to update sync settings');

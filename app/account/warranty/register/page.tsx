@@ -77,7 +77,7 @@ export default function WarrantyRegisterPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/warranty/register', {
+      const response = await fetch('/api/v2/users/warranty/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,10 +90,9 @@ export default function WarrantyRegisterPage() {
         }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Registration failed');
       }
 
       setSuccess(true);

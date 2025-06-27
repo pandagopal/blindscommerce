@@ -63,7 +63,7 @@ const PaymentMethodsContent: React.FC = () => {
   const fetchPaymentMethods = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/account/payment-methods');
+      const response = await fetch('/api/v2/users/payment-methods');
       
       if (!response.ok) {
         throw new Error('Failed to fetch payment methods');
@@ -129,7 +129,7 @@ const PaymentMethodsContent: React.FC = () => {
       }
 
       // Save payment method to our backend
-      const response = await fetch('/api/account/payment-methods', {
+      const response = await fetch('/api/v2/users/payment-methods', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

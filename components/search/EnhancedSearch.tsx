@@ -84,7 +84,8 @@ export default function EnhancedSearch({
       
       if (response.ok) {
         const data = await response.json();
-        setSuggestions(data.suggestions || []);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setSuggestions(data.data?.suggestions || []);
         setShowSuggestions(true);
       }
     } catch (error) {
@@ -107,7 +108,7 @@ export default function EnhancedSearch({
     localStorage.setItem('recent_searches', JSON.stringify(updatedRecentSearches));
 
     // Track search analytics
-    fetch('/api/products/search/suggestions', {
+    fetch('/api/v2/commerce/products/search/suggestions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -195,7 +196,7 @@ export default function EnhancedSearch({
     setShowSuggestions(false);
     
     // Track click analytics
-    fetch('/api/products/search/suggestions', {
+    fetch('/api/v2/commerce/products/search/suggestions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

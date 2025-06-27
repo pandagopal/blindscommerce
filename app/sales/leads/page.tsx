@@ -102,9 +102,11 @@ export default function SalesLeadsPage() {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/sales/leads');
+      const res = await fetch('/api/v2/sales/leads');
       if (res.ok) {
-        const data = await res.json();
+        const result = await res.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const data = result.data;
         setLeads(data.leads);
         setStats(data.stats);
       } else {
@@ -128,7 +130,7 @@ export default function SalesLeadsPage() {
 
   const handleCreateLead = async () => {
     try {
-      const res = await fetch('/api/sales/leads', {
+      const res = await fetch('/api/v2/sales/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLead)
@@ -155,7 +157,7 @@ export default function SalesLeadsPage() {
 
   const handleUpdateLead = async (leadId: string, updates: Partial<Lead>) => {
     try {
-      const res = await fetch(`/api/sales/leads/${leadId}`, {
+      const res = await fetch(`/api/v2/sales/leads/${leadId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)

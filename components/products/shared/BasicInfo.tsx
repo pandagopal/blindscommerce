@@ -148,10 +148,11 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/v2/commerce/categories');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.categories || []);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setCategories(data.data?.categories || []);
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -163,10 +164,11 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
   const fetchVendors = async () => {
     try {
       setLoadingVendors(true);
-      const response = await fetch('/api/admin/vendors');
+      const response = await fetch('/api/v2/admin/vendors');
       if (response.ok) {
         const data = await response.json();
-        setVendors(data.vendors || []);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setVendors(data.data?.vendors || []);
       }
     } catch (error) {
       console.error('Failed to fetch vendors:', error);

@@ -103,17 +103,21 @@ export default function SuperAdminDashboard() {
     const fetchDashboardData = async () => {
       try {
         // Fetch system statistics
-        const statsRes = await fetch('/api/super-admin/stats');
+        const statsRes = await fetch('/api/v2/admin/stats');
         if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setStats(statsData);
+          const statsResult = await statsRes.json();
+          if (statsResult.success) {
+            setStats(statsResult.data);
+          }
         }
 
         // Fetch security alerts
-        const alertsRes = await fetch('/api/super-admin/security-alerts');
+        const alertsRes = await fetch('/api/v2/admin/security-alerts');
         if (alertsRes.ok) {
-          const alertsData = await alertsRes.json();
-          setAlerts(alertsData.alerts || []);
+          const alertsResult = await alertsRes.json();
+          if (alertsResult.success) {
+            setAlerts(alertsResult.data.alerts || []);
+          }
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

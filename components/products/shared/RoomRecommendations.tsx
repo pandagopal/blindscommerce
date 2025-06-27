@@ -50,7 +50,7 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
   useEffect(() => {
     const fetchRoomTypes = async () => {
       try {
-        const response = await fetch('/api/rooms');
+        const response = await fetch('/api/v2/content/rooms');
         if (response.ok) {
           const data = await response.json();
           setRoomTypes(data.rooms || []);

@@ -88,11 +88,12 @@ export default function SMSPreferences({
     setLoading(true);
     try {
       const cleanPhone = phone.replace(/\D/g, '');
-      const response = await fetch(`/api/sms/opt-out?phone=${cleanPhone}`);
+      const response = await fetch(`/api/v2/notifications/sms/opt-out?phone=${cleanPhone}`);
       
       if (response.ok) {
         const data = await response.json();
-        setIsOptedOut(data.isOptedOut);
+        if (!data.success) throw new Error(data.message || 'API request failed');
+        setIsOptedOut(data.data?.isOptedOut || false);
       }
     } catch (error) {
       console.error('Error checking opt-out status:', error);
@@ -109,7 +110,7 @@ export default function SMSPreferences({
 
     setSaving(true);
     try {
-      const response = await fetch('/api/sms/opt-out', {
+      const response = await fetch('/api/v2/notifications/sms/opt-out', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -118,8 +119,9 @@ export default function SMSPreferences({
       });
 
       const data = await response.json();
+      if (!data.success && response.ok) throw new Error(data.message || 'API request failed');
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         setIsOptedOut(true);
         setMessage('Successfully opted out of SMS notifications');
         // Disable all non-required preferences
@@ -146,7 +148,7 @@ export default function SMSPreferences({
 
     setSaving(true);
     try {
-      const response = await fetch('/api/sms/opt-out', {
+      const response = await fetch('/api/v2/notifications/sms/opt-out', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -155,8 +157,9 @@ export default function SMSPreferences({
       });
 
       const data = await response.json();
+      if (!data.success && response.ok) throw new Error(data.message || 'API request failed');
 
-      if (response.ok) {
+      if (response.ok && data.success) {
         setIsOptedOut(false);
         setMessage('Successfully opted back into SMS notifications');
       } else {
@@ -185,7 +188,7 @@ export default function SMSPreferences({
     setSaving(true);
     try {
       // Save preferences to user profile
-      const response = await fetch('/api/account/sms-preferences', {
+      const response = await fetch('/api/v2/users/sms-preferences', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -201,6 +204,8 @@ export default function SMSPreferences({
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (!data.success) throw new Error(data.message || 'API request failed');
         setMessage('SMS preferences saved successfully');
         onPreferencesUpdate?.(preferences);
       } else {

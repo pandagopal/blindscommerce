@@ -41,7 +41,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
   const fetchLoyaltyStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/loyalty/account');
+      const response = await fetch('/api/v2/users/loyalty/account');
       
       if (!response.ok) {
         // If user is not logged in or doesn't have a loyalty account, don't show component

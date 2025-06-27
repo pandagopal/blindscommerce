@@ -100,9 +100,11 @@ export default function SampleManagementPage() {
         params.append('status', selectedStatus);
       }
       
-      const response = await fetch(`/api/admin/sample-orders?${params}`);
+      const response = await fetch(`/api/v2/admin/sample-orders?${params}`);
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const data = result.data;
         setOrders(data.orders || []);
       }
     } catch (error) {
@@ -114,9 +116,11 @@ export default function SampleManagementPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/sample-orders/stats');
+      const response = await fetch('/api/v2/admin/sample-orders/stats');
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const data = result.data;
         setStats(data.stats);
       }
     } catch (error) {
@@ -126,7 +130,7 @@ export default function SampleManagementPage() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: string, trackingNumber?: string) => {
     try {
-      const response = await fetch(`/api/admin/sample-orders/${orderId}`, {
+      const response = await fetch(`/api/v2/admin/sample-orders/${orderId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

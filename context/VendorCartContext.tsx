@@ -178,19 +178,21 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       setIsLoading(true);
       
       // Get or create cart
-      const response = await fetch('/api/cart', {
+      const response = await fetch('/api/v2/commerce/cart', {
         method: 'GET',
       });
       
       if (response.ok) {
-        const data = await response.json();
-        setCartId(data.cart_id);
-        setItems(data.items || []);
-        setSavedForLaterItems(data.saved_for_later || []);
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const cartData = result.data || result;
+        setCartId(cartData.cart_id);
+        setItems(cartData.items || []);
+        setSavedForLaterItems(cartData.saved_for_later || []);
         
         // Load discounts after cart is loaded
-        if (data.cart_id) {
-          await refreshDiscounts(data.cart_id);
+        if (cartData.cart_id) {
+          await refreshDiscounts(cartData.cart_id);
         }
       }
     } catch (error) {
@@ -261,7 +263,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
     try {
       setIsLoadingDiscounts(true);
       
-      const response = await fetch('/api/cart/vendor-discounts', {
+      const response = await fetch('/api/v2/commerce/cart/vendor-discounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -271,12 +273,14 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setAppliedDiscounts(data.applied_discounts || []);
+        const result = await response.json();
+        if (!result.success) throw new Error(result.message || 'API request failed');
+        const discountData = result.data || result;
+        setAppliedDiscounts(discountData.applied_discounts || []);
         
         // Update item prices with discount information
         const updatedItems = items.map(item => {
-          const itemDiscount = data.applied_discounts
+          const itemDiscount = discountData.applied_discounts
             .flatMap((d: VendorDiscount) => d.applied_items)
             .find((ai: any) => ai.cart_item_id === item.cart_item_id);
           
@@ -303,7 +307,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
 
   const validateCoupon = async (coupon_code: string): Promise<CouponValidation> => {
     try {
-      const response = await fetch('/api/vendor/coupons/validate', {
+      const response = await fetch('/api/v2/vendor/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -315,7 +319,8 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       });
 
       const result = await response.json();
-      return result;
+      if (!result.success) throw new Error(result.message || 'API request failed');
+      return result.data || result;
     } catch (error) {
       // Error validating coupon
       return {
@@ -333,7 +338,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
     try {
       setIsApplyingCoupon(true);
       
-      const response = await fetch('/api/cart/apply-coupon', {
+      const response = await fetch('/api/v2/commerce/cart/apply-coupon', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -344,19 +349,23 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       });
 
       const result = await response.json();
+      if (!result.success) {
+        return { success: false, error: result.message || 'Failed to apply coupon' };
+      }
+      const data = result.data || result;
 
       if (response.ok) {
         // Add to applied coupons
         const newCoupon: VendorDiscount = {
-          vendor_id: result.coupon.vendor_id,
-          vendor_name: result.coupon.vendor_name,
-          discount_id: result.coupon.coupon_id,
-          discount_name: result.coupon.coupon_name,
-          discount_type: result.coupon.discount_type,
-          discount_amount: result.coupon.discount_amount,
-          applied_items: result.applied_items,
-          subtotal_before: result.subtotal_before,
-          subtotal_after: result.subtotal_after,
+          vendor_id: data.coupon.vendor_id,
+          vendor_name: data.coupon.vendor_name,
+          discount_id: data.coupon.coupon_id,
+          discount_name: data.coupon.coupon_name,
+          discount_type: data.coupon.discount_type,
+          discount_amount: data.coupon.discount_amount,
+          applied_items: data.applied_items,
+          subtotal_before: data.subtotal_before,
+          subtotal_after: data.subtotal_after,
           coupon_code: coupon_code
         };
 
@@ -364,7 +373,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         
         // Update item prices
         const updatedItems = items.map(item => {
-          const itemDiscount = result.applied_items.find((ai: any) => ai.cart_item_id === item.cart_item_id);
+          const itemDiscount = data.applied_items.find((ai: any) => ai.cart_item_id === item.cart_item_id);
           
           if (itemDiscount) {
             return {
@@ -380,9 +389,9 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         
         setItems(updatedItems);
         
-        return { success: true, message: result.message };
+        return { success: true, message: data.message };
       } else {
-        return { success: false, error: result.error };
+        return { success: false, error: data.error };
       }
     } catch (error) {
       // Error applying coupon
@@ -398,11 +407,15 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
     }
 
     try {
-      const response = await fetch(`/api/cart/apply-coupon?cart_id=${cartId}&coupon_code=${coupon_code}`, {
+      const response = await fetch(`/api/v2/commerce/cart/apply-coupon?cart_id=${cartId}&coupon_code=${coupon_code}`, {
         method: 'DELETE'
       });
 
       const result = await response.json();
+      if (!result.success) {
+        return { success: false, message: result.message || 'Failed to remove coupon' };
+      }
+      const data = result.data || result;
 
       if (response.ok) {
         // Remove from applied coupons
@@ -411,9 +424,9 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         // Refresh discounts to recalculate prices
         await refreshDiscounts();
         
-        return { success: true, message: result.message };
+        return { success: true, message: data.message };
       } else {
-        return { success: false, message: result.error };
+        return { success: false, message: data.error };
       }
     } catch (error) {
       // Error removing coupon
