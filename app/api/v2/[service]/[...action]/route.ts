@@ -133,13 +133,18 @@ async function handleRequest(
     return successResponse(result, service, actionPath, startTime);
 
   } catch (error) {
-    // Log error
-    logError(error as Error, {
-      service,
-      action: actionPath,
-      method,
-      url: req.url,
-    });
+    // Get status code
+    const status = error instanceof Error && 'status' in error ? (error as any).status : 500;
+    
+    // Only log errors that are not 401 (authentication errors are expected for non-authenticated users)
+    if (status !== 401) {
+      logError(error as Error, {
+        service,
+        action: actionPath,
+        method,
+        url: req.url,
+      });
+    }
 
     // Return error response
     const message = process.env.NODE_ENV === 'development'
@@ -148,7 +153,7 @@ async function handleRequest(
 
     return errorResponse(
       message,
-      error instanceof Error && 'status' in error ? (error as any).status : 500,
+      status,
       service,
       actionPath,
       startTime

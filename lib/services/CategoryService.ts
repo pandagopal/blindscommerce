@@ -11,18 +11,14 @@ interface Category {
   name: string;
   slug: string;
   description?: string;
-  parent_id?: number;
   image_url?: string;
   display_order: number;
-  is_active: boolean;
   featured: boolean;
   created_at: Date;
   updated_at: Date;
 }
 
 interface GetCategoriesOptions {
-  parentId?: number;
-  isActive?: boolean;
   isFeatured?: boolean;
   limit?: number;
   offset?: number;
@@ -36,8 +32,6 @@ export class CategoryService extends BaseService {
    */
   async getCategories(options: GetCategoriesOptions = {}): Promise<Category[]> {
     const {
-      parentId,
-      isActive = true,
       isFeatured,
       limit,
       offset = 0,
@@ -51,10 +45,8 @@ export class CategoryService extends BaseService {
         name,
         slug,
         description,
-        parent_id,
         image_url,
         display_order,
-        is_active,
         featured,
         created_at,
         updated_at
@@ -64,19 +56,16 @@ export class CategoryService extends BaseService {
 
     const params: any[] = [];
 
-    if (parentId !== undefined) {
-      query += ' AND parent_id = ?';
-      params.push(parentId);
-    }
-
-    if (isActive !== undefined) {
-      query += ' AND is_active = ?';
-      params.push(isActive);
-    }
+    // Note: parent_id and is_active columns don't exist in the current schema
+    // Commenting out for now
+    // if (parentId !== undefined) {
+    //   query += ' AND parent_id = ?';
+    //   params.push(parentId);
+    // }
 
     if (isFeatured !== undefined) {
       query += ' AND featured = ?';
-      params.push(isFeatured);
+      params.push(isFeatured ? 1 : 0);
     }
 
     // Add sorting
@@ -90,8 +79,8 @@ export class CategoryService extends BaseService {
       query += ` LIMIT ${limit} OFFSET ${offset}`;
     }
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, params);
-    return rows as Category[];
+    const rows = await this.executeQuery<Category>(query, params);
+    return rows;
   }
 
   /**
@@ -104,10 +93,8 @@ export class CategoryService extends BaseService {
         name,
         slug,
         description,
-        parent_id,
         image_url,
         display_order,
-        is_active,
         featured,
         created_at,
         updated_at
@@ -115,8 +102,8 @@ export class CategoryService extends BaseService {
       WHERE category_id = ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [categoryId]);
-    return rows.length > 0 ? (rows[0] as Category) : null;
+    const rows = await this.executeQuery<Category>(query, [categoryId]);
+    return rows.length > 0 ? rows[0] : null;
   }
 
   /**
@@ -129,50 +116,36 @@ export class CategoryService extends BaseService {
         name,
         slug,
         description,
-        parent_id,
         image_url,
         display_order,
-        is_active,
         featured,
         created_at,
         updated_at
       FROM categories
-      WHERE slug = ? AND is_active = true
+      WHERE slug = ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [slug]);
-    return rows.length > 0 ? (rows[0] as Category) : null;
+    const rows = await this.executeQuery<Category>(query, [slug]);
+    return rows.length > 0 ? rows[0] : null;
   }
 
   /**
    * Get subcategories of a parent category
+   * Note: parent_id column doesn't exist in current schema
    */
   async getSubcategories(parentId: number): Promise<Category[]> {
-    return this.getCategories({
-      parentId,
-      isActive: true,
-      sortBy: 'display_order',
-      sortOrder: 'ASC',
-    });
+    // Return empty array since parent_id doesn't exist
+    return [];
   }
 
   /**
    * Get category hierarchy (breadcrumb)
+   * Note: parent_id column doesn't exist in current schema
    */
   async getCategoryHierarchy(categoryId: number): Promise<Category[]> {
-    const query = `
-      WITH RECURSIVE category_hierarchy AS (
-        SELECT * FROM categories WHERE category_id = ?
-        UNION ALL
-        SELECT c.* FROM categories c
-        INNER JOIN category_hierarchy ch ON c.category_id = ch.parent_id
-      )
-      SELECT * FROM category_hierarchy
-      ORDER BY parent_id ASC
-    `;
-
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [categoryId]);
-    return rows as Category[];
+    // Return just the single category since there's no hierarchy
+    const category = await this.getCategoryById(categoryId);
+    return category ? [category] : [];
   }
 
   /**
@@ -182,12 +155,11 @@ export class CategoryService extends BaseService {
     const query = `
       SELECT COUNT(DISTINCT p.product_id) as count
       FROM products p
-      JOIN product_categories pc ON p.product_id = pc.product_id
-      WHERE pc.category_id = ? AND p.is_active = true
+      WHERE p.category_id = ? AND p.is_active = 1
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [categoryId]);
-    return rows[0].count || 0;
+    const rows = await this.executeQuery<RowDataPacket>(query, [categoryId]);
+    return rows[0]?.count || 0;
   }
 
   /**
@@ -195,7 +167,6 @@ export class CategoryService extends BaseService {
    */
   async getFeaturedCategories(limit: number = 8): Promise<Category[]> {
     return this.getCategories({
-      isActive: true,
       isFeatured: true,
       limit,
       sortBy: 'display_order',

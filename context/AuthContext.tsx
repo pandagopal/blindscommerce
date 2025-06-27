@@ -35,6 +35,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const data = result.data || result;
         setUser(data.user);
       } else {
+        // Don't log 401 errors as they're expected for unauthenticated users
+        if (res.status !== 401) {
+          console.error('Error fetching user:', res.status, res.statusText);
+        }
         setUser(null);
       }
     } catch (error) {

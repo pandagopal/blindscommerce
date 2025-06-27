@@ -164,7 +164,7 @@ export class ProductService extends BaseService {
 
     if (isActive !== undefined) {
       whereConditions.push('p.is_active = ?');
-      whereParams.push(isActive);
+      whereParams.push(isActive ? 1 : 0);
     }
 
     if (categoryId) {
@@ -178,24 +178,24 @@ export class ProductService extends BaseService {
     }
 
     if (search) {
-      whereConditions.push('(p.name LIKE ? OR p.description LIKE ? OR p.sku LIKE ?)');
+      whereConditions.push('(p.name LIKE ? OR p.short_description LIKE ? OR p.full_description LIKE ? OR p.sku LIKE ?)');
       const searchPattern = `%${search}%`;
-      whereParams.push(searchPattern, searchPattern, searchPattern);
+      whereParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
-    if (minPrice !== undefined) {
+    if (minPrice !== undefined && minPrice !== null) {
       whereConditions.push('COALESCE(vp.vendor_price, p.base_price) >= ?');
       whereParams.push(minPrice);
     }
 
-    if (maxPrice !== undefined) {
+    if (maxPrice !== undefined && maxPrice !== null) {
       whereConditions.push('COALESCE(vp.vendor_price, p.base_price) <= ?');
       whereParams.push(maxPrice);
     }
 
     if (isFeatured !== undefined) {
       whereConditions.push('p.is_featured = ?');
-      whereParams.push(isFeatured);
+      whereParams.push(isFeatured ? 1 : 0);
     }
 
     if (brands && brands.length > 0) {
@@ -251,6 +251,13 @@ export class ProductService extends BaseService {
     );
     
     const total = countResult.total || 0;
+    
+    // Debug logging
+    if (isFeatured) {
+      console.log('Featured products query - Total found:', total);
+      console.log('Where conditions:', whereConditions);
+      console.log('Where params:', whereParams);
+    }
 
     // Get products with all details
     const sortColumn = sortBy === 'price' 
@@ -266,7 +273,7 @@ export class ProductService extends BaseService {
         MIN(vp.vendor_price) as vendor_price,
         MIN(vd.discount_type) as discount_type,
         MIN(vd.discount_value) as discount_value,
-        pi.image_url as primary_image_url,
+        COALESCE(pi.image_url, p.primary_image_url) as primary_image_url,
         COALESCE(AVG(pr.rating), 0) as avg_rating,
         COUNT(DISTINCT pr.review_id) as review_count
       FROM products p
@@ -281,7 +288,7 @@ export class ProductService extends BaseService {
       LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
       ${features ? 'LEFT JOIN product_features pf ON p.product_id = pf.product_id' : ''}
       ${whereClause}
-      GROUP BY p.product_id, p.name, p.slug, p.sku, p.description, p.short_description, 
+      GROUP BY p.product_id, p.name, p.slug, p.sku, p.short_description, 
                p.full_description, p.base_price, p.cost_price, p.category_id, p.brand_id, 
                p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count, 
                p.created_at, p.updated_at, c.name, c.slug, b.name, pi.image_url
@@ -296,6 +303,18 @@ export class ProductService extends BaseService {
     }
 
     const products = await this.executeQuery<ProductWithDetails>(query, queryParams);
+
+    // Debug logging
+    if (isFeatured) {
+      console.log('Featured products result count:', products.length);
+      if (products.length > 0) {
+        console.log('First product:', {
+          id: products[0].product_id,
+          name: products[0].name,
+          primary_image_url: products[0].primary_image_url
+        });
+      }
+    }
 
     return { products, total };
   }
@@ -407,14 +426,14 @@ export class ProductService extends BaseService {
         c.name as category_name,
         c.slug as category_slug,
         b.name as brand_name,
-        MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance
+        MATCH(p.name, p.short_description, p.full_description) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
       WHERE 
         p.is_active = 1
         AND (
-          MATCH(p.name, p.description) AGAINST(? IN NATURAL LANGUAGE MODE)
+          MATCH(p.name, p.short_description, p.full_description) AGAINST(? IN NATURAL LANGUAGE MODE)
           OR p.name LIKE ?
           OR p.sku LIKE ?
         )

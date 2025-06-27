@@ -128,7 +128,6 @@ export class CommerceHandler extends BaseHandler {
     const limit = this.sanitizeNumber(searchParams.get('limit'), 1, 100);
 
     const categories = await this.categoryService.getCategories({
-      isActive: true,
       isFeatured: featured || undefined,
       limit: limit || undefined,
     });
@@ -155,7 +154,11 @@ export class CommerceHandler extends BaseHandler {
       offset,
     };
 
+    console.log('CommerceHandler.getProducts - options:', JSON.stringify(options, null, 2));
+    
     const { products, total } = await this.productService.getProducts(options);
+    
+    console.log('CommerceHandler.getProducts - result:', { total, productsLength: products.length });
     
     return this.buildPaginatedResponse(products, total, page, limit);
   }

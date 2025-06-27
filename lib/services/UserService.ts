@@ -181,8 +181,8 @@ export class UserService extends BaseService {
           data.last_name || null,
           data.phone || null,
           data.role,
-          true,
-          false
+          1,
+          0
         ]
       );
 
@@ -200,7 +200,7 @@ export class UserService extends BaseService {
             data.vendor_data.business_name,
             data.vendor_data.tax_id || null,
             data.vendor_data.commission_rate || 10,
-            false
+            0
           ]
         );
       }
@@ -211,7 +211,7 @@ export class UserService extends BaseService {
           user_id, email_notifications, sms_notifications,
           newsletter_subscribed, created_at
         ) VALUES (?, ?, ?, ?, NOW())`,
-        [userId, true, false, true]
+        [userId, 1, 0, 1]
       );
 
       await connection.commit();
@@ -273,12 +273,12 @@ export class UserService extends BaseService {
 
     if (isActive !== undefined) {
       whereConditions.push('u.is_active = ?');
-      whereParams.push(isActive);
+      whereParams.push(isActive ? 1 : 0);
     }
 
     if (isVerified !== undefined) {
       whereConditions.push('u.is_verified = ?');
-      whereParams.push(isVerified);
+      whereParams.push(isVerified ? 1 : 0);
     }
 
     if (search) {

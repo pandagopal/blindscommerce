@@ -7,11 +7,13 @@ import { useSearchParams } from 'next/navigation';
 import { Star, CheckCircle, X } from 'lucide-react';
 
 interface Category {
-  id: number;
+  id?: number;
+  category_id?: number;
   name: string;
   slug: string;
-  image: string;
-  description: string;
+  image?: string;
+  image_url?: string;
+  description?: string;
 }
 
 interface Product {
@@ -21,7 +23,8 @@ interface Product {
   category_name: string;
   base_price: number;
   rating: number;
-  primary_image: string;
+  primary_image_url?: string;
+  avg_rating?: number;
 }
 
 interface Room {
@@ -378,11 +381,11 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
           <h2 className="text-3xl font-bold text-center mb-12">Browse Categories</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {Array.isArray(categories) && categories.map((category) => (
-              <Link href={`/products?category=${category.id}`} key={category.category_id || category.id}>
+              <Link href={`/products?category=${category.category_id || category.id}`} key={category.category_id || category.id}>
                 <div className="group relative h-64 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                  {category.image && category.image.trim() !== '' ? (
+                  {((category.image_url || category.image) && (category.image_url || category.image)!.trim() !== '') ? (
                     <Image
-                      src={category.image}
+                      src={category.image_url || category.image || ''}
                       alt={category.name}
                       fill
                       className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -442,9 +445,9 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
               <Link href={`/products/configure/${product.slug}`} key={product.product_id}>
                 <div className="group">
                   <div className="relative h-64 rounded-lg overflow-hidden shadow-lg mb-4">
-                    {product.primary_image && product.primary_image.trim() !== '' ? (
+                    {product.primary_image_url && product.primary_image_url.trim() !== '' ? (
                       <Image
-                        src={product.primary_image}
+                        src={product.primary_image_url.startsWith('/') ? product.primary_image_url : `/uploads/products/${product.primary_image_url}`}
                         alt={product.name}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -460,7 +463,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
                     <span className="text-primary-red font-bold">${product.base_price}</span>
                     <div className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-sm text-gray-600">{product.rating}</span>
+                      <span className="ml-1 text-sm text-gray-600">{product.avg_rating || product.rating || 0}</span>
                     </div>
                   </div>
                 </div>

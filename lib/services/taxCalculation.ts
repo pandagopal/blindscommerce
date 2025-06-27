@@ -63,7 +63,7 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     
     // Try exact ZIP code match first
     let [rows] = await pool.execute<any[]>(
-      'SELECT * FROM tax_rates WHERE zip_code = ? AND is_active = TRUE LIMIT 1',
+      'SELECT * FROM tax_rates WHERE zip_code = ? AND is_active = 1 LIMIT 1',
       [cleanZip]
     );
     
@@ -78,7 +78,7 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     if (cleanZip.length > 5) {
       const shortZip = cleanZip.substring(0, 5);
       [rows] = await pool.execute<any[]>(
-        'SELECT * FROM tax_rates WHERE zip_code = ? AND is_active = TRUE LIMIT 1',
+        'SELECT * FROM tax_rates WHERE zip_code = ? AND is_active = 1 LIMIT 1',
         [shortZip]
       );
       
@@ -91,7 +91,7 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     const stateCode = getStateFromZip(cleanZip);
     if (stateCode) {
       [rows] = await pool.execute<any[]>(
-        'SELECT * FROM tax_rates WHERE state_code = ? AND zip_code = "00000" AND is_active = TRUE LIMIT 1',
+        'SELECT * FROM tax_rates WHERE state_code = ? AND zip_code = "00000" AND is_active = 1 LIMIT 1',
         [stateCode]
       );
       
@@ -102,7 +102,7 @@ export async function getTaxRateByZip(zipCode: string): Promise<TaxRate> {
     
     // Fallback to US average
     [rows] = await pool.execute<any[]>(
-      'SELECT * FROM tax_rates WHERE zip_code = "99999" AND is_active = TRUE LIMIT 1'
+      'SELECT * FROM tax_rates WHERE zip_code = "99999" AND is_active = 1 LIMIT 1'
     );
     
     if (rows.length > 0) {
@@ -243,7 +243,7 @@ export async function getAllTaxRates(
   try {
     const pool = await getPool();
     
-    let whereClause = 'WHERE is_active = TRUE';
+    let whereClause = 'WHERE is_active = 1';
     let params: any[] = [];
     
     if (searchTerm) {
@@ -287,7 +287,7 @@ export async function upsertTaxRate(taxRate: Omit<TaxRate, 'tax_rate_id' | 'crea
       `INSERT INTO tax_rates 
        (zip_code, city, county, state_code, state_name, state_tax_rate, county_tax_rate, 
         city_tax_rate, special_district_tax_rate, total_tax_rate, tax_jurisdiction, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
        ON DUPLICATE KEY UPDATE
        city = VALUES(city),
        county = VALUES(county),

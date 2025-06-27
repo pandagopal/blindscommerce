@@ -45,12 +45,12 @@ const Navbar = () => {
           cache: 'no-store'
         });
         if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.companyInfo) {
+          const result = await response.json();
+          if (result.success && result.data?.companyInfo) {
             setCompanyInfo({
-              companyName: data.companyInfo.companyName || 'Smart Blinds Hub',
-              emergencyHotline: data.companyInfo.emergencyHotline || '1-800-BLINDS',
-              tagline: data.companyInfo.tagline || 'Expert Help Available'
+              companyName: result.data.companyInfo.companyName || 'Smart Blinds Hub',
+              emergencyHotline: result.data.companyInfo.emergencyHotline || '1-800-BLINDS',
+              tagline: result.data.companyInfo.tagline || 'Expert Help Available'
             });
           }
         }
@@ -82,6 +82,10 @@ const Navbar = () => {
         const data = result.data || result;
         setUser(data.user);
       } else {
+        // Don't log 401 errors as they're expected for unauthenticated users
+        if (response.status !== 401) {
+          console.error('Error fetching user:', response.status, response.statusText);
+        }
         setUser(null);
       }
     } catch (error) {

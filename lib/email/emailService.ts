@@ -40,7 +40,7 @@ class EmailService {
   private async getTemplate(templateName: string): Promise<EmailTemplate | null> {
     const pool = await getPool();
     const [rows] = await pool.execute<EmailTemplate[]>(
-      'SELECT * FROM email_templates WHERE name = ? AND is_active = true',
+      'SELECT * FROM email_templates WHERE name = ? AND is_active = 1',
       [templateName]
     );
     return rows[0] || null;

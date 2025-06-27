@@ -28,7 +28,7 @@ export class SettingsHandler extends BaseHandler {
       const pool = await getPool();
       
       const [rows] = await pool.execute<RowDataPacket[]>(
-        'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = TRUE'
+        'SELECT config_key, config_value, config_type FROM upload_security_config WHERE is_active = 1'
       );
 
       // Default settings structure
@@ -199,7 +199,7 @@ export class SettingsHandler extends BaseHandler {
         `SELECT config_key, config_value 
          FROM upload_security_config 
          WHERE config_key IN ('general_site_name', 'general_phone', 'general_tagline') 
-         AND is_active = TRUE`
+         AND is_active = 1`
       );
 
       const companyInfo = {

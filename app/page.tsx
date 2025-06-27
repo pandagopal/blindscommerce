@@ -1,42 +1,38 @@
 import HomeClient from './components/home/HomeClient';
+import { ProductService, CategoryService, ContentService } from '@/lib/services';
+
+// Caching disabled temporarily for testing
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 async function getHomePageData() {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+    // Use direct service calls for server-side data fetching
+    const productService = new ProductService();
+    const categoryService = new CategoryService();
+    const contentService = new ContentService();
     
-    // Fetch all data using internal API calls
-    const [categoriesRes, productsRes, heroBannersRes, roomsRes] = await Promise.all([
-      fetch(`${baseUrl}/v2/commerce/categories?featured=true&limit=8`, { 
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }
+    // Fetch all data in parallel
+    const [categoriesResult, productsResult, heroBannersResult, roomsResult] = await Promise.all([
+      categoryService.getCategories({ isFeatured: true, limit: 8 }),
+      productService.getProducts({ 
+        isFeatured: true, 
+        isActive: true,
+        limit: 12,
+        offset: 0,
+        sortBy: 'name',
+        sortOrder: 'ASC'
       }),
-      fetch(`${baseUrl}/v2/commerce/products?featured=true&limit=12`, { 
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }
-      }),
-      fetch(`${baseUrl}/v2/content/hero-banners`, { 
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }
-      }),
-      fetch(`${baseUrl}/v2/content/rooms`, { 
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' }
-      })
-    ]);
-
-    const [categoriesData, productsData, heroBannersData, roomsData] = await Promise.all([
-      categoriesRes.json(),
-      productsRes.json(),
-      heroBannersRes.json(),
-      roomsRes.json()
+      contentService.getHeroBanners(),
+      contentService.getRooms()
     ]);
 
     return {
-      categories: categoriesData.data?.categories || [],
-      products: productsData.data?.products || [],
+      categories: categoriesResult?.categories || [],
+      products: productsResult?.products || [],
       reviews: [],
-      heroBanners: heroBannersData.data?.banners || [],
-      rooms: roomsData.data?.rooms || []
+      heroBanners: heroBannersResult?.banners || [],
+      rooms: roomsResult?.rooms || []
     };
   } catch (error) {
     console.error('Error fetching homepage data:', error);

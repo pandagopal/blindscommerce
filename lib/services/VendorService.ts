@@ -300,7 +300,7 @@ export class VendorService extends BaseService {
 
     if (isActive !== undefined) {
       whereConditions.push('p.is_active = ?');
-      whereParams.push(isActive);
+      whereParams.push(isActive ? 1 : 0);
     }
 
     if (search) {

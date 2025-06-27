@@ -2,6 +2,11 @@ import { Metadata } from "next";
 import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
 import ProductSortHeader from "@/components/ProductSortHeader";
+import { ProductService, CategoryService } from '@/lib/services';
+
+// Caching disabled temporarily for testing
+export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 // Generate dynamic metadata based on search parameters
 export async function generateMetadata({
@@ -146,47 +151,46 @@ export default async function ProductsPage({
     categoryName: '', // Will be populated from API data
   };
 
-  // Fetch data from API
+  // Use direct service calls for server-side data fetching
+  const productService = new ProductService();
+  const categoryService = new CategoryService();
+  
   let categories = [];
   let products = [];
   let features = [];
 
   try {
-    // Build centralized API URL with query parameters
-    const apiUrl = new URL(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/pages/products`);
+    // Fetch data in parallel
+    const [categoriesResult, productsResult] = await Promise.all([
+      categoryService.getCategories({}),
+      productService.getProducts({
+        categoryId: categoryId || undefined,
+        minPrice: minPrice || undefined,
+        maxPrice: maxPrice || undefined,
+        sortBy: sortByParam as any,
+        sortOrder: sortOrderParam.toUpperCase() as 'ASC' | 'DESC',
+        search: searchParam,
+        isActive: true,
+        limit: 50,
+        offset: 0
+      })
+    ]);
+
+    categories = categoriesResult?.categories || [];
+    products = productsResult?.products || [];
     
-    if (categoryId) apiUrl.searchParams.set('category', categoryId.toString());
-    if (roomParam) apiUrl.searchParams.set('room', roomParam);
-    if (minPrice !== null) apiUrl.searchParams.set('minPrice', minPrice.toString());
-    if (maxPrice !== null) apiUrl.searchParams.set('maxPrice', maxPrice.toString());
-    if (sortByParam) apiUrl.searchParams.set('sortBy', sortByParam);
-    if (sortOrderParam) apiUrl.searchParams.set('sortOrder', sortOrderParam);
-    if (searchParam) apiUrl.searchParams.set('search', searchParam);
-    if (saleParam) apiUrl.searchParams.set('sale', saleParam);
-    if (featureIds.length > 0) apiUrl.searchParams.set('features', featureIds.join(','));
-
-    const response = await fetch(apiUrl.toString()); // Manual cache refresh only
-
-    if (response.ok) {
-      const data = await response.json();
-      if (data.success) {
-        categories = data.data.categories || [];
-        products = data.data.products || [];
-        features = data.data.features || [];
-        
-        // Update page context with category name
-        if (categoryId && categories.length > 0) {
-          const selectedCategory = categories.find(cat => cat.id === categoryId);
-          if (selectedCategory) {
-            pageContext.categoryName = selectedCategory.name;
-          }
-        }
+    // Features will be empty for now
+    features = [];
+    
+    // Update page context with category name
+    if (categoryId && categories.length > 0) {
+      const selectedCategory = categories.find(cat => cat.category_id === categoryId);
+      if (selectedCategory) {
+        pageContext.categoryName = selectedCategory.name;
       }
-    } else {
-      console.error("Centralized API request failed:", response.status, response.statusText);
     }
   } catch (error) {
-    console.error("Error fetching data from centralized API:", error);
+    console.error("Error fetching data:", error);
     categories = [];
     products = [];
     features = [];

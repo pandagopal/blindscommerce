@@ -10,6 +10,7 @@ export { UserService } from './UserService';
 export { VendorService } from './VendorService';
 export { CartService } from './CartService';
 export { CategoryService } from './CategoryService';
+export { ContentService } from './ContentService';
 
 // Re-export types
 export type { QueryResult, BatchOperationResult } from './BaseService';

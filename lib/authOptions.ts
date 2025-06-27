@@ -98,11 +98,11 @@ export const authOptions: NextAuthOptions = {
             user.email,
             hashedPassword,
             'customer', // ONLY create customer accounts via social login
-            true,
+            1,
             account.provider,
             account.providerAccountId,
             user.image,
-            true // Social login users are considered email verified
+            1 // Social login users are considered email verified
           ]
         );
 
