@@ -112,31 +112,38 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // Use V2 API to get user info
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/users/${decoded.userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      cache: 'no-store'
-    });
+    // FIXED: Direct database query to avoid circular dependency with V2 API
+    const { getPool } = await import('@/lib/db');
+    const pool = await getPool();
+    const [rows] = await pool.execute<any[]>(
+      `SELECT 
+        user_id,
+        email,
+        first_name,
+        last_name,
+        phone,
+        role,
+        vendor_id,
+        is_active
+      FROM users 
+      WHERE user_id = ? AND is_active = 1`,
+      [decoded.userId]
+    );
 
-    if (!response.ok) {
+    if (rows.length === 0) {
       return null;
     }
 
-    const result = await response.json();
-    const userData = result.data || result;
+    const userData = rows[0];
 
     // Transform to expected format
     return {
-      userId: userData.user_id || userData.userId,
+      userId: userData.user_id,
       email: userData.email,
-      firstName: userData.first_name || userData.firstName,
-      lastName: userData.last_name || userData.lastName,
+      firstName: userData.first_name,
+      lastName: userData.last_name,
       phone: userData.phone,
-      isAdmin: userData.is_admin || userData.isAdmin || userData.role === 'admin',
+      isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
       role: userData.role
     };
   } catch (error) {

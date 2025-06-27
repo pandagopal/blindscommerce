@@ -285,7 +285,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     const areaInSqFt = area / 144; // Convert sq inches to sq ft
     
     // 1. Start with base price from Basic Info tab
-    let totalPrice = product?.base_price || 0;
+    let totalPrice = parseFloat(product?.base_price) || 0;
     
     // 2. Add pricing from Pricing Matrix based on width/height ranges
     if (product?.pricingMatrix && totalWidth > 0 && totalHeight > 0) {
@@ -330,7 +330,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       );
       
       if (selectedControl && selectedControl.enabled) {
-        totalPrice += selectedControl.price_adjustment;
+        totalPrice += parseFloat(selectedControl.price_adjustment) || 0;
       }
     }
     if (config.valanceOption === 'circular-fabric') totalPrice += 45;
@@ -338,7 +338,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     if (config.valanceOption === 'fabric-wrapped') totalPrice += 55;
     if (config.bottomRailOption === 'fabric-wrapped') totalPrice += 25;
     
-    return totalPrice;
+    // Ensure we always return a number
+    return isNaN(totalPrice) ? 0 : totalPrice;
   };
 
   const isStepCompleted = (step: string) => {

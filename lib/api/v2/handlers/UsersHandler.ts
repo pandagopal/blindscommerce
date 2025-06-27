@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
-import { UserService, OrderService } from '@/lib/services';
+import { userService, orderService } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { hashPassword, comparePassword } from '@/lib/db';
 
@@ -46,8 +46,8 @@ const AddAddressSchema = z.object({
 });
 
 export class UsersHandler extends BaseHandler {
-  private userService = new UserService();
-  private orderService = new OrderService();
+  private userService = userService;
+  private orderService = orderService;
 
   /**
    * Handle GET requests

@@ -30,8 +30,8 @@ export default function ProductConfiguratorPage() {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        // Fetching product with slug
-        const res = await fetch(`/api/products/${slug}?configure=true`);
+        // Search for the product by slug
+        const res = await fetch(`/api/v2/commerce/products?search=${encodeURIComponent(slug)}&limit=10`);
 
         if (!res.ok) {
           const errorData = await res.text();
@@ -40,8 +40,35 @@ export default function ProductConfiguratorPage() {
         }
 
         const data = await res.json();
-        setProduct(data.product);
-      } catch (error) {
+        
+        // Find the product with exact matching slug
+        // Handle both paginated and non-paginated responses
+        const products = data.data?.data || data.data?.products || data.products || data.data || [];
+        const product = Array.isArray(products) ? products.find((p: any) => p.slug === slug) : null;
+        
+        if (!product) {
+          console.error('Product not found in results:', { slug, products: products.map((p: any) => p.slug) });
+          throw new Error('Product not found');
+        }
+        
+        // Get detailed product information if product_id exists
+        if (product.product_id) {
+          try {
+            const detailRes = await fetch(`/api/v2/commerce/products/${product.product_id}`);
+            if (detailRes.ok) {
+              const detailData = await detailRes.json();
+              setProduct(detailData.data || detailData);
+            } else {
+              setProduct(product);
+            }
+          } catch (detailError) {
+            console.warn('Could not fetch detailed product info, using search result:', detailError);
+            setProduct(product);
+          }
+        } else {
+          setProduct(product);
+        }
+      } catch (error: any) {
         console.error('Error fetching product:', error);
         setError(`There was an error loading the product: ${error.message}`);
       } finally {

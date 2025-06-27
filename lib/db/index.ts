@@ -47,7 +47,7 @@ const RETRY_INTERVAL = 2000;
 let dbConnectionFailed = false;
 let lastFailureTime = 0;
 const RECOVERY_INTERVAL = 30000; // 30 seconds recovery period
-let poolStatsInterval: NodeJS.Timeout | null = null;
+// let poolStatsInterval: NodeJS.Timeout | null = null;
 
 // Generic execute query function with proper typing
 export async function executeQuery<T extends RowDataPacket>(
@@ -88,7 +88,17 @@ const shouldAttemptRecovery = (): boolean => {
 };
 
 // Reset connection state (for development/testing)
-export const resetConnectionState = (): void => {
+export const resetConnectionState = async (): Promise<void> => {
+  // Properly close existing pool connections before resetting
+  if (pool) {
+    try {
+      await pool.end();
+      console.log('[Pool] Existing connections properly closed');
+    } catch (error) {
+      console.error('[Pool] Error closing connections:', error);
+    }
+  }
+  
   dbConnectionFailed = false;
   connectionRetries = 0;
   lastFailureTime = 0;

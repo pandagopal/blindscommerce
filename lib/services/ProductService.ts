@@ -5,6 +5,7 @@
 
 import { BaseService } from './BaseService';
 import { RowDataPacket } from 'mysql2';
+import { parseProductPrices, parseArrayPrices, parseDecimal } from '@/lib/utils/priceUtils';
 
 interface Product extends RowDataPacket {
   product_id: number;
@@ -70,7 +71,7 @@ export class ProductService extends BaseService {
         vp.vendor_price,
         vd.discount_type,
         vd.discount_value,
-        COALESCE(cp.customer_price, vp.vendor_price, p.base_price) as effective_price
+        COALESCE(vp.vendor_price, p.base_price) as effective_price
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
@@ -80,8 +81,6 @@ export class ProductService extends BaseService {
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
         AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
-      LEFT JOIN customer_pricing cp ON p.product_id = cp.product_id 
-        ${customerId ? 'AND cp.customer_id = ?' : 'AND 1=0'}
       WHERE p.product_id = ? AND p.is_active = 1
       LIMIT 1
     `;
@@ -95,7 +94,7 @@ export class ProductService extends BaseService {
     
     if (rows.length === 0) return null;
     
-    const product = rows[0];
+    const product = parseProductPrices(rows[0]);
     
     // Get images and features in parallel
     const [images, features] = await this.executeParallel<{
@@ -168,8 +167,8 @@ export class ProductService extends BaseService {
     }
 
     if (categoryId) {
-      whereConditions.push('(p.category_id = ? OR c.parent_id = ?)');
-      whereParams.push(categoryId, categoryId);
+      whereConditions.push('p.category_id = ?');
+      whereParams.push(categoryId);
     }
 
     if (vendorId) {
@@ -178,9 +177,9 @@ export class ProductService extends BaseService {
     }
 
     if (search) {
-      whereConditions.push('(p.name LIKE ? OR p.short_description LIKE ? OR p.full_description LIKE ? OR p.sku LIKE ?)');
+      whereConditions.push('(p.name LIKE ? OR p.short_description LIKE ? OR p.full_description LIKE ? OR p.sku LIKE ? OR p.slug LIKE ?)');
       const searchPattern = `%${search}%`;
-      whereParams.push(searchPattern, searchPattern, searchPattern, searchPattern);
+      whereParams.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
     }
 
     if (minPrice !== undefined && minPrice !== null) {
@@ -252,12 +251,6 @@ export class ProductService extends BaseService {
     
     const total = countResult.total || 0;
     
-    // Debug logging
-    if (isFeatured) {
-      console.log('Featured products query - Total found:', total);
-      console.log('Where conditions:', whereConditions);
-      console.log('Where params:', whereParams);
-    }
 
     // Get products with all details
     const sortColumn = sortBy === 'price' 
@@ -302,19 +295,8 @@ export class ProductService extends BaseService {
       queryParams.push(...havingParams);
     }
 
-    const products = await this.executeQuery<ProductWithDetails>(query, queryParams);
-
-    // Debug logging
-    if (isFeatured) {
-      console.log('Featured products result count:', products.length);
-      if (products.length > 0) {
-        console.log('First product:', {
-          id: products[0].product_id,
-          name: products[0].name,
-          primary_image_url: products[0].primary_image_url
-        });
-      }
-    }
+    const rawProducts = await this.executeQuery<ProductWithDetails>(query, queryParams);
+    const products = parseArrayPrices(rawProducts);
 
     return { products, total };
   }

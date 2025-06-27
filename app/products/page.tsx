@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import ProductFilters from "@/components/ProductFilters";
 import ProductGrid from "@/components/ProductGrid";
 import ProductSortHeader from "@/components/ProductSortHeader";
-import { ProductService, CategoryService } from '@/lib/services';
 
 // Caching disabled temporarily for testing
 export const revalidate = 0;
@@ -151,9 +150,8 @@ export default async function ProductsPage({
     categoryName: '', // Will be populated from API data
   };
 
-  // Use direct service calls for server-side data fetching
-  const productService = new ProductService();
-  const categoryService = new CategoryService();
+  // Use singleton service instances to prevent connection pool exhaustion
+  const { productService, categoryService } = await import('@/lib/services/singletons');
   
   let categories = [];
   let products = [];
@@ -176,7 +174,7 @@ export default async function ProductsPage({
       })
     ]);
 
-    categories = categoriesResult?.categories || [];
+    categories = categoriesResult || [];
     products = productsResult?.products || [];
     
     // Features will be empty for now

@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Category {
-  id: number;
+  id?: number;
+  category_id?: number;
   name: string;
   slug: string;
   count?: number;
@@ -303,15 +304,15 @@ export default function ProductFilters({
               {Array.isArray(categories) && categories.filter(cat => 
                 ['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds'].includes(cat.name)
               ).map((category) => (
-                <div key={category.id} className="flex items-center">
+                <div key={category.category_id || category.id} className="flex items-center">
                   <input
                     type="checkbox"
-                    id={`category-${category.id}`}
+                    id={`category-${category.category_id || category.id}`}
                     className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={() => handleCategoryChange(category.id)}
+                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
+                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
                   />
-                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
                     {category.name}
                   </label>
                 </div>
@@ -326,15 +327,15 @@ export default function ProductFilters({
               {Array.isArray(categories) && categories.filter(cat => 
                 ['Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades'].includes(cat.name)
               ).map((category) => (
-                <div key={category.id} className="flex items-center">
+                <div key={category.category_id || category.id} className="flex items-center">
                   <input
                     type="checkbox"
-                    id={`category-${category.id}`}
+                    id={`category-${category.category_id || category.id}`}
                     className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={() => handleCategoryChange(category.id)}
+                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
+                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
                   />
-                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
                     {category.name}
                   </label>
                 </div>
@@ -349,15 +350,15 @@ export default function ProductFilters({
               {Array.isArray(categories) && categories.filter(cat => 
                 ['Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
               ).map((category) => (
-                <div key={category.id} className="flex items-center">
+                <div key={category.category_id || category.id} className="flex items-center">
                   <input
                     type="checkbox"
-                    id={`category-${category.id}`}
+                    id={`category-${category.category_id || category.id}`}
                     className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.id)}
-                    onChange={() => handleCategoryChange(category.id)}
+                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
+                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
                   />
-                  <label htmlFor={`category-${category.id}`} className="ml-2 text-sm text-gray-700">
+                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
                     {category.name}
                   </label>
                 </div>

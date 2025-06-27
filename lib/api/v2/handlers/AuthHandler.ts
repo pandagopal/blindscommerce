@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
-import { UserService } from '@/lib/services';
+import { userService } from '@/lib/services/singletons';
 import { comparePassword, hashPassword } from '@/lib/db';
 import { z } from 'zod';
 import { sign } from 'jsonwebtoken';
@@ -35,7 +35,7 @@ const ResetPasswordSchema = z.object({
 });
 
 export class AuthHandler extends BaseHandler {
-  private userService = new UserService();
+  private userService = userService;
 
   async handleGET(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {

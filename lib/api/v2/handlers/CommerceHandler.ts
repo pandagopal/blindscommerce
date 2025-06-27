@@ -6,11 +6,11 @@
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
 import { 
-  ProductService, 
-  CartService, 
-  OrderService,
-  CategoryService 
-} from '@/lib/services';
+  productService, 
+  cartService, 
+  orderService,
+  categoryService 
+} from '@/lib/services/singletons';
 import { z } from 'zod';
 
 // Validation schemas
@@ -59,10 +59,10 @@ const CreateOrderSchema = z.object({
 });
 
 export class CommerceHandler extends BaseHandler {
-  private productService = new ProductService();
-  private cartService = new CartService();
-  private orderService = new OrderService();
-  private categoryService = new CategoryService();
+  private productService = productService;
+  private cartService = cartService;
+  private orderService = orderService;
+  private categoryService = categoryService;
 
   /**
    * Handle GET requests
@@ -154,11 +154,7 @@ export class CommerceHandler extends BaseHandler {
       offset,
     };
 
-    console.log('CommerceHandler.getProducts - options:', JSON.stringify(options, null, 2));
-    
     const { products, total } = await this.productService.getProducts(options);
-    
-    console.log('CommerceHandler.getProducts - result:', { total, productsLength: products.length });
     
     return this.buildPaginatedResponse(products, total, page, limit);
   }

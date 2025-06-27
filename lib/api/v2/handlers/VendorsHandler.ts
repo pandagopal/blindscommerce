@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
-import { VendorService, ProductService, OrderService } from '@/lib/services';
+import { vendorService, productService, orderService } from '@/lib/services/singletons';
 import { z } from 'zod';
 
 // Validation schemas
@@ -58,9 +58,9 @@ const CreateCouponSchema = z.object({
 });
 
 export class VendorsHandler extends BaseHandler {
-  private vendorService = new VendorService();
-  private productService = new ProductService();
-  private orderService = new OrderService();
+  private vendorService = vendorService;
+  private productService = productService;
+  private orderService = orderService;
 
   /**
    * Handle GET requests

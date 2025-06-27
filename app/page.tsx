@@ -1,5 +1,5 @@
 import HomeClient from './components/home/HomeClient';
-import { ProductService, CategoryService, ContentService } from '@/lib/services';
+import { productService, categoryService, contentService } from '@/lib/services/singletons';
 
 // Caching disabled temporarily for testing
 export const revalidate = 0;
@@ -7,10 +7,7 @@ export const dynamic = 'force-dynamic';
 
 async function getHomePageData() {
   try {
-    // Use direct service calls for server-side data fetching
-    const productService = new ProductService();
-    const categoryService = new CategoryService();
-    const contentService = new ContentService();
+    // Use singleton service instances to prevent connection pool exhaustion
     
     // Fetch all data in parallel
     const [categoriesResult, productsResult, heroBannersResult, roomsResult] = await Promise.all([
@@ -28,7 +25,7 @@ async function getHomePageData() {
     ]);
 
     return {
-      categories: categoriesResult?.categories || [],
+      categories: categoriesResult || [],
       products: productsResult?.products || [],
       reviews: [],
       heroBanners: heroBannersResult?.banners || [],

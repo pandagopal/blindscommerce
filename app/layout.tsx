@@ -20,9 +20,14 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: defaultMetadata.title,
   description: defaultMetadata.description,
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#ffffff',
 };
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+};
+
+export const themeColor = '#ffffff';
 
 export default function RootLayout({
   children,

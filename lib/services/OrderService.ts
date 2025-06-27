@@ -6,6 +6,7 @@
 import { BaseService } from './BaseService';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { getPool } from '@/lib/db';
+import { parseArrayPrices, parseDecimal, parsePriceFields } from '@/lib/utils/priceUtils';
 
 interface Order extends RowDataPacket {
   order_id: number;
@@ -233,9 +234,13 @@ export class OrderService extends BaseService {
       LIMIT 1
     `;
 
-    const [order] = await this.executeQuery<OrderWithDetails>(orderQuery, [orderId]);
+    const [rawOrder] = await this.executeQuery<OrderWithDetails>(orderQuery, [orderId]);
     
-    if (!order) return null;
+    if (!rawOrder) return null;
+    
+    const order = parsePriceFields(rawOrder, [
+      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount'
+    ]);
 
     // Get order items with product and vendor details
     const itemsQuery = `
@@ -367,7 +372,10 @@ export class OrderService extends BaseService {
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     `;
 
-    const orders = await this.executeQuery<OrderWithDetails>(ordersQuery, whereParams);
+    const rawOrders = await this.executeQuery<OrderWithDetails>(ordersQuery, whereParams);
+    const orders = parseArrayPrices(rawOrders, [
+      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount'
+    ]);
 
     // Get items for all orders in one query
     if (orders.length > 0) {
@@ -562,8 +570,8 @@ export class OrderService extends BaseService {
 
     return {
       totalOrders: stats[0]?.total_orders || 0,
-      totalRevenue: parseFloat(stats[0]?.total_revenue || 0),
-      averageOrderValue: parseFloat(stats[0]?.avg_order_value || 0),
+      totalRevenue: parseDecimal(stats[0]?.total_revenue),
+      averageOrderValue: parseDecimal(stats[0]?.avg_order_value),
       ordersByStatus,
       revenueByMonth: monthlyRevenue.reverse()
     };

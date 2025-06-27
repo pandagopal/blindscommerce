@@ -6,6 +6,7 @@
 import { BaseService } from './BaseService';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { getPool } from '@/lib/db';
+import { parseArrayPrices, parseDecimal, parsePriceFields } from '@/lib/utils/priceUtils';
 
 interface CartItem extends RowDataPacket {
   cart_item_id: number;
@@ -114,7 +115,10 @@ export class CartService extends BaseService {
       ORDER BY ci.created_at DESC
     `;
 
-    const items = await this.executeQuery<CartItemWithDetails>(itemsQuery, whereParams);
+    const rawItems = await this.executeQuery<CartItemWithDetails>(itemsQuery, whereParams);
+    const items = parseArrayPrices(rawItems, [
+      'unit_price', 'vendor_price', 'base_price', 'discount_amount', 'tax_amount', 'final_price'
+    ]);
 
     if (items.length === 0) {
       return this.getEmptyCart();
@@ -126,9 +130,9 @@ export class CartService extends BaseService {
     const vendorMap = new Map<number, any>();
 
     items.forEach(item => {
-      const itemSubtotal = (item.vendor_price || item.base_price) * item.quantity;
+      const itemSubtotal = parseDecimal(item.vendor_price || item.base_price) * item.quantity;
       subtotal += itemSubtotal;
-      totalDiscount += item.discount_amount || 0;
+      totalDiscount += parseDecimal(item.discount_amount);
 
       // Vendor breakdown
       if (!vendorMap.has(item.vendor_id)) {

@@ -6,6 +6,7 @@
 import { BaseService } from './BaseService';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { getPool } from '@/lib/db';
+import { parseDecimal } from '@/lib/utils/priceUtils';
 
 interface VendorInfo extends RowDataPacket {
   vendor_info_id: number;
@@ -256,15 +257,15 @@ export class VendorService extends BaseService {
       recentOrders: recentOrders || [],
       topProducts: topProducts || [],
       salesMetrics: {
-        today: parseFloat(salesMetrics[0]?.today || 0),
-        week: parseFloat(salesMetrics[0]?.week || 0),
-        month: parseFloat(salesMetrics[0]?.month || 0),
-        year: parseFloat(salesMetrics[0]?.year || 0)
+        today: parseDecimal(salesMetrics[0]?.today),
+        week: parseDecimal(salesMetrics[0]?.week),
+        month: parseDecimal(salesMetrics[0]?.month),
+        year: parseDecimal(salesMetrics[0]?.year)
       },
       performanceMetrics: {
-        orderFulfillmentRate: parseFloat(performanceMetrics[0]?.order_fulfillment_rate || 0),
-        averageProcessingTime: parseFloat(performanceMetrics[0]?.avg_processing_time || 0),
-        customerSatisfaction: parseFloat(performanceMetrics[0]?.customer_satisfaction || 0)
+        orderFulfillmentRate: parseDecimal(performanceMetrics[0]?.order_fulfillment_rate),
+        averageProcessingTime: parseDecimal(performanceMetrics[0]?.avg_processing_time),
+        customerSatisfaction: parseDecimal(performanceMetrics[0]?.customer_satisfaction)
       }
     };
   }
@@ -502,11 +503,11 @@ export class VendorService extends BaseService {
     const monthlyBreakdown = await this.executeQuery<any>(monthlyQuery, params);
 
     return {
-      totalRevenue: parseFloat(summary?.total_revenue || 0),
-      totalCommission: parseFloat(summary?.total_commission || 0),
-      netRevenue: parseFloat(summary?.net_revenue || 0),
-      pendingPayouts: parseFloat(summary?.pending_payouts || 0),
-      completedPayouts: parseFloat(summary?.completed_payouts || 0),
+      totalRevenue: parseDecimal(summary?.total_revenue),
+      totalCommission: parseDecimal(summary?.total_commission),
+      netRevenue: parseDecimal(summary?.net_revenue),
+      pendingPayouts: parseDecimal(summary?.pending_payouts),
+      completedPayouts: parseDecimal(summary?.completed_payouts),
       monthlyBreakdown: monthlyBreakdown.reverse()
     };
   }

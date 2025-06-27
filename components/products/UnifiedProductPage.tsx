@@ -205,7 +205,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
-      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -229,7 +229,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     
     try {
       setLoading(true);
-      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
       
       // Load basic product data
       const res = await fetch(`${apiPath}/${productId}`);
@@ -505,7 +505,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const toggleProductStatus = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -529,7 +529,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const deleteProduct = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'DELETE',
       });
