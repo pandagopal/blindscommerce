@@ -12,19 +12,34 @@ interface VendorInfo extends RowDataPacket {
   vendor_info_id: number;
   user_id: number;
   business_name: string;
-  tax_id?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zip_code?: string;
-  country?: string;
-  phone?: string;
-  website?: string;
-  description?: string;
+  business_email?: string;
+  business_phone?: string;
+  business_description?: string;
   logo_url?: string;
-  commission_rate: number;
+  website_url?: string;
+  year_established?: number;
+  is_verified?: boolean;
+  verification_date?: Date;
+  approval_status?: string;
   is_approved: boolean;
-  approved_at?: Date;
+  tax_id?: string;
+  business_address_line1?: string;
+  business_address_line2?: string;
+  business_city?: string;
+  business_state?: string;
+  business_postal_code?: string;
+  business_country?: string;
+  total_sales?: number;
+  rating?: number;
+  is_active?: boolean;
+  commission_rate: number;
+  payment_terms?: string;
+  minimum_payout?: number;
+  payment_method?: string;
+  bank_account_info?: string;
+  paypal_email?: string;
+  tax_form_submitted?: boolean;
+  auto_payout_enabled?: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -91,45 +106,46 @@ export class VendorService extends BaseService {
       -- Product stats
       LEFT JOIN (
         SELECT 
-          vendor_info_id,
+          vp.vendor_id,
           COUNT(*) as total_products,
           SUM(CASE WHEN p.is_active = 1 THEN 1 ELSE 0 END) as active_products
         FROM vendor_products vp
         JOIN products p ON vp.product_id = p.product_id
-        GROUP BY vendor_info_id
-      ) p_stats ON vi.vendor_info_id = p_stats.vendor_info_id
+        GROUP BY vp.vendor_id
+      ) p_stats ON vi.vendor_info_id = p_stats.vendor_id
       
       -- Order stats
       LEFT JOIN (
         SELECT 
-          vendor_info_id,
-          COUNT(DISTINCT order_id) as total_orders,
-          SUM(total_amount) as total_revenue,
-          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders
-        FROM vendor_orders
-        GROUP BY vendor_info_id
-      ) o_stats ON vi.vendor_info_id = o_stats.vendor_info_id
+          o.vendor_id,
+          COUNT(DISTINCT o.order_id) as total_orders,
+          SUM(o.total_amount) as total_revenue,
+          SUM(CASE WHEN o.status = 'pending' THEN 1 ELSE 0 END) as pending_orders
+        FROM orders o
+        WHERE o.vendor_id IS NOT NULL
+        GROUP BY o.vendor_id
+      ) o_stats ON vi.vendor_info_id = o_stats.vendor_id
       
       -- Review stats
       LEFT JOIN (
         SELECT 
-          vp.vendor_info_id,
+          vp.vendor_id,
           AVG(pr.rating) as average_rating,
           COUNT(DISTINCT pr.review_id) as total_reviews
         FROM product_reviews pr
         JOIN vendor_products vp ON pr.product_id = vp.product_id
-        GROUP BY vp.vendor_info_id
-      ) r_stats ON vi.vendor_info_id = r_stats.vendor_info_id
+        GROUP BY vp.vendor_id
+      ) r_stats ON vi.vendor_info_id = r_stats.vendor_id
       
       -- Sales team stats
       LEFT JOIN (
         SELECT 
-          vendor_info_id,
+          ss.vendor_id,
           COUNT(*) as sales_team_count
-        FROM sales_representatives
-        WHERE is_active = 1
-        GROUP BY vendor_info_id
-      ) s_stats ON vi.vendor_info_id = s_stats.vendor_info_id
+        FROM sales_staff ss
+        WHERE ss.is_active = 1
+        GROUP BY ss.vendor_id
+      ) s_stats ON vi.vendor_info_id = s_stats.vendor_id
       
       WHERE vi.vendor_info_id = ?
       LIMIT 1
@@ -147,7 +163,7 @@ export class VendorService extends BaseService {
     if (!vendor) return null;
 
     // Get all dashboard data in parallel
-    const [recentOrders, topProducts, salesMetrics, performanceMetrics] = await this.executeParallel<{
+    const { recentOrders, topProducts, salesMetrics, performanceMetrics } = await this.executeParallel<{
       recentOrders: any[];
       topProducts: any[];
       salesMetrics: any[];
@@ -156,18 +172,18 @@ export class VendorService extends BaseService {
       recentOrders: {
         query: `
           SELECT 
-            vo.order_id,
-            vo.status,
-            vo.total_amount,
-            vo.created_at,
+            o.order_id,
+            o.status,
+            o.total_amount as vendor_total,
+            o.created_at,
             o.order_number,
             u.email as customer_email,
-            CONCAT(u.first_name, ' ', u.last_name) as customer_name
-          FROM vendor_orders vo
-          JOIN orders o ON vo.order_id = o.order_id
+            CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+            (SELECT COUNT(*) FROM order_items WHERE order_id = o.order_id) as item_count
+          FROM orders o
           JOIN users u ON o.user_id = u.user_id
-          WHERE vo.vendor_info_id = ?
-          ORDER BY vo.created_at DESC
+          WHERE o.vendor_id = ?
+          ORDER BY o.created_at DESC
           LIMIT 10
         `,
         params: [vendorId]
@@ -181,20 +197,21 @@ export class VendorService extends BaseService {
             p.primary_image_url,
             vp.vendor_price,
             COALESCE(sales.quantity_sold, 0) as quantity_sold,
-            COALESCE(sales.revenue, 0) as revenue
+            COALESCE(sales.revenue, 0) as revenue,
+            vp.vendor_id as vendor_product_vendor_id
           FROM vendor_products vp
           JOIN products p ON vp.product_id = p.product_id
           LEFT JOIN (
             SELECT 
               oi.product_id,
               SUM(oi.quantity) as quantity_sold,
-              SUM(oi.total) as revenue
+              SUM(oi.total_price) as revenue
             FROM order_items oi
-            JOIN vendor_orders vo ON oi.order_id = vo.order_id
-            WHERE vo.vendor_info_id = ? AND vo.status NOT IN ('cancelled', 'refunded')
+            JOIN orders o ON oi.order_id = o.order_id
+            WHERE o.vendor_id = ? AND o.status NOT IN ('cancelled', 'refunded')
             GROUP BY oi.product_id
           ) sales ON p.product_id = sales.product_id
-          WHERE vp.vendor_info_id = ?
+          WHERE vp.vendor_id = ?
           ORDER BY sales.revenue DESC
           LIMIT 10
         `,
@@ -207,8 +224,8 @@ export class VendorService extends BaseService {
             SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) THEN total_amount ELSE 0 END) as week,
             SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN total_amount ELSE 0 END) as month,
             SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) THEN total_amount ELSE 0 END) as year
-          FROM vendor_orders
-          WHERE vendor_info_id = ? AND status NOT IN ('cancelled', 'refunded')
+          FROM orders
+          WHERE vendor_id = ? AND status NOT IN ('cancelled', 'refunded')
         `,
         params: [vendorId]
       },
@@ -240,21 +257,39 @@ export class VendorService extends BaseService {
                 SELECT AVG(pr.rating)
                 FROM product_reviews pr
                 JOIN vendor_products vp ON pr.product_id = vp.product_id
-                WHERE vp.vendor_info_id = ?
+                WHERE vp.vendor_id = ?
               ), 
               0
             ) as customer_satisfaction
             
-          FROM vendor_orders
-          WHERE vendor_info_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          FROM orders
+          WHERE vendor_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         `,
         params: [vendorId, vendorId]
       }
     });
 
+    // Map to the format expected by the vendor dashboard page
     return {
+      stats: {
+        totalProducts: vendor?.total_products || 0,
+        totalOrders: vendor?.total_orders || 0,
+        totalSales: vendor?.total_revenue || 0,
+        pendingOrders: vendor?.pending_orders || 0,
+        activeProducts: vendor?.active_products || 0,
+        averageRating: vendor?.average_rating || 0,
+        totalReviews: vendor?.total_reviews || 0,
+        salesTeamCount: vendor?.sales_team_count || 0
+      },
       vendor,
-      recentOrders: recentOrders || [],
+      recentOrders: (recentOrders || []).map(order => ({
+        id: order.order_id,
+        date: order.created_at,
+        customer: order.customer_name,
+        total: order.vendor_total,
+        status: order.status,
+        items: order.item_count || 0
+      })),
       topProducts: topProducts || [],
       salesMetrics: {
         today: parseDecimal(salesMetrics[0]?.today),
@@ -296,7 +331,7 @@ export class VendorService extends BaseService {
     } = options;
 
     // Build WHERE conditions
-    const whereConditions: string[] = ['vp.vendor_info_id = ?'];
+    const whereConditions: string[] = ['vp.vendor_id = ?'];
     const whereParams: any[] = [vendorId];
 
     if (isActive !== undefined) {
@@ -349,12 +384,13 @@ export class VendorService extends BaseService {
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN (
         SELECT 
-          product_id,
-          SUM(quantity) as quantity_sold,
-          SUM(total) as revenue
-        FROM order_items
-        WHERE vendor_info_id = ?
-        GROUP BY product_id
+          oi.product_id,
+          SUM(oi.quantity) as quantity_sold,
+          SUM(oi.total_price) as revenue
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.order_id
+        WHERE o.vendor_id = ?
+        GROUP BY oi.product_id
       ) sales ON p.product_id = sales.product_id
       WHERE ${whereClause}
       ORDER BY ${sortColumn} ${sortOrder}
@@ -383,15 +419,15 @@ export class VendorService extends BaseService {
             *,
             CASE 
               WHEN is_active = 1 
-                AND (start_date IS NULL OR start_date <= NOW())
-                AND (end_date IS NULL OR end_date >= NOW())
+                AND (valid_from IS NULL OR valid_from <= NOW())
+                AND (valid_until IS NULL OR valid_until >= NOW())
               THEN 'active'
-              WHEN end_date < NOW() THEN 'expired'
-              WHEN start_date > NOW() THEN 'scheduled'
+              WHEN valid_until < NOW() THEN 'expired'
+              WHEN valid_from > NOW() THEN 'scheduled'
               ELSE 'inactive'
             END as status
           FROM vendor_discounts
-          WHERE vendor_info_id = ?
+          WHERE vendor_id = ?
           ORDER BY created_at DESC
         `,
         params: [vendorId]
@@ -402,17 +438,17 @@ export class VendorService extends BaseService {
             *,
             CASE 
               WHEN is_active = 1 
-                AND (start_date IS NULL OR start_date <= NOW())
-                AND (end_date IS NULL OR end_date >= NOW())
-                AND (usage_limit IS NULL OR usage_count < usage_limit)
+                AND (valid_from IS NULL OR valid_from <= NOW())
+                AND (valid_until IS NULL OR valid_until >= NOW())
+                AND (usage_limit_total IS NULL OR usage_count < usage_limit_total)
               THEN 'active'
-              WHEN end_date < NOW() THEN 'expired'
-              WHEN usage_limit IS NOT NULL AND usage_count >= usage_limit THEN 'exhausted'
-              WHEN start_date > NOW() THEN 'scheduled'
+              WHEN valid_until < NOW() THEN 'expired'
+              WHEN usage_limit_total IS NOT NULL AND usage_count >= usage_limit_total THEN 'exhausted'
+              WHEN valid_from > NOW() THEN 'scheduled'
               ELSE 'inactive'
             END as status
           FROM vendor_coupons
-          WHERE vendor_info_id = ?
+          WHERE vendor_id = ?
           ORDER BY created_at DESC
         `,
         params: [vendorId]
@@ -444,12 +480,12 @@ export class VendorService extends BaseService {
     const dateParams: any[] = [];
 
     if (dateFrom) {
-      dateConditions.push('vo.created_at >= ?');
+      dateConditions.push('o.created_at >= ?');
       dateParams.push(dateFrom);
     }
 
     if (dateTo) {
-      dateConditions.push('vo.created_at <= ?');
+      dateConditions.push('o.created_at <= ?');
       dateParams.push(dateTo);
     }
 
@@ -459,43 +495,44 @@ export class VendorService extends BaseService {
 
     const query = `
       SELECT 
-        SUM(vo.total_amount) as total_revenue,
-        SUM(vo.commission_amount) as total_commission,
-        SUM(vo.total_amount - vo.commission_amount) as net_revenue,
+        SUM(o.total_amount) as total_revenue,
+        COALESCE(SUM(vc.commission_amount), 0) as total_commission,
+        SUM(o.total_amount) - COALESCE(SUM(vc.commission_amount), 0) as net_revenue,
         
-        SUM(CASE 
-          WHEN vp.status = 'pending' THEN vp.amount 
-          ELSE 0 
-        END) as pending_payouts,
+        (SELECT COALESCE(SUM(payout_amount), 0) 
+         FROM vendor_payouts 
+         WHERE vendor_id = ? 
+           AND payout_status = 'pending') as pending_payouts,
         
-        SUM(CASE 
-          WHEN vp.status = 'completed' THEN vp.amount 
-          ELSE 0 
-        END) as completed_payouts
+        (SELECT COALESCE(SUM(payout_amount), 0) 
+         FROM vendor_payouts 
+         WHERE vendor_id = ? 
+           AND payout_status = 'completed') as completed_payouts
         
-      FROM vendor_orders vo
-      LEFT JOIN vendor_payouts vp ON vo.vendor_info_id = vp.vendor_info_id
-      WHERE vo.vendor_info_id = ? 
-        AND vo.status NOT IN ('cancelled', 'refunded')
+      FROM orders o
+      LEFT JOIN vendor_commissions vc ON o.order_id = vc.order_id AND vc.vendor_id = o.vendor_id
+      WHERE o.vendor_id = ? 
+        AND o.status NOT IN ('cancelled', 'refunded')
         ${dateClause}
     `;
 
-    const params = [vendorId, ...dateParams];
+    const params = [vendorId, vendorId, vendorId, ...dateParams];
     const [summary] = await this.executeQuery<any>(query, params);
 
     // Get monthly breakdown
     const monthlyQuery = `
       SELECT 
-        DATE_FORMAT(created_at, '%Y-%m') as month,
-        SUM(total_amount) as revenue,
-        SUM(commission_amount) as commission,
-        SUM(total_amount - commission_amount) as net_revenue,
-        COUNT(DISTINCT order_id) as order_count
-      FROM vendor_orders
-      WHERE vendor_info_id = ? 
-        AND status NOT IN ('cancelled', 'refunded')
+        DATE_FORMAT(o.created_at, '%Y-%m') as month,
+        SUM(o.total_amount) as revenue,
+        COALESCE(SUM(vc.commission_amount), 0) as commission,
+        SUM(o.total_amount) - COALESCE(SUM(vc.commission_amount), 0) as net_revenue,
+        COUNT(DISTINCT o.order_id) as order_count
+      FROM orders o
+      LEFT JOIN vendor_commissions vc ON o.order_id = vc.order_id AND vc.vendor_id = o.vendor_id
+      WHERE o.vendor_id = ? 
+        AND o.status NOT IN ('cancelled', 'refunded')
         ${dateClause}
-      GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+      GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
       ORDER BY month DESC
       LIMIT 12
     `;

@@ -16,7 +16,7 @@ import {
 
 interface BulkJob {
   job_id: string;
-  vendor_info_id: number;
+  vendor_id: number;
   vendor_name: string;
   operation_type: 'import' | 'export' | 'update';
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors';
@@ -256,7 +256,7 @@ export default function AdminBulkOperationsPage() {
                       <div className="text-sm font-medium text-gray-900">
                         {job.vendor_name}
                       </div>
-                      <div className="text-sm text-gray-500">ID: {job.vendor_info_id}</div>
+                      <div className="text-sm text-gray-500">ID: {job.vendor_id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

@@ -124,7 +124,7 @@ export async function getCurrentUser(): Promise<User | null> {
         u.phone,
         u.role,
         u.is_active,
-        vi.vendor_info_id as vendor_info_id
+        vi.vendor_info_id as vendor_id
       FROM users u
       LEFT JOIN vendor_info vi ON u.user_id = vi.user_id
       WHERE u.user_id = ? AND u.is_active = 1`,
@@ -146,7 +146,7 @@ export async function getCurrentUser(): Promise<User | null> {
       phone: userData.phone,
       isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
       role: userData.role,
-      vendorId: userData.vendor_info_id
+      vendorId: userData.vendor_id
     };
   } catch (error) {
     console.error('Error getting current user:', error);

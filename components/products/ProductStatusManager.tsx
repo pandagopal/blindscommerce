@@ -111,7 +111,7 @@ export default function ProductStatusManager({
 
   const fetchProductInfo = async () => {
     try {
-      const response = await fetch(`/api/v2/vendor/products/${productId}/activate`);
+      const response = await fetch(`/api/v2/vendors/products/${productId}/activate`);
       const data = await response.json();
       
       if (response.ok) {
@@ -153,7 +153,7 @@ export default function ProductStatusManager({
     setSuccess(null);
 
     try {
-      const response = await fetch(`/api/v2/vendor/products/${productId}/activate`, {
+      const response = await fetch(`/api/v2/vendors/products/${productId}/activate`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

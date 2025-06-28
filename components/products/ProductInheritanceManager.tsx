@@ -94,7 +94,7 @@ export default function ProductInheritanceManager({
       const params = new URLSearchParams();
       if (productId) params.append('productId', productId.toString());
       
-      const response = await fetch(`/api/v2/vendor/products/inheritance?${params}`);
+      const response = await fetch(`/api/v2/vendors/products/inheritance?${params}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -116,7 +116,7 @@ export default function ProductInheritanceManager({
     setSuccess(null);
 
     try {
-      const response = await fetch('/api/v2/vendor/products/inheritance', {
+      const response = await fetch('/api/v2/vendors/products/inheritance', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -156,7 +156,7 @@ export default function ProductInheritanceManager({
       const relationship = relationships.find(r => r.inheritanceId === inheritanceId);
       if (!relationship) return;
 
-      const response = await fetch('/api/v2/vendor/products/inheritance', {
+      const response = await fetch('/api/v2/vendors/products/inheritance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

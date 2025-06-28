@@ -45,7 +45,7 @@ export default function ViewProductPage() {
     try {
       
       // Try vendor products API first, then fall back to general products API
-      let res = await fetch(`/api/v2/vendor/products/${id}`);
+      let res = await fetch(`/api/v2/vendors/products/${id}`);
       
       if (!res.ok) {
         // If vendor API fails, try general products API

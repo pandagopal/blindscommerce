@@ -69,6 +69,7 @@ export class VendorsHandler extends BaseHandler {
     const routes = {
       'dashboard': () => this.getDashboard(user),
       'profile': () => this.getProfile(user),
+      'info': () => this.getVendorInfo(req, user),
       'products': () => this.getProducts(req, user),
       'products/:id': () => this.getProduct(action[1], user),
       'orders': () => this.getOrders(req, user),
@@ -136,8 +137,8 @@ export class VendorsHandler extends BaseHandler {
     this.requireRole(user, 'VENDOR');
     
     const [vendor] = await this.vendorService.raw(
-      'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
-      [user.user_id]
+      'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? AND is_active = 1 ORDER BY vendor_info_id ASC LIMIT 1',
+      [user.userId]
     );
 
     if (!vendor) {
@@ -156,6 +157,31 @@ export class VendorsHandler extends BaseHandler {
   private async getProfile(user: any) {
     const vendorId = await this.getVendorId(user);
     return this.vendorService.getVendorWithStats(vendorId);
+  }
+
+  private async getVendorInfo(req: NextRequest, user: any) {
+    const searchParams = this.getSearchParams(req);
+    const userId = searchParams.get('user_id');
+    
+    if (!userId) {
+      throw new ApiError('user_id parameter is required', 400);
+    }
+
+    // Admin can check any vendor info
+    if (user.role === 'admin') {
+      const [vendorInfo] = await this.vendorService.raw(
+        'SELECT vendor_info_id, user_id, business_name FROM vendor_info WHERE user_id = ?',
+        [parseInt(userId)]
+      );
+      
+      if (!vendorInfo) {
+        throw new ApiError('Vendor not found', 404);
+      }
+      
+      return vendorInfo;
+    } else {
+      throw new ApiError('Insufficient permissions', 403);
+    }
   }
 
   private async updateProfile(req: NextRequest, user: any) {
@@ -209,7 +235,7 @@ export class VendorsHandler extends BaseHandler {
 
     // Verify vendor owns the product
     const [ownership] = await this.vendorService.raw(
-      'SELECT 1 FROM vendor_products WHERE vendor_info_id = ? AND product_id = ?',
+      'SELECT 1 FROM vendor_products WHERE vendor_id = ? AND product_id = ?',
       [vendorId, productId]
     );
 
@@ -240,7 +266,7 @@ export class VendorsHandler extends BaseHandler {
 
     // Add vendor relationship
     await this.vendorService.raw(
-      `INSERT INTO vendor_products (vendor_info_id, product_id, vendor_price, quantity_available)
+      `INSERT INTO vendor_products (vendor_id, product_id, vendor_price, quantity_available)
        VALUES (?, ?, ?, ?)`,
       [vendorId, product.product_id, data.vendorPrice, data.quantity]
     );
@@ -258,7 +284,7 @@ export class VendorsHandler extends BaseHandler {
 
     // Verify ownership
     const [ownership] = await this.vendorService.raw(
-      'SELECT 1 FROM vendor_products WHERE vendor_info_id = ? AND product_id = ?',
+      'SELECT 1 FROM vendor_products WHERE vendor_id = ? AND product_id = ?',
       [vendorId, productId]
     );
 
@@ -286,7 +312,7 @@ export class VendorsHandler extends BaseHandler {
         `UPDATE vendor_products 
          SET vendor_price = COALESCE(?, vendor_price),
              quantity_available = COALESCE(?, quantity_available)
-         WHERE vendor_info_id = ? AND product_id = ?`,
+         WHERE vendor_id = ? AND product_id = ?`,
         [data.vendorPrice, data.quantity, vendorId, productId]
       );
     }
@@ -342,9 +368,16 @@ export class VendorsHandler extends BaseHandler {
     }
 
     // Verify vendor has items in this order
+    // Check if order is assigned to this vendor OR if vendor has products in the order
     const [hasItems] = await this.vendorService.raw(
-      'SELECT 1 FROM vendor_orders WHERE vendor_info_id = ? AND order_id = ?',
-      [vendorId, orderId]
+      `SELECT 1 FROM orders o 
+       WHERE o.order_id = ? 
+       AND (o.vendor_id = ? OR EXISTS (
+         SELECT 1 FROM order_items oi 
+         JOIN vendor_products vp ON oi.product_id = vp.product_id 
+         WHERE oi.order_id = o.order_id AND vp.vendor_id = ?
+       ))`,
+      [orderId, vendorId, vendorId]
     );
 
     if (!hasItems) {
@@ -367,13 +400,9 @@ export class VendorsHandler extends BaseHandler {
       notes: z.string().optional(),
     }));
 
-    // Update vendor order status
-    await this.vendorService.raw(
-      `UPDATE vendor_orders 
-       SET status = ?, updated_at = NOW()
-       WHERE vendor_info_id = ? AND order_id = ?`,
-      [status, vendorId, orderId]
-    );
+    // TODO: Implement vendor-specific order status tracking
+    // In a multi-vendor system, each vendor should be able to update the status of their items
+    // This would require a vendor_order_status table or similar
 
     return { message: 'Order status updated successfully' };
   }
@@ -397,10 +426,10 @@ export class VendorsHandler extends BaseHandler {
 
     const result = await this.vendorService.raw(
       `INSERT INTO vendor_discounts (
-        vendor_info_id, name, discount_type, discount_value,
-        min_purchase, applies_to, product_ids, category_ids,
-        start_date, end_date, is_active, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        vendor_id, discount_name, discount_type, discount_value,
+        minimum_order_value, applies_to, target_ids,
+        valid_from, valid_until, is_active, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         vendorId,
         data.name,
@@ -408,10 +437,12 @@ export class VendorsHandler extends BaseHandler {
         data.discountValue,
         data.minPurchase,
         data.appliesTo,
-        JSON.stringify(data.productIds || []),
-        JSON.stringify(data.categoryIds || []),
-        data.startDate,
-        data.endDate,
+        JSON.stringify({
+          products: data.productIds || [],
+          categories: data.categoryIds || []
+        }),
+        data.startDate || new Date(),
+        data.endDate || null,
         data.isActive,
       ]
     );
@@ -438,22 +469,24 @@ export class VendorsHandler extends BaseHandler {
 
     const result = await this.vendorService.raw(
       `INSERT INTO vendor_coupons (
-        vendor_info_id, code, description, discount_type, discount_value,
-        min_purchase, usage_limit, per_customer_limit,
-        start_date, end_date, is_active, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        vendor_id, coupon_code, coupon_name, description, discount_type, discount_value,
+        minimum_order_value, usage_limit_total, usage_limit_per_customer,
+        valid_from, valid_until, is_active, created_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         vendorId,
         data.code,
+        data.code, // Use code as name if no name provided
         data.description,
         data.discountType,
         data.discountValue,
         data.minPurchase,
         data.usageLimit,
-        data.perCustomerLimit,
-        data.startDate,
-        data.endDate,
+        data.perCustomerLimit || 1,
+        data.startDate || new Date(),
+        data.endDate || null,
         data.isActive,
+        user.userId,
       ]
     );
 

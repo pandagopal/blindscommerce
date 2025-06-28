@@ -15,7 +15,7 @@ import { Plus, DollarSign, Percent, TrendingUp, Users, Edit, Trash2, Download, B
 interface CommissionRule {
   rule_id: number;
   rule_name: string;
-  vendor_info_id?: number;
+  vendor_id?: number;
   vendor_name?: string;
   sales_staff_id?: number;
   sales_staff_name?: string;
@@ -40,7 +40,7 @@ interface CommissionRule {
 interface CommissionCalculation {
   calculation_id: number;
   order_id: number;
-  vendor_info_id: number;
+  vendor_id: number;
   vendor_name: string;
   sales_staff_id?: number;
   sales_staff_name?: string;
@@ -75,7 +75,7 @@ export default function CommissionManagementPage() {
   // Form state for creating/editing rules
   const [formData, setFormData] = useState({
     rule_name: '',
-    vendor_info_id: '',
+    vendor_id: '',
     sales_staff_id: '',
     commission_type: 'percentage' as const,
     commission_rate: 0,
@@ -109,7 +109,7 @@ export default function CommissionManagementPage() {
           limit: '10',
           search: searchTerm,
           ...(statusFilter !== 'all' && { status: statusFilter }),
-          ...(vendorFilter !== 'all' && { vendor_info_id: vendorFilter })
+          ...(vendorFilter !== 'all' && { vendor_id: vendorFilter })
         });
 
         const response = await fetch(`/api/v2/admin/commissions/rules?${params}`);
@@ -122,7 +122,7 @@ export default function CommissionManagementPage() {
           page: currentPage.toString(),
           limit: '20',
           ...(statusFilter !== 'all' && { payment_status: statusFilter }),
-          ...(vendorFilter !== 'all' && { vendor_info_id: vendorFilter })
+          ...(vendorFilter !== 'all' && { vendor_id: vendorFilter })
         });
 
         const response = await fetch(`/api/v2/admin/commissions/calculations?${params}`);
@@ -213,7 +213,7 @@ export default function CommissionManagementPage() {
   const resetForm = () => {
     setFormData({
       rule_name: '',
-      vendor_info_id: '',
+      vendor_id: '',
       sales_staff_id: '',
       commission_type: 'percentage',
       commission_rate: 0,

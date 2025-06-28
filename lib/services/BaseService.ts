@@ -62,6 +62,16 @@ export abstract class BaseService {
   }
 
   /**
+   * Execute a raw query (alias for executeQuery for compatibility)
+   */
+  async raw<T extends RowDataPacket>(
+    query: string,
+    params: any[] = []
+  ): Promise<T[]> {
+    return this.executeQuery<T>(query, params);
+  }
+
+  /**
    * Execute multiple queries in parallel
    */
   protected async executeParallel<T extends Record<string, any>>(

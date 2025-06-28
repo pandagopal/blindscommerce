@@ -53,18 +53,18 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     const values: any[] = [];
     const conditions: string[] = [];
 
-    // For vendors, we need to get their vendor_info_id first
+    // For vendors, we need to get their vendor_id first
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
       console.log('🔍 Looking up vendor_info for userId:', userId);
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
+        'SELECT vendor_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
       console.log('📊 Vendor info result:', vendorInfo);
       if (vendorInfo.length > 0) {
-        vendorId = vendorInfo[0].vendor_info_id;
-        console.log('✅ Found vendor_info_id:', vendorId);
+        vendorId = vendorInfo[0].vendor_id;
+        console.log('✅ Found vendor_id:', vendorId);
       } else {
         console.log('❌ No vendor_info found for userId:', userId);
       }
@@ -96,7 +96,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
         LEFT JOIN product_categories pc ON p.product_id = pc.product_id
         LEFT JOIN categories c ON pc.category_id = c.category_id
         LEFT JOIN order_items oi ON p.product_id = oi.product_id
-        WHERE vp.vendor_info_id = ?
+        WHERE vp.vendor_id = ?
         GROUP BY p.product_id, p.name, p.slug, p.short_description, p.sku, p.base_price, 
                  p.stock_status, p.is_active, p.created_at, p.updated_at, 
                  vp.vendor_price, vp.quantity_available, vp.is_active
@@ -194,7 +194,7 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
         JOIN products p ON vp.product_id = p.product_id
         LEFT JOIN product_categories pc ON p.product_id = pc.product_id
         LEFT JOIN categories c ON pc.category_id = c.category_id
-        WHERE vp.vendor_info_id = ?
+        WHERE vp.vendor_id = ?
       `;
       if (conditions.length > 0) {
         countQuery += ' AND ' + conditions.join(' AND ');
@@ -369,7 +369,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
       // Admin creating product and assigning to vendor
       await pool.execute(
         `INSERT INTO vendor_products (
-          vendor_info_id,
+          vendor_id,
           product_id,
           vendor_sku,
           vendor_price,
@@ -395,14 +395,14 @@ export async function createProduct(data: ProductData, userId: number, role: str
     } else if (role === 'vendor') {
       // Vendor creating their own product
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+        'SELECT vendor_id FROM vendor_info WHERE user_id = ?',
         [userId]
       );
       
       if (vendorInfo.length > 0) {
         await pool.execute(
           `INSERT INTO vendor_products (
-            vendor_info_id,
+            vendor_id,
             product_id,
             vendor_sku,
             vendor_price,
@@ -413,7 +413,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
             vendor_description
           ) VALUES (?, ?, ?, ?, 100, 1, 7, 1, ?)`,
           [
-            vendorInfo[0].vendor_info_id,
+            vendorInfo[0].vendor_id,
             productId,
             sku,
             basePrice,

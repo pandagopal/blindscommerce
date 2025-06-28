@@ -205,7 +205,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
       const res = await fetch(`${apiPath}?${params.toString()}`);
       const data = await res.json();
       if (!res.ok) {
@@ -229,7 +229,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     
     try {
       setLoading(true);
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
       
       // Load basic product data
       const res = await fetch(`${apiPath}/${productId}`);
@@ -254,7 +254,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             fullDescription: product.full_description || '',
             sku: product.sku || '',
             basePrice: product.base_price || 0,
-            vendorId: product.vendor_info_id || '',
+            vendorId: product.vendor_id || '',
             isActive: Boolean(product.is_active),
             isFeatured: Boolean(product.is_featured),
             categories: Array.isArray(product.categories) ? product.categories : [],
@@ -347,7 +347,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     formData.append('category', `fabric_${fabricType}`);
     formData.append('productId', currentProductId);
     
-    const uploadResponse = await fetch('/api/v2/vendor/upload', {
+    const uploadResponse = await fetch('/api/v2/vendors/upload', {
       method: 'POST',
       body: formData,
     });
@@ -390,7 +390,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           formData.append('category', 'product');
           formData.append('productId', currentProductId || 'new');
           
-          const uploadResponse = await fetch('/api/v2/vendor/upload', {
+          const uploadResponse = await fetch('/api/v2/vendors/upload', {
             method: 'POST',
             body: formData,
           });
@@ -431,7 +431,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     try {
       setSaving(true);
       
-      const baseEndpoint = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendor/products';
+      const baseEndpoint = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const apiEndpoint = isEditMode ? `${baseEndpoint}/${productId}` : baseEndpoint;
       const method = isEditMode ? 'PUT' : 'POST';
       
@@ -453,7 +453,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         short_description: productData.basicInfo.shortDescription,
         description: productData.basicInfo.fullDescription,
         base_price: productData.basicInfo.basePrice,
-        vendor_info_id: productData.basicInfo.vendorId,
+        vendor_id: productData.basicInfo.vendorId,
         is_active: productData.basicInfo.isActive,
         is_featured: productData.basicInfo.isFeatured,
         categories: productData.basicInfo.categories,
@@ -505,7 +505,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const toggleProductStatus = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -529,7 +529,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const deleteProduct = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendor/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'DELETE',
       });
@@ -728,7 +728,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                             <button
                               onClick={async () => {
                                 try {
-                                  const response = await fetch('/api/v2/vendor/products/clone', {
+                                  const response = await fetch('/api/v2/vendors/products/clone', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ 

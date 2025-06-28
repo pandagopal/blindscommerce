@@ -27,7 +27,7 @@ export default function VendorOrderDetailsPage() {
       setLoading(true);
       setError('');
       try {
-        const res = await fetch(`/api/vendor/orders/${orderId}`);
+        const res = await fetch(`/api/v2/vendors/orders/${orderId}`);
         if (!res.ok) throw new Error('Failed to fetch order');
         const data = await res.json();
         setOrder(data.order);
@@ -45,7 +45,7 @@ export default function VendorOrderDetailsPage() {
     setStatusUpdating(true);
     setStatusError('');
     try {
-      const res = await fetch(`/api/vendor/orders/${orderId}`, {
+      const res = await fetch(`/api/v2/vendors/orders/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),

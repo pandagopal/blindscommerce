@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface VendorDiscount {
   type: 'vendor_discount' | 'vendor_coupon';
-  vendor_info_id: number;
+  vendor_id: number;
   vendor_name: string;
   discount_id?: number;
   coupon_id?: number;
@@ -53,7 +53,7 @@ export default function AppliedDiscountsList({
         {/* Vendor Automatic Discounts */}
         {discounts.map((discount) => (
           <div 
-            key={`discount-${discount.vendor_info_id}-${discount.discount_id}`}
+            key={`discount-${discount.vendor_id}-${discount.discount_id}`}
             className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200"
           >
             <div className="flex items-center gap-3">
@@ -81,7 +81,7 @@ export default function AppliedDiscountsList({
         {/* Vendor Coupons */}
         {coupons.map((coupon) => (
           <div 
-            key={`coupon-${coupon.vendor_info_id}-${coupon.coupon_id}`}
+            key={`coupon-${coupon.vendor_id}-${coupon.coupon_id}`}
             className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200"
           >
             <div className="flex items-center gap-3">
@@ -122,8 +122,8 @@ export default function AppliedDiscountsList({
         {appliedDiscounts.length > 1 && (
           <div className="pt-2 border-t border-green-200">
             <div className="text-sm text-gray-600 mb-2">Savings by Vendor:</div>
-            {Array.from(new Set(appliedDiscounts.map(d => d.vendor_info_id))).map(vendorId => {
-              const vendorDiscounts = appliedDiscounts.filter(d => d.vendor_info_id === vendorId);
+            {Array.from(new Set(appliedDiscounts.map(d => d.vendor_id))).map(vendorId => {
+              const vendorDiscounts = appliedDiscounts.filter(d => d.vendor_id === vendorId);
               const vendorTotal = vendorDiscounts.reduce((sum, d) => sum + d.amount, 0);
               const vendorName = vendorDiscounts[0]?.vendor_name;
               

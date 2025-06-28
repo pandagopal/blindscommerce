@@ -32,7 +32,7 @@ interface OrderItem extends RowDataPacket {
   order_item_id: number;
   order_id: number;
   product_id: number;
-  vendor_info_id: number;
+  vendor_id: number;
   quantity: number;
   price: number;
   discount_amount: number;
@@ -57,7 +57,7 @@ interface OrderCreationData {
   user_id: number;
   items: Array<{
     product_id: number;
-    vendor_info_id: number;
+    vendor_id: number;
     quantity: number;
     price: number;
     discount_amount?: number;
@@ -136,7 +136,7 @@ export class OrderService extends BaseService {
       const itemValues = data.items.map(item => [
         orderId,
         item.product_id,
-        item.vendor_info_id,
+        item.vendor_id,
         item.quantity,
         item.price,
         item.discount_amount || 0,
@@ -147,7 +147,7 @@ export class OrderService extends BaseService {
 
       await connection.query(
         `INSERT INTO order_items (
-          order_id, product_id, vendor_info_id, quantity, price,
+          order_id, product_id, vendor_id, quantity, price,
           discount_amount, tax_amount, total, configuration
         ) VALUES ?`,
         [itemValues]
@@ -166,10 +166,10 @@ export class OrderService extends BaseService {
 
       // Create vendor orders (split order by vendor)
       const vendorGroups = data.items.reduce((acc, item) => {
-        if (!acc[item.vendor_info_id]) {
-          acc[item.vendor_info_id] = [];
+        if (!acc[item.vendor_id]) {
+          acc[item.vendor_id] = [];
         }
-        acc[item.vendor_info_id].push(item);
+        acc[item.vendor_id].push(item);
         return acc;
       }, {} as Record<number, typeof data.items>);
 
@@ -184,24 +184,23 @@ export class OrderService extends BaseService {
           sum + (item.tax_amount || 0), 0
         );
 
-        await connection.execute(
-          `INSERT INTO vendor_orders (
-            order_id, vendor_info_id, status, subtotal, discount_amount,
-            tax_amount, total_amount, commission_rate, commission_amount,
-            created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-          [
-            orderId,
-            vendorId,
-            'pending',
-            vendorSubtotal,
-            vendorDiscount,
-            vendorTax,
-            vendorSubtotal - vendorDiscount + vendorTax,
-            10, // Default commission rate, should come from vendor settings
-            (vendorSubtotal - vendorDiscount) * 0.10 // 10% commission
-          ]
-        );
+        // Create vendor commission records for each vendor item
+        const commissionRate = 10; // Default commission rate, should come from vendor settings
+        for (const item of vendorItems) {
+          await connection.execute(
+            `INSERT INTO vendor_commissions (
+              vendor_id, order_id, order_item_id, commission_rate, 
+              commission_amount, commission_status, created_at
+            ) VALUES (?, ?, ?, ?, ?, 'pending', NOW())`,
+            [
+              vendorId,
+              orderId,
+              item.order_item_id,
+              commissionRate,
+              (item.total - (item.discount_amount || 0)) * (commissionRate / 100)
+            ]
+          );
+        }
       }
 
       await connection.commit();
@@ -252,7 +251,7 @@ export class OrderService extends BaseService {
         vi.business_name as vendor_name
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON oi.vendor_info_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_id
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id
     `;
@@ -304,7 +303,7 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('EXISTS (SELECT 1 FROM vendor_orders vo WHERE vo.order_id = o.order_id AND vo.vendor_info_id = ?)');
+      whereConditions.push('o.vendor_id = ?');
       whereParams.push(vendorId);
     }
 
@@ -391,7 +390,7 @@ export class OrderService extends BaseService {
           vi.business_name as vendor_name
         FROM order_items oi
         JOIN products p ON oi.product_id = p.product_id
-        LEFT JOIN vendor_info vi ON oi.vendor_info_id = vi.vendor_info_id
+        LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_id
         WHERE oi.order_id IN (${placeholders})
         ORDER BY oi.order_id, oi.order_item_id
       `;
@@ -458,10 +457,13 @@ export class OrderService extends BaseService {
       );
 
       // Update vendor order status if applicable
-      await connection.execute(
-        'UPDATE vendor_orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
-        [newStatus, orderId]
-      );
+      // Update vendor commission status if order is cancelled
+      if (newStatus === 'cancelled') {
+        await connection.execute(
+          'UPDATE vendor_commissions SET commission_status = ? WHERE order_id = ?',
+          ['cancelled', orderId]
+        );
+      }
 
       await connection.commit();
       return true;
@@ -500,7 +502,7 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('vo.vendor_info_id = ?');
+      whereConditions.push('vo.vendor_id = ?');
       whereParams.push(vendorId);
     }
 
@@ -518,7 +520,7 @@ export class OrderService extends BaseService {
       ? `WHERE ${whereConditions.join(' AND ')}` 
       : '';
 
-    const baseTable = vendorId ? 'vendor_orders vo JOIN orders o ON vo.order_id = o.order_id' : 'orders o';
+    const baseTable = 'orders o';
 
     // Get all statistics in parallel
     const [stats, statusBreakdown, monthlyRevenue] = await this.executeParallel<{
@@ -530,8 +532,8 @@ export class OrderService extends BaseService {
         query: `
           SELECT 
             COUNT(DISTINCT o.order_id) as total_orders,
-            COALESCE(SUM(${vendorId ? 'vo.total_amount' : 'o.total_amount'}), 0) as total_revenue,
-            COALESCE(AVG(${vendorId ? 'vo.total_amount' : 'o.total_amount'}), 0) as avg_order_value
+            COALESCE(SUM(o.total_amount), 0) as total_revenue,
+            COALESCE(AVG(o.total_amount), 0) as avg_order_value
           FROM ${baseTable}
           ${whereClause}
         `,

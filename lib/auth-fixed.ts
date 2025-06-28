@@ -36,7 +36,7 @@ interface UserRow extends RowDataPacket {
   last_name: string;
   phone: string;
   role: string;
-  vendor_info_id?: number;
+  vendor_id?: number;
   is_active: boolean;
 }
 
@@ -134,7 +134,7 @@ export async function getCurrentUser(): Promise<User | null> {
         last_name,
         phone,
         role,
-        vendor_info_id,
+        vendor_id,
         is_active
       FROM users 
       WHERE user_id = ? AND is_active = 1`,
@@ -156,7 +156,7 @@ export async function getCurrentUser(): Promise<User | null> {
       phone: userData.phone,
       isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
       role: userData.role,
-      vendorId: userData.vendor_info_id
+      vendorId: userData.vendor_id
     };
   } catch (error) {
     console.error('Error getting current user:', error);
@@ -245,7 +245,7 @@ export async function authenticateUser(email: string, password: string): Promise
       phone: user.phone,
       isAdmin: user.role === 'admin' || user.role === 'super_admin',
       role: user.role,
-      vendorId: user.vendor_info_id
+      vendorId: user.vendor_id
     };
   } catch (error) {
     console.error('Authentication error:', error);
@@ -271,7 +271,7 @@ export async function getUserFromToken(token: string): Promise<User | null> {
         last_name,
         phone,
         role,
-        vendor_info_id,
+        vendor_id,
         is_active
       FROM users 
       WHERE user_id = ? AND is_active = 1`,
@@ -292,7 +292,7 @@ export async function getUserFromToken(token: string): Promise<User | null> {
       phone: userData.phone,
       isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
       role: userData.role,
-      vendorId: userData.vendor_info_id
+      vendorId: userData.vendor_id
     };
   } catch (error) {
     console.error('Error getting user from token:', error);

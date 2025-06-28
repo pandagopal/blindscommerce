@@ -85,7 +85,7 @@ export class UserService extends BaseService {
         
       FROM users u
       LEFT JOIN vendor_info vi ON u.user_id = vi.user_id AND u.role = 'vendor'
-      LEFT JOIN sales_representatives sr ON u.user_id = sr.user_id AND u.role = 'sales_representative'
+      LEFT JOIN sales_staff sr ON u.user_id = sr.user_id AND u.role = 'sales_representative'
       LEFT JOIN (
         SELECT 
           sales_rep_id,
@@ -318,7 +318,7 @@ export class UserService extends BaseService {
       SELECT COUNT(DISTINCT u.user_id) as total
       FROM users u
       LEFT JOIN vendor_info vi ON u.user_id = vi.user_id
-      LEFT JOIN sales_representatives sr ON u.user_id = sr.user_id
+      LEFT JOIN sales_staff sr ON u.user_id = sr.user_id
       ${whereClause}
     `;
 
@@ -342,7 +342,7 @@ export class UserService extends BaseService {
         
       FROM users u
       LEFT JOIN vendor_info vi ON u.user_id = vi.user_id
-      LEFT JOIN sales_representatives sr ON u.user_id = sr.user_id
+      LEFT JOIN sales_staff sr ON u.user_id = sr.user_id
       ${whereClause}
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}

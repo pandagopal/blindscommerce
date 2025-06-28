@@ -5,7 +5,7 @@ import { getPool } from '@/lib/db';
 import { validateImage, validateVideo, validateCSV } from './fileValidators';
 
 export interface VendorFileStructure {
-  vendorInfoId: number;
+  vendorId: number;
   vendorName: string;
   basePath: string;
   categoryFolders: Map<string, string>;
@@ -36,16 +36,16 @@ export interface ExistingFile {
  * Folder structure: uploads/vendor_{vendorId}_{vendorName}/category_name/files
  */
 export class VendorFileManager {
-  private vendorInfoId: number;
+  private vendorId: number;
   private vendorName: string;
   private basePath: string;
   private uploadsRoot: string;
 
-  constructor(vendorInfoId: number, vendorName: string) {
-    this.vendorInfoId = vendorInfoId; // This is vendor_info_id from database
+  constructor(vendorId: number, vendorName: string) {
+    this.vendorId = vendorId; // This is vendor_info_id from database
     this.vendorName = this.sanitizeVendorName(vendorName);
     this.uploadsRoot = path.join(process.cwd(), 'public', 'uploads');
-    this.basePath = path.join(this.uploadsRoot, `vendor_${vendorInfoId}_${this.vendorName}`);
+    this.basePath = path.join(this.uploadsRoot, `vendor_${vendorId}_${this.vendorName}`);
   }
 
   /**
@@ -101,7 +101,7 @@ export class VendorFileManager {
       FROM vendor_files vf
       WHERE vf.vendor_info_id = ? AND vf.deleted_at IS NULL
     `;
-    const params = [this.vendorInfoId];
+    const params = [this.vendorId];
 
     if (category) {
       query += ' AND vf.category = ?';
@@ -152,7 +152,7 @@ export class VendorFileManager {
       FROM vendor_files 
       WHERE vendor_info_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
       LIMIT 1
-    `, [this.vendorInfoId, category, fileHash]);
+    `, [this.vendorId, category, fileHash]);
 
     const duplicateFiles = rows as any[];
 
@@ -260,7 +260,7 @@ export class VendorFileManager {
       // Store metadata in database
       await this.storeFileMetadata({
         fileId,
-        vendorInfoId: this.vendorInfoId,
+        vendorId: this.vendorId,
         originalName: sanitizedOriginalName,
         category,
         uploadType,
@@ -309,7 +309,7 @@ export class VendorFileManager {
       FROM vendor_files 
       WHERE vendor_info_id = ? AND deleted_at IS NULL
       GROUP BY category, upload_type
-    `, [this.vendorInfoId]);
+    `, [this.vendorId]);
 
     const stats = rows as any[];
     const filesByCategory = new Map<string, number>();
@@ -360,7 +360,7 @@ export class VendorFileManager {
       const [rows] = await pool.execute(`
         SELECT file_path, category FROM vendor_files 
         WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
-      `, [this.vendorInfoId, fileId]);
+      `, [this.vendorId, fileId]);
 
       const files = rows as any[];
       if (files.length === 0) {
@@ -374,7 +374,7 @@ export class VendorFileManager {
         UPDATE vendor_files 
         SET deleted_at = NOW(), deleted_by = ?
         WHERE file_id = ?
-      `, [this.vendorInfoId, fileId]);
+      `, [this.vendorId, fileId]);
 
       // Remove physical file
       try {
@@ -413,11 +413,11 @@ export class VendorFileManager {
   private generateFileId(): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2);
-    return `${this.vendorInfoId}_${timestamp}_${random}`;
+    return `${this.vendorId}_${timestamp}_${random}`;
   }
 
   private generateFileUrl(fileId: string, category: string, originalName: string): string {
-    return `/uploads/vendor_${this.vendorInfoId}_${this.vendorName}/${category}/${fileId}${path.extname(originalName)}`;
+    return `/uploads/vendor_${this.vendorId}_${this.vendorName}/${category}/${fileId}${path.extname(originalName)}`;
   }
 
   private async createThumbnail(buffer: Buffer, category: string, fileId: string, extension: string): Promise<void> {
@@ -441,7 +441,7 @@ export class VendorFileManager {
 
   private async storeFileMetadata(metadata: {
     fileId: string;
-    vendorInfoId: number;
+    vendorId: number;
     originalName: string;
     category: string;
     uploadType: string;
@@ -460,7 +460,7 @@ export class VendorFileManager {
         width, height, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `, [
-      metadata.vendorInfoId,
+      metadata.vendorId,
       metadata.fileId,
       metadata.originalName,
       metadata.category,

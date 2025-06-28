@@ -35,7 +35,7 @@ export interface CartItem {
 
 interface VendorDiscount {
   type: 'vendor_discount' | 'vendor_coupon';
-  vendor_info_id: number;
+  vendor_id: number;
   vendor_name: string;
   discount_id?: number;
   coupon_id?: number;

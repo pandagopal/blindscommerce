@@ -55,21 +55,24 @@ function VendorDashboardContent() {
             sessionStorage.setItem('AdminViewId', adminViewUserId);
             
             // Fetch the vendor being viewed
-            const vendorRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+            const vendorRes = await fetch(`/api/v2/admin/users/${adminViewUserId}`);
             if (vendorRes.ok) {
-              const vendorData = await vendorRes.json();
-              if (vendorData.user.role !== 'vendor') {
+              const vendorResult = await vendorRes.json();
+              const vendorData = vendorResult.data || vendorResult;
+              const user = vendorData.user || vendorData;
+              if (user.role !== 'vendor') {
                 alert('Selected user is not a vendor');
                 router.push('/admin/users');
                 return;
               }
-              setViewedVendor(vendorData.user);
+              setViewedVendor(user);
               
-              // Fetch vendor_info_id for this user
-              const vendorInfoRes = await fetch(`/api/vendor/info?user_id=${adminViewUserId}`);
+              // Fetch vendor_id for this user
+              const vendorInfoRes = await fetch(`/api/v2/vendors/info?user_id=${adminViewUserId}`);
               if (vendorInfoRes.ok) {
-                const vendorInfoData = await vendorInfoRes.json();
-                setVendorInfoId(vendorInfoData.vendor_info_id);
+                const vendorInfoResult = await vendorInfoRes.json();
+                const vendorInfoData = vendorInfoResult.data || vendorInfoResult;
+                setVendorInfoId(vendorInfoData.vendor_id || vendorInfoData.vendor_info_id);
               }
             } else {
               alert('Failed to fetch vendor information');
@@ -113,7 +116,8 @@ function VendorDashboardContent() {
         
         const res = await fetch(apiUrl, { headers });
         if (res.ok) {
-          const data = await res.json();
+          const result = await res.json();
+          const data = result.data || result;
           setStats(data.stats || {
             totalSales: 0,
             totalOrders: 0,
@@ -181,7 +185,7 @@ function VendorDashboardContent() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-8">
-        {isAdminView ? `${viewedVendor.first_name} ${viewedVendor.last_name}'s ` : ''}Vendor Dashboard
+        {isAdminView ? `${viewedVendor.firstName} ${viewedVendor.lastName}'s ` : ''}Vendor Dashboard
       </h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -225,7 +229,7 @@ function VendorDashboardContent() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentOrders.map((order: RecentOrder) => (
+                {recentOrders.length > 0 ? recentOrders.map((order: RecentOrder) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(order.date)}</td>
@@ -252,7 +256,13 @@ function VendorDashboardContent() {
                       </Link>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      No recent orders found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

@@ -75,7 +75,7 @@ export default function ProductCloneButton({
     setError(null);
 
     try {
-      const response = await fetch('/api/v2/vendor/products/clone', {
+      const response = await fetch('/api/v2/vendors/products/clone', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
