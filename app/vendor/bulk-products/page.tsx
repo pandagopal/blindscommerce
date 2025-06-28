@@ -68,7 +68,7 @@ export default function VendorBulkProductsPage() {
 
   const fetchJobs = async () => {
     try {
-      const response = await fetch('/api/v2/vendor/bulk-products/jobs');
+      const response = await fetch('/api/v2/vendors/products/bulk/jobs');
       if (response.ok) {
         const data = await response.json();
         setJobs(data.jobs || []);
@@ -80,7 +80,7 @@ export default function VendorBulkProductsPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/v2/vendor/bulk-products/stats');
+      const response = await fetch('/api/v2/vendors/products/bulk/stats');
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats);
@@ -93,7 +93,7 @@ export default function VendorBulkProductsPage() {
   const downloadTemplate = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/v2/vendor/bulk-products/template');
+      const response = await fetch('/api/v2/vendors/products/bulk/template');
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -131,7 +131,7 @@ export default function VendorBulkProductsPage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('/api/v2/vendor/bulk-products/import', {
+      const response = await fetch('/api/v2/vendors/products/bulk', {
         method: 'POST',
         body: formData,
       });
@@ -165,7 +165,7 @@ export default function VendorBulkProductsPage() {
         categoryFilter: exportOptions.categoryFilter,
       });
 
-      const response = await fetch(`/api/vendor/bulk-products/export?${params}`);
+      const response = await fetch(`/api/v2/vendors/products/bulk/export?${params}`);
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);

@@ -274,7 +274,7 @@ export function ConfigProvider({
       
       // 1. Get base price from pricing matrix based on width/height
       try {
-        const response = await fetch(`/api/products/${product.slug}/pricing?width=${config.width}&height=${config.height}`);
+        const response = await fetch(`/api/v2/commerce/products/${product.product_id}/pricing?width=${config.width}&height=${config.height}`);
         if (response.ok) {
           const pricingData = await response.json();
           basePrice = pricingData.price || product.base_price || 0;
@@ -288,64 +288,47 @@ export function ConfigProvider({
 
       // 2. Calculate fabric price (price per square foot × area)
       let fabricPrice = 0;
-      if (config.materialId) {
-        try {
-          const response = await fetch(`/api/products/${product.slug}/fabric-pricing?materialId=${config.materialId}&width=${config.width}&height=${config.height}`);
-          if (response.ok) {
-            const fabricData = await response.json();
-            const area = (config.width * config.height) / 144; // Convert to square feet
-            fabricPrice = (fabricData.pricePerSqft || 0) * area;
-          }
-        } catch (error) {
-          console.error('Error fetching fabric pricing:', error);
+      if (config.materialId && product.materials) {
+        const selectedMaterial = product.materials.find((m: any) => m.material_id === config.materialId);
+        if (selectedMaterial) {
+          const area = (config.width * config.height) / 144; // Convert to square feet
+          fabricPrice = (selectedMaterial.price_per_sqft || 0) * area;
         }
       }
 
       // 3. Calculate vendor options price
       let optionsPrice = 0;
-      try {
-        const response = await fetch(`/api/products/${product.slug}/vendor-options`);
-        if (response.ok) {
-          const optionsData = await response.json();
-          
-          // Mount type price
-          const mountOption = optionsData.mountTypes?.find((m: any) => m.name === mountTypes.find(mt => mt.id === config.mountType)?.name);
-          if (mountOption?.enabled) {
-            optionsPrice += mountOption.price_adjustment || 0;
-          }
-
-          // Control type price
-          const controlOption = optionsData.controlTypes?.liftSystems?.find((c: any) => c.name === config.controlType) ||
-                               optionsData.controlTypes?.wandSystem?.find((c: any) => c.name === config.controlType) ||
-                               optionsData.controlTypes?.stringSystem?.find((c: any) => c.name === config.controlType) ||
-                               optionsData.controlTypes?.remoteControl?.find((c: any) => c.name === config.controlType);
-          if (controlOption?.enabled) {
-            optionsPrice += controlOption.price_adjustment || 0;
-          }
-
-          // Valance (headrail) price
-          const headrailOption = optionsData.valanceOptions?.find((h: any) => h.name === headrailOptions.find(ho => ho.id === config.headrailId)?.name);
-          if (headrailOption?.enabled) {
-            optionsPrice += headrailOption.price_adjustment || 0;
-          }
-
-          // Bottom rail price
-          const bottomRailOption = optionsData.bottomRailOptions?.find((b: any) => b.name === bottomRailOptions.find(bro => bro.id === config.bottomRailId)?.name);
-          if (bottomRailOption?.enabled) {
-            optionsPrice += bottomRailOption.price_adjustment || 0;
-          }
+      
+      // Use mount types and control types from the product data
+      if (mountTypes && config.mountType) {
+        const mountType = mountTypes.find(mt => mt.id === config.mountType);
+        if (mountType && mountType.price_adjustment) {
+          optionsPrice += mountType.price_adjustment || 0;
         }
-      } catch (error) {
-        console.error('Error fetching vendor options:', error);
-        // Fallback to hardcoded modifiers
-        const mountModifier = mountTypes.find(m => m.id === config.mountType)?.priceModifier ?? 0;
-        const controlModifier = controlTypes.find(c => c.name === config.controlType)?.priceModifier ?? 0;
-        const headrailModifier = config.headrailId ? 
-          headrailOptions.find(h => h.id === config.headrailId)?.priceModifier ?? 0 : 0;
-        const bottomRailModifier = config.bottomRailId ? 
-          bottomRailOptions.find(b => b.id === config.bottomRailId)?.priceModifier ?? 0 : 0;
-        
-        optionsPrice = mountModifier + controlModifier + headrailModifier + bottomRailModifier;
+      }
+
+      // Control type price
+      if (controlTypes && config.controlType) {
+        const controlType = controlTypes.find((ct: any) => ct.name === config.controlType);
+        if (controlType && controlType.price_adjustment) {
+          optionsPrice += controlType.price_adjustment || 0;
+        }
+      }
+
+      // Valance (headrail) price
+      if (headrailOptions && config.headrailId) {
+        const headrailOption = headrailOptions.find(ho => ho.id === config.headrailId);
+        if (headrailOption && headrailOption.priceModifier) {
+          optionsPrice += headrailOption.priceModifier || 0;
+        }
+      }
+
+      // Bottom rail price
+      if (bottomRailOptions && config.bottomRailId) {
+        const bottomRailOption = bottomRailOptions.find(bro => bro.id === config.bottomRailId);
+        if (bottomRailOption && bottomRailOption.priceModifier) {
+          optionsPrice += bottomRailOption.priceModifier || 0;
+        }
       }
 
       // Add color and material modifiers from product data

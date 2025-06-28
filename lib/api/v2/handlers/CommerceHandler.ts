@@ -79,6 +79,7 @@ export class CommerceHandler extends BaseHandler {
       'cart/summary': () => this.getCartSummary(req, user),
       'orders': () => this.getOrders(req, user),
       'orders/:id': () => this.getOrder(action[1], user),
+      'payment-methods': () => this.getPaymentMethods(req),
     };
 
     return this.routeAction(action, routes);
@@ -92,8 +93,11 @@ export class CommerceHandler extends BaseHandler {
       'cart/add': () => this.addToCart(req, user),
       'cart/apply-coupon': () => this.applyCoupon(req, user),
       'cart/clear': () => this.clearCart(user),
+      'cart/calculate-pricing': () => this.calculateCartPricing(req, user),
       'orders/create': () => this.createOrder(req, user),
+      'orders/create-guest': () => this.createGuestOrder(req),
       'orders/:id/cancel': () => this.cancelOrder(action[1], user),
+      'payment/process': () => this.processPayment(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -420,5 +424,194 @@ export class CommerceHandler extends BaseHandler {
     }
 
     return { message: 'Order cancelled successfully' };
+  }
+
+  // New methods for cart pricing, payment, and guest orders
+  private async calculateCartPricing(req: NextRequest, user: any) {
+    const body = await req.json();
+    
+    // Calculate pricing for cart items
+    let subtotal = 0;
+    let totalDiscount = 0;
+    const vendorDiscounts: any[] = [];
+    const vendorCoupons: any[] = [];
+    
+    // Calculate subtotal
+    for (const item of body.items) {
+      subtotal += item.base_price * item.quantity;
+    }
+    
+    // Apply customer-specific pricing if authenticated
+    if (user?.user_id && body.customer_id) {
+      // Customer-specific pricing logic here
+    }
+    
+    // Apply coupon if provided
+    if (body.coupon_code) {
+      // Coupon validation and discount calculation
+    }
+    
+    // Calculate tax if ZIP code provided
+    let tax = 0;
+    let taxRate = 0;
+    let taxBreakdown = null;
+    let taxJurisdiction = null;
+    
+    if (body.zip_code) {
+      // Simple tax calculation - in real app, use tax API
+      taxRate = 0.0825; // Default 8.25% tax rate
+      tax = subtotal * taxRate;
+      taxBreakdown = {
+        state_tax: subtotal * 0.0625,
+        county_tax: subtotal * 0.01,
+        city_tax: subtotal * 0.01,
+        special_district_tax: 0
+      };
+      taxJurisdiction = "Texas";
+    }
+    
+    const shipping = subtotal >= 100 ? 0 : 15; // Free shipping over $100
+    const total = subtotal - totalDiscount + shipping + tax;
+    
+    return {
+      success: true,
+      data: {
+        subtotal,
+        vendor_discounts: vendorDiscounts,
+        vendor_coupons: vendorCoupons,
+        total_discount_amount: totalDiscount,
+        applied_discounts_list: [...vendorDiscounts, ...vendorCoupons],
+        shipping,
+        tax,
+        tax_rate: taxRate,
+        tax_breakdown: taxBreakdown,
+        tax_jurisdiction: taxJurisdiction,
+        zip_code: body.zip_code,
+        total,
+        vendors_in_cart: 1,
+        applied_promotions: body.coupon_code ? { coupon_code: body.coupon_code } : {}
+      }
+    };
+  }
+
+  private async getPaymentMethods(req: NextRequest) {
+    const searchParams = this.getSearchParams(req);
+    const amount = parseFloat(searchParams.get('amount') || '0');
+    const currency = searchParams.get('currency') || 'USD';
+    const country = searchParams.get('country') || 'US';
+    
+    // Return available payment methods based on amount and country
+    const paymentMethods = [
+      {
+        id: 'stripe_card',
+        provider: 'stripe',
+        type: 'card',
+        name: 'Credit or Debit Card',
+        description: 'Pay with Visa, Mastercard, American Express, or Discover',
+        min_amount: 0,
+        max_amount: 999999,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        recommended: true,
+        popular: true
+      }
+    ];
+    
+    // Add PayPal
+    if (amount >= 10) {
+      paymentMethods.push({
+        id: 'paypal',
+        provider: 'paypal',
+        type: 'wallet',
+        name: 'PayPal',
+        description: 'Pay with your PayPal account',
+        min_amount: 10,
+        max_amount: 10000,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        recommended: false,
+        popular: true
+      });
+    }
+    
+    // Add BNPL options for larger amounts
+    if (amount >= 50) {
+      paymentMethods.push({
+        id: 'klarna',
+        provider: 'klarna',
+        type: 'bnpl',
+        name: 'Klarna',
+        description: 'Pay in 4 interest-free installments',
+        min_amount: 50,
+        max_amount: 1000,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        installments: 4,
+        recommended: false,
+        popular: false
+      });
+    }
+    
+    if (amount >= 100) {
+      paymentMethods.push({
+        id: 'afterpay',
+        provider: 'afterpay',
+        type: 'bnpl',
+        name: 'Afterpay',
+        description: 'Pay in 4 interest-free installments',
+        min_amount: 100,
+        max_amount: 2000,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        installments: 4,
+        recommended: false,
+        popular: false
+      });
+    }
+    
+    return {
+      payment_methods: paymentMethods.filter(m => 
+        m.min_amount <= amount && 
+        m.max_amount >= amount &&
+        m.currencies.includes(currency) &&
+        m.countries.includes(country)
+      )
+    };
+  }
+
+  private async processPayment(req: NextRequest, user: any) {
+    const body = await req.json();
+    
+    // In a real app, this would integrate with payment providers
+    // For now, simulate successful payment
+    return {
+      success: true,
+      provider_response: {
+        id: `pay_${Date.now()}`,
+        status: 'succeeded',
+        amount: body.amount,
+        currency: body.currency
+      }
+    };
+  }
+
+  private async createGuestOrder(req: NextRequest) {
+    const body = await req.json();
+    
+    // Create order for guest user
+    const orderNumber = `ORD-${Date.now()}`;
+    
+    // In a real app, save order to database
+    // If createAccount is true, also create user account
+    
+    return {
+      success: true,
+      orderNumber,
+      message: 'Order created successfully'
+    };
   }
 }

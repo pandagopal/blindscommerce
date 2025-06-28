@@ -117,16 +117,17 @@ export async function getCurrentUser(): Promise<User | null> {
     const pool = await getPool();
     const [rows] = await pool.execute<any[]>(
       `SELECT 
-        user_id,
-        email,
-        first_name,
-        last_name,
-        phone,
-        role,
-        vendor_id,
-        is_active
-      FROM users 
-      WHERE user_id = ? AND is_active = 1`,
+        u.user_id,
+        u.email,
+        u.first_name,
+        u.last_name,
+        u.phone,
+        u.role,
+        u.is_active,
+        vi.vendor_info_id as vendor_info_id
+      FROM users u
+      LEFT JOIN vendor_info vi ON u.user_id = vi.user_id
+      WHERE u.user_id = ? AND u.is_active = 1`,
       [decoded.userId]
     );
 
@@ -144,7 +145,8 @@ export async function getCurrentUser(): Promise<User | null> {
       lastName: userData.last_name,
       phone: userData.phone,
       isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
-      role: userData.role
+      role: userData.role,
+      vendorId: userData.vendor_info_id
     };
   } catch (error) {
     console.error('Error getting current user:', error);

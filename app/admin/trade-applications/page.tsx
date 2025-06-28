@@ -79,7 +79,7 @@ export default function TradeApplicationsPage() {
 
   const handleStatusUpdate = async (applicationId: number, newStatus: string, notes?: string) => {
     try {
-      const response = await fetch(`/api/admin/trade-applications/${applicationId}`, {
+      const response = await fetch(`/api/v2/admin/trade-applications/${applicationId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

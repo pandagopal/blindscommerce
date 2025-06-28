@@ -103,7 +103,7 @@ function VendorDashboardContent() {
       
       try {
         setDashboardLoading(true);
-        const apiUrl = '/api/vendor/dashboard';
+        const apiUrl = '/api/v2/vendors/dashboard';
           
         const adminViewId = sessionStorage.getItem('AdminViewId');
         const headers: HeadersInit = {};

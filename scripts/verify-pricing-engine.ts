@@ -202,9 +202,9 @@ async function verifyProductPricing(productId: number, productName: string): Pro
 
     // Step 6: Volume Discounts
     const [volumeResult] = await pool.execute<RowDataPacket[]>(
-      `SELECT vd.*, vp.vendor_id 
+      `SELECT vd.*, vp.vendor_info_id 
        FROM volume_discounts vd
-       JOIN vendor_products vp ON vp.vendor_id = vd.vendor_id
+       JOIN vendor_products vp ON vp.vendor_info_id = vd.vendor_info_id
        WHERE vp.product_id = ? AND vd.is_active = 1`,
       [productId]
     );
@@ -216,7 +216,7 @@ async function verifyProductPricing(productId: number, productName: string): Pro
     const [vendorResult] = await pool.execute<RowDataPacket[]>(
       `SELECT vd.*, vp.vendor_price 
        FROM vendor_discounts vd
-       JOIN vendor_products vp ON vp.vendor_id = vd.vendor_id
+       JOIN vendor_products vp ON vp.vendor_info_id = vd.vendor_info_id
        WHERE vp.product_id = ? AND vd.is_active = 1
        AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
        AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())`,

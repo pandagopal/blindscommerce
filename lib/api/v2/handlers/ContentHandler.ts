@@ -6,7 +6,10 @@
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
 import { getPool } from '@/lib/db';
-import { RowDataPacket } from 'mysql2';
+import { RowDataPacket, ResultSetHeader } from 'mysql2';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { randomUUID } from 'crypto';
 
 export class ContentHandler extends BaseHandler {
   /**
@@ -15,7 +18,7 @@ export class ContentHandler extends BaseHandler {
   async handleGET(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'social-accounts': () => this.getSocialAccounts(),
-      'rooms': () => this.getRooms(),
+      'rooms': () => this.getRooms(user),
       'hero-banners': () => this.getHeroBanners(),
       'recently-viewed': () => this.getRecentlyViewed(req),
     };
@@ -26,17 +29,27 @@ export class ContentHandler extends BaseHandler {
   async handlePOST(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'recently-viewed': () => this.addRecentlyViewed(req),
+      'rooms': () => this.createRoom(req, user),
+      'rooms/upload': () => this.uploadRoomImage(req, user),
     };
 
     return this.routeAction(action, routes);
   }
 
   async handlePUT(req: NextRequest, action: string[], user: any): Promise<any> {
-    throw new ApiError('Method not allowed', 405);
+    const routes = {
+      'rooms/*': () => this.updateRoom(req, action, user),
+    };
+
+    return this.routeAction(action, routes);
   }
 
   async handleDELETE(req: NextRequest, action: string[], user: any): Promise<any> {
-    throw new ApiError('Method not allowed', 405);
+    const routes = {
+      'rooms/*': () => this.deleteRoom(action, user),
+    };
+
+    return this.routeAction(action, routes);
   }
 
   private async getSocialAccounts() {
@@ -72,9 +85,14 @@ export class ContentHandler extends BaseHandler {
     }
   }
 
-  private async getRooms() {
+  private async getRooms(user: any) {
     try {
       const pool = await getPool();
+      
+      // For admin users, get all rooms including inactive ones
+      const isAdmin = user?.role === 'ADMIN';
+      const whereClause = isAdmin ? '' : 'WHERE is_active = 1';
+      
       const [rows] = await pool.execute<RowDataPacket[]>(
         `SELECT 
           room_type_id,
@@ -84,9 +102,12 @@ export class ContentHandler extends BaseHandler {
           typical_humidity,
           light_exposure,
           privacy_requirements,
+          recommended_products,
+          is_active,
           created_at,
           updated_at
         FROM room_types
+        ${whereClause}
         ORDER BY name ASC`
       );
 
@@ -174,6 +195,191 @@ export class ContentHandler extends BaseHandler {
         success: false,
         error: 'Failed to record product view'
       };
+    }
+  }
+
+  private async createRoom(req: NextRequest, user: any) {
+    this.requireRole(user, 'ADMIN');
+    
+    try {
+      const data = await req.json();
+      const {
+        name,
+        description,
+        image_url,
+        typical_humidity,
+        light_exposure,
+        privacy_requirements,
+        recommended_products,
+        is_active = true
+      } = data;
+
+      const pool = await getPool();
+      const [result] = await pool.execute<ResultSetHeader>(
+        `INSERT INTO room_types (
+          name, description, image_url, typical_humidity,
+          light_exposure, privacy_requirements, recommended_products, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name,
+          description || null,
+          image_url || null,
+          typical_humidity || null,
+          light_exposure || null,
+          privacy_requirements || null,
+          recommended_products || null,
+          is_active ? 1 : 0
+        ]
+      );
+
+      return {
+        success: true,
+        room_type_id: result.insertId,
+        message: 'Room created successfully'
+      };
+    } catch (error) {
+      console.error('Error creating room:', error);
+      throw new ApiError('Failed to create room', 500);
+    }
+  }
+
+  private async updateRoom(req: NextRequest, action: string[], user: any) {
+    this.requireRole(user, 'ADMIN');
+    
+    const roomId = action[1];
+    if (!roomId || isNaN(parseInt(roomId))) {
+      throw new ApiError('Invalid room ID', 400);
+    }
+
+    try {
+      const data = await req.json();
+      const {
+        name,
+        description,
+        image_url,
+        typical_humidity,
+        light_exposure,
+        privacy_requirements,
+        recommended_products,
+        is_active
+      } = data;
+
+      const pool = await getPool();
+      const [result] = await pool.execute<ResultSetHeader>(
+        `UPDATE room_types SET
+          name = ?,
+          description = ?,
+          image_url = ?,
+          typical_humidity = ?,
+          light_exposure = ?,
+          privacy_requirements = ?,
+          recommended_products = ?,
+          is_active = ?,
+          updated_at = NOW()
+        WHERE room_type_id = ?`,
+        [
+          name,
+          description || null,
+          image_url || null,
+          typical_humidity || null,
+          light_exposure || null,
+          privacy_requirements || null,
+          recommended_products || null,
+          is_active ? 1 : 0,
+          parseInt(roomId)
+        ]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new ApiError('Room not found', 404);
+      }
+
+      return {
+        success: true,
+        message: 'Room updated successfully'
+      };
+    } catch (error) {
+      console.error('Error updating room:', error);
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to update room', 500);
+    }
+  }
+
+  private async deleteRoom(action: string[], user: any) {
+    this.requireRole(user, 'ADMIN');
+    
+    const roomId = action[1];
+    if (!roomId || isNaN(parseInt(roomId))) {
+      throw new ApiError('Invalid room ID', 400);
+    }
+
+    try {
+      const pool = await getPool();
+      const [result] = await pool.execute<ResultSetHeader>(
+        'DELETE FROM room_types WHERE room_type_id = ?',
+        [parseInt(roomId)]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new ApiError('Room not found', 404);
+      }
+
+      return {
+        success: true,
+        message: 'Room deleted successfully'
+      };
+    } catch (error) {
+      console.error('Error deleting room:', error);
+      throw new ApiError('Failed to delete room', 500);
+    }
+  }
+
+  private async uploadRoomImage(req: NextRequest, user: any) {
+    this.requireRole(user, 'ADMIN');
+    
+    try {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      
+      if (!file) {
+        throw new ApiError('No file provided', 400);
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP are allowed', 400);
+      }
+
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new ApiError('File size too large. Maximum 5MB allowed', 400);
+      }
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+
+      // Generate unique filename
+      const ext = file.name.split('.').pop();
+      const filename = `room_${randomUUID()}.${ext}`;
+      const uploadDir = join(process.cwd(), 'public', 'uploads', 'rooms');
+      const filePath = join(uploadDir, filename);
+
+      // Ensure upload directory exists
+      await mkdir(uploadDir, { recursive: true });
+
+      // Save file
+      await writeFile(filePath, buffer);
+
+      return {
+        success: true,
+        url: `/uploads/rooms/${filename}`,
+        filename
+      };
+    } catch (error) {
+      console.error('Error uploading room image:', error);
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to upload image', 500);
     }
   }
 }

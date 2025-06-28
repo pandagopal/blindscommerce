@@ -91,45 +91,45 @@ export class VendorService extends BaseService {
       -- Product stats
       LEFT JOIN (
         SELECT 
-          vendor_id,
+          vendor_info_id,
           COUNT(*) as total_products,
           SUM(CASE WHEN p.is_active = 1 THEN 1 ELSE 0 END) as active_products
         FROM vendor_products vp
         JOIN products p ON vp.product_id = p.product_id
-        GROUP BY vendor_id
-      ) p_stats ON vi.vendor_info_id = p_stats.vendor_id
+        GROUP BY vendor_info_id
+      ) p_stats ON vi.vendor_info_id = p_stats.vendor_info_id
       
       -- Order stats
       LEFT JOIN (
         SELECT 
-          vendor_id,
+          vendor_info_id,
           COUNT(DISTINCT order_id) as total_orders,
           SUM(total_amount) as total_revenue,
           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_orders
         FROM vendor_orders
-        GROUP BY vendor_id
-      ) o_stats ON vi.vendor_info_id = o_stats.vendor_id
+        GROUP BY vendor_info_id
+      ) o_stats ON vi.vendor_info_id = o_stats.vendor_info_id
       
       -- Review stats
       LEFT JOIN (
         SELECT 
-          vp.vendor_id,
+          vp.vendor_info_id,
           AVG(pr.rating) as average_rating,
           COUNT(DISTINCT pr.review_id) as total_reviews
         FROM product_reviews pr
         JOIN vendor_products vp ON pr.product_id = vp.product_id
-        GROUP BY vp.vendor_id
-      ) r_stats ON vi.vendor_info_id = r_stats.vendor_id
+        GROUP BY vp.vendor_info_id
+      ) r_stats ON vi.vendor_info_id = r_stats.vendor_info_id
       
       -- Sales team stats
       LEFT JOIN (
         SELECT 
-          vendor_id,
+          vendor_info_id,
           COUNT(*) as sales_team_count
         FROM sales_representatives
         WHERE is_active = 1
-        GROUP BY vendor_id
-      ) s_stats ON vi.vendor_info_id = s_stats.vendor_id
+        GROUP BY vendor_info_id
+      ) s_stats ON vi.vendor_info_id = s_stats.vendor_info_id
       
       WHERE vi.vendor_info_id = ?
       LIMIT 1
@@ -166,7 +166,7 @@ export class VendorService extends BaseService {
           FROM vendor_orders vo
           JOIN orders o ON vo.order_id = o.order_id
           JOIN users u ON o.user_id = u.user_id
-          WHERE vo.vendor_id = ?
+          WHERE vo.vendor_info_id = ?
           ORDER BY vo.created_at DESC
           LIMIT 10
         `,
@@ -191,10 +191,10 @@ export class VendorService extends BaseService {
               SUM(oi.total) as revenue
             FROM order_items oi
             JOIN vendor_orders vo ON oi.order_id = vo.order_id
-            WHERE vo.vendor_id = ? AND vo.status NOT IN ('cancelled', 'refunded')
+            WHERE vo.vendor_info_id = ? AND vo.status NOT IN ('cancelled', 'refunded')
             GROUP BY oi.product_id
           ) sales ON p.product_id = sales.product_id
-          WHERE vp.vendor_id = ?
+          WHERE vp.vendor_info_id = ?
           ORDER BY sales.revenue DESC
           LIMIT 10
         `,
@@ -208,7 +208,7 @@ export class VendorService extends BaseService {
             SUM(CASE WHEN created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) THEN total_amount ELSE 0 END) as month,
             SUM(CASE WHEN YEAR(created_at) = YEAR(CURDATE()) THEN total_amount ELSE 0 END) as year
           FROM vendor_orders
-          WHERE vendor_id = ? AND status NOT IN ('cancelled', 'refunded')
+          WHERE vendor_info_id = ? AND status NOT IN ('cancelled', 'refunded')
         `,
         params: [vendorId]
       },
@@ -240,13 +240,13 @@ export class VendorService extends BaseService {
                 SELECT AVG(pr.rating)
                 FROM product_reviews pr
                 JOIN vendor_products vp ON pr.product_id = vp.product_id
-                WHERE vp.vendor_id = ?
+                WHERE vp.vendor_info_id = ?
               ), 
               0
             ) as customer_satisfaction
             
           FROM vendor_orders
-          WHERE vendor_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          WHERE vendor_info_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
         `,
         params: [vendorId, vendorId]
       }
@@ -296,7 +296,7 @@ export class VendorService extends BaseService {
     } = options;
 
     // Build WHERE conditions
-    const whereConditions: string[] = ['vp.vendor_id = ?'];
+    const whereConditions: string[] = ['vp.vendor_info_id = ?'];
     const whereParams: any[] = [vendorId];
 
     if (isActive !== undefined) {
@@ -353,7 +353,7 @@ export class VendorService extends BaseService {
           SUM(quantity) as quantity_sold,
           SUM(total) as revenue
         FROM order_items
-        WHERE vendor_id = ?
+        WHERE vendor_info_id = ?
         GROUP BY product_id
       ) sales ON p.product_id = sales.product_id
       WHERE ${whereClause}
@@ -391,7 +391,7 @@ export class VendorService extends BaseService {
               ELSE 'inactive'
             END as status
           FROM vendor_discounts
-          WHERE vendor_id = ?
+          WHERE vendor_info_id = ?
           ORDER BY created_at DESC
         `,
         params: [vendorId]
@@ -412,7 +412,7 @@ export class VendorService extends BaseService {
               ELSE 'inactive'
             END as status
           FROM vendor_coupons
-          WHERE vendor_id = ?
+          WHERE vendor_info_id = ?
           ORDER BY created_at DESC
         `,
         params: [vendorId]
@@ -474,8 +474,8 @@ export class VendorService extends BaseService {
         END) as completed_payouts
         
       FROM vendor_orders vo
-      LEFT JOIN vendor_payouts vp ON vo.vendor_id = vp.vendor_id
-      WHERE vo.vendor_id = ? 
+      LEFT JOIN vendor_payouts vp ON vo.vendor_info_id = vp.vendor_info_id
+      WHERE vo.vendor_info_id = ? 
         AND vo.status NOT IN ('cancelled', 'refunded')
         ${dateClause}
     `;
@@ -492,7 +492,7 @@ export class VendorService extends BaseService {
         SUM(total_amount - commission_amount) as net_revenue,
         COUNT(DISTINCT order_id) as order_count
       FROM vendor_orders
-      WHERE vendor_id = ? 
+      WHERE vendor_info_id = ? 
         AND status NOT IN ('cancelled', 'refunded')
         ${dateClause}
       GROUP BY DATE_FORMAT(created_at, '%Y-%m')

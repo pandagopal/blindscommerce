@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
         ...(roleFilter !== 'all' && { role: roleFilter })
       });
 
-      const response = await fetch(`/api/admin/users?${queryParams}`);
+      const response = await fetch(`/api/v2/admin/users?${queryParams}`);
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to fetch users');
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
 
     try {
       setError(null);
-      const response = await fetch(`/api/admin/users/${userId}`, {
+      const response = await fetch(`/api/v2/admin/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -30,7 +30,7 @@ interface UserWithDetails extends User {
     is_approved: boolean;
   };
   sales_info?: {
-    vendor_id: number;
+    vendor_info_id: number;
     commission_rate: number;
     total_sales: number;
   };
@@ -74,7 +74,7 @@ export class UserService extends BaseService {
         vi.is_approved as vendor_is_approved,
         
         -- Sales rep info
-        sr.vendor_id as sales_vendor_id,
+        sr.vendor_info_id as sales_vendor_info_id,
         sr.commission_rate as sales_commission_rate,
         COALESCE(sr_stats.total_sales, 0) as sales_total_sales,
         
@@ -124,9 +124,9 @@ export class UserService extends BaseService {
       };
     }
 
-    if (user.role === 'sales_representative' && user.sales_vendor_id) {
+    if (user.role === 'sales_representative' && user.sales_vendor_info_id) {
       userWithDetails.sales_info = {
-        vendor_id: user.sales_vendor_id,
+        vendor_info_id: user.sales_vendor_info_id,
         commission_rate: user.sales_commission_rate,
         total_sales: user.sales_total_sales
       };
@@ -145,7 +145,7 @@ export class UserService extends BaseService {
     delete userWithDetails.business_name;
     delete userWithDetails.vendor_commission_rate;
     delete userWithDetails.vendor_is_approved;
-    delete userWithDetails.sales_vendor_id;
+    delete userWithDetails.sales_vendor_info_id;
     delete userWithDetails.sales_commission_rate;
     delete userWithDetails.sales_total_sales;
     delete userWithDetails.customer_total_orders;
@@ -290,7 +290,7 @@ export class UserService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('sr.vendor_id = ?');
+      whereConditions.push('sr.vendor_info_id = ?');
       whereParams.push(vendorId);
     }
 
@@ -331,7 +331,7 @@ export class UserService extends BaseService {
         u.*,
         vi.business_name,
         vi.vendor_info_id,
-        sr.vendor_id as sales_vendor_id,
+        sr.vendor_info_id as sales_vendor_info_id,
         
         CASE u.role
           WHEN 'vendor' THEN vi.business_name

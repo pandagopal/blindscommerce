@@ -53,7 +53,7 @@ export default function AdminVendorsPage() {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/admin/vendors?limit=${vendorsPerPage}&offset=${(currentPage - 1) * vendorsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}${searchQuery ? `&search=${searchQuery}` : ''}`
+        `/api/v2/admin/vendors?limit=${vendorsPerPage}&offset=${(currentPage - 1) * vendorsPerPage}&sortBy=${sortBy}&sortOrder=${sortOrder}${searchQuery ? `&search=${searchQuery}` : ''}`
       );
       
       if (!response.ok) {
@@ -115,7 +115,7 @@ export default function AdminVendorsPage() {
 
   const handleStatusToggle = async (vendorId: number, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/admin/vendors/${vendorId}`, {
+      const response = await fetch(`/api/v2/admin/vendors/${vendorId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

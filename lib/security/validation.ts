@@ -185,7 +185,7 @@ export const validateVendorAccess = async (userId: number): Promise<VendorValida
     const pool = await getPool();
     
     const [rows] = await pool.execute(
-      `SELECT vendor_info_id as vendor_id, approval_status as status, is_verified as is_approved 
+      `SELECT vendor_info_id as vendor_info_id, approval_status as status, is_verified as is_approved 
        FROM vendor_info 
        WHERE user_id = ? AND is_active = 1`,
       [userId]
@@ -216,7 +216,7 @@ export const validateVendorAccess = async (userId: number): Promise<VendorValida
     
     return {
       isValid: true,
-      vendorId: vendor.vendor_id
+      vendorId: vendor.vendor_info_id
     };
   } catch (error) {
     console.error('Error validating vendor access:', error);

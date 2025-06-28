@@ -16,7 +16,7 @@ import {
 
 interface BulkJob {
   job_id: string;
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   operation_type: 'import' | 'export' | 'update';
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'completed_with_errors';
@@ -89,7 +89,7 @@ export default function AdminBulkOperationsPage() {
         params.append('operation', selectedOperation);
       }
       
-      const response = await fetch(`/api/admin/bulk-operations?${params}`);
+      const response = await fetch(`/api/v2/admin/bulk?${params}`);
       if (response.ok) {
         const data = await response.json();
         setJobs(data.jobs || []);
@@ -256,7 +256,7 @@ export default function AdminBulkOperationsPage() {
                       <div className="text-sm font-medium text-gray-900">
                         {job.vendor_name}
                       </div>
-                      <div className="text-sm text-gray-500">ID: {job.vendor_id}</div>
+                      <div className="text-sm text-gray-500">ID: {job.vendor_info_id}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

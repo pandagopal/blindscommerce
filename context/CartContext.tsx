@@ -35,7 +35,7 @@ export interface CartItem {
 
 interface VendorDiscount {
   type: 'vendor_discount' | 'vendor_coupon';
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   discount_id?: number;
   coupon_id?: number;
@@ -199,7 +199,7 @@ export function CartProvider({ children }: CartProviderProps) {
       // Create cache key based on request content
       // Calculate pricing without cache
 
-      const response = await fetch('/api/v2/pricing/calculate', {
+      const response = await fetch('/api/v2/commerce/cart/calculate-pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pricingRequest)

@@ -87,7 +87,7 @@ export default function VendorDiscountsPage() {
 
   // Lazy load discounts/coupons data only when this route is active
   const fetchDiscountsData = async () => {
-    const endpoint = activeTab === 'discounts' ? '/api/vendor/discounts' : '/api/vendor/coupons';
+    const endpoint = activeTab === 'discounts' ? '/api/v2/vendors/discounts' : '/api/v2/vendors/coupons';
     const params = new URLSearchParams({
       page: currentPage.toString(),
       limit: pagination.limit.toString(),
@@ -165,8 +165,8 @@ export default function VendorDiscountsPage() {
 
     try {
       const endpoint = activeTab === 'discounts' 
-        ? `/api/vendor/discounts/${(editingItem as VendorDiscount).discount_id}`
-        : `/api/vendor/coupons/${(editingItem as VendorCoupon).coupon_id}`;
+        ? `/api/v2/vendors/discounts/${(editingItem as VendorDiscount).discount_id}`
+        : `/api/v2/vendors/coupons/${(editingItem as VendorCoupon).coupon_id}`;
 
       const response = await fetch(endpoint, {
         method: 'PUT',
@@ -191,8 +191,8 @@ export default function VendorDiscountsPage() {
   const handleToggleStatus = async (item: VendorDiscount | VendorCoupon) => {
     try {
       const endpoint = activeTab === 'discounts' 
-        ? `/api/vendor/discounts/${(item as VendorDiscount).discount_id}`
-        : `/api/vendor/coupons/${(item as VendorCoupon).coupon_id}`;
+        ? `/api/v2/vendors/discounts/${(item as VendorDiscount).discount_id}`
+        : `/api/v2/vendors/coupons/${(item as VendorCoupon).coupon_id}`;
 
       const response = await fetch(endpoint, {
         method: 'PUT',

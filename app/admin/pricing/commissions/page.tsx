@@ -15,7 +15,7 @@ import { Plus, DollarSign, Percent, TrendingUp, Users, Edit, Trash2, Download, B
 interface CommissionRule {
   rule_id: number;
   rule_name: string;
-  vendor_id?: number;
+  vendor_info_id?: number;
   vendor_name?: string;
   sales_staff_id?: number;
   sales_staff_name?: string;
@@ -40,7 +40,7 @@ interface CommissionRule {
 interface CommissionCalculation {
   calculation_id: number;
   order_id: number;
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   sales_staff_id?: number;
   sales_staff_name?: string;
@@ -75,7 +75,7 @@ export default function CommissionManagementPage() {
   // Form state for creating/editing rules
   const [formData, setFormData] = useState({
     rule_name: '',
-    vendor_id: '',
+    vendor_info_id: '',
     sales_staff_id: '',
     commission_type: 'percentage' as const,
     commission_rate: 0,
@@ -109,10 +109,10 @@ export default function CommissionManagementPage() {
           limit: '10',
           search: searchTerm,
           ...(statusFilter !== 'all' && { status: statusFilter }),
-          ...(vendorFilter !== 'all' && { vendor_id: vendorFilter })
+          ...(vendorFilter !== 'all' && { vendor_info_id: vendorFilter })
         });
 
-        const response = await fetch(`/api/admin/pricing/commissions/rules?${params}`);
+        const response = await fetch(`/api/v2/admin/commissions/rules?${params}`);
         if (response.ok) {
           const data = await response.json();
           setCommissionRules(data.rules);
@@ -122,16 +122,16 @@ export default function CommissionManagementPage() {
           page: currentPage.toString(),
           limit: '20',
           ...(statusFilter !== 'all' && { payment_status: statusFilter }),
-          ...(vendorFilter !== 'all' && { vendor_id: vendorFilter })
+          ...(vendorFilter !== 'all' && { vendor_info_id: vendorFilter })
         });
 
-        const response = await fetch(`/api/admin/pricing/commissions/calculations?${params}`);
+        const response = await fetch(`/api/v2/admin/commissions/calculations?${params}`);
         if (response.ok) {
           const data = await response.json();
           setCommissionCalculations(data.calculations);
         }
       } else if (activeTab === 'summary') {
-        const response = await fetch('/api/v2/admin/pricing/commissions/summary');
+        const response = await fetch('/api/v2/admin/commissions/summary');
         if (response.ok) {
           const data = await response.json();
           setCommissionSummary(data);
@@ -146,7 +146,7 @@ export default function CommissionManagementPage() {
 
   const handleCreateRule = async () => {
     try {
-      const response = await fetch('/api/v2/admin/pricing/commissions/rules', {
+      const response = await fetch('/api/v2/admin/commissions/rules', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -164,7 +164,7 @@ export default function CommissionManagementPage() {
 
   const handleUpdateRule = async (rule_id: number, updates: Partial<CommissionRule>) => {
     try {
-      const response = await fetch(`/api/admin/pricing/commissions/rules/${rule_id}`, {
+      const response = await fetch(`/api/v2/admin/commissions/rules/${rule_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
@@ -182,7 +182,7 @@ export default function CommissionManagementPage() {
     if (!confirm('Are you sure you want to delete this commission rule?')) return;
 
     try {
-      const response = await fetch(`/api/admin/pricing/commissions/rules/${rule_id}`, {
+      const response = await fetch(`/api/v2/admin/commissions/rules/${rule_id}`, {
         method: 'DELETE'
       });
 
@@ -196,7 +196,7 @@ export default function CommissionManagementPage() {
 
   const handlePaymentStatusUpdate = async (calculation_id: number, status: string) => {
     try {
-      const response = await fetch(`/api/admin/pricing/commissions/calculations/${calculation_id}`, {
+      const response = await fetch(`/api/v2/admin/commissions/calculations/${calculation_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payment_status: status })
@@ -213,7 +213,7 @@ export default function CommissionManagementPage() {
   const resetForm = () => {
     setFormData({
       rule_name: '',
-      vendor_id: '',
+      vendor_info_id: '',
       sales_staff_id: '',
       commission_type: 'percentage',
       commission_rate: 0,

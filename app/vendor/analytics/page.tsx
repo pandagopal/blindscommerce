@@ -52,7 +52,7 @@ export default function VendorAnalyticsPage() {
 
   // Lazy load analytics data only when this route is active
   const fetchAnalyticsData = async () => {
-    const res = await fetch(`/api/vendor/analytics?range=${dateRange}`);
+    const res = await fetch(`/api/v2/vendors/analytics?range=${dateRange}`);
     if (!res.ok) {
       throw new Error('Failed to fetch analytics data');
     }
@@ -71,7 +71,7 @@ export default function VendorAnalyticsPage() {
 
   const exportData = async (type: string) => {
     try {
-      const res = await fetch(`/api/vendor/analytics/export?type=${type}&range=${dateRange}`);
+      const res = await fetch(`/api/v2/vendors/analytics/export?type=${type}&range=${dateRange}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

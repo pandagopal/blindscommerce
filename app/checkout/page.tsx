@@ -120,12 +120,13 @@ export default function CheckoutPage() {
             
             // Load default address
             try {
-              const addressResponse = await fetch('/api/v2/users/shipping-addresses');
+              const addressResponse = await fetch('/api/v2/users/addresses');
               console.log('Address response status:', addressResponse.status);
               if (addressResponse.ok) {
                 const addressData = await addressResponse.json();
                 console.log('Address data received:', addressData);
-                const defaultAddress = addressData.addresses?.find((addr: any) => addr.isDefault);
+                const addresses = addressData.data?.addresses || addressData.addresses || [];
+                const defaultAddress = addresses.find((addr: any) => addr.isDefault);
                 
                 if (defaultAddress) {
                   console.log('Setting default address:', defaultAddress);
@@ -153,7 +154,7 @@ export default function CheckoutPage() {
         // Load available payment methods based on order total
         const amount = total || 100; // Use 100 as default if total is 0
         console.log('Fetching payment methods for amount:', amount);
-        const paymentResponse = await fetch(`/api/v2/commerce/payments/methods?amount=${amount}&currency=USD&country=US`);
+        const paymentResponse = await fetch(`/api/v2/commerce/payment-methods?amount=${amount}&currency=USD&country=US`);
         console.log('Payment response status:', paymentResponse.status);
         
         if (paymentResponse.ok) {
@@ -256,28 +257,30 @@ export default function CheckoutPage() {
           zip_code: value.trim()
         };
 
-        const response = await fetch('/api/v2/commerce/pricing/calculate', {
+        const response = await fetch('/api/v2/commerce/cart/calculate-pricing', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(pricingRequest)
         });
 
         if (response.ok) {
-          const data = await response.json();
+          const result = await response.json();
+          const data = result.data || result;
           updatePricingWithTax({
-            subtotal: data.pricing.subtotal,
-            volume_discount: data.pricing.discounts.volume_discount,
-            coupon_discount: data.pricing.discounts.coupon_discount,
-            campaign_discount: data.pricing.discounts.campaign_discount,
-            total_discount: data.pricing.discounts.total_discount,
-            shipping: data.pricing.shipping,
-            tax: data.pricing.tax,
-            tax_rate: data.pricing.tax_rate,
-            tax_breakdown: data.pricing.tax_breakdown,
-            tax_jurisdiction: data.pricing.tax_jurisdiction,
-            zip_code: data.pricing.zip_code,
-            total: data.pricing.total,
-            applied_promotions: data.pricing.applied_promotions
+            subtotal: data.subtotal,
+            vendor_discounts: data.vendor_discounts || [],
+            vendor_coupons: data.vendor_coupons || [],
+            total_discount_amount: data.total_discount_amount || 0,
+            applied_discounts_list: data.applied_discounts_list || [],
+            shipping: data.shipping,
+            tax: data.tax,
+            tax_rate: data.tax_rate,
+            tax_breakdown: data.tax_breakdown,
+            tax_jurisdiction: data.tax_jurisdiction,
+            zip_code: data.zip_code,
+            total: data.total,
+            vendors_in_cart: data.vendors_in_cart || 1,
+            applied_promotions: data.applied_promotions || {}
           });
         }
       } catch (error) {
@@ -310,7 +313,7 @@ export default function CheckoutPage() {
       };
 
       // Process payment
-      const paymentResponse = await fetch('/api/v2/commerce/payments/methods', {
+      const paymentResponse = await fetch('/api/v2/commerce/payment/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -372,7 +375,7 @@ export default function CheckoutPage() {
         special_instructions: formData.specialInstructions
       };
 
-      const apiEndpoint = isGuest ? '/api/v2/commerce/orders/guest' : '/api/v2/commerce/orders/create';
+      const apiEndpoint = isGuest ? '/api/v2/commerce/orders/create-guest' : '/api/v2/commerce/orders/create';
       
       const finalOrderData = isGuest ? {
         ...orderData,

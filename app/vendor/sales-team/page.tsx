@@ -64,7 +64,7 @@ export default function VendorSalesTeamPage() {
 
   const fetchSalesTeam = async () => {
     try {
-      const res = await fetch('/api/v2/vendor/sales-team');
+      const res = await fetch('/api/v2/vendors/sales-team');
       if (!res.ok) throw new Error('Failed to fetch sales team');
       const data = await res.json();
       setSalesTeam(data.salesTeam || []);
@@ -83,8 +83,8 @@ export default function VendorSalesTeamPage() {
 
     try {
       const endpoint = editingId 
-        ? `/api/vendor/sales-team/${editingId}`
-        : '/api/vendor/sales-team';
+        ? `/api/v2/vendors/sales-team/${editingId}`
+        : '/api/v2/vendors/sales-team';
       
       const method = editingId ? 'PUT' : 'POST';
       
@@ -137,7 +137,7 @@ export default function VendorSalesTeamPage() {
 
   const handleToggleActive = async (salesStaffId: number, isActive: boolean) => {
     try {
-      const res = await fetch(`/api/vendor/sales-team/${salesStaffId}`, {
+      const res = await fetch(`/api/v2/vendors/sales-team/${salesStaffId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive })
@@ -162,7 +162,7 @@ export default function VendorSalesTeamPage() {
     if (!confirm('Are you sure you want to remove this sales person from your team?')) return;
 
     try {
-      const res = await fetch(`/api/vendor/sales-team/${salesStaffId}`, {
+      const res = await fetch(`/api/v2/vendors/sales-team/${salesStaffId}`, {
         method: 'DELETE'
       });
 

@@ -142,7 +142,7 @@ function SalesDashboardContent() {
     const fetchDashboardData = async () => {
       try {
         // Fetch dashboard data from API
-        const response = await fetch('/api/v2/users/sales/dashboard');
+        const response = await fetch('/api/v2/sales/dashboard');
         if (response.ok) {
           const data = await response.json();
           setLeads(data.leads || []);

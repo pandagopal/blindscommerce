@@ -83,7 +83,7 @@ export default function SavedConfigurationsPage() {
 
     setDeleteStatus('loading');
     try {
-      const response = await fetch(`/api/account/configurations?id=${deleteId}`, {
+      const response = await fetch(`/api/v2/users/configurations/${deleteId}`, {
         method: 'DELETE'
       });
 

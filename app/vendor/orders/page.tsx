@@ -47,7 +47,7 @@ export default function VendorOrdersPage() {
     if (status && status !== 'All') params.set('status', status);
     if (search) params.set('search', search);
     
-    const response = await fetch(`/api/vendor/orders?${params.toString()}`);
+    const response = await fetch(`/api/v2/vendors/orders?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch orders');
     const data = await response.json();
     

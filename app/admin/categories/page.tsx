@@ -89,8 +89,8 @@ export default function AdminCategoriesPage() {
 
     try {
       const endpoint = editingCategory 
-        ? `/api/admin/categories/${editingCategory.category_id}`
-        : '/api/admin/categories';
+        ? `/api/v2/admin/categories/${editingCategory.category_id}`
+        : '/api/v2/admin/categories';
       
       const method = editingCategory ? 'PUT' : 'POST';
 
@@ -118,7 +118,7 @@ export default function AdminCategoriesPage() {
     if (!confirm('Are you sure you want to delete this category?')) return;
 
     try {
-      const response = await fetch(`/api/admin/categories/${id}`, {
+      const response = await fetch(`/api/v2/admin/categories/${id}`, {
         method: 'DELETE'
       });
 

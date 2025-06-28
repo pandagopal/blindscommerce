@@ -68,7 +68,7 @@ export default function AdminAnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/analytics/dashboard?range=${dateRange}`);
+      const res = await fetch(`/api/v2/analytics/overview?range=${dateRange}`);
       if (res.ok) {
         const data = await res.json();
         setAnalyticsData(data);
@@ -82,7 +82,7 @@ export default function AdminAnalyticsPage() {
 
   const exportData = async (type: string) => {
     try {
-      const res = await fetch(`/api/admin/dashboard/export?type=${type}&range=${dateRange}`);
+      const res = await fetch(`/api/v2/analytics/export?type=${type}&range=${dateRange}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);

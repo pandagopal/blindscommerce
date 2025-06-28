@@ -59,7 +59,7 @@ function AccountPageContent() {
           sessionStorage.setItem('AdminViewId', adminViewUserId);
           
           // Fetch the customer being viewed
-          const customerRes = await fetch(`/api/admin/users/${adminViewUserId}`);
+          const customerRes = await fetch(`/api/v2/admin/users/${adminViewUserId}`);
           if (customerRes.ok) {
             const customerData = await customerRes.json();
             if (customerData.user.role !== 'customer') {

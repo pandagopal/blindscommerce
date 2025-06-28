@@ -106,7 +106,7 @@ export default function InstallerJobsPage() {
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/v2/installer/jobs');
+      const res = await fetch('/api/v2/installers/jobs');
       const result = await res.json();
       if (result.success) {
         setJobs(result.data.jobs);
@@ -223,17 +223,30 @@ export default function InstallerJobsPage() {
 
   const handleUpdateJobStatus = async (jobId: string, status: InstallerJob['status'], notes?: string) => {
     try {
-      const updates: any = { status };
+      let res;
+      
       if (status === 'completed') {
-        updates.completed_at = new Date().toISOString();
-        updates.completion_notes = notes;
+        // Use the specific complete endpoint for job completion
+        const updates = {
+          completed_at: new Date().toISOString(),
+          completion_notes: notes
+        };
+        
+        res = await fetch(`/api/v2/installers/jobs/${jobId}/complete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+      } else {
+        // Use the regular update endpoint for other status changes
+        const updates = { status };
+        
+        res = await fetch(`/api/v2/installers/jobs/${jobId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
       }
-
-      const res = await fetch(`/api/installer/jobs/${jobId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
 
       if (res.ok) {
         fetchJobs();

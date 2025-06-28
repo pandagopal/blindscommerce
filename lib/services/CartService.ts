@@ -13,7 +13,7 @@ interface CartItem extends RowDataPacket {
   user_id: number;
   session_id?: string;
   product_id: number;
-  vendor_id: number;
+  vendor_info_id: number;
   quantity: number;
   configuration?: any;
   price: number;
@@ -44,7 +44,7 @@ interface CartSummary {
   total: number;
   itemCount: number;
   vendorBreakdown: Array<{
-    vendor_id: number;
+    vendor_info_id: number;
     vendor_name: string;
     subtotal: number;
     discount: number;
@@ -109,8 +109,8 @@ export class CartService extends BaseService {
         
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.product_id
-      JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-      JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
+      JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_info_id = vp.vendor_info_id
+      JOIN vendor_info vi ON ci.vendor_info_id = vi.vendor_info_id
       WHERE ${whereClause}
       ORDER BY ci.created_at DESC
     `;
@@ -135,9 +135,9 @@ export class CartService extends BaseService {
       totalDiscount += parseDecimal(item.discount_amount);
 
       // Vendor breakdown
-      if (!vendorMap.has(item.vendor_id)) {
-        vendorMap.set(item.vendor_id, {
-          vendor_id: item.vendor_id,
+      if (!vendorMap.has(item.vendor_info_id)) {
+        vendorMap.set(item.vendor_info_id, {
+          vendor_info_id: item.vendor_info_id,
           vendor_name: item.vendor_name,
           subtotal: 0,
           discount: 0,
@@ -145,7 +145,7 @@ export class CartService extends BaseService {
         });
       }
 
-      const vendor = vendorMap.get(item.vendor_id);
+      const vendor = vendorMap.get(item.vendor_info_id);
       vendor.subtotal += itemSubtotal;
       vendor.discount += item.discount_amount || 0;
       vendor.itemCount++;
@@ -194,7 +194,7 @@ export class CartService extends BaseService {
         FROM cart_items 
         WHERE ${data.userId ? 'user_id = ?' : 'session_id = ?'}
           AND product_id = ? 
-          AND vendor_id = ?
+          AND vendor_info_id = ?
           AND configuration = ?
         LIMIT 1
       `;
@@ -228,7 +228,7 @@ export class CartService extends BaseService {
             COALESCE(vp.vendor_price, p.base_price) as price
           FROM products p
           LEFT JOIN vendor_products vp ON p.product_id = vp.product_id 
-            AND vp.vendor_id = ?
+            AND vp.vendor_info_id = ?
           WHERE p.product_id = ?`,
           [data.vendorId, data.productId]
         );
@@ -238,7 +238,7 @@ export class CartService extends BaseService {
         // Insert new item
         const insertQuery = `
           INSERT INTO cart_items (
-            user_id, session_id, product_id, vendor_id, 
+            user_id, session_id, product_id, vendor_info_id, 
             quantity, configuration, price, created_at, updated_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `;
@@ -277,8 +277,8 @@ export class CartService extends BaseService {
           CASE WHEN vp.quantity_available >= ci.quantity THEN 1 ELSE 0 END as in_stock
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
-        JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-        JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
+        JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_info_id = vp.vendor_info_id
+        JOIN vendor_info vi ON ci.vendor_info_id = vi.vendor_info_id
         WHERE ci.cart_item_id = ?`,
         [cartItemId]
       );
@@ -395,7 +395,7 @@ export class CartService extends BaseService {
         vc.*,
         vi.business_name as vendor_name
       FROM vendor_coupons vc
-      JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
+      JOIN vendor_info vi ON vc.vendor_info_id = vi.vendor_info_id
       WHERE vc.code = ?
         AND vc.is_active = 1
         AND (vc.start_date IS NULL OR vc.start_date <= NOW())
@@ -410,7 +410,7 @@ export class CartService extends BaseService {
     }
 
     // Check if coupon applies to any items in cart
-    const applicableItems = cart.items.filter(item => item.vendor_id === coupon.vendor_id);
+    const applicableItems = cart.items.filter(item => item.vendor_info_id === coupon.vendor_info_id);
     
     if (applicableItems.length === 0) {
       return { 
@@ -489,9 +489,9 @@ export class CartService extends BaseService {
            FROM cart_items 
            WHERE user_id = ? 
              AND product_id = ? 
-             AND vendor_id = ?
+             AND vendor_info_id = ?
              AND configuration = ?`,
-          [userId, guestItem.product_id, guestItem.vendor_id, guestItem.configuration]
+          [userId, guestItem.product_id, guestItem.vendor_info_id, guestItem.configuration]
         );
 
         if (existing[0]) {

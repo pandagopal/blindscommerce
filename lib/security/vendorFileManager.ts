@@ -99,7 +99,7 @@ export class VendorFileManager {
              vf.file_size, vf.width, vf.height, vf.created_at,
              vf.upload_type, vf.file_format
       FROM vendor_files vf
-      WHERE vf.vendor_id = ? AND vf.deleted_at IS NULL
+      WHERE vf.vendor_info_id = ? AND vf.deleted_at IS NULL
     `;
     const params = [this.vendorInfoId];
 
@@ -150,7 +150,7 @@ export class VendorFileManager {
     const [rows] = await pool.execute(`
       SELECT file_id, original_name 
       FROM vendor_files 
-      WHERE vendor_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
+      WHERE vendor_info_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
       LIMIT 1
     `, [this.vendorInfoId, category, fileHash]);
 
@@ -307,7 +307,7 @@ export class VendorFileManager {
     const [rows] = await pool.execute(`
       SELECT category, upload_type, COUNT(*) as file_count, SUM(file_size) as total_size
       FROM vendor_files 
-      WHERE vendor_id = ? AND deleted_at IS NULL
+      WHERE vendor_info_id = ? AND deleted_at IS NULL
       GROUP BY category, upload_type
     `, [this.vendorInfoId]);
 
@@ -359,7 +359,7 @@ export class VendorFileManager {
       // Get file info
       const [rows] = await pool.execute(`
         SELECT file_path, category FROM vendor_files 
-        WHERE vendor_id = ? AND file_id = ? AND deleted_at IS NULL
+        WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
       `, [this.vendorInfoId, fileId]);
 
       const files = rows as any[];
@@ -455,7 +455,7 @@ export class VendorFileManager {
     
     await pool.execute(`
       INSERT INTO vendor_files (
-        vendor_id, file_id, original_name, category, upload_type,
+        vendor_info_id, file_id, original_name, category, upload_type,
         file_size, file_format, file_hash, file_path,
         width, height, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())

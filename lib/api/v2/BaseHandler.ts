@@ -96,7 +96,9 @@ export abstract class BaseHandler {
   protected checkRole(user: any, requiredRole: UserRole): boolean {
     if (!user) return false;
     
-    const userLevel = UserRoles[user.role as UserRole] || 0;
+    // Convert role to uppercase to match UserRoles keys
+    const userRoleKey = user.role?.toUpperCase() as UserRole;
+    const userLevel = UserRoles[userRoleKey] || 0;
     const requiredLevel = UserRoles[requiredRole];
     
     return userLevel >= requiredLevel;

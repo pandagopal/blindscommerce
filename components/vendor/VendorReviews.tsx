@@ -7,7 +7,7 @@ import VendorReviewForm from './VendorReviewForm';
 
 interface VendorRating {
   rating_id: number;
-  vendor_id: number;
+  vendor_info_id: number;
   user_id: number;
   order_id: number;
   overall_rating: number;

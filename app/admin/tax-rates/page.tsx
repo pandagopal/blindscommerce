@@ -77,7 +77,7 @@ export default function TaxRatesPage() {
         ...(searchTerm && { search: searchTerm })
       });
 
-      const res = await fetch(`/api/admin/tax-rates?${params}`, {
+      const res = await fetch(`/api/v2/admin/tax-rates?${params}`, {
         credentials: 'include'
       });
       if (!res.ok) {

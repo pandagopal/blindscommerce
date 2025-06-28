@@ -6,7 +6,7 @@ export interface CartItem {
   cart_item_id: number;
   cart_id: number;
   product_id: number;
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   quantity: number;
   width?: number;
@@ -46,7 +46,7 @@ export interface CartItem {
 }
 
 export interface VendorDiscount {
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   discount_id: number;
   discount_name: string;
@@ -65,7 +65,7 @@ export interface VendorDiscount {
 }
 
 export interface VendorCartSummary {
-  vendor_id: number;
+  vendor_info_id: number;
   vendor_name: string;
   items: CartItem[];
   item_count: number;
@@ -206,9 +206,9 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
   const calculateVendorSummaries = () => {
     // Group items by vendor
     const vendorGroups = items.reduce((acc, item) => {
-      if (!acc[item.vendor_id]) {
-        acc[item.vendor_id] = {
-          vendor_id: item.vendor_id,
+      if (!acc[item.vendor_info_id]) {
+        acc[item.vendor_info_id] = {
+          vendor_info_id: item.vendor_info_id,
           vendor_name: item.vendor_name,
           items: [],
           item_count: 0,
@@ -221,16 +221,16 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
         };
       }
       
-      acc[item.vendor_id].items.push(item);
-      acc[item.vendor_id].item_count += item.quantity;
+      acc[item.vendor_info_id].items.push(item);
+      acc[item.vendor_info_id].item_count += item.quantity;
       
       // Use discounted price if available, otherwise original price
       const itemPrice = item.discounted_price || item.unit_price;
-      acc[item.vendor_id].subtotal += itemPrice * item.quantity;
+      acc[item.vendor_info_id].subtotal += itemPrice * item.quantity;
       
       // Add discount amount for this item
       if (item.discount_amount) {
-        acc[item.vendor_id].discount_amount += item.discount_amount;
+        acc[item.vendor_info_id].discount_amount += item.discount_amount;
       }
       
       return acc;
@@ -238,14 +238,14 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
 
     // Add discount information
     [...appliedDiscounts, ...appliedCoupons].forEach(discount => {
-      if (vendorGroups[discount.vendor_id]) {
+      if (vendorGroups[discount.vendor_info_id]) {
         if (discount.coupon_code) {
-          vendorGroups[discount.vendor_id].applied_coupons.push(discount);
+          vendorGroups[discount.vendor_info_id].applied_coupons.push(discount);
         } else {
-          vendorGroups[discount.vendor_id].applied_discounts.push(discount);
+          vendorGroups[discount.vendor_info_id].applied_discounts.push(discount);
         }
         
-        vendorGroups[discount.vendor_id].subtotal_after_discount = discount.subtotal_after;
+        vendorGroups[discount.vendor_info_id].subtotal_after_discount = discount.subtotal_after;
       }
     });
 
@@ -357,7 +357,7 @@ export const VendorCartProvider = ({ children }: VendorCartProviderProps) => {
       if (response.ok) {
         // Add to applied coupons
         const newCoupon: VendorDiscount = {
-          vendor_id: data.coupon.vendor_id,
+          vendor_info_id: data.coupon.vendor_info_id,
           vendor_name: data.coupon.vendor_name,
           discount_id: data.coupon.coupon_id,
           discount_name: data.coupon.coupon_name,

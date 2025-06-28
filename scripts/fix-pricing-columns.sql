@@ -72,9 +72,9 @@ MODIFY COLUMN cost_price DECIMAL(10,2) DEFAULT NULL CHECK (cost_price IS NULL OR
 
 -- 9. Add indexes for pricing-related queries
 CREATE INDEX idx_product_pricing_lookup ON products(product_id, base_price);
-CREATE INDEX idx_vendor_pricing ON vendor_products(product_id, vendor_id, vendor_price);
+CREATE INDEX idx_vendor_pricing ON vendor_products(product_id, vendor_info_id, vendor_price);
 CREATE INDEX idx_customer_pricing ON customer_specific_pricing(product_id, customer_id);
-CREATE INDEX idx_active_discounts ON vendor_discounts(vendor_id, is_active, valid_from, valid_until);
+CREATE INDEX idx_active_discounts ON vendor_discounts(vendor_info_id, is_active, valid_from, valid_until);
 CREATE INDEX idx_coupon_lookup ON coupon_codes(code, is_active, valid_from, valid_until);
 
 -- 10. Add computed column for effective price (MySQL 5.7+)
@@ -93,7 +93,7 @@ SELECT
     p.product_id,
     p.name as product_name,
     p.base_price,
-    vp.vendor_id,
+    vp.vendor_info_id,
     vp.vendor_price,
     COALESCE(vp.vendor_price, p.base_price) as list_price,
     vd.discount_type as vendor_discount_type,
@@ -110,7 +110,7 @@ SELECT
     END as discounted_price
 FROM products p
 LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
-LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
+LEFT JOIN vendor_discounts vd ON vp.vendor_info_id = vd.vendor_info_id 
     AND vd.is_active = 1 
     AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
     AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())

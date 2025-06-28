@@ -76,8 +76,8 @@ export class ProductService extends BaseService {
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id 
-        ${vendorId ? 'AND vp.vendor_id = ?' : ''}
-      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
+        ${vendorId ? 'AND vp.vendor_info_id = ?' : ''}
+      LEFT JOIN vendor_discounts vd ON vp.vendor_info_id = vd.vendor_info_id 
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
         AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
@@ -172,7 +172,7 @@ export class ProductService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('vp.vendor_id = ?');
+      whereConditions.push('vp.vendor_info_id = ?');
       whereParams.push(vendorId);
     }
 
@@ -273,7 +273,7 @@ export class ProductService extends BaseService {
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN brands b ON p.brand_id = b.brand_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
-      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
+      LEFT JOIN vendor_discounts vd ON vp.vendor_info_id = vd.vendor_info_id 
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
         AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
@@ -366,10 +366,10 @@ export class ProductService extends BaseService {
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       LEFT JOIN customer_pricing cp ON p.product_id = cp.product_id 
         AND cp.customer_id = ?
-      LEFT JOIN volume_discounts vold ON vp.vendor_id = vold.vendor_id
+      LEFT JOIN volume_discounts vold ON vp.vendor_info_id = vold.vendor_info_id
         AND vold.is_active = 1
         AND ? BETWEEN vold.min_quantity AND COALESCE(vold.max_quantity, 999999)
-      LEFT JOIN vendor_coupons vc ON vp.vendor_id = vc.vendor_id
+      LEFT JOIN vendor_coupons vc ON vp.vendor_info_id = vc.vendor_info_id
         AND vc.code = ?
         AND vc.is_active = 1
         AND (vc.start_date IS NULL OR vc.start_date <= NOW())

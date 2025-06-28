@@ -32,7 +32,7 @@ interface OrderItem extends RowDataPacket {
   order_item_id: number;
   order_id: number;
   product_id: number;
-  vendor_id: number;
+  vendor_info_id: number;
   quantity: number;
   price: number;
   discount_amount: number;
@@ -57,7 +57,7 @@ interface OrderCreationData {
   user_id: number;
   items: Array<{
     product_id: number;
-    vendor_id: number;
+    vendor_info_id: number;
     quantity: number;
     price: number;
     discount_amount?: number;
@@ -136,7 +136,7 @@ export class OrderService extends BaseService {
       const itemValues = data.items.map(item => [
         orderId,
         item.product_id,
-        item.vendor_id,
+        item.vendor_info_id,
         item.quantity,
         item.price,
         item.discount_amount || 0,
@@ -147,7 +147,7 @@ export class OrderService extends BaseService {
 
       await connection.query(
         `INSERT INTO order_items (
-          order_id, product_id, vendor_id, quantity, price,
+          order_id, product_id, vendor_info_id, quantity, price,
           discount_amount, tax_amount, total, configuration
         ) VALUES ?`,
         [itemValues]
@@ -166,10 +166,10 @@ export class OrderService extends BaseService {
 
       // Create vendor orders (split order by vendor)
       const vendorGroups = data.items.reduce((acc, item) => {
-        if (!acc[item.vendor_id]) {
-          acc[item.vendor_id] = [];
+        if (!acc[item.vendor_info_id]) {
+          acc[item.vendor_info_id] = [];
         }
-        acc[item.vendor_id].push(item);
+        acc[item.vendor_info_id].push(item);
         return acc;
       }, {} as Record<number, typeof data.items>);
 
@@ -186,7 +186,7 @@ export class OrderService extends BaseService {
 
         await connection.execute(
           `INSERT INTO vendor_orders (
-            order_id, vendor_id, status, subtotal, discount_amount,
+            order_id, vendor_info_id, status, subtotal, discount_amount,
             tax_amount, total_amount, commission_rate, commission_amount,
             created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -252,7 +252,7 @@ export class OrderService extends BaseService {
         vi.business_name as vendor_name
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON oi.vendor_info_id = vi.vendor_info_id
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id
     `;
@@ -304,7 +304,7 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('EXISTS (SELECT 1 FROM vendor_orders vo WHERE vo.order_id = o.order_id AND vo.vendor_id = ?)');
+      whereConditions.push('EXISTS (SELECT 1 FROM vendor_orders vo WHERE vo.order_id = o.order_id AND vo.vendor_info_id = ?)');
       whereParams.push(vendorId);
     }
 
@@ -391,7 +391,7 @@ export class OrderService extends BaseService {
           vi.business_name as vendor_name
         FROM order_items oi
         JOIN products p ON oi.product_id = p.product_id
-        LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+        LEFT JOIN vendor_info vi ON oi.vendor_info_id = vi.vendor_info_id
         WHERE oi.order_id IN (${placeholders})
         ORDER BY oi.order_id, oi.order_item_id
       `;
@@ -500,7 +500,7 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('vo.vendor_id = ?');
+      whereConditions.push('vo.vendor_info_id = ?');
       whereParams.push(vendorId);
     }
 

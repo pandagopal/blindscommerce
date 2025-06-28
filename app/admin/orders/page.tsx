@@ -88,7 +88,7 @@ export default function AdminOrdersPage() {
         ...(statusFilter !== 'all' && { status: statusFilter })
       });
 
-      const response = await fetch(`/api/admin/orders?${queryParams}`);
+      const response = await fetch(`/api/v2/admin/orders?${queryParams}`);
       if (!response.ok) {
         throw new Error('Failed to fetch orders');
       }

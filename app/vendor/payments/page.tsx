@@ -74,7 +74,7 @@ export default function VendorPaymentsPage() {
   // Lazy load payment data only when this route is active
   const fetchPaymentData = async () => {
     try {
-      const res = await fetch(`/api/vendor/payments?range=${dateRange}`);
+      const res = await fetch(`/api/v2/vendors/financial-summary?range=${dateRange}`);
       if (res.ok) {
         const data = await res.json();
         return data;
@@ -106,7 +106,7 @@ export default function VendorPaymentsPage() {
 
   const exportData = async (type: string) => {
     try {
-      const res = await fetch(`/api/vendor/payments/export?type=${type}&range=${dateRange}`);
+      const res = await fetch(`/api/v2/vendors/financial-summary/export?type=${type}&range=${dateRange}`);
       if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
