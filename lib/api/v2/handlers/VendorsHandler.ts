@@ -89,6 +89,8 @@ export class VendorsHandler extends BaseHandler {
       'sales-team': () => this.getSalesTeam(req, user),
       'reviews': () => this.getReviews(req, user),
       'storefront': () => this.getStorefront(user),
+      'shipments': () => this.getShipments(req, user),
+      'shipments/:id': () => this.getShipment(action[1], user),
     };
 
     return this.routeAction(action, routes);
@@ -121,6 +123,7 @@ export class VendorsHandler extends BaseHandler {
       'coupons/:id': () => this.updateCoupon(action[1], req, user),
       'orders/:id/status': () => this.updateOrderStatus(action[1], req, user),
       'sales-team/:id': () => this.updateSalesRep(action[2], req, user),
+      'shipments/:id': () => this.updateShipment(action[1], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -549,21 +552,65 @@ export class VendorsHandler extends BaseHandler {
     const vendorId = await this.getVendorId(user);
     const searchParams = this.getSearchParams(req);
     
-    const dateFrom = searchParams.get('dateFrom') 
-      ? new Date(searchParams.get('dateFrom')!)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+    // Parse range parameter (e.g., '30d', '7d', '90d')
+    const range = searchParams.get('range') || '30d';
+    let dateFrom: Date;
+    let dateTo = new Date();
     
-    const dateTo = searchParams.get('dateTo')
-      ? new Date(searchParams.get('dateTo')!)
-      : new Date();
+    // Convert range to date
+    const rangeMatch = range.match(/(\d+)([dwmy])/);
+    if (rangeMatch) {
+      const [, value, unit] = rangeMatch;
+      const daysMultiplier = {
+        'd': 1,
+        'w': 7,
+        'm': 30,
+        'y': 365
+      }[unit] || 1;
+      
+      dateFrom = new Date(Date.now() - parseInt(value) * daysMultiplier * 24 * 60 * 60 * 1000);
+    } else {
+      // Default to 30 days if range format is invalid
+      dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    }
+    
+    // Also support explicit dateFrom/dateTo parameters
+    if (searchParams.get('dateFrom')) {
+      dateFrom = new Date(searchParams.get('dateFrom')!);
+    }
+    if (searchParams.get('dateTo')) {
+      dateTo = new Date(searchParams.get('dateTo')!);
+    }
 
-    const stats = await this.orderService.getOrderStatistics({
-      vendorId,
-      dateFrom,
-      dateTo,
-    });
+    try {
+      const stats = await this.orderService.getOrderStatistics({
+        vendorId,
+        dateFrom,
+        dateTo,
+      });
 
-    return stats;
+      // Transform data to match expected frontend format
+      return {
+        overview: {
+          total_revenue: stats.totalRevenue || 0,
+          revenue_change: 0, // TODO: Calculate change percentage
+          total_orders: stats.totalOrders || 0,
+          orders_change: 0, // TODO: Calculate change percentage
+          product_views: 0, // TODO: Implement product views tracking
+          views_change: 0,
+          conversion_rate: 0, // TODO: Calculate conversion rate
+          conversion_change: 0,
+          avg_rating: 0, // TODO: Get average rating from reviews
+          commission_earned: 0 // TODO: Calculate commissions
+        },
+        sales_data: stats.revenueByMonth || [],
+        product_performance: [], // TODO: Implement product performance
+        customer_insights: [] // TODO: Implement customer insights
+      };
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      throw new ApiError('Failed to fetch analytics data', 500);
+    }
   }
 
   private async getFinancialSummary(req: NextRequest, user: any) {
@@ -941,7 +988,6 @@ export class VendorsHandler extends BaseHandler {
           u.last_name as lastName,
           u.email,
           u.phone,
-          u.phone_country as phoneCountry,
           ss.territory,
           ss.commission_rate as commissionRate,
           ss.target_sales as targetSales,
@@ -1009,6 +1055,369 @@ export class VendorsHandler extends BaseHandler {
 
   private async requestPayout(req: NextRequest, user: any) {
     throw new ApiError('Not implemented', 501);
+  }
+
+  // Shipments management
+  private async getShipments(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+    
+    try {
+      const searchParams = new URL(req.url).searchParams;
+      const status = searchParams.get('status') || 'all';
+      const carrier = searchParams.get('carrier') || 'all';
+      const search = searchParams.get('search') || '';
+      
+      // Get orders with shipping info and fulfillment data for this vendor
+      let query = `
+        SELECT 
+          o.order_id,
+          o.order_number,
+          CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+          usa.address_line_1,
+          usa.address_line_2,
+          usa.city,
+          usa.state_province,
+          usa.postal_code,
+          usa.country,
+          ful.tracking_number,
+          ful.carrier,
+          o.status as order_status,
+          o.created_at as created_date,
+          o.shipping_amount as shipping_cost,
+          ful.estimated_delivery,
+          ful.fulfillment_notes as notes,
+          ful.created_at as fulfilled_date
+        FROM orders o
+        JOIN users u ON o.user_id = u.user_id
+        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+        LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
+        WHERE o.vendor_id = ?
+        AND o.status IN ('pending', 'processing', 'shipped', 'delivered')
+      `;
+      
+      const params: any[] = [vendorId];
+      
+      if (status !== 'all') {
+        // Map shipment status to order status
+        const statusMap: Record<string, string> = {
+          'pending': 'pending',
+          'picked_up': 'processing',
+          'in_transit': 'shipped',
+          'out_for_delivery': 'shipped',
+          'delivered': 'delivered'
+        };
+        if (statusMap[status]) {
+          query += ' AND o.status = ?';
+          params.push(statusMap[status]);
+        }
+      }
+      
+      if (carrier !== 'all') {
+        query += ' AND ful.carrier = ?';
+        params.push(carrier);
+      }
+      
+      if (search) {
+        query += ' AND (ful.tracking_number LIKE ? OR o.order_number LIKE ?)';
+        params.push(`%${search}%`, `%${search}%`);
+      }
+      
+      query += ' ORDER BY o.created_at DESC';
+      
+      const [orders] = await pool.execute(query, params);
+      
+      // Transform orders to shipments format
+      const shipments = await Promise.all(
+        (orders as any[]).map(async (order) => {
+          const [items] = await pool.execute(`
+            SELECT 
+              oi.order_item_id as id,
+              p.name as product_name,
+              oi.quantity,
+              p.sku
+            FROM order_items oi
+            JOIN products p ON oi.product_id = p.product_id
+            WHERE oi.order_id = ?
+          `, [order.order_id]);
+          
+          // Build full address
+          const addressParts = [
+            order.address_line_1,
+            order.address_line_2,
+            `${order.city}, ${order.state_province} ${order.postal_code}`,
+            order.country
+          ].filter(Boolean).join(', ');
+          
+          // Map order status to shipment status
+          let shipmentStatus = 'pending';
+          if (order.order_status === 'processing') {
+            shipmentStatus = order.tracking_number ? 'picked_up' : 'pending';
+          } else if (order.order_status === 'shipped') {
+            shipmentStatus = order.tracking_number ? 'in_transit' : 'out_for_delivery';
+          } else if (order.order_status === 'delivered') {
+            shipmentStatus = 'delivered';
+          } else if (order.order_status === 'cancelled' || order.order_status === 'refunded') {
+            shipmentStatus = 'failed';
+          }
+          
+          // Calculate estimated delivery if not set
+          const estimatedDelivery = order.estimated_delivery || 
+            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          
+          return {
+            id: `ship_${order.order_id}`,
+            order_id: order.order_number,
+            customer_name: order.customer_name,
+            shipping_address: addressParts,
+            tracking_number: order.tracking_number || '',
+            carrier: order.carrier || 'ups',
+            status: shipmentStatus,
+            created_date: order.created_date,
+            shipped_date: order.fulfilled_date || null,
+            estimated_delivery: estimatedDelivery,
+            actual_delivery: order.order_status === 'delivered' ? order.fulfilled_date : null,
+            items: items || [],
+            weight: 2.5, // Default weight for now
+            dimensions: '12x8x4', // Default dimensions for now
+            shipping_cost: parseFloat(order.shipping_cost) || 0,
+            notes: order.notes || ''
+          };
+        })
+      );
+      
+      return {
+        shipments: shipments,
+        total: shipments.length
+      };
+    } catch (error) {
+      console.error('Error fetching shipments:', error);
+      throw new ApiError('Failed to fetch shipments', 500);
+    }
+  }
+
+  private async getShipment(id: string, user: any) {
+    // Extract order_id from shipment id (format: ship_123)
+    const orderId = id.replace('ship_', '');
+    if (!orderId || isNaN(Number(orderId))) {
+      throw new ApiError('Invalid shipment ID', 400);
+    }
+    
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+    
+    try {
+      const [orders] = await pool.execute(`
+        SELECT 
+          o.order_id,
+          o.order_number,
+          CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+          usa.address_line_1,
+          usa.address_line_2,
+          usa.city,
+          usa.state_province,
+          usa.postal_code,
+          usa.country,
+          ful.tracking_number,
+          ful.carrier,
+          o.status as order_status,
+          o.created_at as created_date,
+          o.shipping_amount as shipping_cost,
+          ful.estimated_delivery,
+          ful.fulfillment_notes as notes,
+          ful.created_at as fulfilled_date
+        FROM orders o
+        JOIN users u ON o.user_id = u.user_id
+        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+        LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
+        WHERE o.order_id = ? AND o.vendor_id = ?
+      `, [orderId, vendorId]);
+      
+      if ((orders as any[]).length === 0) {
+        throw new ApiError('Shipment not found', 404);
+      }
+      
+      const order = (orders as any[])[0];
+      
+      // Get items
+      const [items] = await pool.execute(`
+        SELECT 
+          oi.order_item_id as id,
+          p.name as product_name,
+          oi.quantity,
+          p.sku
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        WHERE oi.order_id = ?
+      `, [order.order_id]);
+      
+      // Build full address
+      const addressParts = [
+        order.address_line_1,
+        order.address_line_2,
+        `${order.city}, ${order.state_province} ${order.postal_code}`,
+        order.country
+      ].filter(Boolean).join(', ');
+      
+      // Map order status to shipment status
+      let shipmentStatus = 'pending';
+      if (order.order_status === 'processing') {
+        shipmentStatus = order.tracking_number ? 'picked_up' : 'pending';
+      } else if (order.order_status === 'shipped') {
+        shipmentStatus = order.tracking_number ? 'in_transit' : 'out_for_delivery';
+      } else if (order.order_status === 'delivered') {
+        shipmentStatus = 'delivered';
+      } else if (order.order_status === 'cancelled' || order.order_status === 'refunded') {
+        shipmentStatus = 'failed';
+      }
+      
+      // Calculate estimated delivery if not set
+      const estimatedDelivery = order.estimated_delivery || 
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      
+      return {
+        id: id,
+        order_id: order.order_number,
+        customer_name: order.customer_name,
+        shipping_address: addressParts,
+        tracking_number: order.tracking_number || '',
+        carrier: order.carrier || 'ups',
+        status: shipmentStatus,
+        created_date: order.created_date,
+        shipped_date: order.fulfilled_date || null,
+        estimated_delivery: estimatedDelivery,
+        actual_delivery: order.order_status === 'delivered' ? order.fulfilled_date : null,
+        items: items || [],
+        weight: 2.5,
+        dimensions: '12x8x4',
+        shipping_cost: parseFloat(order.shipping_cost) || 0,
+        notes: order.notes || ''
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error fetching shipment:', error);
+      throw new ApiError('Failed to fetch shipment', 500);
+    }
+  }
+
+  private async updateShipment(id: string, req: NextRequest, user: any) {
+    // Extract order_id from shipment id (format: ship_123)
+    const orderId = id.replace('ship_', '');
+    if (!orderId || isNaN(Number(orderId))) {
+      throw new ApiError('Invalid shipment ID', 400);
+    }
+    
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+    
+    try {
+      await conn.beginTransaction();
+      
+      // Verify order belongs to vendor
+      const [orders] = await conn.execute(`
+        SELECT o.order_id, o.status
+        FROM orders o
+        WHERE o.order_id = ? AND o.vendor_id = ?
+      `, [orderId, vendorId]);
+      
+      if ((orders as any[]).length === 0) {
+        throw new ApiError('Shipment not found', 404);
+      }
+      
+      const order = (orders as any[])[0];
+      
+      // Update order status if provided
+      if (body.status) {
+        // Map shipment status to order status
+        const statusMap: Record<string, string> = {
+          'pending': 'pending',
+          'picked_up': 'processing',
+          'in_transit': 'shipped',
+          'out_for_delivery': 'shipped',
+          'delivered': 'delivered',
+          'failed': 'cancelled'
+        };
+        
+        if (statusMap[body.status]) {
+          await conn.execute(
+            'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
+            [statusMap[body.status], orderId]
+          );
+        }
+      }
+      
+      // Check if fulfillment record exists
+      const [fulfillment] = await conn.execute(
+        'SELECT fulfillment_id FROM order_fulfillment WHERE order_id = ?',
+        [orderId]
+      );
+      
+      if ((fulfillment as any[]).length > 0) {
+        // Update existing fulfillment record
+        const updates = [];
+        const values = [];
+        
+        if (body.tracking_number) {
+          updates.push('tracking_number = ?');
+          values.push(body.tracking_number);
+        }
+        
+        if (body.carrier) {
+          updates.push('carrier = ?');
+          values.push(body.carrier);
+        }
+        
+        if (body.notes !== undefined) {
+          updates.push('fulfillment_notes = ?');
+          values.push(body.notes);
+        }
+        
+        if (body.estimated_delivery) {
+          updates.push('estimated_delivery = ?');
+          values.push(body.estimated_delivery);
+        }
+        
+        if (updates.length > 0) {
+          updates.push('updated_at = NOW()');
+          values.push(orderId);
+          
+          await conn.execute(
+            `UPDATE order_fulfillment SET ${updates.join(', ')} WHERE order_id = ?`,
+            values
+          );
+        }
+      } else {
+        // Create new fulfillment record
+        await conn.execute(
+          `INSERT INTO order_fulfillment 
+           (order_id, tracking_number, carrier, estimated_delivery, fulfillment_notes, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+          [
+            orderId,
+            body.tracking_number || null,
+            body.carrier || 'ups',
+            body.estimated_delivery || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            body.notes || null
+          ]
+        );
+      }
+      
+      await conn.commit();
+      
+      return {
+        success: true,
+        message: 'Shipment updated successfully'
+      };
+    } catch (error) {
+      await conn.rollback();
+      if (error instanceof ApiError) throw error;
+      console.error('Error updating shipment:', error);
+      throw new ApiError('Failed to update shipment', 500);
+    } finally {
+      conn.release();
+    }
   }
 
   private async getStorefront(user: any) {

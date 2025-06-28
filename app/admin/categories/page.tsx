@@ -49,7 +49,9 @@ export default function AdminCategoriesPage() {
         console.error('Error response:', errorData);
       } else {
         const data = await response.json();
-        setCategories(data.categories || []);
+        // V2 API returns data in data.data
+        const categoriesData = data.data || data;
+        setCategories(categoriesData.categories || []);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -73,7 +75,8 @@ export default function AdminCategoriesPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         setFormData(prev => ({ ...prev, image_url: data.url }));
       }
     } catch (error) {

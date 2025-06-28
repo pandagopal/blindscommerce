@@ -2,8 +2,8 @@
   "metadata": {
     "title": "Claude's BlindsCommerce Application Reference",
     "format": "machine_readable_json",
-    "last_updated": "2025-06-26",
-    "version": "3.0",
+    "last_updated": "2025-06-28",
+    "version": "3.1",
     "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
     "consolidated_from": "26 documentation files merged into single reference"
   },
@@ -554,6 +554,124 @@
     ]
   },
   
+  "critical_sql_best_practices": {
+    "overview": "Recurring SQL errors have been identified as a major issue",
+    "common_mistakes": {
+      "reserved_keywords": {
+        "problem": "Using MySQL reserved keywords as aliases or identifiers",
+        "examples": ["of", "order", "group", "select", "where", "from", "as"],
+        "solution": "Always use safe aliases like 'ful' instead of 'of', 'ord' instead of 'order'",
+        "prevention": "Check MySQL reserved keywords list before naming"
+      },
+      "column_existence": {
+        "problem": "Assuming columns exist without checking database schema",
+        "examples": ["phone_country", "shipping_address", "vo.total_amount"],
+        "solution": "ALWAYS check table structure with DESCRIBE command first",
+        "prevention": "Run 'DESCRIBE table_name' before writing any SQL query"
+      },
+      "table_aliases": {
+        "problem": "Using undefined table aliases in queries",
+        "examples": ["vo.vendor_id when 'vo' alias doesn't exist"],
+        "solution": "Ensure all aliases are defined in FROM/JOIN clauses",
+        "prevention": "Double-check all table aliases match their declarations"
+      },
+      "data_type_assumptions": {
+        "problem": "Assuming data types without verification",
+        "examples": ["treating decimals as strings", "wrong date formats"],
+        "solution": "Check column types with DESCRIBE before operations",
+        "prevention": "Always verify data types match expected format"
+      }
+    },
+    "mandatory_verification_steps": [
+      "ALWAYS run 'DESCRIBE table_name' before writing queries",
+      "ALWAYS check if columns exist before referencing them",
+      "ALWAYS verify table relationships and foreign keys",
+      "ALWAYS test SQL queries in small pieces first",
+      "NEVER assume column names based on convention",
+      "NEVER use reserved keywords as aliases"
+    ],
+    "query_writing_checklist": {
+      "step_1": "Identify all tables needed for the query",
+      "step_2": "Run DESCRIBE on each table to verify structure",
+      "step_3": "Check for reserved keywords in aliases",
+      "step_4": "Verify all column names exist exactly as spelled",
+      "step_5": "Test JOIN conditions with simple SELECT first",
+      "step_6": "Build complex queries incrementally",
+      "step_7": "Always use parameterized queries for user input"
+    },
+    "database_interaction_rules": {
+      "connection_verification": "Always check database connection before queries",
+      "error_handling": "Catch and log SQL errors with full context",
+      "transaction_usage": "Use transactions for multi-step operations",
+      "connection_pooling": "Always release connections after use",
+      "query_logging": "Log queries in development for debugging"
+    }
+  },
+  
+  "api_response_format_standards": {
+    "overview": "Consistent API response formats prevent frontend errors",
+    "required_structure": {
+      "success_response": {
+        "success": true,
+        "data": "actual response data",
+        "metadata": "optional pagination, counts, etc"
+      },
+      "error_response": {
+        "success": false,
+        "error": "error message",
+        "code": "specific error code",
+        "details": "optional additional context"
+      }
+    },
+    "common_frontend_expectations": {
+      "array_responses": "Always return arrays for list endpoints, even if empty",
+      "object_responses": "Always return objects for detail endpoints, null if not found",
+      "numeric_values": "Always parse decimals/floats, never return as strings",
+      "date_formats": "Always use ISO 8601 format for dates",
+      "null_handling": "Use null for missing values, not undefined or empty strings"
+    },
+    "infinite_loop_prevention": {
+      "error_handling": "Never let errors trigger re-renders that cause new requests",
+      "loading_states": "Always set loading to false on both success and error",
+      "dependency_arrays": "Be careful with useEffect dependencies",
+      "error_boundaries": "Implement error boundaries to catch render errors",
+      "request_deduplication": "Prevent duplicate requests with request IDs"
+    }
+  },
+  
+  "service_method_patterns": {
+    "executeParallel_usage": {
+      "returns": "Object with query keys, NOT an array",
+      "correct_usage": "const results = await executeParallel(); const { key1, key2 } = results;",
+      "incorrect_usage": "const [result1, result2] = await executeParallel(); // WRONG!",
+      "type_safety": "Always type the generic parameter properly"
+    },
+    "transaction_pattern": {
+      "structure": "try { begin; operations; commit; } catch { rollback; } finally { release; }",
+      "connection_handling": "Always get connection from pool, never use pool directly in transactions",
+      "error_propagation": "Re-throw errors after rollback for proper error handling"
+    }
+  },
+  
+  "debugging_workflow": {
+    "sql_errors": [
+      "1. Copy the exact error message",
+      "2. Extract the table names from the query",
+      "3. Run DESCRIBE on each table",
+      "4. Compare column names in error with actual schema",
+      "5. Check for typos and reserved keywords",
+      "6. Test simplified version of query first"
+    ],
+    "api_errors": [
+      "1. Check browser network tab for actual response",
+      "2. Verify response format matches frontend expectations",
+      "3. Check for missing await keywords",
+      "4. Verify error handling doesn't trigger re-renders",
+      "5. Add console.logs at key points",
+      "6. Check for race conditions"
+    ]
+  },
+  
   "important_reminders": {
     "do_what_asked": "nothing more, nothing less",
     "never_create_files": "unless absolutely necessary",
@@ -561,6 +679,8 @@
     "no_proactive_docs": "never create documentation unless requested",
     "follow_v2_pattern": "use consolidated API architecture",
     "test_everything": "verify UI and data flow completely",
-    "check_claude_md": "this is the single source of truth"
+    "check_claude_md": "this is the single source of truth",
+    "verify_sql_first": "ALWAYS check database schema before writing SQL",
+    "no_assumptions": "NEVER assume column names or data types"
   }
 }

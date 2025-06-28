@@ -218,8 +218,14 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         throw new Error(data.message || 'API request failed');
       }
       
-      setProducts(data.data?.products || []);
-      setTotalProducts(data.data?.pagination?.total || 0);
+      // Handle both response formats - commerce API returns { data: { data: [...], pagination: {...} } }
+      // while admin API returns { data: { products: [...], pagination: {...} } }
+      const responseData = data.data || data;
+      const products = responseData.data || responseData.products || [];
+      const total = responseData.pagination?.total || 0;
+      
+      setProducts(products);
+      setTotalProducts(total);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to connect to server');

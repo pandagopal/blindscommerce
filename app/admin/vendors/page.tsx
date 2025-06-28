@@ -60,14 +60,38 @@ export default function AdminVendorsPage() {
         throw new Error(`Failed to fetch vendors: ${response.status}`);
       }
       
-      const data = await response.json() as { vendors?: VendorInfo[], total?: number, error?: string };
+      const result = await response.json();
       
-      if (data.error) {
-        throw new Error(data.error);
+      if (result.error) {
+        throw new Error(result.error);
       }
       
-      setVendors(data.vendors || []);
-      setTotalVendors(data.total || 0);
+      // V2 API returns data in data.data
+      const data = result.data || result;
+      
+      // Transform snake_case to camelCase for the UI
+      const transformedVendors = (data.vendors || []).map((vendor: any) => ({
+        id: vendor.user_id,
+        email: vendor.email,
+        firstName: vendor.first_name || '',
+        lastName: vendor.last_name || '',
+        companyName: vendor.business_name || '',
+        contactEmail: vendor.business_email || vendor.email,
+        contactPhone: vendor.business_phone || '',
+        city: vendor.city,
+        state: vendor.state,
+        isActive: vendor.is_active === 1,
+        isVerified: vendor.is_verified === 1,
+        approvalStatus: vendor.approval_status || 'pending',
+        totalSales: 0, // Not provided by current API
+        rating: 0, // Not provided by current API
+        createdAt: vendor.created_at,
+        productCount: vendor.product_count || 0,
+        activeProducts: vendor.active_products || 0
+      }));
+      
+      setVendors(transformedVendors);
+      setTotalVendors(data.pagination?.total || data.total || 0);
     } catch (error) {
       console.error('Error fetching vendors:', error);
       setError('Failed to fetch vendors');

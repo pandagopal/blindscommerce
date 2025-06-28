@@ -59,7 +59,9 @@ export default function AdminHeroBannersPage() {
         setError('Failed to fetch banners');
       } else {
         const data = await response.json();
-        setBanners(data.banners || []);
+        // V2 API returns data in data.data
+        const bannersData = data.data || data;
+        setBanners(bannersData.banners || []);
       }
     } catch (error) {
       console.error('Error fetching banners:', error);
@@ -86,7 +88,8 @@ export default function AdminHeroBannersPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         const fieldName = imageType === 'background' ? 'background_image' : 'right_side_image';
         setFormData(prev => ({ ...prev, [fieldName]: data.url }));
       } else {
@@ -105,8 +108,8 @@ export default function AdminHeroBannersPage() {
 
     try {
       const endpoint = editingBanner 
-        ? `/api/v2/content/hero-banners/${editingBanner.banner_id}`
-        : '/api/v2/content/hero-banners';
+        ? `/api/v2/admin/hero-banners/${editingBanner.banner_id}`
+        : '/api/v2/admin/hero-banners';
       
       const method = editingBanner ? 'PUT' : 'POST';
 
@@ -134,7 +137,7 @@ export default function AdminHeroBannersPage() {
     if (!confirm('Are you sure you want to delete this banner?')) return;
 
     try {
-      const response = await fetch(`/api/v2/content/hero-banners/${id}`, {
+      const response = await fetch(`/api/v2/admin/hero-banners/${id}`, {
         method: 'DELETE'
       });
 
@@ -169,7 +172,7 @@ export default function AdminHeroBannersPage() {
 
   const toggleActive = async (banner: HeroBanner) => {
     try {
-      const response = await fetch(`/api/v2/content/hero-banners/${banner.banner_id}`, {
+      const response = await fetch(`/api/v2/admin/hero-banners/${banner.banner_id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

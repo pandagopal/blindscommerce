@@ -44,7 +44,7 @@ export default function AdminRoomsPage() {
 
   const fetchRooms = async () => {
     try {
-      const response = await fetch('/api/v2/content/rooms');
+      const response = await fetch('/api/v2/admin/rooms');
       
       if (!response.ok) {
         const errorData = await response.text();
@@ -52,7 +52,9 @@ export default function AdminRoomsPage() {
         setError('Failed to fetch rooms');
       } else {
         const data = await response.json();
-        setRooms(data.rooms || []);
+        // V2 API returns data in data.data
+        const roomsData = data.data || data;
+        setRooms(roomsData.rooms || []);
       }
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -72,13 +74,14 @@ export default function AdminRoomsPage() {
     formDataUpload.append('file', file);
 
     try {
-      const response = await fetch('/api/v2/content/rooms/upload', {
+      const response = await fetch('/api/v2/admin/upload/rooms', {
         method: 'POST',
         body: formDataUpload
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         setFormData(prev => ({ ...prev, image_url: data.url }));
       } else {
         alert('Failed to upload image');
@@ -96,8 +99,8 @@ export default function AdminRoomsPage() {
 
     try {
       const endpoint = editingRoom 
-        ? `/api/v2/content/rooms/${editingRoom.room_type_id}`
-        : '/api/v2/content/rooms';
+        ? `/api/v2/admin/rooms/${editingRoom.room_type_id}`
+        : '/api/v2/admin/rooms';
       
       const method = editingRoom ? 'PUT' : 'POST';
 
@@ -125,7 +128,7 @@ export default function AdminRoomsPage() {
     if (!confirm('Are you sure you want to delete this room?')) return;
 
     try {
-      const response = await fetch(`/api/v2/content/rooms/${id}`, {
+      const response = await fetch(`/api/v2/admin/rooms/${id}`, {
         method: 'DELETE'
       });
 

@@ -248,10 +248,13 @@ export class OrderService extends BaseService {
         p.name as product_name,
         p.sku as product_sku,
         p.primary_image_url as product_image,
-        vi.business_name as vendor_name
+        COALESCE(vi.business_name, ovi.business_name, 'Platform Direct') as vendor_name,
+        COALESCE(p.vendor_id, o.vendor_id) as vendor_id
       FROM order_items oi
+      JOIN orders o ON oi.order_id = o.order_id
       JOIN products p ON oi.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_id
+      LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
+      LEFT JOIN vendor_info ovi ON o.vendor_id = ovi.user_id
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id
     `;
@@ -390,7 +393,7 @@ export class OrderService extends BaseService {
           vi.business_name as vendor_name
         FROM order_items oi
         JOIN products p ON oi.product_id = p.product_id
-        LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_id
+        LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
         WHERE oi.order_id IN (${placeholders})
         ORDER BY oi.order_id, oi.order_item_id
       `;
@@ -502,7 +505,7 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('vo.vendor_id = ?');
+      whereConditions.push('o.vendor_id = ?');
       whereParams.push(vendorId);
     }
 
@@ -523,7 +526,7 @@ export class OrderService extends BaseService {
     const baseTable = 'orders o';
 
     // Get all statistics in parallel
-    const [stats, statusBreakdown, monthlyRevenue] = await this.executeParallel<{
+    const results = await this.executeParallel<{
       stats: any[];
       statusBreakdown: any[];
       monthlyRevenue: any[];
@@ -554,7 +557,7 @@ export class OrderService extends BaseService {
         query: `
           SELECT 
             DATE_FORMAT(o.created_at, '%Y-%m') as month,
-            COALESCE(SUM(${vendorId ? 'vo.total_amount' : 'o.total_amount'}), 0) as revenue
+            COALESCE(SUM(o.total_amount), 0) as revenue
           FROM ${baseTable}
           ${whereClause}
           GROUP BY DATE_FORMAT(o.created_at, '%Y-%m')
@@ -565,17 +568,19 @@ export class OrderService extends BaseService {
       }
     });
 
-    const ordersByStatus = statusBreakdown.reduce((acc, row) => {
+    const { stats, statusBreakdown, monthlyRevenue } = results;
+
+    const ordersByStatus = (statusBreakdown || []).reduce((acc, row) => {
       acc[row.status] = row.count;
       return acc;
     }, {} as Record<string, number>);
 
     return {
-      totalOrders: stats[0]?.total_orders || 0,
-      totalRevenue: parseDecimal(stats[0]?.total_revenue),
-      averageOrderValue: parseDecimal(stats[0]?.avg_order_value),
+      totalOrders: stats?.[0]?.total_orders || 0,
+      totalRevenue: parseDecimal(stats?.[0]?.total_revenue),
+      averageOrderValue: parseDecimal(stats?.[0]?.avg_order_value),
       ordersByStatus,
-      revenueByMonth: monthlyRevenue.reverse()
+      revenueByMonth: (monthlyRevenue || []).reverse()
     };
   }
 }

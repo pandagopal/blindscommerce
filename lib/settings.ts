@@ -158,33 +158,8 @@ export async function getPlatformSettings(): Promise<PlatformSettings> {
     return settingsCache as PlatformSettings;
   }
 
-  try {
-    // Use V2 API to fetch settings
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/settings`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store'
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch settings');
-    }
-
-    const result = await response.json();
-    const settings = result.data || DEFAULT_SETTINGS;
-
-    // Update cache
-    settingsCache = settings;
-    cacheTimestamp = now;
-
-    return settings;
-  } catch (error) {
-    console.error('Error fetching platform settings:', error);
-    // Return cached settings if available, otherwise defaults
-    return settingsCache as PlatformSettings || DEFAULT_SETTINGS;
-  }
+  // Simply return defaults - settings should be fetched via API only
+  return DEFAULT_SETTINGS;
 }
 
 // Get specific setting value

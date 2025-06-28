@@ -85,9 +85,10 @@ export default function TaxRatesPage() {
         throw new Error(`Failed to load tax rates: ${errorData.error || res.statusText}`);
       }
       const data = await res.json();
-      setTaxRates(data.taxRates || []);
-      setTotalRecords(data.total || 0);
-      setTotalPages(Math.ceil((data.total || 0) / itemsPerPage));
+      // V2 API returns data.rates
+      setTaxRates(data.rates || []);
+      setTotalRecords(data.pagination?.total || data.total || 0);
+      setTotalPages(Math.ceil((data.pagination?.total || data.total || 0) / itemsPerPage));
     } catch (error) {
       console.error('Error loading tax rates:', error);
     }

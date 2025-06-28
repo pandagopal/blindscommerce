@@ -61,7 +61,8 @@ export default function AdminOrdersPage() {
         const response = await fetch('/api/v2/auth/me');
         if (response.ok) {
           const result = await response.json();
-        const data = result.data || result;setCurrentUser(data.user);
+        const data = result.data || result;
+        setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -94,8 +95,10 @@ export default function AdminOrdersPage() {
       }
 
       const data = await response.json();
-      setOrders(data.orders);
-      setTotalOrders(data.total);
+      // V2 API returns data in data.data
+      const ordersData = data.data || data;
+      setOrders(ordersData.orders || []);
+      setTotalOrders(ordersData.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
     } finally {

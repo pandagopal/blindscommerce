@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +67,7 @@ interface ShippingAddress {
 
 export default function VendorProfilePage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -96,51 +98,75 @@ export default function VendorProfilePage() {
   const [shipForm, setShipForm] = useState<Partial<ShippingAddress>>({ address: '' });
   const [editingShipId, setEditingShipId] = useState<number | null>(null);
 
+  // Check authentication
   useEffect(() => {
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login?redirect=/vendor/profile');
+        return;
+      }
+      if (user.role !== 'vendor' && user.role !== 'admin') {
+        router.push('/');
+        return;
+      }
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    // Only fetch profile if user is authenticated and is a vendor
+    if (authLoading || !user || (user.role !== 'vendor' && user.role !== 'admin')) {
+      return;
+    }
+
     const fetchVendorProfile = async () => {
       try {
         const response = await fetch('/api/v2/vendors/profile');
         if (!response.ok) {
-          throw new Error('Authentication required');
+          if (response.status === 401) {
+            router.push('/login?redirect=/vendor/profile');
+            return;
+          }
+          throw new Error('Failed to fetch profile');
         }
         const data = await response.json();
-        // Use the profile data from the API response
-        const profile = data.profile;
+        // The API returns the vendor data directly, not wrapped in 'profile'
+        const vendorData = data;
+        
         // Ensure all fields have default values to prevent controlled/uncontrolled input issues
         const profileWithDefaults = {
-          userId: profile.userId || 0,
-          email: profile.email || '',
-          firstName: profile.firstName || '',
-          lastName: profile.lastName || '',
-          phone: profile.phone || '',
-          phoneCountry: (profile.phoneCountry || 'US') as CountryCode,
-          companyName: profile.businessName || '',
-          contactEmail: profile.businessEmail || '',
-          contactPhone: profile.businessPhone || '',
-          contactPhoneCountry: (profile.contactPhoneCountry || 'US') as CountryCode,
-          businessDescription: profile.businessDescription || '',
-          taxId: profile.taxId || '',
-          businessLicense: '', // Not in current API
+          userId: vendorData.user_id || user?.userId || 0,
+          email: vendorData.email || user?.email || '',
+          firstName: vendorData.first_name || user?.firstName || '',
+          lastName: vendorData.last_name || user?.lastName || '',
+          phone: vendorData.phone || '',
+          phoneCountry: (vendorData.phone_country || 'US') as CountryCode,
+          companyName: vendorData.business_name || '',
+          contactEmail: vendorData.business_email || vendorData.email || '',
+          contactPhone: vendorData.business_phone || vendorData.phone || '',
+          contactPhoneCountry: (vendorData.business_phone_country || 'US') as CountryCode,
+          businessDescription: vendorData.description || '',
+          taxId: vendorData.tax_id || '',
+          businessLicense: vendorData.business_license || '',
           address: {
-            addressLine1: profile.address?.addressLine1 || '',
-            addressLine2: profile.address?.addressLine2 || '',
-            city: profile.address?.city || '',
-            state: profile.address?.state || '',
-            postalCode: profile.address?.postalCode || '',
-            country: profile.address?.country || 'United States'
+            addressLine1: vendorData.address || '',
+            addressLine2: vendorData.address_line_2 || '',
+            city: vendorData.city || '',
+            state: vendorData.state || '',
+            postalCode: vendorData.zip_code || '',
+            country: vendorData.country || 'United States'
           }
         };
         setProfile(profileWithDefaults);
       } catch (error) {
         console.error('Error fetching vendor profile:', error);
-        router.push('/login?redirect=/vendor/profile');
+        setMessage({ type: 'error', text: 'Failed to load profile data' });
       } finally {
         setLoading(false);
       }
     };
 
     fetchVendorProfile();
-  }, [router]);
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -330,7 +356,7 @@ export default function VendorProfilePage() {
   const handleShipEdit = (id: number) => { const s = shipping.find((s) => s.id === id); if (s) { setShipForm(s); setEditingShipId(id); } };
   const handleShipDelete = (id: number) => { setShipping((prev) => prev.filter((s) => s.id !== id)); if (editingShipId === id) { setShipForm({ address: '' }); setEditingShipId(null); } };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="flex justify-center items-center min-h-[70vh]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>

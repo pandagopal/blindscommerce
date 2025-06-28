@@ -15,6 +15,7 @@ import { CartService } from './CartService';
 import { OrderService } from './OrderService';
 import { UserService } from './UserService';
 import { VendorService } from './VendorService';
+import { SettingsService } from './SettingsService';
 
 // Import email and SMS services
 import { emailService } from '@/lib/email/emailService';
@@ -28,6 +29,7 @@ export const cartService = new CartService();
 export const orderService = new OrderService();
 export const userService = new UserService();
 export const vendorService = new VendorService();
+export const settingsService = new SettingsService();
 
 // Re-export email and SMS services
 export { emailService, smsService };
@@ -41,6 +43,7 @@ export const services = {
   order: orderService,
   user: userService,
   vendor: vendorService,
+  settings: settingsService,
   email: emailService,
   sms: smsService
 };
