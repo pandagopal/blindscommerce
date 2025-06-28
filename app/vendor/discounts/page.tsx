@@ -97,7 +97,6 @@ export default function VendorDiscountsPage() {
     });
 
     const fullUrl = `${endpoint}?${params}`;
-    console.log('[DiscountsPage] Fetching from:', fullUrl, 'for tab:', activeTab);
     
     setLoading(true);
     setError('');
@@ -105,17 +104,6 @@ export default function VendorDiscountsPage() {
     try {
       const response = await fetch(fullUrl);
       const data = await response.json();
-      console.log('[DiscountsPage] Response:', { 
-        status: response.status, 
-        data,
-        dataKeys: Object.keys(data),
-        discounts: data.discounts,
-        coupons: data.coupons,
-        successField: data.success,
-        dataField: data.data,
-        endpoint: endpoint,
-        activeTab: activeTab
-      });
       
       if (!response.ok) throw new Error('Failed to fetch data');
       
@@ -123,7 +111,6 @@ export default function VendorDiscountsPage() {
       const responseData = data.data || data;
       
       if (activeTab === 'discounts') {
-        console.log('[DiscountsPage] Setting discounts:', responseData.discounts?.length || 0);
         setDiscounts(responseData.discounts || []);
         setPagination(prev => ({
           ...prev,
@@ -131,7 +118,6 @@ export default function VendorDiscountsPage() {
           totalPages: Math.ceil((responseData.total || 0) / prev.limit)
         }));
       } else {
-        console.log('[DiscountsPage] Setting coupons:', responseData.coupons?.length || 0);
         setCoupons(responseData.coupons || []);
         setPagination(prev => ({
           ...prev,
@@ -141,7 +127,6 @@ export default function VendorDiscountsPage() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch data');
-      console.error('[DiscountsPage] Error:', err);
     } finally {
       setLoading(false);
     }
@@ -246,7 +231,7 @@ export default function VendorDiscountsPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl">
       <div className="mb-6">
         <div className="flex justify-between items-center">
           <div>
@@ -266,10 +251,7 @@ export default function VendorDiscountsPage() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(value) => {
-        console.log('[DiscountsPage] Tab changed to:', value);
-        setActiveTab(value);
-      }} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="discounts">Discounts</TabsTrigger>
           <TabsTrigger value="coupons">Coupons</TabsTrigger>
@@ -400,33 +382,33 @@ export default function VendorDiscountsPage() {
         </TabsContent>
 
         <TabsContent value="coupons">
-          <div className="bg-white rounded-lg border">
+          <div className="bg-white rounded-lg border overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full divide-y divide-gray-200 table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '120px'}}>
                       Code
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '110px'}}>
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '80px'}}>
                       Value
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '90px'}}>
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '80px'}}>
                       Usage
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '100px'}}>
                       Valid Until
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style={{width: '100px'}}>
                       Actions
                     </th>
                   </tr>
@@ -434,54 +416,62 @@ export default function VendorDiscountsPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {coupons.map((coupon) => (
                     <tr key={coupon.coupon_id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <code className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">
+                      <td className="px-3 py-3">
+                        <code className="px-1 py-0.5 bg-gray-100 rounded text-xs font-mono block truncate">
                           {coupon.coupon_code}
                         </code>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                      <td className="px-3 py-3">
+                        <div className="text-sm font-medium text-gray-900 truncate">
                           {coupon.display_name || coupon.coupon_name}
                         </div>
-                        <div className="text-sm text-gray-500">{coupon.description}</div>
+                        {coupon.description && (
+                          <div className="text-xs text-gray-500 truncate">{coupon.description}</div>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge variant="outline">{coupon.discount_type.replace('_', ' ')}</Badge>
+                      <td className="px-3 py-3">
+                        <Badge variant="outline" className="text-xs">{coupon.discount_type.replace('_', ' ')}</Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 text-sm text-gray-900">
                         {getDiscountValue(coupon)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3">
                         {getStatusBadge(coupon.is_active, coupon.valid_until)}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {coupon.usage_count}
-                        {coupon.usage_limit_total && ` / ${coupon.usage_limit_total}`}
+                      <td className="px-3 py-3 text-sm text-gray-900">
+                        <span className="whitespace-nowrap">
+                          {coupon.usage_count}
+                          {coupon.usage_limit_total && ` / ${coupon.usage_limit_total}`}
+                        </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-3 py-3 text-sm text-gray-900">
                         {coupon.valid_until ? formatDate(coupon.valid_until) : 'No expiry'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEdit(coupon)}
-                          title="Edit coupon"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleToggleStatus(coupon)}
-                          title={coupon.is_active ? 'Deactivate coupon' : 'Activate coupon'}
-                        >
-                          {coupon.is_active ? (
-                            <ToggleRight className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <ToggleLeft className="h-4 w-4 text-gray-400" />
-                          )}
-                        </Button>
+                      <td className="px-3 py-3 text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(coupon)}
+                            title="Edit coupon"
+                            className="p-1"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleToggleStatus(coupon)}
+                            title={coupon.is_active ? 'Deactivate coupon' : 'Activate coupon'}
+                            className="p-1"
+                          >
+                            {coupon.is_active ? (
+                              <ToggleRight className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="h-4 w-4 text-gray-400" />
+                            )}
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}

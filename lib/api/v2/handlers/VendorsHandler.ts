@@ -7,6 +7,8 @@ import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
 import { vendorService, productService, orderService } from '@/lib/services/singletons';
 import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import { getPool } from '@/lib/db';
 
 // Validation schemas
 const UpdateVendorSchema = z.object({
@@ -118,6 +120,7 @@ export class VendorsHandler extends BaseHandler {
       'discounts/:id': () => this.updateDiscount(action[1], req, user),
       'coupons/:id': () => this.updateCoupon(action[1], req, user),
       'orders/:id/status': () => this.updateOrderStatus(action[1], req, user),
+      'sales-team/:id': () => this.updateSalesRep(action[2], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -703,15 +706,301 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async getSalesTeam(req: NextRequest, user: any) {
-    throw new ApiError('Not implemented', 501);
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+    
+    try {
+      // Get sales team members for this vendor
+      const [salesTeam] = await pool.execute(`
+        SELECT 
+          ss.sales_staff_id as salesStaffId,
+          ss.user_id as userId,
+          u.first_name as firstName,
+          u.last_name as lastName,
+          u.email,
+          u.phone,
+          ss.territory,
+          ss.commission_rate as commissionRate,
+          ss.target_sales as targetSales,
+          COALESCE(ss.total_sales, 0) as totalSales,
+          ss.is_active as isActive,
+          ss.created_at as startDate
+        FROM sales_staff ss
+        JOIN users u ON ss.user_id = u.user_id
+        WHERE ss.vendor_id = ?
+        ORDER BY ss.created_at DESC
+      `, [vendorId]);
+      
+      return {
+        salesTeam: salesTeam || [],
+        total: (salesTeam as any[])?.length || 0
+      };
+    } catch (error) {
+      console.error('Error fetching sales team:', error);
+      throw new ApiError('Failed to fetch sales team', 500);
+    }
   }
 
   private async addSalesRep(req: NextRequest, user: any) {
-    throw new ApiError('Not implemented', 501);
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    
+    const {
+      email,
+      firstName,
+      lastName,
+      phone,
+      territory,
+      commissionRate,
+      targetSales,
+      isActive
+    } = body;
+    
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+    
+    try {
+      await conn.beginTransaction();
+      
+      // Check if user with email already exists
+      const [existingUser] = await conn.execute(
+        'SELECT user_id FROM users WHERE email = ?',
+        [email]
+      );
+      
+      let userId;
+      
+      if ((existingUser as any[]).length > 0) {
+        // User exists, check if already a sales rep for this vendor
+        userId = (existingUser as any[])[0].user_id;
+        
+        const [existingSalesRep] = await conn.execute(
+          'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND vendor_id = ?',
+          [userId, vendorId]
+        );
+        
+        if ((existingSalesRep as any[]).length > 0) {
+          throw new ApiError('This user is already a sales representative for your company', 400);
+        }
+      } else {
+        // Create new user with sales_representative role
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        
+        const [result] = await conn.execute(
+          `INSERT INTO users (
+            email, password_hash, first_name, last_name, phone, 
+            role, is_active, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, 'sales', 1, NOW(), NOW())`,
+          [email, hashedPassword, firstName, lastName, phone]
+        );
+        
+        userId = (result as any).insertId;
+        
+        // TODO: Send welcome email with temporary password
+      }
+      
+      // Create sales staff record
+      const [salesResult] = await conn.execute(
+        `INSERT INTO sales_staff (
+          user_id, vendor_id, commission_rate, target_sales, territory,
+          is_active, total_sales, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`,
+        [userId, vendorId, commissionRate, targetSales, territory, isActive ? 1 : 0]
+      );
+      
+      await conn.commit();
+      
+      // Fetch and return the created sales rep
+      const [newSalesRep] = await conn.execute(`
+        SELECT 
+          ss.sales_staff_id as salesStaffId,
+          ss.user_id as userId,
+          u.first_name as firstName,
+          u.last_name as lastName,
+          u.email,
+          u.phone,
+          ss.territory,
+          ss.commission_rate as commissionRate,
+          ss.target_sales as targetSales,
+          COALESCE(ss.total_sales, 0) as totalSales,
+          ss.is_active as isActive,
+          ss.created_at as startDate
+        FROM sales_staff ss
+        JOIN users u ON ss.user_id = u.user_id
+        WHERE ss.sales_staff_id = ?
+      `, [(salesResult as any).insertId]);
+      
+      return {
+        success: true,
+        salesRep: (newSalesRep as any[])[0]
+      };
+      
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
+  }
+
+  private async updateSalesRep(id: string, req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    
+    if (!id || isNaN(Number(id))) {
+      throw new ApiError('Invalid sales staff ID', 400);
+    }
+    
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+    
+    try {
+      // Check if the sales rep belongs to this vendor
+      const [salesRep] = await conn.execute(
+        'SELECT ss.sales_staff_id, ss.user_id FROM sales_staff ss WHERE ss.sales_staff_id = ? AND ss.vendor_id = ?',
+        [id, vendorId]
+      );
+      
+      if ((salesRep as any[]).length === 0) {
+        throw new ApiError('Sales representative not found', 404);
+      }
+      
+      const userId = (salesRep as any[])[0].user_id;
+      
+      await conn.beginTransaction();
+      
+      // Update user information if provided
+      if (body.firstName || body.lastName || body.phone) {
+        const updates = [];
+        const values = [];
+        
+        if (body.firstName) {
+          updates.push('first_name = ?');
+          values.push(body.firstName);
+        }
+        if (body.lastName) {
+          updates.push('last_name = ?');
+          values.push(body.lastName);
+        }
+        if (body.phone !== undefined) {
+          updates.push('phone = ?');
+          values.push(body.phone);
+        }
+        
+        if (updates.length > 0) {
+          updates.push('updated_at = NOW()');
+          values.push(userId);
+          
+          await conn.execute(
+            `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`,
+            values
+          );
+        }
+      }
+      
+      // Update sales staff information
+      const staffUpdates = [];
+      const staffValues = [];
+      
+      if (body.territory !== undefined) {
+        staffUpdates.push('territory = ?');
+        staffValues.push(body.territory);
+      }
+      if (body.commissionRate !== undefined) {
+        staffUpdates.push('commission_rate = ?');
+        staffValues.push(body.commissionRate);
+      }
+      if (body.targetSales !== undefined) {
+        staffUpdates.push('target_sales = ?');
+        staffValues.push(body.targetSales);
+      }
+      if (body.isActive !== undefined) {
+        staffUpdates.push('is_active = ?');
+        staffValues.push(body.isActive ? 1 : 0);
+      }
+      
+      if (staffUpdates.length > 0) {
+        staffUpdates.push('updated_at = NOW()');
+        staffValues.push(id);
+        
+        await conn.execute(
+          `UPDATE sales_staff SET ${staffUpdates.join(', ')} WHERE sales_staff_id = ?`,
+          staffValues
+        );
+      }
+      
+      await conn.commit();
+      
+      // Fetch and return the updated sales rep
+      const [updatedSalesRep] = await conn.execute(`
+        SELECT 
+          ss.sales_staff_id as salesStaffId,
+          ss.user_id as userId,
+          u.first_name as firstName,
+          u.last_name as lastName,
+          u.email,
+          u.phone,
+          u.phone_country as phoneCountry,
+          ss.territory,
+          ss.commission_rate as commissionRate,
+          ss.target_sales as targetSales,
+          COALESCE(ss.total_sales, 0) as totalSales,
+          ss.is_active as isActive,
+          ss.created_at as startDate
+        FROM sales_staff ss
+        JOIN users u ON ss.user_id = u.user_id
+        WHERE ss.sales_staff_id = ?
+      `, [id]);
+      
+      return {
+        success: true,
+        salesRep: (updatedSalesRep as any[])[0]
+      };
+      
+    } catch (error) {
+      await conn.rollback();
+      throw error;
+    } finally {
+      conn.release();
+    }
   }
 
   private async removeSalesRep(id: string, user: any) {
-    throw new ApiError('Not implemented', 501);
+    const vendorId = await this.getVendorId(user);
+    
+    if (!id || isNaN(Number(id))) {
+      throw new ApiError('Invalid sales staff ID', 400);
+    }
+    
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+    
+    try {
+      // Check if the sales rep belongs to this vendor
+      const [salesRep] = await conn.execute(
+        'SELECT sales_staff_id FROM sales_staff WHERE sales_staff_id = ? AND vendor_id = ?',
+        [id, vendorId]
+      );
+      
+      if ((salesRep as any[]).length === 0) {
+        throw new ApiError('Sales representative not found', 404);
+      }
+      
+      // Soft delete by setting is_active to 0
+      await conn.execute(
+        'UPDATE sales_staff SET is_active = 0, updated_at = NOW() WHERE sales_staff_id = ?',
+        [id]
+      );
+      
+      return {
+        success: true,
+        message: 'Sales representative removed successfully'
+      };
+      
+    } finally {
+      conn.release();
+    }
   }
 
   private async getReviews(req: NextRequest, user: any) {
