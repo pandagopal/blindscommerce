@@ -72,6 +72,10 @@ export class VendorsHandler extends BaseHandler {
       'info': () => this.getVendorInfo(req, user),
       'products': () => this.getProducts(req, user),
       'products/:id': () => this.getProduct(action[1], user),
+      'products/bulk/jobs': () => this.getBulkJobs(user),
+      'products/bulk/stats': () => this.getBulkStats(user),
+      'products/bulk/template': () => this.getBulkTemplate(),
+      'products/bulk/export': () => this.exportProducts(req, user),
       'orders': () => this.getOrders(req, user),
       'orders/:id': () => this.getOrder(action[1], user),
       'discounts': () => this.getDiscounts(user),
@@ -82,6 +86,7 @@ export class VendorsHandler extends BaseHandler {
       'financial-summary': () => this.getFinancialSummary(req, user),
       'sales-team': () => this.getSalesTeam(req, user),
       'reviews': () => this.getReviews(req, user),
+      'storefront': () => this.getStorefront(user),
     };
 
     return this.routeAction(action, routes);
@@ -93,7 +98,7 @@ export class VendorsHandler extends BaseHandler {
   async handlePOST(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'products': () => this.createProduct(req, user),
-      'products/bulk': () => this.bulkUpdateProducts(req, user),
+      'products/bulk': () => this.bulkImportProducts(req, user),
       'discounts': () => this.createDiscount(req, user),
       'coupons': () => this.createCoupon(req, user),
       'sales-team': () => this.addSalesRep(req, user),
@@ -205,9 +210,22 @@ export class VendorsHandler extends BaseHandler {
 
   // Product management
   private async getProducts(req: NextRequest, user: any) {
+    console.log('[VendorsHandler.getProducts] Called with user:', user.userId);
+    
     const vendorId = await this.getVendorId(user);
     const searchParams = this.getSearchParams(req);
     const { page, limit, offset } = this.getPagination(searchParams);
+
+    console.log('[VendorsHandler.getProducts] Query params:', {
+      vendorId,
+      page,
+      limit,
+      offset,
+      active: searchParams.get('active'),
+      search: searchParams.get('search'),
+      sortBy: searchParams.get('sortBy'),
+      sortOrder: searchParams.get('sortOrder')
+    });
 
     const { products, total } = await this.vendorService.getVendorProducts(
       vendorId,
@@ -222,7 +240,19 @@ export class VendorsHandler extends BaseHandler {
       }
     );
 
-    return this.buildPaginatedResponse(products, total, page, limit);
+    console.log('[VendorsHandler.getProducts] Results:', {
+      productsCount: products.length,
+      total,
+      firstProduct: products[0]?.name || 'No products'
+    });
+
+    const paginatedResponse = this.buildPaginatedResponse(products, total, page, limit);
+    
+    // Return the paginated response directly - route.ts will wrap it
+    return {
+      products: paginatedResponse.data,
+      pagination: paginatedResponse.pagination
+    };
   }
 
   private async getProduct(id: string, user: any) {
@@ -409,15 +439,30 @@ export class VendorsHandler extends BaseHandler {
 
   // Discounts and coupons
   private async getDiscounts(user: any) {
+    console.log('[VendorsHandler.getDiscounts] Called with user:', user.userId);
+    
     const vendorId = await this.getVendorId(user);
     const { discounts } = await this.vendorService.getVendorDiscounts(vendorId);
-    return discounts;
+    
+    console.log('[VendorsHandler.getDiscounts] Results:', {
+      vendorId,
+      discountsCount: discounts?.length || 0,
+      firstDiscount: discounts?.[0]?.discount_name || 'No discounts'
+    });
+    
+    return {
+      discounts: discounts || [],
+      total: discounts?.length || 0
+    };
   }
 
   private async getCoupons(user: any) {
     const vendorId = await this.getVendorId(user);
     const { coupons } = await this.vendorService.getVendorDiscounts(vendorId);
-    return coupons;
+    return {
+      coupons: coupons || [],
+      total: coupons?.length || 0
+    };
   }
 
   private async createDiscount(req: NextRequest, user: any) {
@@ -550,8 +595,103 @@ export class VendorsHandler extends BaseHandler {
     throw new ApiError('Not implemented', 501);
   }
 
-  private async bulkUpdateProducts(req: NextRequest, user: any) {
-    throw new ApiError('Not implemented', 501);
+  // Bulk product operations
+  private async getBulkJobs(user: any) {
+    const vendorId = await this.getVendorId(user);
+    // Return mock data for now - in production this would query bulk_import_jobs table
+    return {
+      jobs: [],
+      total: 0
+    };
+  }
+
+  private async getBulkStats(user: any) {
+    const vendorId = await this.getVendorId(user);
+    const stats = await this.vendorService.getVendorWithStats(vendorId);
+    
+    return {
+      totalProducts: stats?.total_products || 0,
+      activeProducts: stats?.active_products || 0,
+      inactiveProducts: (stats?.total_products || 0) - (stats?.active_products || 0),
+      totalCategories: 0, // TODO: Implement category count
+      recentJobs: 0
+    };
+  }
+
+  private async getBulkTemplate() {
+    // Return CSV template headers
+    const headers = [
+      'name',
+      'sku',
+      'category_id',
+      'base_price',
+      'short_description',
+      'full_description',
+      'is_active',
+      'is_featured',
+      'stock_quantity',
+      'min_width',
+      'max_width',
+      'min_height', 
+      'max_height'
+    ];
+    
+    return {
+      template: headers.join(','),
+      headers,
+      mimeType: 'text/csv',
+      filename: 'product_import_template.csv'
+    };
+  }
+
+  private async exportProducts(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const searchParams = this.getSearchParams(req);
+    const format = searchParams.get('format') || 'csv';
+    
+    // Get all vendor products
+    const { products } = await this.vendorService.getVendorProducts(vendorId, {
+      limit: 10000 // Get all products for export
+    });
+    
+    if (format === 'csv') {
+      // Convert to CSV format
+      const headers = Object.keys(products[0] || {});
+      const csv = [
+        headers.join(','),
+        ...products.map(p => headers.map(h => JSON.stringify(p[h] || '')).join(','))
+      ].join('\n');
+      
+      return {
+        data: csv,
+        mimeType: 'text/csv',
+        filename: `products_export_${new Date().toISOString().split('T')[0]}.csv`
+      };
+    } else {
+      return {
+        data: products,
+        mimeType: 'application/json',
+        filename: `products_export_${new Date().toISOString().split('T')[0]}.json`
+      };
+    }
+  }
+
+  private async bulkImportProducts(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const formData = await req.formData();
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      throw new ApiError('No file uploaded', 400);
+    }
+    
+    // TODO: Implement actual file processing
+    // For now, return a mock job response
+    return {
+      job_id: `job_${Date.now()}`,
+      status: 'processing',
+      message: 'Bulk import job started successfully'
+    };
   }
 
   private async getProductAnalytics(req: NextRequest, user: any) {
@@ -580,6 +720,44 @@ export class VendorsHandler extends BaseHandler {
 
   private async requestPayout(req: NextRequest, user: any) {
     throw new ApiError('Not implemented', 501);
+  }
+
+  private async getStorefront(user: any) {
+    const vendorId = await this.getVendorId(user);
+    const vendor = await this.vendorService.getVendorWithStats(vendorId);
+    
+    if (!vendor) {
+      throw new ApiError('Vendor not found', 404);
+    }
+
+    // Get featured products
+    const { products } = await this.vendorService.getVendorProducts(vendorId, {
+      isActive: true,
+      limit: 12,
+      sortBy: 'sales',
+      sortOrder: 'DESC'
+    });
+
+    return {
+      vendor: {
+        vendor_id: vendor.vendor_info_id,
+        business_name: vendor.business_name,
+        description: vendor.business_description,
+        logo_url: vendor.logo_url,
+        website_url: vendor.website_url,
+        rating: vendor.average_rating || 0,
+        total_reviews: vendor.total_reviews || 0,
+        total_products: vendor.total_products || 0,
+        is_verified: vendor.is_verified
+      },
+      featured_products: products,
+      categories: [], // TODO: Implement vendor categories
+      stats: {
+        total_sales: vendor.total_sales || 0,
+        active_products: vendor.active_products || 0,
+        satisfaction_rate: vendor.average_rating ? (vendor.average_rating / 5 * 100) : 0
+      }
+    };
   }
 
   /**

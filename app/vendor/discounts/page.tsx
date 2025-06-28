@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useLazyLoad } from '@/hooks/useLazyLoad';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,6 +76,7 @@ export default function VendorDiscountsPage() {
   const [activeTab, setActiveTab] = useState('discounts');
   const [editingItem, setEditingItem] = useState<VendorDiscount | VendorCoupon | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [pagination, setPagination] = useState({
     page: 1,
@@ -85,8 +85,8 @@ export default function VendorDiscountsPage() {
     totalPages: 0
   });
 
-  // Lazy load discounts/coupons data only when this route is active
-  const fetchDiscountsData = async () => {
+  // Manual fetch function
+  const fetchDiscountsData = useCallback(async () => {
     const endpoint = activeTab === 'discounts' ? '/api/v2/vendors/discounts' : '/api/v2/vendors/coupons';
     const params = new URLSearchParams({
       page: currentPage.toString(),
@@ -96,39 +96,62 @@ export default function VendorDiscountsPage() {
       ...(typeFilter !== 'all' && { type: typeFilter })
     });
 
-    const response = await fetch(`${endpoint}?${params}`);
-    if (!response.ok) throw new Error('Failed to fetch data');
+    const fullUrl = `${endpoint}?${params}`;
+    console.log('[DiscountsPage] Fetching from:', fullUrl, 'for tab:', activeTab);
     
-    return response.json();
-  };
-
-  const { 
-    data: fetchedData, 
-    loading, 
-    error: fetchError, 
-    refetch 
-  } = useLazyLoad(fetchDiscountsData, {
-    targetPath: '/vendor/discounts',
-    dependencies: [currentPage, searchTerm, statusFilter, typeFilter, activeTab]
-  });
-
-  useEffect(() => {
-    if (fetchedData) {
-      const data = fetchedData;
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await fetch(fullUrl);
+      const data = await response.json();
+      console.log('[DiscountsPage] Response:', { 
+        status: response.status, 
+        data,
+        dataKeys: Object.keys(data),
+        discounts: data.discounts,
+        coupons: data.coupons,
+        successField: data.success,
+        dataField: data.data,
+        endpoint: endpoint,
+        activeTab: activeTab
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch data');
+      
+      // Handle wrapped response from V2 API
+      const responseData = data.data || data;
       
       if (activeTab === 'discounts') {
-        setDiscounts(data.discounts || []);
+        console.log('[DiscountsPage] Setting discounts:', responseData.discounts?.length || 0);
+        setDiscounts(responseData.discounts || []);
+        setPagination(prev => ({
+          ...prev,
+          total: responseData.total || 0,
+          totalPages: Math.ceil((responseData.total || 0) / prev.limit)
+        }));
       } else {
-        setCoupons(data.coupons || []);
+        console.log('[DiscountsPage] Setting coupons:', responseData.coupons?.length || 0);
+        setCoupons(responseData.coupons || []);
+        setPagination(prev => ({
+          ...prev,
+          total: responseData.total || 0,
+          totalPages: Math.ceil((responseData.total || 0) / prev.limit)
+        }));
       }
-      
-      setPagination(prev => ({
-        ...prev,
-        total: data.total || 0,
-        totalPages: Math.ceil((data.total || 0) / prev.limit)
-      }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+      console.error('[DiscountsPage] Error:', err);
+    } finally {
+      setLoading(false);
     }
-  }, [fetchedData, activeTab]);
+  }, [activeTab, currentPage, searchTerm, statusFilter, typeFilter, pagination.limit]);
+
+
+  // Fetch data when component mounts or dependencies change
+  useEffect(() => {
+    fetchDiscountsData();
+  }, [fetchDiscountsData]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -182,7 +205,7 @@ export default function VendorDiscountsPage() {
 
       setIsEditModalOpen(false);
       setEditingItem(null);
-      refetch(); // Refresh the list
+      fetchDiscountsData(); // Refresh the list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update item');
     }
@@ -206,7 +229,7 @@ export default function VendorDiscountsPage() {
         throw new Error('Failed to toggle status');
       }
 
-      refetch(); // Refresh the list
+      fetchDiscountsData(); // Refresh the list
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to toggle status');
     }
@@ -243,7 +266,10 @@ export default function VendorDiscountsPage() {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => {
+        console.log('[DiscountsPage] Tab changed to:', value);
+        setActiveTab(value);
+      }} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="discounts">Discounts</TabsTrigger>
           <TabsTrigger value="coupons">Coupons</TabsTrigger>

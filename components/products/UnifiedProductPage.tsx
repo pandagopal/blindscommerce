@@ -206,20 +206,36 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
       const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
-      const res = await fetch(`${apiPath}?${params.toString()}`);
+      const fullUrl = `${apiPath}?${params.toString()}`;
+      console.log('[UnifiedProductPage] Fetching products from:', fullUrl);
+      
+      const res = await fetch(fullUrl);
       const data = await res.json();
+      console.log('[UnifiedProductPage] Response:', { 
+        status: res.status, 
+        data,
+        dataKeys: Object.keys(data),
+        dataData: data.data,
+        dataDataProducts: data.data?.products
+      });
       if (!res.ok) {
+        console.log('[UnifiedProductPage] Response not OK:', res.status, data);
         setError(data.message || data.error || `Failed to fetch products: ${res.status}`);
         return;
       }
-      if (!data.success) throw new Error(data.message || 'API request failed');
+      if (!data.success) {
+        console.log('[UnifiedProductPage] API request failed:', data);
+        throw new Error(data.message || 'API request failed');
+      }
       
+      console.log('[UnifiedProductPage] Setting products:', data.data?.products?.length || 0, 'products');
       setProducts(data.data?.products || []);
       setTotalProducts(data.data?.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching products:', error);
       setError('Failed to connect to server');
     } finally {
+      console.log('[UnifiedProductPage] Setting loading to false');
       setLoading(false);
     }
   };
@@ -572,12 +588,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   // Filter products for list mode
   let filteredProducts = products;
+  console.log('[UnifiedProductPage] Products state:', products.length, 'Filtered:', filteredProducts.length);
+  
   if (searchQuery && isListMode) {
     const query = searchQuery.toLowerCase();
     filteredProducts = filteredProducts.filter((p) =>
       p.name.toLowerCase().includes(query) ||
       (p.slug && p.slug.toLowerCase().includes(query))
     );
+    console.log('[UnifiedProductPage] After search filter:', filteredProducts.length);
   }
 
   // RENDER LIST MODE

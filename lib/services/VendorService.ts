@@ -314,8 +314,8 @@ export class VendorService extends BaseService {
       isActive?: boolean;
       search?: string;
       categoryId?: number;
-      sortBy?: 'name' | 'price' | 'stock' | 'sales';
-      sortOrder?: 'ASC' | 'DESC';
+      sortBy?: 'name' | 'price' | 'stock' | 'sales' | 'created_at' | 'updated_at' | string;
+      sortOrder?: 'ASC' | 'DESC' | 'asc' | 'desc';
       limit?: number;
       offset?: number;
     } = {}
@@ -329,6 +329,9 @@ export class VendorService extends BaseService {
       limit = 20,
       offset = 0
     } = options;
+
+    // Normalize sortOrder
+    const normalizedSortOrder = sortOrder.toUpperCase() as 'ASC' | 'DESC';
 
     // Build WHERE conditions
     const whereConditions: string[] = ['vp.vendor_id = ?'];
@@ -352,6 +355,7 @@ export class VendorService extends BaseService {
 
     const whereClause = whereConditions.join(' AND ');
 
+
     // Get total count
     const countQuery = `
       SELECT COUNT(*) as total
@@ -360,14 +364,20 @@ export class VendorService extends BaseService {
       WHERE ${whereClause}
     `;
 
+    // console.log('[VendorService.getVendorProducts] Count query:', countQuery);
+
     const [countResult] = await this.executeQuery<RowDataPacket>(countQuery, whereParams);
     const total = countResult.total || 0;
+    
+    // console.log('[VendorService.getVendorProducts] Total count:', total);
 
     // Determine sort column
     let sortColumn = 'p.name';
     if (sortBy === 'price') sortColumn = 'vp.vendor_price';
     else if (sortBy === 'stock') sortColumn = 'vp.quantity_available';
     else if (sortBy === 'sales') sortColumn = 'sales_count';
+    else if (sortBy === 'created_at') sortColumn = 'p.created_at';
+    else if (sortBy === 'updated_at') sortColumn = 'p.updated_at';
 
     // Get products with sales data
     const query = `
@@ -393,11 +403,25 @@ export class VendorService extends BaseService {
         GROUP BY oi.product_id
       ) sales ON p.product_id = sales.product_id
       WHERE ${whereClause}
-      ORDER BY ${sortColumn} ${sortOrder}
+      ORDER BY ${sortColumn} ${normalizedSortOrder}
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     `;
 
+    // console.log('[VendorService.getVendorProducts] Main query:', query);
+
+    // console.log('[VendorService.getVendorProducts] Main query params:', [vendorId, ...whereParams]);
+    // console.log('[VendorService.getVendorProducts] Executing main query...');
+    
     const products = await this.executeQuery<any>(query, [vendorId, ...whereParams]);
+    
+    // console.log('[VendorService.getVendorProducts] Products found:', products.length);
+    // if (products.length > 0) {
+    //   console.log('[VendorService.getVendorProducts] First product:', {
+    //     id: products[0].product_id,
+    //     name: products[0].name,
+    //     vendor_price: products[0].vendor_price
+    //   });
+    // }
 
     return { products, total };
   }
@@ -409,7 +433,8 @@ export class VendorService extends BaseService {
     discounts: any[];
     coupons: any[];
   }> {
-    const [discounts, coupons] = await this.executeParallel<{
+    
+    const { discounts, coupons } = await this.executeParallel<{
       discounts: any[];
       coupons: any[];
     }>({
@@ -455,6 +480,7 @@ export class VendorService extends BaseService {
       }
     });
 
+    
     return {
       discounts: discounts || [],
       coupons: coupons || []
