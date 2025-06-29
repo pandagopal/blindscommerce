@@ -2,10 +2,11 @@
   "metadata": {
     "title": "Claude's BlindsCommerce Application Reference",
     "format": "machine_readable_json",
-    "last_updated": "2025-06-28",
-    "version": "3.1",
+    "last_updated": "2025-06-29",
+    "version": "3.2",
     "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
-    "consolidated_from": "26 documentation files merged into single reference"
+    "consolidated_from": "26 documentation files merged into single reference",
+    "latest_changes": "Added unified_product_page_ui_fixes section with Pricing and Fabric tab UI improvements"
   },
   
   "project_overview": {
@@ -487,6 +488,34 @@
       "parallel_queries": "Promise.all patterns",
       "cache_warming": "scheduled jobs",
       "query_optimization": "EXPLAIN analysis"
+    },
+    "unified_product_page_ui_fixes": {
+      "issue": "Pricing and Fabric tabs had UI layout problems",
+      "date_fixed": "2025-06-29",
+      "pricing_tab_fixes": {
+        "problem": "Table cells were too large and compacted",
+        "solution": "Reduced cell heights and converted to text inputs",
+        "changes": {
+          "cell_height": "h-10 → h-8",
+          "cell_width": "min-w-[80px] → min-w-[60px]",
+          "input_type": "TableCell → Input with type='text' pattern='[0-9]*\\.?[0-9]{0,2}'",
+          "input_size": "Added size='sm' className='h-6'",
+          "visual_result": "More compact, better spacing, decimal validation"
+        }
+      },
+      "fabric_tab_fixes": {
+        "problem": "Content didn't fit properly in the container",
+        "solution": "Added scrollable container with proper height constraints",
+        "changes": {
+          "container_classes": "Added 'overflow-y-auto max-h-[600px]'",
+          "scroll_behavior": "Vertical scroll for overflow content",
+          "responsive_height": "Container adapts to viewport with max height limit"
+        }
+      },
+      "files_modified": [
+        "/app/vendor/products/components/tabs/PricingTab.tsx",
+        "/app/vendor/products/components/tabs/FabricTab.tsx"
+      ]
     }
   },
   
