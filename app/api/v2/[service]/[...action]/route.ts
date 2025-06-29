@@ -97,6 +97,14 @@ async function handleRequest(
   const startTime = Date.now();
   const { service, action } = await params;
   const actionPath = action.join('/');
+  
+  console.log('[V2 Route Handler] Request:', {
+    method,
+    service,
+    action,
+    actionPath,
+    url: req.url
+  });
 
   try {
     // Validate service exists

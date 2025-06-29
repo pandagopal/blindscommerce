@@ -110,7 +110,7 @@ export class CartService extends BaseService {
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.product_id
       JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-      JOIN vendor_info vi ON ci.vendor_id = vi.vendor_id
+      JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
       WHERE ${whereClause}
       ORDER BY ci.created_at DESC
     `;
@@ -278,7 +278,7 @@ export class CartService extends BaseService {
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
         JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-        JOIN vendor_info vi ON ci.vendor_id = vi.vendor_id
+        JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
         WHERE ci.cart_item_id = ?`,
         [cartItemId]
       );

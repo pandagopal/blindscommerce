@@ -453,10 +453,10 @@ export class OrderService extends BaseService {
 
       // Add to status history
       await connection.execute(
-        `INSERT INTO order_status_history 
-         (order_id, old_status, new_status, changed_by, notes, created_at)
-         VALUES (?, ?, ?, ?, ?, NOW())`,
-        [orderId, oldStatus, newStatus, userId, notes]
+        `INSERT INTO order_status_log 
+         (order_id, status, notes, updated_by, created_at)
+         VALUES (?, ?, ?, ?, NOW())`,
+        [orderId, newStatus, notes || `Status changed from ${oldStatus} to ${newStatus}`, userId]
       );
 
       // Update vendor order status if applicable

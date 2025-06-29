@@ -111,7 +111,7 @@ export class AnalyticsHandler extends BaseHandler {
           p.name,
           p.sku,
           SUM(oi.quantity) as units_sold,
-          SUM(oi.total) as revenue
+          SUM(oi.total_price) as revenue
         FROM order_items oi
         JOIN products p ON oi.product_id = p.product_id
         JOIN orders o ON oi.order_id = o.order_id

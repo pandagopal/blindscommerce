@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 // Define fixed width and height ranges
@@ -92,6 +91,12 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
   const handlePriceChange = (widthRange: string, heightRange: string, value: string) => {
     const key = `${widthRange}_${heightRange}`;
     
+    // Validate input - only allow numbers and up to 2 decimal places
+    const regex = /^\d*\.?\d{0,2}$/;
+    if (!regex.test(value) && value !== '') {
+      return; // Don't update if invalid format
+    }
+    
     // Create updated price matrix
     const updatedPriceMatrix = {
       ...priceMatrix,
@@ -144,36 +149,50 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-center">All Sizes in INCHES</CardTitle>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAllRanges(!showAllRanges)}
-              className="px-3 py-1 text-sm bg-primary text-white rounded hover:bg-primary/90"
-            >
-              {showAllRanges ? 'Show Paginated' : 'Show All (up to 300")'}
-            </button>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Pricing Matrix</CardTitle>
+              <p className="text-sm text-muted-foreground mt-1">All sizes in inches</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAllRanges(!showAllRanges)}
+                className="px-2 py-1 text-xs bg-primary text-white rounded hover:bg-primary/90 transition-colors"
+              >
+                {showAllRanges ? 'Paginated View' : 'Show All'}
+              </button>
+            </div>
           </div>
+          {isReadOnly && (
+            <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded-md border border-amber-200">
+              📋 View-only mode - Prices cannot be edited
+            </div>
+          )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto border-t">
+          <Table className="min-w-full relative">
+            <TableHeader className="sticky top-0 z-20 bg-gray-50">
               <TableRow>
-                <TableHead className="text-left">Sizes</TableHead>
+                <TableHead className="text-left sticky left-0 bg-gray-50 z-30 min-w-[70px] border-r p-2">
+                  <div className="text-xs font-semibold">Size</div>
+                </TableHead>
                 {WIDTH_RANGES.map((range) => (
-                  <TableHead key={range.label} className="text-center">
-                    Width<br />{range.label}
+                  <TableHead key={range.label} className="text-center min-w-[60px] px-1 bg-gray-50">
+                    <div className="text-[10px] text-gray-500">W</div>
+                    <div className="text-xs font-medium">{range.label}</div>
                   </TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {visibleHeightRanges.map((heightRange) => (
-                <TableRow key={heightRange.label}>
-                  <TableCell className="font-medium whitespace-nowrap">
-                    Height<br />{heightRange.label}
+                <TableRow key={heightRange.label} className="hover:bg-gray-50">
+                  <TableCell className="font-medium whitespace-nowrap sticky left-0 bg-white z-10 min-w-[70px] border-r p-2">
+                    <div className="text-[10px] text-gray-500">H</div>
+                    <div className="text-xs font-medium">{heightRange.label}</div>
                   </TableCell>
                   {WIDTH_RANGES.map((widthRange) => {
                     const currentPrice = getPrice(widthRange.label, heightRange.label);
@@ -182,8 +201,8 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                     
                     return (
                       <TableCell key={`${widthRange.label}-${heightRange.label}`} className="p-0">
-                        <Input
-                          type="number"
+                        <input
+                          type="text"
                           value={currentPrice}
                           onChange={(e) => handlePriceChange(widthRange.label, heightRange.label, e.target.value)}
                           onFocus={(e) => {
@@ -191,10 +210,15 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                               e.target.select();
                             }
                           }}
-                          className={`text-center border-0 h-12 ${isPositiveValue ? 'text-blue-600 font-medium' : ''}`}
-                          min="0"
+                          className={`w-full text-center h-8 px-1 text-xs border-0 outline-none focus:ring-1 focus:ring-blue-400 ${
+                            isPositiveValue 
+                              ? 'text-blue-600 font-medium bg-blue-50' 
+                              : 'bg-white hover:bg-gray-50'
+                          } ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-text'}`}
                           disabled={isReadOnly}
                           placeholder="0.00"
+                          pattern="[0-9]*\.?[0-9]{0,2}"
+                          inputMode="decimal"
                         />
                       </TableCell>
                     );
@@ -207,50 +231,37 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
 
         {/* Pagination Controls */}
         {!showAllRanges && totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages} (Height ranges: {visibleHeightRanges[0]?.label} to {visibleHeightRanges[visibleHeightRanges.length - 1]?.label})
+          <div className="flex items-center justify-between px-4 py-2 border-t bg-gray-50">
+            <div className="text-xs text-muted-foreground">
+              Heights: {visibleHeightRanges[0]?.label}"-{visibleHeightRanges[visibleHeightRanges.length - 1]?.label}"
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-1 items-center">
               <button
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                className={`px-2 py-1 rounded text-xs transition-colors ${
                   currentPage === 1 
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                     : 'bg-primary text-white hover:bg-primary/90'
                 }`}
               >
-                Previous
+                ‹
               </button>
               
-              {/* Page numbers */}
-              <div className="flex gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
-                      currentPage === page
-                        ? 'bg-primary text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
+              <span className="px-2 text-xs text-gray-600">
+                {currentPage} / {totalPages}
+              </span>
               
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
-                className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+                className={`px-2 py-1 rounded text-xs transition-colors ${
                   currentPage === totalPages 
                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                     : 'bg-primary text-white hover:bg-primary/90'
                 }`}
               >
-                Next
+                ›
               </button>
             </div>
           </div>

@@ -88,7 +88,8 @@ export abstract class BaseService {
     });
 
     const results = await Promise.all(promises);
-    return Object.fromEntries(results) as T;
+    const resultObject = Object.fromEntries(results) as T;
+    return resultObject;
   }
 
   /**

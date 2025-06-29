@@ -414,7 +414,7 @@ export class AdminHandler extends BaseHandler {
       const pool = await getPool();
       // Check if category exists
       const [existing] = await pool.execute(
-        'SELECT category_id FROM product_categories WHERE category_id = ?',
+        'SELECT category_id FROM categories WHERE category_id = ?',
         [id]
       );
       
@@ -424,7 +424,7 @@ export class AdminHandler extends BaseHandler {
       
       // Check if new slug conflicts with another category
       const [slugConflict] = await pool.execute(
-        'SELECT category_id FROM product_categories WHERE slug = ? AND category_id != ?',
+        'SELECT category_id FROM categories WHERE slug = ? AND category_id != ?',
         [slug, id]
       );
       
@@ -468,7 +468,7 @@ export class AdminHandler extends BaseHandler {
       const pool = await getPool();
       // Check if category exists
       const [existing] = await pool.execute(
-        'SELECT category_id FROM product_categories WHERE category_id = ?',
+        'SELECT category_id FROM categories WHERE category_id = ?',
         [id]
       );
       

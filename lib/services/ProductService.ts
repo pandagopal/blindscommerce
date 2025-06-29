@@ -87,19 +87,20 @@ export class ProductService extends BaseService {
 
     const params = [];
     if (vendorId) params.push(vendorId);
-    if (customerId) params.push(customerId);
     params.push(productId);
 
     const rows = await this.executeQuery<ProductWithDetails>(query, params);
     
-    if (rows.length === 0) return null;
+    if (rows.length === 0) {
+      return null;
+    }
     
     const product = parseProductPrices(rows[0]);
     
     // Get images and features in parallel
-    const [images, features] = await this.executeParallel<{
-      images: any[];
-      features: any[];
+    const result = await this.executeParallel<{
+      images: any[] | null;
+      features: any[] | null;
     }>({
       images: {
         query: 'SELECT * FROM product_images WHERE product_id = ? ORDER BY display_order',
@@ -117,8 +118,12 @@ export class ProductService extends BaseService {
       }
     });
 
-    product.images = images || [];
-    product.features = features || [];
+    // Safely handle null values
+    const images = result?.images || [];
+    const features = result?.features || [];
+
+    product.images = images;
+    product.features = features;
     
     return product;
   }

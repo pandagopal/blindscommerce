@@ -234,7 +234,7 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4">
         {localData.fabrics.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Camera className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -244,25 +244,27 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="overflow-x-auto">
+            <div className="min-w-[600px] space-y-2">
             {/* Header Row */}
-            <div className="grid grid-cols-12 gap-4 pb-2 border-b font-medium text-sm text-gray-700">
+            <div className="grid grid-cols-12 gap-2 pb-2 border-b font-medium text-xs text-gray-700">
               <div className="col-span-2">Image</div>
               <div className="col-span-3">Fabric Name</div>
               <div className="col-span-2">Price ($)</div>
-              <div className="col-span-3">Fabric Type</div>
+              <div className="col-span-2">Type</div>
               <div className="col-span-2">Status</div>
+              <div className="col-span-1">Action</div>
             </div>
 
             {/* Fabric Rows */}
             {localData.fabrics.map((fabric) => (
-              <div key={fabric.id} className="grid grid-cols-12 gap-4 items-center py-3 border-b border-gray-100 hover:bg-gray-50 rounded-lg">
+              <div key={fabric.id} className="grid grid-cols-12 gap-2 items-center py-2 border-b border-gray-100 hover:bg-gray-50">
                 {/* Image Thumbnail */}
                 <div className="col-span-2">
                   <div className="relative">
                     {fabric.image && fabric.image.url ? (
                       // Show actual image if uploaded URL exists
-                      <div className="relative w-16 h-16 border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="relative w-12 h-12 border border-gray-200 rounded overflow-hidden">
                         <img
                           src={fabric.image.url}
                           alt={fabric.name || 'Fabric image'}
@@ -272,27 +274,27 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                         {!isReadOnly && (
                           <button
                             onClick={() => removeImage(fabric.id)}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs hover:bg-red-600"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-2 w-2" />
                           </button>
                         )}
                       </div>
                     ) : fabric.image && fabric.image.file ? (
                       // Show file selected indicator if file exists but not uploaded yet
-                      <div className="relative w-16 h-16 border border-green-300 rounded-lg overflow-hidden bg-green-50 flex items-center justify-center">
+                      <div className="relative w-12 h-12 border border-green-300 rounded overflow-hidden bg-green-50 flex items-center justify-center">
                         <div className="text-center">
-                          <Camera className="h-4 w-4 text-green-600 mx-auto mb-1" />
-                          <div className="text-xs text-green-700 truncate w-14" title={fabric.image.name}>
-                            {fabric.image.name.length > 8 ? fabric.image.name.substring(0, 8) + '...' : fabric.image.name}
+                          <Camera className="h-3 w-3 text-green-600 mx-auto" />
+                          <div className="text-[10px] text-green-700 truncate w-10" title={fabric.image.name}>
+                            {fabric.image.name.length > 6 ? fabric.image.name.substring(0, 6) + '..' : fabric.image.name}
                           </div>
                         </div>
                         {!isReadOnly && (
                           <button
                             onClick={() => removeImage(fabric.id)}
-                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                            className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs hover:bg-red-600"
                           >
-                            <X className="h-3 w-3" />
+                            <X className="h-2 w-2" />
                           </button>
                         )}
                       </div>
@@ -300,9 +302,9 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                       <button
                         onClick={() => triggerFileInput(fabric.id)}
                         disabled={isReadOnly}
-                        className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-12 h-12 border-2 border-dashed border-gray-300 rounded flex items-center justify-center hover:border-gray-400 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Upload className="h-6 w-6 text-gray-400" />
+                        <Upload className="h-4 w-4 text-gray-400" />
                       </button>
                     )}
                     
@@ -327,9 +329,9 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                     type="text"
                     value={fabric.name}
                     onChange={(e) => updateFabric(fabric.id, 'name', e.target.value)}
-                    placeholder="Enter fabric name"
+                    placeholder="Fabric name"
                     disabled={isReadOnly}
-                    className="w-full"
+                    className="w-full h-8 text-xs"
                   />
                 </div>
 
@@ -343,23 +345,23 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                     disabled={isReadOnly}
                     min="0"
                     step="0.01"
-                    className="w-full"
+                    className="w-full h-8 text-xs"
                   />
                 </div>
 
                 {/* Fabric Type */}
-                <div className="col-span-3">
+                <div className="col-span-2">
                   <Select
                     value={fabric.fabricType}
                     onValueChange={(value) => updateFabric(fabric.id, 'fabricType', value)}
                     disabled={isReadOnly}
                   >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select type" />
+                    <SelectTrigger className="w-full h-8 text-xs">
+                      <SelectValue placeholder="Type" />
                     </SelectTrigger>
                     <SelectContent>
                       {FABRIC_TYPES.map((type) => (
-                        <SelectItem key={type.value} value={type.value}>
+                        <SelectItem key={type.value} value={type.value} className="text-xs">
                           {type.label}
                         </SelectItem>
                       ))}
@@ -369,43 +371,49 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
 
                 {/* Status */}
                 <div className="col-span-2">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <Switch
                       checked={fabric.enabled}
                       onCheckedChange={(checked) => updateFabric(fabric.id, 'enabled', checked)}
                       disabled={isReadOnly}
+                      className="scale-75"
                     />
-                    <span className={`text-sm ${fabric.enabled ? 'text-green-600' : 'text-gray-400'}`}>
-                      {fabric.enabled ? 'Enabled' : 'Disabled'}
+                    <span className={`text-xs ${fabric.enabled ? 'text-green-600' : 'text-gray-400'}`}>
+                      {fabric.enabled ? 'On' : 'Off'}
                     </span>
-                    {!isReadOnly && (
-                      <div className="flex gap-1">
-                        {fabric.image && (
-                          <Button
-                            onClick={() => triggerFileInput(fabric.id)}
-                            size="sm"
-                            variant="ghost"
-                            className="p-1 h-6 w-6"
-                            title="Replace image"
-                          >
-                            <Camera className="h-3 w-3" />
-                          </Button>
-                        )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="col-span-1">
+                  {!isReadOnly && (
+                    <div className="flex gap-1 justify-end">
+                      {fabric.image && (
                         <Button
-                          onClick={() => removeFabric(fabric.id)}
+                          onClick={() => triggerFileInput(fabric.id)}
                           size="sm"
                           variant="ghost"
-                          className="p-1 h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Remove fabric"
+                          className="p-1 h-6 w-6"
+                          title="Replace image"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Camera className="h-3 w-3" />
                         </Button>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                      <Button
+                        onClick={() => removeFabric(fabric.id)}
+                        size="sm"
+                        variant="ghost"
+                        className="p-1 h-6 w-6 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        title="Remove fabric"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
+            </div>
           </div>
         )}
 

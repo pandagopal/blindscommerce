@@ -97,16 +97,27 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   
   // Get product ID from URL
   const productId = React.useMemo(() => {
-    // For edit/view modes: /vendor/products/240/edit -> extract 240
-    if (isEditMode || isViewMode) {
-      const pathParts = pathname.split('/');
-      const editOrViewIndex = pathParts.findIndex(part => part === 'edit' || part === 'view');
-      if (editOrViewIndex > 0) {
-        return pathParts[editOrViewIndex - 1];
+    const pathParts = pathname.split('/');
+    
+    // For view mode: /vendor/products/view/242 -> extract 242
+    if (isViewMode) {
+      const viewIndex = pathParts.findIndex(part => part === 'view');
+      if (viewIndex > 0 && viewIndex < pathParts.length - 1) {
+        const id = pathParts[viewIndex + 1];
+        return id;
+      }
+    }
+    // For edit mode: /vendor/products/240/edit -> extract 240
+    if (isEditMode) {
+      const editIndex = pathParts.findIndex(part => part === 'edit');
+      if (editIndex > 0) {
+        const id = pathParts[editIndex - 1];
+        return id;
       }
     }
     // For other cases, try search params or last segment
-    return searchParams.get('id') || pathname.split('/').pop();
+    const fallbackId = searchParams.get('id') || pathname.split('/').pop();
+    return fallbackId;
   }, [pathname, searchParams, isEditMode, isViewMode]);
 
   // List mode states
@@ -237,17 +248,35 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   const loadProductData = async () => {
     if (!productId || productId === 'new' || productId === 'add') return;
     
+    // Additional validation to prevent invalid product IDs
+    if (productId === 'products' || productId === 'view' || productId === 'edit') {
+      setError('Invalid product ID');
+      setLoading(false);
+      return;
+    }
+    
+    // Ensure productId is numeric for vendor products
+    const numericId = parseInt(productId);
+    if (isNaN(numericId)) {
+      setError('Invalid product ID');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
+      const fullUrl = `${apiPath}/${numericId}`;
       
       // Load basic product data
-      const res = await fetch(`${apiPath}/${productId}`);
+      const res = await fetch(fullUrl);
       const data = await res.json();
+      
       if (!res.ok) {
-        setError(data.message || 'Failed to load product data');
+        setError(data.message || data.error || 'Failed to load product data');
         return;
       }
+      
       if (!data.success) throw new Error(data.message || 'API request failed');
       
       if (data.data?.product) {

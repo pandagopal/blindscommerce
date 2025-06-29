@@ -247,8 +247,8 @@ export class UsersHandler extends BaseHandler {
     this.requireAuth(user);
 
     const addresses = await this.userService.raw(
-      `SELECT * FROM user_addresses 
-       WHERE user_id = ? AND is_deleted = 0 
+      `SELECT * FROM user_shipping_addresses 
+       WHERE user_id = ? AND is_active = 1 
        ORDER BY is_default DESC, created_at DESC`,
       [user.user_id]
     );
@@ -265,7 +265,7 @@ export class UsersHandler extends BaseHandler {
     }
 
     const [address] = await this.userService.raw(
-      'SELECT * FROM user_addresses WHERE address_id = ? AND user_id = ?',
+      'SELECT * FROM user_shipping_addresses WHERE address_id = ? AND user_id = ?',
       [addressId, user.user_id]
     );
 
@@ -284,21 +284,22 @@ export class UsersHandler extends BaseHandler {
     // If setting as default, unset other defaults
     if (data.isDefault) {
       await this.userService.raw(
-        'UPDATE user_addresses SET is_default = 0 WHERE user_id = ? AND type = ?',
-        [user.user_id, data.type]
+        'UPDATE user_shipping_addresses SET is_default = 0 WHERE user_id = ? AND is_billing_address = ?',
+        [user.user_id, data.type === 'billing' ? 1 : 0]
       );
     }
 
     const result = await this.userService.raw(
-      `INSERT INTO user_addresses (
-        user_id, type, is_default, first_name, last_name, company,
-        street1, street2, city, state, zip_code, country, phone,
+      `INSERT INTO user_shipping_addresses (
+        user_id, address_name, is_default, is_billing_address, first_name, last_name, company,
+        address_line_1, address_line_2, city, state_province, postal_code, country, phone,
         created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         user.user_id,
-        data.type,
+        `${data.firstName} ${data.lastName} ${data.type}`,
         data.isDefault,
+        data.type === 'billing' ? 1 : 0,
         data.firstName,
         data.lastName,
         data.company,
@@ -331,29 +332,29 @@ export class UsersHandler extends BaseHandler {
     // If setting as default, unset other defaults
     if (data.isDefault) {
       await this.userService.raw(
-        'UPDATE user_addresses SET is_default = 0 WHERE user_id = ? AND type = ? AND address_id != ?',
-        [user.user_id, data.type, addressId]
+        'UPDATE user_shipping_addresses SET is_default = 0 WHERE user_id = ? AND is_billing_address = ? AND address_id != ?',
+        [user.user_id, data.type === 'billing' ? 1 : 0, addressId]
       );
     }
 
     const result = await this.userService.raw(
-      `UPDATE user_addresses 
-       SET type = COALESCE(?, type),
+      `UPDATE user_shipping_addresses 
+       SET is_billing_address = COALESCE(?, is_billing_address),
            is_default = COALESCE(?, is_default),
            first_name = COALESCE(?, first_name),
            last_name = COALESCE(?, last_name),
            company = COALESCE(?, company),
-           street1 = COALESCE(?, street1),
-           street2 = COALESCE(?, street2),
+           address_line_1 = COALESCE(?, address_line_1),
+           address_line_2 = COALESCE(?, address_line_2),
            city = COALESCE(?, city),
-           state = COALESCE(?, state),
-           zip_code = COALESCE(?, zip_code),
+           state_province = COALESCE(?, state_province),
+           postal_code = COALESCE(?, postal_code),
            country = COALESCE(?, country),
            phone = COALESCE(?, phone),
            updated_at = NOW()
        WHERE address_id = ? AND user_id = ?`,
       [
-        data.type,
+        data.type === 'billing' ? 1 : 0,
         data.isDefault,
         data.firstName,
         data.lastName,
@@ -386,7 +387,7 @@ export class UsersHandler extends BaseHandler {
     }
 
     const result = await this.userService.raw(
-      'UPDATE user_addresses SET is_deleted = 1 WHERE address_id = ? AND user_id = ?',
+      'UPDATE user_shipping_addresses SET is_active = 0 WHERE address_id = ? AND user_id = ?',
       [addressId, user.user_id]
     );
 
@@ -565,13 +566,12 @@ export class UsersHandler extends BaseHandler {
 
     // Save token
     await this.userService.raw(
-      `INSERT INTO email_verifications (user_id, token, expires_at, created_at)
-       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR), NOW())
+      `INSERT INTO verification_tokens (identifier, token, expires)
+       VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
        ON DUPLICATE KEY UPDATE 
          token = VALUES(token),
-         expires_at = VALUES(expires_at),
-         created_at = VALUES(created_at)`,
-      [user.user_id, token]
+         expires = VALUES(expires)`,
+      [user.email, token]
     );
 
     // TODO: Send verification email
