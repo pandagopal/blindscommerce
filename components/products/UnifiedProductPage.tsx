@@ -381,8 +381,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   // Upload a single fabric image
   const uploadSingleFabricImage = async (image: any, fabricType: string, currentProductId: string) => {
     const formData = new FormData();
-    formData.append('files', image.file);
-    formData.append('uploadType', 'productImages');
+    formData.append('file', image.file);  // Changed from 'files' to 'file'
+    formData.append('type', 'fabric');  // Changed to match what the handler expects
     formData.append('category', `fabric_${fabricType}`);
     formData.append('productId', currentProductId);
     
@@ -399,16 +399,23 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     
     const uploadResult = await uploadResponse.json();
     
-    if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
-      const uploadedUrl = uploadResult.uploaded[0].secureUrl;
+    // Handle V2 API response format
+    const uploadData = uploadResult.data || uploadResult;
+    
+    if (uploadData.success && uploadData.uploaded && uploadData.uploaded.length > 0) {
+      const uploadedUrl = uploadData.uploaded[0].secureUrl;
       
       return {
         ...image,
         url: uploadedUrl,
       };
+    } else if (uploadResult.success && uploadResult.data) {
+      // Alternative: if the data is wrapped differently
+      console.error('Upload response has unexpected structure:', uploadResult);
+      throw new Error('Upload response has unexpected structure');
     } else {
       console.error('Upload failed - unexpected result format:', uploadResult);
-      throw new Error(`Upload failed: ${uploadResult.error || 'Unknown error'}`);
+      throw new Error(`Upload failed: ${uploadResult.error || uploadData.error || 'Unknown error'}`);
     }
   };
 
@@ -424,8 +431,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       if (image.url?.startsWith('blob:') && image.file) {
         try {
           const formData = new FormData();
-          formData.append('files', image.file);
-          formData.append('uploadType', 'productImages');
+          formData.append('file', image.file);  // Changed from 'files' to 'file'
+          formData.append('type', 'product');  // Changed to match what the handler expects
           formData.append('category', 'product');
           formData.append('productId', currentProductId || 'new');
           
@@ -442,8 +449,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           
           const uploadResult = await uploadResponse.json();
           
-          if (uploadResult.success && uploadResult.uploaded && uploadResult.uploaded.length > 0) {
-            const uploadedUrl = uploadResult.uploaded[0].secureUrl;
+          // Handle V2 API response format
+          const uploadData = uploadResult.data || uploadResult;
+          
+          if (uploadData.success && uploadData.uploaded && uploadData.uploaded.length > 0) {
+            const uploadedUrl = uploadData.uploaded[0].secureUrl;
             
             processedImages.push({
               ...image,
@@ -451,7 +461,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
               file: undefined // Remove file reference after upload
             });
           } else {
-            throw new Error(`Upload failed: ${uploadResult.error || 'Unknown error'}`);
+            throw new Error(`Upload failed: ${uploadResult.error || uploadData.error || 'Unknown error'}`);
           }
         } catch (error) {
           console.error(`Failed to upload image: ${image.alt}`, error);
@@ -490,7 +500,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         slug: productData.basicInfo.slug,
         sku: productData.basicInfo.sku,
         short_description: productData.basicInfo.shortDescription,
-        description: productData.basicInfo.fullDescription,
+        full_description: productData.basicInfo.fullDescription,
         base_price: productData.basicInfo.basePrice,
         vendor_id: productData.basicInfo.vendorId,
         is_active: productData.basicInfo.isActive,
@@ -518,7 +528,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to save product');
+        throw new Error(error.message || error.error || 'Failed to save product');
       }
 
       const result = await response.json();

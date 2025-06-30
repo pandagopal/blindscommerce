@@ -29,6 +29,7 @@ interface SalesPerson {
   lastName: string;
   email: string;
   phone?: string;
+  phoneCountry?: CountryCode;
   territory?: string;
   commissionRate: number;
   targetSales: number;
@@ -50,6 +51,7 @@ export default function VendorSalesTeamPage() {
     firstName: '',
     lastName: '',
     phone: '',
+    phoneCountry: 'US' as CountryCode,
     territory: '',
     commissionRate: 5.0,
     targetSales: 50000,
@@ -123,7 +125,6 @@ export default function VendorSalesTeamPage() {
       firstName: person.firstName,
       lastName: person.lastName,
       phone: person.phone || '',
-      phoneCountry: person.phoneCountry || 'US',
       territory: person.territory || '',
       commissionRate: person.commissionRate,
       targetSales: person.targetSales,
