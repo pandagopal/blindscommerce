@@ -13,10 +13,20 @@ import { getPool } from '@/lib/db';
 // Validation schemas
 const UpdateVendorSchema = z.object({
   businessName: z.string().min(1).optional(),
-  description: z.string().optional(),
+  businessDescription: z.string().optional(),
+  businessEmail: z.string().email().optional(),
+  businessPhone: z.string().optional(),
   phone: z.string().optional(),
   website: z.string().url().optional(),
-  address: z.string().optional(),
+  address: z.object({
+    addressLine1: z.string().optional(),
+    addressLine2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().optional(),
+  }).optional(),
+  // Keep old fields for backward compatibility
   city: z.string().optional(),
   state: z.string().optional(),
   zipCode: z.string().optional(),
@@ -107,6 +117,7 @@ export class VendorsHandler extends BaseHandler {
       'coupons': () => this.createCoupon(req, user),
       'sales-team': () => this.addSalesRep(req, user),
       'payouts/request': () => this.requestPayout(req, user),
+      'upload': () => this.uploadFile(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -197,17 +208,21 @@ export class VendorsHandler extends BaseHandler {
 
   private async updateProfile(req: NextRequest, user: any) {
     const vendorId = await this.getVendorId(user);
-    const data = await this.getValidatedBody(req, UpdateVendorSchema);
+    const data = await req.json(); // Get raw data to handle complex structure
+
+    // Extract address fields from nested object
+    const addressData = data.address || {};
 
     await this.vendorService.update(vendorId, {
       business_name: data.businessName,
-      description: data.description,
-      phone: data.phone,
-      website: data.website,
-      address: data.address,
-      city: data.city,
-      state: data.state,
-      zip_code: data.zipCode,
+      business_description: data.businessDescription,
+      business_phone: data.businessPhone || data.phone,
+      business_email: data.businessEmail || data.contactEmail,
+      website_url: data.website,
+      business_address_line1: addressData.addressLine1 || data.address,
+      business_city: addressData.city || data.city,
+      business_state: addressData.state || data.state,
+      business_postal_code: addressData.postalCode || data.zipCode,
       updated_at: new Date(),
     });
 
@@ -272,9 +287,11 @@ export class VendorsHandler extends BaseHandler {
       const results = await this.productService.executeParallel<{
       categories: any[];
       options: any[];
+      specifications: any[];
       pricingMatrix: any[];
       fabric: any[];
       rooms: any[];
+      features: any[];
     }>({
       categories: {
         query: `
@@ -292,6 +309,16 @@ export class VendorsHandler extends BaseHandler {
         `,
         params: [productId]
       },
+      specifications: {
+        query: `
+          SELECT spec_category, spec_value 
+          FROM product_specifications 
+          WHERE product_id = ? 
+          AND spec_category IN ('mount_type', 'lift_system', 'wand_system', 'string_system', 'remote_control', 'valance_option', 'bottom_rail_option')
+          ORDER BY spec_category, display_order
+        `,
+        params: [productId]
+      },
       pricingMatrix: {
         query: `
           SELECT * FROM product_pricing_matrix 
@@ -302,8 +329,15 @@ export class VendorsHandler extends BaseHandler {
       },
       fabric: {
         query: `
-          SELECT * FROM product_fabric_options 
-          WHERE product_id = ?
+          SELECT 
+            fo.*,
+            fi.image_url,
+            fi.image_name,
+            fp.price_per_sqft
+          FROM product_fabric_options fo
+          LEFT JOIN product_fabric_images fi ON fo.fabric_option_id = fi.fabric_option_id
+          LEFT JOIN product_fabric_pricing fp ON fo.fabric_option_id = fp.fabric_option_id
+          WHERE fo.product_id = ?
         `,
         params: [productId]
       },
@@ -314,18 +348,30 @@ export class VendorsHandler extends BaseHandler {
           WHERE pr.product_id = ?
         `,
         params: [productId]
+      },
+      features: {
+        query: `
+          SELECT f.*, pf.product_feature_id
+          FROM product_features pf
+          JOIN features f ON pf.feature_id = f.feature_id
+          WHERE pf.product_id = ?
+          ORDER BY f.display_order
+        `,
+        params: [productId]
       }
     });
 
 
-    const { categories, options, pricingMatrix, fabric, rooms } = results;
+    const { categories, options, specifications, pricingMatrix, fabric, rooms, features } = results;
 
     // Check for null results and default to empty arrays
     const safeCategories = categories || [];
     const safeOptions = options || [];
+    const safeSpecifications = specifications || [];
     const safePricingMatrix = pricingMatrix || [];
     const safeFabric = fabric || [];
     const safeRooms = rooms || [];
+    const safeFeatures = features || [];
 
     // Get primary category
     const primaryCategoryResult = await this.productService.executeQuery(
@@ -344,8 +390,12 @@ export class VendorsHandler extends BaseHandler {
       fabricData.fabrics = safeFabric.map(f => ({
         id: `fabric_${f.fabric_option_id}`,
         name: f.fabric_name || f.name || '',
-        image: null, // product_fabric_options doesn't have image_url
-        price: 0, // product_fabric_options doesn't have price_adjustment
+        image: f.image_url ? {
+          id: `fabric_image_${f.fabric_option_id}`,
+          url: f.image_url,
+          name: f.image_name || f.fabric_name || ''
+        } : null,
+        price: f.price_per_sqft ? parseFloat(f.price_per_sqft) * 100 : 0, // Convert back from price per sqft
         fabricType: f.fabric_type || 'colored',
         enabled: f.is_enabled === 1
       }));
@@ -390,6 +440,70 @@ export class VendorsHandler extends BaseHandler {
         optionsData.dimensions.heightIncrement = parseFloat(heightDim.increment_value) || 0.125;
       }
     }
+    
+    // Process specifications into options
+    if (safeSpecifications && safeSpecifications.length > 0) {
+      // Group specifications by category
+      const mountTypes: any[] = [];
+      const liftSystems: any[] = [];
+      const wandSystem: any[] = [];
+      const stringSystem: any[] = [];
+      const remoteControl: any[] = [];
+      const valanceOptions: any[] = [];
+      const bottomRailOptions: any[] = [];
+      
+      safeSpecifications.forEach(spec => {
+        // Parse the spec_value if it's a JSON string
+        let value = spec.spec_value;
+        try {
+          // Check if spec_value is a JSON string
+          if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
+            value = JSON.parse(value);
+          }
+        } catch (e) {
+          // If parsing fails, create a basic object with the string value
+          value = { name: value, price_adjustment: 0, enabled: true };
+        }
+        
+        // Ensure value is an object with the expected properties
+        if (typeof value === 'string') {
+          value = { name: value, price_adjustment: 0, enabled: true };
+        }
+        
+        switch (spec.spec_category) {
+          case 'mount_type':
+            mountTypes.push(value);
+            break;
+          case 'lift_system':
+            liftSystems.push(value);
+            break;
+          case 'wand_system':
+            wandSystem.push(value);
+            break;
+          case 'string_system':
+            stringSystem.push(value);
+            break;
+          case 'remote_control':
+            remoteControl.push(value);
+            break;
+          case 'valance_option':
+            valanceOptions.push(value);
+            break;
+          case 'bottom_rail_option':
+            bottomRailOptions.push(value);
+            break;
+        }
+      });
+      
+      // Update optionsData with specifications
+      optionsData.mountTypes = mountTypes;
+      optionsData.controlTypes.liftSystems = liftSystems;
+      optionsData.controlTypes.wandSystem = wandSystem;
+      optionsData.controlTypes.stringSystem = stringSystem;
+      optionsData.controlTypes.remoteControl = remoteControl;
+      optionsData.valanceOptions = valanceOptions;
+      optionsData.bottomRailOptions = bottomRailOptions;
+    }
 
       // Build enhanced product response
       const enhancedProduct = {
@@ -398,10 +512,18 @@ export class VendorsHandler extends BaseHandler {
         primary_category: primaryCategory?.category_name || product.category_name || '',
         short_description: product.short_description || product.description || '',
         full_description: product.full_description || product.description || '',
+        brand: product.brand_name || '', // Add brand for UI compatibility
         options: optionsData,
         pricing_matrix: safePricingMatrix || [],
         fabric: fabricData,
-        roomRecommendations: safeRooms || []
+        roomRecommendations: safeRooms.map(room => ({
+          id: room.id?.toString() || '',
+          roomType: room.room_type || room.room_name || '',
+          recommendation: room.special_considerations || '',
+          priority: room.suitability_score || 5
+        })) || [],
+        images: product.images || [], // Ensure images are included
+        features: safeFeatures || [] // Include features
       };
 
       return { product: enhancedProduct };
@@ -417,7 +539,9 @@ export class VendorsHandler extends BaseHandler {
           options: null,
           pricing_matrix: [],
           fabric: { fabrics: [] },
-          roomRecommendations: []
+          roomRecommendations: [],
+          images: product.images || [], // Ensure images are included
+          features: product.features || [] // Include features from base product
         }
       };
     }
@@ -428,7 +552,8 @@ export class VendorsHandler extends BaseHandler {
     const data = await req.json();
 
     // Begin transaction
-    const conn = await this.productService.getConnection();
+    const pool = await getPool();
+    const conn = await pool.getConnection();
     
     try {
       await conn.beginTransaction();
@@ -456,7 +581,7 @@ export class VendorsHandler extends BaseHandler {
           data.slug,
           data.sku,
           data.short_description,
-          data.description || data.short_description,
+          data.full_description || data.description || data.short_description,
           data.base_price,
           data.is_active ? 1 : 0,
           data.is_featured ? 1 : 0,
@@ -548,7 +673,8 @@ export class VendorsHandler extends BaseHandler {
       if (data.fabric && data.fabric.fabrics) {
         for (const fabric of data.fabric.fabrics) {
           if (fabric.name) {
-            await conn.execute(
+            // Insert fabric option
+            const [fabricResult] = await conn.execute(
               `INSERT INTO product_fabric_options (
                 product_id, vendor_id, fabric_name, fabric_type, is_enabled
               ) VALUES (?, ?, ?, ?, ?)`,
@@ -560,6 +686,45 @@ export class VendorsHandler extends BaseHandler {
                 fabric.enabled ? 1 : 0
               ]
             );
+            
+            const fabricOptionId = fabricResult.insertId;
+            
+            // Insert fabric image if exists
+            if (fabric.image && fabric.image.url) {
+              await conn.execute(
+                `INSERT INTO product_fabric_images (
+                  fabric_option_id, product_id, image_url, image_name, image_alt, image_size, image_type, is_primary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  fabricOptionId,
+                  productId,
+                  fabric.image.url,
+                  fabric.image.name || fabric.name,
+                  fabric.name,
+                  fabric.image.size || 0,
+                  fabric.image.type || 'image/jpeg',
+                  1
+                ]
+              );
+            }
+            
+            // Optionally insert fabric pricing
+            if (fabric.price && fabric.price > 0) {
+              await conn.execute(
+                `INSERT INTO product_fabric_pricing (
+                  fabric_option_id, product_id, min_width, max_width, min_height, max_height, price_per_sqft
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  fabricOptionId,
+                  productId,
+                  0,      // min_width
+                  999,    // max_width
+                  0,      // min_height
+                  999,    // max_height
+                  fabric.price / 100  // Convert to price per sqft
+                ]
+              );
+            }
           }
         }
       }
@@ -597,15 +762,16 @@ export class VendorsHandler extends BaseHandler {
       // Add room recommendations (using product_rooms table)
       if (data.roomRecommendations && Array.isArray(data.roomRecommendations)) {
         for (const room of data.roomRecommendations) {
-          if (room.room_name || room.room_type || room.name) {
+          if (room.roomType || room.room_type || room.name) {
             await conn.execute(
               `INSERT INTO product_rooms 
-               (product_id, room_type, suitability_score) 
-               VALUES (?, ?, ?)`,
+               (product_id, room_type, suitability_score, special_considerations) 
+               VALUES (?, ?, ?, ?)`,
               [
                 productId,
-                room.room_name || room.room_type || room.name,
-                room.suitability_score || 5
+                room.roomType || room.room_type || room.name,
+                room.priority || room.suitability_score || 5,
+                room.recommendation || room.special_considerations || null
               ]
             );
           }
@@ -628,6 +794,110 @@ export class VendorsHandler extends BaseHandler {
               i
             ]
           );
+        }
+      }
+
+      // Add product specifications (mount types, control types, etc.)
+      if (data.options) {
+        // Save mount types
+        if (data.options.mountTypes && Array.isArray(data.options.mountTypes)) {
+          for (let i = 0; i < data.options.mountTypes.length; i++) {
+            const value = typeof data.options.mountTypes[i] === 'object' 
+              ? JSON.stringify(data.options.mountTypes[i])
+              : data.options.mountTypes[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'mount_type', value, 'mount_type', i]
+            );
+          }
+        }
+        
+        // Save control types
+        if (data.options.controlTypes) {
+          // Lift systems
+          if (Array.isArray(data.options.controlTypes.liftSystems)) {
+            for (let i = 0; i < data.options.controlTypes.liftSystems.length; i++) {
+              const value = typeof data.options.controlTypes.liftSystems[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.liftSystems[i])
+                : data.options.controlTypes.liftSystems[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'lift_system', value, 'lift_system', i]
+              );
+            }
+          }
+          
+          // Wand system
+          if (Array.isArray(data.options.controlTypes.wandSystem)) {
+            for (let i = 0; i < data.options.controlTypes.wandSystem.length; i++) {
+              const value = typeof data.options.controlTypes.wandSystem[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.wandSystem[i])
+                : data.options.controlTypes.wandSystem[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'wand_system', value, 'wand_system', i]
+              );
+            }
+          }
+          
+          // String system
+          if (Array.isArray(data.options.controlTypes.stringSystem)) {
+            for (let i = 0; i < data.options.controlTypes.stringSystem.length; i++) {
+              const value = typeof data.options.controlTypes.stringSystem[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.stringSystem[i])
+                : data.options.controlTypes.stringSystem[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'string_system', value, 'string_system', i]
+              );
+            }
+          }
+          
+          // Remote control
+          if (Array.isArray(data.options.controlTypes.remoteControl)) {
+            for (let i = 0; i < data.options.controlTypes.remoteControl.length; i++) {
+              const value = typeof data.options.controlTypes.remoteControl[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.remoteControl[i])
+                : data.options.controlTypes.remoteControl[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'remote_control', value, 'remote_control', i]
+              );
+            }
+          }
+        }
+        
+        // Save valance options
+        if (data.options.valanceOptions && Array.isArray(data.options.valanceOptions)) {
+          for (let i = 0; i < data.options.valanceOptions.length; i++) {
+            const value = typeof data.options.valanceOptions[i] === 'object' 
+              ? JSON.stringify(data.options.valanceOptions[i])
+              : data.options.valanceOptions[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'valance_option', value, 'valance_option', i]
+            );
+          }
+        }
+        
+        // Save bottom rail options
+        if (data.options.bottomRailOptions && Array.isArray(data.options.bottomRailOptions)) {
+          for (let i = 0; i < data.options.bottomRailOptions.length; i++) {
+            const value = typeof data.options.bottomRailOptions[i] === 'object' 
+              ? JSON.stringify(data.options.bottomRailOptions[i])
+              : data.options.bottomRailOptions[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'bottom_rail_option', value, 'bottom_rail_option', i]
+            );
+          }
         }
       }
 
@@ -666,7 +936,8 @@ export class VendorsHandler extends BaseHandler {
     const data = await req.json();
 
     // Begin transaction
-    const conn = await this.productService.getConnection();
+    const pool = await getPool();
+    const conn = await pool.getConnection();
     
     try {
       await conn.beginTransaction();
@@ -702,7 +973,7 @@ export class VendorsHandler extends BaseHandler {
           data.slug,
           data.sku,
           data.short_description,
-          data.description || data.short_description,
+          data.full_description || data.description || data.short_description,
           data.base_price,
           data.is_active ? 1 : 0,
           data.is_featured ? 1 : 0,
@@ -732,39 +1003,145 @@ export class VendorsHandler extends BaseHandler {
       }
 
       // Update options (using product_dimensions table)
-      if (data.options && data.options.dimensions) {
-        // Delete existing dimensions
+      if (data.options) {
+        // Delete existing dimensions and specifications
         await conn.execute('DELETE FROM product_dimensions WHERE product_id = ?', [productId]);
+        await conn.execute('DELETE FROM product_specifications WHERE product_id = ? AND spec_category IN (?, ?, ?, ?, ?, ?, ?)', 
+          [productId, 'mount_type', 'lift_system', 'wand_system', 'string_system', 'remote_control', 'valance_option', 'bottom_rail_option']);
         
-        // Insert width dimension
-        await conn.execute(
-          `INSERT INTO product_dimensions (
-            product_id, dimension_type_id, min_value, max_value, increment_value, unit
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            productId,
-            1, // Width type
-            data.options.dimensions.minWidth || 12,
-            data.options.dimensions.maxWidth || 96,
-            data.options.dimensions.widthIncrement || 0.125,
-            'inches'
-          ]
-        );
+        // Save dimensions
+        if (data.options.dimensions) {
+          // Insert width dimension
+          await conn.execute(
+            `INSERT INTO product_dimensions (
+              product_id, dimension_type_id, min_value, max_value, increment_value, unit
+            ) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              productId,
+              1, // Width type
+              data.options.dimensions.minWidth || 12,
+              data.options.dimensions.maxWidth || 96,
+              data.options.dimensions.widthIncrement || 0.125,
+              'inches'
+            ]
+          );
+          
+          // Insert height dimension
+          await conn.execute(
+            `INSERT INTO product_dimensions (
+              product_id, dimension_type_id, min_value, max_value, increment_value, unit
+            ) VALUES (?, ?, ?, ?, ?, ?)`,
+            [
+              productId,
+              2, // Height type
+              data.options.dimensions.minHeight || 12,
+              data.options.dimensions.maxHeight || 120,
+              data.options.dimensions.heightIncrement || 0.125,
+              'inches'
+            ]
+          );
+        }
         
-        // Insert height dimension
-        await conn.execute(
-          `INSERT INTO product_dimensions (
-            product_id, dimension_type_id, min_value, max_value, increment_value, unit
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            productId,
-            2, // Height type
-            data.options.dimensions.minHeight || 12,
-            data.options.dimensions.maxHeight || 120,
-            data.options.dimensions.heightIncrement || 0.125,
-            'inches'
-          ]
-        );
+        // Save mount types
+        if (data.options.mountTypes && Array.isArray(data.options.mountTypes)) {
+          for (let i = 0; i < data.options.mountTypes.length; i++) {
+            const value = typeof data.options.mountTypes[i] === 'object' 
+              ? JSON.stringify(data.options.mountTypes[i])
+              : data.options.mountTypes[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'mount_type', value, 'mount_type', i]
+            );
+          }
+        }
+        
+        // Save control types
+        if (data.options.controlTypes) {
+          // Lift systems
+          if (Array.isArray(data.options.controlTypes.liftSystems)) {
+            for (let i = 0; i < data.options.controlTypes.liftSystems.length; i++) {
+              const value = typeof data.options.controlTypes.liftSystems[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.liftSystems[i])
+                : data.options.controlTypes.liftSystems[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'lift_system', value, 'lift_system', i]
+              );
+            }
+          }
+          
+          // Wand system
+          if (Array.isArray(data.options.controlTypes.wandSystem)) {
+            for (let i = 0; i < data.options.controlTypes.wandSystem.length; i++) {
+              const value = typeof data.options.controlTypes.wandSystem[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.wandSystem[i])
+                : data.options.controlTypes.wandSystem[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'wand_system', value, 'wand_system', i]
+              );
+            }
+          }
+          
+          // String system
+          if (Array.isArray(data.options.controlTypes.stringSystem)) {
+            for (let i = 0; i < data.options.controlTypes.stringSystem.length; i++) {
+              const value = typeof data.options.controlTypes.stringSystem[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.stringSystem[i])
+                : data.options.controlTypes.stringSystem[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'string_system', value, 'string_system', i]
+              );
+            }
+          }
+          
+          // Remote control
+          if (Array.isArray(data.options.controlTypes.remoteControl)) {
+            for (let i = 0; i < data.options.controlTypes.remoteControl.length; i++) {
+              const value = typeof data.options.controlTypes.remoteControl[i] === 'object' 
+                ? JSON.stringify(data.options.controlTypes.remoteControl[i])
+                : data.options.controlTypes.remoteControl[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'remote_control', value, 'remote_control', i]
+              );
+            }
+          }
+        }
+        
+        // Save valance options
+        if (data.options.valanceOptions && Array.isArray(data.options.valanceOptions)) {
+          for (let i = 0; i < data.options.valanceOptions.length; i++) {
+            const value = typeof data.options.valanceOptions[i] === 'object' 
+              ? JSON.stringify(data.options.valanceOptions[i])
+              : data.options.valanceOptions[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'valance_option', value, 'valance_option', i]
+            );
+          }
+        }
+        
+        // Save bottom rail options
+        if (data.options.bottomRailOptions && Array.isArray(data.options.bottomRailOptions)) {
+          for (let i = 0; i < data.options.bottomRailOptions.length; i++) {
+            const value = typeof data.options.bottomRailOptions[i] === 'object' 
+              ? JSON.stringify(data.options.bottomRailOptions[i])
+              : data.options.bottomRailOptions[i];
+            await conn.execute(
+              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
+               VALUES (?, ?, ?, ?, ?)`,
+              [productId, 'bottom_rail_option', value, 'bottom_rail_option', i]
+            );
+          }
+        }
       }
 
       // Update pricing matrix
@@ -795,13 +1172,15 @@ export class VendorsHandler extends BaseHandler {
 
       // Update fabric (using product_fabric_options table)
       if (data.fabric && data.fabric.fabrics) {
-        // Delete existing fabric options
+        // Delete existing fabric options and images
         await conn.execute('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
+        await conn.execute('DELETE FROM product_fabric_images WHERE product_id = ?', [productId]);
         
         // Insert new fabric options
         for (const fabric of data.fabric.fabrics) {
           if (fabric.name) {
-            await conn.execute(
+            // Insert fabric option
+            const [fabricResult] = await conn.execute(
               `INSERT INTO product_fabric_options (
                 product_id, vendor_id, fabric_name, fabric_type, is_enabled
               ) VALUES (?, ?, ?, ?, ?)`,
@@ -813,6 +1192,45 @@ export class VendorsHandler extends BaseHandler {
                 fabric.enabled ? 1 : 0
               ]
             );
+            
+            const fabricOptionId = fabricResult.insertId;
+            
+            // Insert fabric image if exists
+            if (fabric.image && fabric.image.url) {
+              await conn.execute(
+                `INSERT INTO product_fabric_images (
+                  fabric_option_id, product_id, image_url, image_name, image_alt, image_size, image_type, is_primary
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  fabricOptionId,
+                  productId,
+                  fabric.image.url,
+                  fabric.image.name || fabric.name,
+                  fabric.name,
+                  fabric.image.size || 0,
+                  fabric.image.type || 'image/jpeg',
+                  1
+                ]
+              );
+            }
+            
+            // Optionally insert fabric pricing (using a simple flat price for now)
+            if (fabric.price && fabric.price > 0) {
+              await conn.execute(
+                `INSERT INTO product_fabric_pricing (
+                  fabric_option_id, product_id, min_width, max_width, min_height, max_height, price_per_sqft
+                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  fabricOptionId,
+                  productId,
+                  0,      // min_width
+                  999,    // max_width (large number for "all sizes")
+                  0,      // min_height
+                  999,    // max_height
+                  fabric.price / 100  // Convert to price per sqft (rough approximation)
+                ]
+              );
+            }
           }
         }
       }
@@ -858,15 +1276,16 @@ export class VendorsHandler extends BaseHandler {
         
         // Insert new recommendations
         for (const room of data.roomRecommendations) {
-          if (room.room_name || room.room_type || room.name) {
+          if (room.roomType || room.room_type || room.name) {
             await conn.execute(
               `INSERT INTO product_rooms 
-               (product_id, room_type, suitability_score) 
-               VALUES (?, ?, ?)`,
+               (product_id, room_type, suitability_score, special_considerations) 
+               VALUES (?, ?, ?, ?)`,
               [
                 productId,
-                room.room_name || room.room_type || room.name,
-                room.suitability_score || 5
+                room.roomType || room.room_type || room.name,
+                room.priority || room.suitability_score || 5,
+                room.recommendation || room.special_considerations || null
               ]
             );
           }
@@ -2021,5 +2440,71 @@ export class VendorsHandler extends BaseHandler {
     }
     
     return vendor.vendor_info_id;
+  }
+
+  /**
+   * Handle file uploads for vendor products
+   */
+  private async uploadFile(req: NextRequest, user: any) {
+    try {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      const type = formData.get('type') as string || 'product';
+      
+      if (!file) {
+        throw new ApiError('No file provided', 400);
+      }
+      
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
+      }
+      
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new ApiError('File size too large. Maximum size is 5MB', 400);
+      }
+      
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomString = Math.random().toString(36).substring(2, 15);
+      const fileExtension = file.name.split('.').pop();
+      const filename = `vendor-${user.userId}-${timestamp}-${randomString}.${fileExtension}`;
+      
+      // Create upload directory path based on type
+      const uploadDir = type === 'fabric' ? 'fabric' : 'products';
+      const uploadPath = `uploads/${uploadDir}/${filename}`;
+      
+      // Convert file to buffer
+      const buffer = Buffer.from(await file.arrayBuffer());
+      
+      // Use the file system to save the file
+      const fs = require('fs').promises;
+      const path = require('path');
+      const fullPath = path.join(process.cwd(), 'public', uploadPath);
+      
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      
+      // Write file
+      await fs.writeFile(fullPath, buffer);
+      
+      // Return the response in the format expected by the frontend
+      return {
+        success: true,
+        uploaded: [{
+          secureUrl: `/${uploadPath}`,
+          url: `/${uploadPath}`,
+          filename: filename,
+          size: file.size,
+          type: file.type
+        }]
+      };
+    } catch (error) {
+      console.error('Upload error:', error);
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to upload file', 500);
+    }
   }
 }

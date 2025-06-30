@@ -118,11 +118,18 @@ export class ProductService extends BaseService {
       }
     });
 
-    // Safely handle null values
+    // Safely handle null values and transform field names
     const images = result?.images || [];
     const features = result?.features || [];
 
-    product.images = images;
+    // Transform image field names to match frontend expectations
+    product.images = images.map(img => ({
+      id: img.image_id?.toString() || '',
+      url: img.image_url || '',
+      alt: img.alt_text || '',
+      isPrimary: img.is_primary === 1,
+      display_order: img.display_order || 0
+    }));
     product.features = features;
     
     return product;
