@@ -396,11 +396,11 @@ export class CartService extends BaseService {
         vi.business_name as vendor_name
       FROM vendor_coupons vc
       JOIN vendor_info vi ON vc.vendor_id = vi.vendor_id
-      WHERE vc.code = ?
+      WHERE vc.coupon_code = ?
         AND vc.is_active = 1
-        AND (vc.start_date IS NULL OR vc.start_date <= NOW())
-        AND (vc.end_date IS NULL OR vc.end_date >= NOW())
-        AND (vc.usage_limit IS NULL OR vc.usage_count < vc.usage_limit)
+        AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())
+        AND (vc.valid_until IS NULL OR vc.valid_until >= NOW())
+        AND (vc.usage_limit_total IS NULL OR vc.usage_count < vc.usage_limit_total)
       LIMIT 1`,
       [couponCode]
     );

@@ -174,7 +174,141 @@ export class CommerceHandler extends BaseHandler {
       throw new ApiError('Product not found', 404);
     }
 
-    return product;
+    // Get additional configuration options for product configurator
+    try {
+      const configData = await this.productService.executeParallel<{
+        dimensions: any[];
+        fabricOptions: any[];
+        specifications: any[];
+        rooms: any[];
+        features: any[];
+        images: any[];
+      }>({
+        dimensions: {
+          query: `SELECT * FROM product_dimensions WHERE product_id = ?`,
+          params: [productId]
+        },
+        fabricOptions: {
+          query: `
+            SELECT fo.fabric_option_id, fo.product_id, fo.fabric_type, fo.fabric_name, 
+                   fo.is_enabled, fo.description, 1 as display_order,
+                   fo.texture_url, fo.texture_scale, fo.material_finish, fo.opacity, fo.render_priority,
+                   fi.image_url as fabric_image_url
+            FROM product_fabric_options fo
+            LEFT JOIN product_fabric_images fi ON fo.fabric_option_id = fi.fabric_option_id 
+              AND fi.is_primary = 1
+            WHERE fo.product_id = ? AND fo.is_enabled = 1
+            ORDER BY fo.fabric_type, fo.fabric_name
+          `,
+          params: [productId]
+        },
+        specifications: {
+          query: `
+            SELECT spec_category, spec_value, display_order
+            FROM product_specifications 
+            WHERE product_id = ? 
+            ORDER BY spec_category, display_order
+          `,
+          params: [productId]
+        },
+        rooms: {
+          query: `
+            SELECT room_type 
+            FROM product_rooms 
+            WHERE product_id = ?
+          `,
+          params: [productId]
+        },
+        features: {
+          query: `
+            SELECT f.*, pf.id as product_feature_id
+            FROM product_features pf
+            JOIN features f ON pf.feature_id = f.feature_id
+            WHERE pf.product_id = ?
+            ORDER BY f.display_order
+          `,
+          params: [productId]
+        },
+        images: {
+          query: `
+            SELECT image_id, image_url, alt_text, is_primary, display_order
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY is_primary DESC, display_order ASC
+          `,
+          params: [productId]
+        }
+      });
+
+      // Process specifications into control types structure
+      const controlTypes = {
+        liftSystems: [],
+        wandSystem: [],
+        stringSystem: [],
+        remoteControl: [],
+        valanceOptions: [],
+        bottomRailOptions: []
+      };
+
+      if (configData.specifications) {
+        configData.specifications.forEach(spec => {
+          let item;
+          
+          // Try to parse spec_value as JSON first
+          try {
+            const parsed = JSON.parse(spec.spec_value);
+            item = {
+              name: parsed.name || spec.spec_value,
+              enabled: parsed.enabled !== false,
+              price_adjustment: parsed.price_adjustment || 0
+            };
+          } catch (e) {
+            // If not JSON, use as plain string
+            item = {
+              name: spec.spec_value,
+              enabled: true,
+              price_adjustment: 0
+            };
+          }
+
+          switch(spec.spec_category) {
+            case 'lift_system':
+              controlTypes.liftSystems.push(item);
+              break;
+            case 'wand_system':
+              controlTypes.wandSystem.push(item);
+              break;
+            case 'string_system':
+              controlTypes.stringSystem.push(item);
+              break;
+            case 'remote_control':
+              controlTypes.remoteControl.push(item);
+              break;
+            case 'valance_option':
+              controlTypes.valanceOptions.push(item);
+              break;
+            case 'bottom_rail_option':
+              controlTypes.bottomRailOptions.push(item);
+              break;
+          }
+        });
+      }
+
+      // Add configuration data to product
+      return {
+        ...product,
+        dimensions: configData.dimensions?.[0] || null,
+        fabricOptions: configData.fabricOptions || [],
+        controlTypes,
+        rooms: configData.rooms?.map(r => r.room_type) || [],
+        features: configData.features || [],
+        images: configData.images || []
+      };
+    } catch (error) {
+      console.error('Error loading product configuration:', error);
+      // Return product without config data if there's an error
+      return product;
+    }
   }
 
   private async getProductPricing(id: string, req: NextRequest, user: any) {

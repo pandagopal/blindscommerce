@@ -738,10 +738,20 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             }}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className={`w-12 h-12 bg-gradient-to-br ${getBgClass(fabric.fabric_type)} rounded-lg flex items-center justify-center ${
-                                fabric.fabric_type?.toLowerCase() === 'blackout' ? 'text-white' : 'text-gray-700'
+                              <div className={`w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden border-2 ${
+                                config.fabricType === fabric.fabric_option_id.toString() ? 'border-blue-500' : 'border-gray-200'
                               }`}>
-                                <div className="w-8 h-8 bg-white/80 rounded shadow-sm"></div>
+                                {fabric.fabric_image_url ? (
+                                  <img 
+                                    src={fabric.fabric_image_url} 
+                                    alt={fabric.fabric_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className={`w-full h-full bg-gradient-to-br ${getBgClass(fabric.fabric_type)} flex items-center justify-center`}>
+                                    <div className="w-10 h-10 bg-white/80 rounded shadow-sm"></div>
+                                  </div>
+                                )}
                               </div>
                               <div className="flex-1">
                                 <h3 className="font-semibold mb-1 text-gray-900">{fabric.fabric_name}</h3>
@@ -946,65 +956,81 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               )}
             </div>
 
-            {/* Rail Options */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
-              activeSection === 'rails' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
-            }`}
-              onFocus={() => setActiveSection('rails')}
-              onBlur={() => setActiveSection(null)}
-            >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
-                Rail Options
-                <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
-              </h2>
-              
-              <div className="space-y-4">
+            {/* Rail Options - Only show if there are any enabled options */}
+            {((product?.controlTypes?.valanceOptions && product.controlTypes.valanceOptions.filter(o => o.enabled).length > 0) || 
+              (product?.controlTypes?.bottomRailOptions && product.controlTypes.bottomRailOptions.filter(o => o.enabled).length > 0)) && (
+              <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+                activeSection === 'rails' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
+              }`}
+                onFocus={() => setActiveSection('rails')}
+                onBlur={() => setActiveSection(null)}
+              >
+                <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                  Rail Options
+                  <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
+                </h2>
+                
+                <div className="space-y-4">
                 {/* Valance Options */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valance (Head Rail)</label>
-                  <select
-                    value={config.valanceOption}
-                    onChange={(e) => {
-                      setConfig(prev => ({ ...prev, valanceOption: e.target.value }));
-                      setErrors(prev => ({ ...prev, valanceOption: '' }));
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                      errors.valanceOption ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select valance option</option>
-                    <option value="circular-fabric">Circular (With Fabric Insert) (+$45)</option>
-                    <option value="square-without">Square (Without Fabric) (+$35)</option>
-                    <option value="fabric-wrapped">Fabric Wrapped (+$55)</option>
-                  </select>
-                  {errors.valanceOption && (
-                    <p className="text-red-500 text-sm mt-1">{errors.valanceOption}</p>
-                  )}
-                </div>
+                {product?.controlTypes?.valanceOptions && product.controlTypes.valanceOptions.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Valance (Head Rail)</label>
+                    <select
+                      value={config.valanceOption}
+                      onChange={(e) => {
+                        setConfig(prev => ({ ...prev, valanceOption: e.target.value }));
+                        setErrors(prev => ({ ...prev, valanceOption: '' }));
+                      }}
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                        errors.valanceOption ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select valance option</option>
+                      {product.controlTypes.valanceOptions
+                        .filter(option => option.enabled)
+                        .map((option) => (
+                          <option key={option.name} value={option.name.toLowerCase().replace(/\s+/g, '-')}>
+                            {option.name} {option.price_adjustment > 0 ? `(+$${option.price_adjustment})` : ''}
+                          </option>
+                        ))}
+                    </select>
+                    {errors.valanceOption && (
+                      <p className="text-red-500 text-sm mt-1">{errors.valanceOption}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Bottom Rail Options */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bottom Rail</label>
-                  <select
-                    value={config.bottomRailOption}
-                    onChange={(e) => {
-                      setConfig(prev => ({ ...prev, bottomRailOption: e.target.value }));
-                      setErrors(prev => ({ ...prev, bottomRailOption: '' }));
-                    }}
-                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                      errors.bottomRailOption ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                  >
-                    <option value="">Select bottom rail option</option>
-                    <option value="fabric-wrapped">Fabric Wrapped (+$25)</option>
-                    <option value="just-rail">Just a Rail (+$0)</option>
-                  </select>
-                  {errors.bottomRailOption && (
-                    <p className="text-red-500 text-sm mt-1">{errors.bottomRailOption}</p>
-                  )}
-                </div>
+                {product?.controlTypes?.bottomRailOptions && product.controlTypes.bottomRailOptions.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bottom Rail</label>
+                    <select
+                      value={config.bottomRailOption}
+                      onChange={(e) => {
+                        setConfig(prev => ({ ...prev, bottomRailOption: e.target.value }));
+                        setErrors(prev => ({ ...prev, bottomRailOption: '' }));
+                      }}
+                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                        errors.bottomRailOption ? 'border-red-300' : 'border-gray-300'
+                      }`}
+                    >
+                      <option value="">Select bottom rail option</option>
+                      {product.controlTypes.bottomRailOptions
+                        .filter(option => option.enabled)
+                        .map((option) => (
+                          <option key={option.name} value={option.name.toLowerCase().replace(/\s+/g, '-')}>
+                            {option.name} {option.price_adjustment > 0 ? `(+$${option.price_adjustment})` : ''}
+                          </option>
+                        ))}
+                    </select>
+                    {errors.bottomRailOption && (
+                      <p className="text-red-500 text-sm mt-1">{errors.bottomRailOption}</p>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
+            )}
 
             {/* Action Buttons - Mobile Responsive */}
             <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
@@ -1135,7 +1161,16 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                       Brand: <span className="font-medium text-gray-900">Blinds.com</span>
                     </p>
                     <p className="text-sm text-gray-600">
-                      Shown in: <span className="font-medium text-gray-900">Select a Color to Preview</span>
+                      Shown in: <span className="font-medium text-gray-900">
+                        {config.fabricType && product?.fabricOptions ? 
+                          (() => {
+                            const selectedFabric = product.fabricOptions.find(
+                              f => f.fabric_option_id.toString() === config.fabricType
+                            );
+                            return selectedFabric ? selectedFabric.fabric_name : 'Select a Color to Preview';
+                          })()
+                          : 'Select a Color to Preview'}
+                      </span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -1162,22 +1197,46 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   </button>
                 </div>
                 
-                {/* Product Image */}
-                {product?.images && product.images.length > 0 ? (
-                  <div className="w-full h-full bg-cover bg-center" 
-                       style={{
-                         backgroundImage: `url(${product.images[0].image_url})`
-                       }}>
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <div className="text-center">
-                      <div className="text-6xl mb-3">🏠</div>
-                      <p className="text-lg font-medium">Product preview</p>
-                      <p className="text-sm">Image will appear here</p>
+                {/* Product Image - Show fabric image if fabric is selected, otherwise show main product image */}
+                {(() => {
+                  // Check if a fabric is selected and has an image
+                  if (config.fabricType && product?.fabricOptions) {
+                    const selectedFabric = product.fabricOptions.find(
+                      f => f.fabric_option_id.toString() === config.fabricType
+                    );
+                    if (selectedFabric?.fabric_image_url) {
+                      return (
+                        <div className="w-full h-full bg-cover bg-center" 
+                             style={{
+                               backgroundImage: `url(${selectedFabric.fabric_image_url})`
+                             }}>
+                        </div>
+                      );
+                    }
+                  }
+                  
+                  // Default to product image
+                  if (product?.images && product.images.length > 0) {
+                    return (
+                      <div className="w-full h-full bg-cover bg-center" 
+                           style={{
+                             backgroundImage: `url(${product.images[0].image_url})`
+                           }}>
+                      </div>
+                    );
+                  }
+                  
+                  // Fallback placeholder
+                  return (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <div className="text-6xl mb-3">🏠</div>
+                        <p className="text-lg font-medium">Product preview</p>
+                        <p className="text-sm">Image will appear here</p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               {/* Shipping Info */}

@@ -54,6 +54,7 @@ export default function ProductConfiguratorPage() {
         // Get detailed product information if product_id exists
         if (product.product_id) {
           try {
+            // Get product details with configuration options from commerce API
             const detailRes = await fetch(`/api/v2/commerce/products/${product.product_id}`);
             if (detailRes.ok) {
               const detailData = await detailRes.json();

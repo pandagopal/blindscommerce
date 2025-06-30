@@ -68,6 +68,7 @@ export class ProductService extends BaseService {
         c.name as category_name,
         c.slug as category_slug,
         b.name as brand_name,
+        COALESCE(vp.vendor_id, p.vendor_id) as vendor_id,
         vp.vendor_price,
         vd.discount_type,
         vd.discount_value,

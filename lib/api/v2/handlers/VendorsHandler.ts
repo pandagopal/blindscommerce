@@ -331,6 +331,11 @@ export class VendorsHandler extends BaseHandler {
         query: `
           SELECT 
             fo.*,
+            fo.texture_url,
+            fo.texture_scale,
+            fo.material_finish,
+            fo.opacity,
+            fo.render_priority,
             fi.image_url,
             fi.image_name,
             fp.price_per_sqft
@@ -351,7 +356,7 @@ export class VendorsHandler extends BaseHandler {
       },
       features: {
         query: `
-          SELECT f.*, pf.product_feature_id
+          SELECT f.*, pf.id as product_feature_id
           FROM product_features pf
           JOIN features f ON pf.feature_id = f.feature_id
           WHERE pf.product_id = ?
@@ -397,7 +402,11 @@ export class VendorsHandler extends BaseHandler {
         } : null,
         price: f.price_per_sqft ? parseFloat(f.price_per_sqft) * 100 : 0, // Convert back from price per sqft
         fabricType: f.fabric_type || 'colored',
-        enabled: f.is_enabled === 1
+        enabled: f.is_enabled === 1,
+        textureUrl: f.texture_url || null,
+        textureScale: f.texture_scale || 1.0,
+        materialFinish: f.material_finish || 'matte',
+        opacity: f.opacity || 1.0
       }));
     }
 
@@ -676,14 +685,20 @@ export class VendorsHandler extends BaseHandler {
             // Insert fabric option
             const [fabricResult] = await conn.execute(
               `INSERT INTO product_fabric_options (
-                product_id, vendor_id, fabric_name, fabric_type, is_enabled
-              ) VALUES (?, ?, ?, ?, ?)`,
+                product_id, vendor_id, fabric_name, fabric_type, is_enabled,
+                texture_url, texture_scale, material_finish, opacity, render_priority
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 productId,
                 vendorId,
                 fabric.name,
                 fabric.fabricType || 'colored',
-                fabric.enabled ? 1 : 0
+                fabric.enabled ? 1 : 0,
+                fabric.textureUrl || null,
+                fabric.textureScale || 1.0,
+                fabric.materialFinish || 'matte',
+                fabric.opacity || 1.0,
+                fabric.renderPriority || 0
               ]
             );
             
@@ -1182,14 +1197,20 @@ export class VendorsHandler extends BaseHandler {
             // Insert fabric option
             const [fabricResult] = await conn.execute(
               `INSERT INTO product_fabric_options (
-                product_id, vendor_id, fabric_name, fabric_type, is_enabled
-              ) VALUES (?, ?, ?, ?, ?)`,
+                product_id, vendor_id, fabric_name, fabric_type, is_enabled,
+                texture_url, texture_scale, material_finish, opacity, render_priority
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 productId,
                 vendorId,
                 fabric.name,
                 fabric.fabricType || 'colored',
-                fabric.enabled ? 1 : 0
+                fabric.enabled ? 1 : 0,
+                fabric.textureUrl || null,
+                fabric.textureScale || 1.0,
+                fabric.materialFinish || 'matte',
+                fabric.opacity || 1.0,
+                fabric.renderPriority || 0
               ]
             );
             

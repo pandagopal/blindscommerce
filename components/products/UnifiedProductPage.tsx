@@ -21,6 +21,7 @@ import Fabric, { FabricRef } from '@/components/products/shared/Fabric';
 import Images from '@/components/products/shared/Images';
 import Features from '@/components/products/shared/Features';
 import RoomRecommendations from '@/components/products/shared/RoomRecommendations';
+import Rendering3D from '@/components/products/shared/Rendering3D';
 import ProductCloneButton from '@/components/products/ProductCloneButton';
 
 // Types
@@ -181,7 +182,38 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     fabric: {
       fabrics: []
     },
-    roomRecommendations: []
+    roomRecommendations: [],
+    rendering3D: {
+      model3D: null,
+      renderingConfig: {
+        engine: 'three.js',
+        environment: 'studio',
+        lighting: {
+          ambient: 0.4,
+          directional: 0.6,
+          shadowSoftness: 0.5
+        },
+        camera: {
+          defaultPosition: [0, 0, 5],
+          fov: 45
+        },
+        quality: {
+          resolution: 'high',
+          antialiasing: true,
+          shadows: true
+        }
+      },
+      previewSettings: {
+        autoRotate: false,
+        showGrid: false,
+        showAxes: false
+      },
+      textureSettings: {
+        defaultScale: 1.0,
+        defaultFinish: 'matte',
+        defaultOpacity: 1.0
+      }
+    }
   });
 
   const productsPerPage = 25;
@@ -327,7 +359,38 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           images: Array.isArray(product.images) ? product.images : [],
           features: Array.isArray(product.features) ? product.features : [],
           fabric: product.fabric || { fabrics: [] },
-          roomRecommendations: Array.isArray(product.roomRecommendations) ? product.roomRecommendations : []
+          roomRecommendations: Array.isArray(product.roomRecommendations) ? product.roomRecommendations : [],
+          rendering3D: product.rendering3D || {
+            model3D: null,
+            renderingConfig: {
+              engine: 'three.js',
+              environment: 'studio',
+              lighting: {
+                ambient: 0.4,
+                directional: 0.6,
+                shadowSoftness: 0.5
+              },
+              camera: {
+                defaultPosition: [0, 0, 5],
+                fov: 45
+              },
+              quality: {
+                resolution: 'high',
+                antialiasing: true,
+                shadows: true
+              }
+            },
+            previewSettings: {
+              autoRotate: false,
+              showGrid: false,
+              showAxes: false
+            },
+            textureSettings: {
+              defaultScale: 1.0,
+              defaultFinish: 'matte',
+              defaultOpacity: 1.0
+            }
+          }
         };
         
         setProductData(mappedData);
@@ -515,7 +578,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         pricing_matrix: productData.pricing.matrixEntries,
         fabric: processedFabricData,
         features: productData.features,
-        roomRecommendations: productData.roomRecommendations
+        roomRecommendations: productData.roomRecommendations,
+        rendering3D: productData.rendering3D
       };
       
       const response = await fetch(apiEndpoint, {
@@ -996,7 +1060,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
           {/* Product Form Tabs */}
           <Tabs defaultValue="basic-info" className="w-full">
-            <TabsList className="grid w-full grid-cols-7">
+            <TabsList className="grid w-full grid-cols-8">
               <TabsTrigger value="basic-info">Basic Info</TabsTrigger>
               <TabsTrigger value="options">Options</TabsTrigger>
               <TabsTrigger value="fabric">Fabric</TabsTrigger>
@@ -1004,6 +1068,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
               <TabsTrigger value="images">Images</TabsTrigger>
               <TabsTrigger value="features">Features</TabsTrigger>
               <TabsTrigger value="rooms">Rooms</TabsTrigger>
+              <TabsTrigger value="rendering3d">3D & Rendering</TabsTrigger>
             </TabsList>
 
             <div className="p-6">
@@ -1067,6 +1132,20 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                   recommendations={productData.roomRecommendations}
                   onChange={(data) => updateProductData('roomRecommendations', data)}
                   isReadOnly={isViewMode}
+                />
+              </TabsContent>
+
+              <TabsContent value="rendering3d">
+                <Rendering3D
+                  data={productData.rendering3D}
+                  onChange={(data) => updateProductData('rendering3D', data)}
+                  isReadOnly={isViewMode}
+                  productId={productId}
+                  fabrics={productData.fabric.fabrics.map(f => ({
+                    id: f.id,
+                    name: f.name,
+                    texture_url: f.image?.url
+                  }))}
                 />
               </TabsContent>
             </div>

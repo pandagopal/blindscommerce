@@ -23,6 +23,10 @@ interface FabricOption {
   price: number;
   fabricType: string;
   enabled: boolean;
+  textureUrl?: string;
+  textureScale?: number;
+  materialFinish?: 'matte' | 'satin' | 'glossy' | 'metallic';
+  opacity?: number;
 }
 
 interface FabricData {

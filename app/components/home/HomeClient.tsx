@@ -446,12 +446,29 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
                 <div className="group">
                   <div className="relative h-64 rounded-lg overflow-hidden shadow-lg mb-4">
                     {product.primary_image_url && product.primary_image_url.trim() !== '' ? (
-                      <Image
-                        src={product.primary_image_url.startsWith('/') ? product.primary_image_url : `/uploads/products/${product.primary_image_url}`}
-                        alt={product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
+                      <>
+                        <Image
+                          src={
+                            product.primary_image_url.startsWith('http') 
+                              ? product.primary_image_url 
+                              : product.primary_image_url.startsWith('/') 
+                                ? product.primary_image_url 
+                                : `/uploads/products/${product.primary_image_url}`
+                          }
+                          alt={product.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            console.error(`Failed to load image for ${product.name}:`, e.currentTarget.src);
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
+                          }}
+                          unoptimized={true}
+                        />
+                        <div className="hidden absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center fallback-icon">
+                          <span className="text-4xl text-gray-400">📦</span>
+                        </div>
+                      </>
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
                         <span className="text-4xl text-gray-400">📦</span>
