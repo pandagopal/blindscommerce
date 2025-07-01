@@ -31,6 +31,7 @@ interface VendorProfile {
   phone: string;
   phoneCountry: CountryCode;
   companyName: string;
+  brandName: string;
   contactEmail: string;
   contactPhone: string;
   contactPhoneCountry: CountryCode;
@@ -141,6 +142,7 @@ export default function VendorProfilePage() {
           phone: vendorData.phone || '',
           phoneCountry: (vendorData.phone_country || 'US') as CountryCode,
           companyName: vendorData.business_name || '',
+          brandName: vendorData.brand_name || '',
           contactEmail: vendorData.business_email || vendorData.email || '',
           contactPhone: vendorData.business_phone || vendorData.phone || '',
           contactPhoneCountry: (vendorData.business_phone_country || 'US') as CountryCode,
@@ -201,6 +203,7 @@ export default function VendorProfilePage() {
           phone: profile.phone,
           phoneCountry: profile.phoneCountry,
           businessName: profile.companyName,
+          brandName: profile.brandName,
           businessEmail: profile.contactEmail,
           businessPhone: profile.contactPhone,
           contactPhoneCountry: profile.contactPhoneCountry,
@@ -404,6 +407,19 @@ export default function VendorProfilePage() {
                       value={profile.companyName}
                       onChange={(e) => setProfile({ ...profile, companyName: e.target.value })}
                       className="pl-10"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="brandName">Brand Name</Label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <Input
+                      id="brandName"
+                      value={profile.brandName || ''}
+                      onChange={(e) => setProfile({ ...profile, brandName: e.target.value })}
+                      className="pl-10"
+                      placeholder="Your brand name"
                     />
                   </div>
                 </div>

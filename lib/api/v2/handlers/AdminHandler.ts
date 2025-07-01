@@ -187,7 +187,7 @@ export class AdminHandler extends BaseHandler {
           COALESCE(SUM(CASE WHEN vp.is_active = 1 THEN 1 ELSE 0 END), 0) as active_products
         FROM users u
         INNER JOIN vendor_info vi ON u.user_id = vi.user_id
-        LEFT JOIN vendor_products vp ON vi.user_id = vp.vendor_id
+        LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
         WHERE u.role = 'vendor'
       `;
       
@@ -959,6 +959,13 @@ export class AdminHandler extends BaseHandler {
     const body = await req.json();
     
     try {
+      // Handle vendor_id - convert "marketplace" to null
+      if (body.vendor_id === 'marketplace' || body.vendor_id === '') {
+        body.vendor_id = null;
+      } else if (body.vendor_id) {
+        body.vendor_id = parseInt(body.vendor_id);
+      }
+      
       const product = await productService.create(body);
       return {
         success: true,
@@ -974,6 +981,13 @@ export class AdminHandler extends BaseHandler {
     const body = await req.json();
     
     try {
+      // Handle vendor_id - convert "marketplace" to null
+      if (body.vendor_id === 'marketplace' || body.vendor_id === '') {
+        body.vendor_id = null;
+      } else if (body.vendor_id) {
+        body.vendor_id = parseInt(body.vendor_id);
+      }
+      
       await productService.update(parseInt(id), body);
       return { success: true };
     } catch (error) {

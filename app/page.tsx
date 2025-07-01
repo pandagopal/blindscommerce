@@ -10,24 +10,26 @@ async function getHomePageData() {
     // Use singleton service instances to prevent connection pool exhaustion
     
     // Fetch all data in parallel
-    const [categoriesResult, productsResult, heroBannersResult, roomsResult] = await Promise.all([
+    const [categoriesResult, productsResult, heroBannersResult, roomsResult, reviewsResult] = await Promise.all([
       categoryService.getCategories({ isFeatured: true }),
       productService.getProducts({ 
         isFeatured: true, 
         isActive: true,
-        limit: 12,
+        vendorOnly: true,
+        limit: 15,
         offset: 0,
         sortBy: 'name',
         sortOrder: 'ASC'
       }),
       contentService.getHeroBanners(),
-      contentService.getRooms()
+      contentService.getRooms(),
+      contentService.getReviews(10)
     ]);
 
     return {
       categories: categoriesResult || [],
       products: productsResult?.products || [],
-      reviews: [],
+      reviews: reviewsResult?.reviews || [],
       heroBanners: heroBannersResult?.banners || [],
       rooms: roomsResult?.rooms || []
     };

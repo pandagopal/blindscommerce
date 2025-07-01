@@ -395,7 +395,7 @@ export class CartService extends BaseService {
         vc.*,
         vi.business_name as vendor_name
       FROM vendor_coupons vc
-      JOIN vendor_info vi ON vc.vendor_id = vi.vendor_id
+      JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
       WHERE vc.coupon_code = ?
         AND vc.is_active = 1
         AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())

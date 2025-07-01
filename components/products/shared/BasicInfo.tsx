@@ -105,7 +105,6 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
       isFeatured: false,
       categories: [],
       primaryCategory: '',
-      brand: '',
       ...safeData
     };
   }, [data]);

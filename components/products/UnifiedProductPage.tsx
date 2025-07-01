@@ -152,8 +152,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       isActive: true,
       isFeatured: false,
       categories: [],
-      primaryCategory: '',
-      brand: ''
+      primaryCategory: ''
     },
     options: {
       dimensions: {
@@ -329,8 +328,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             isActive: Boolean(product.is_active),
             isFeatured: Boolean(product.is_featured),
             categories: Array.isArray(product.categories) ? product.categories : [],
-            primaryCategory: product.primary_category || '',
-            brand: product.brand_name || ''
+            primaryCategory: product.primary_category || ''
           },
           options: optionsData || {
             dimensions: {
@@ -570,7 +568,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         is_featured: productData.basicInfo.isFeatured,
         categories: productData.basicInfo.categories,
         primary_category: productData.basicInfo.primaryCategory,
-        brand: productData.basicInfo.brand,
         
         // Other tabs data
         images: processedImages,

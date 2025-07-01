@@ -22,7 +22,6 @@ interface ProductData {
     isActive?: boolean;
     isFeatured?: boolean;
     category: string;
-    brand?: string;
   };
   options?: any;
   images?: Array<{ url: string; isPrimary?: boolean }>;
@@ -57,11 +56,11 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_id FROM vendor_info WHERE user_id = ? LIMIT 1',
+        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
       if (vendorInfo.length > 0) {
-        vendorId = vendorInfo[0].vendor_id;
+        vendorId = vendorInfo[0].vendor_info_id;
       } else {
       }
     }
@@ -248,8 +247,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
       vendorId,
       isActive = true,
       isFeatured = false,
-      category,
-      brand
+      category
     } = basicInfo;
 
     // Use provided slug or generate from name as fallback
@@ -272,46 +270,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
       finalSlug = `${originalSlug}-${slugCounter}`;
     }
 
-    // Handle brand - get or create brand
-    let brandId: number | null = null;
-    if (brand && brand.trim()) {
-      // Check if brand exists
-      const [existingBrands] = await pool.execute<RowDataPacket[]>(
-        'SELECT brand_id FROM brands WHERE name = ?',
-        [brand.trim()]
-      );
-      
-      if (existingBrands.length > 0) {
-        brandId = existingBrands[0].brand_id;
-      } else {
-        // Create new brand
-        const brandSlug = brand.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-        const [brandResult] = await pool.execute<ResultSetHeader>(
-          'INSERT INTO brands (name, slug, is_active, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
-          [brand.trim(), brandSlug]
-        );
-        brandId = brandResult.insertId;
-      }
-    } else {
-      // Create default brand for vendor products if no brand specified
-      const defaultBrandName = role === 'vendor' ? 'Vendor Products' : 'General';
-      const [existingDefaultBrand] = await pool.execute<RowDataPacket[]>(
-        'SELECT brand_id FROM brands WHERE name = ?',
-        [defaultBrandName]
-      );
-      
-      if (existingDefaultBrand.length > 0) {
-        brandId = existingDefaultBrand[0].brand_id;
-      } else {
-        // Create default brand
-        const defaultSlug = defaultBrandName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const [defaultBrandResult] = await pool.execute<ResultSetHeader>(
-          'INSERT INTO brands (name, slug, is_active, created_at, updated_at) VALUES (?, ?, 1, NOW(), NOW())',
-          [defaultBrandName, defaultSlug]
-        );
-        brandId = defaultBrandResult.insertId;
-      }
-    }
+    // Brand handling removed - brands are now vendor properties
 
     // Insert the product
     const [productResult] = await pool.execute<ResultSetHeader>(
@@ -322,15 +281,14 @@ export async function createProduct(data: ProductData, userId: number, role: str
         full_description,
         sku,
         base_price,
-        brand_id,
         stock_status,
         status,
         is_active,
         is_featured,
         created_at,
         updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'in_stock', 'active', ?, ?, NOW(), NOW())`,
-      [name, finalSlug, shortDescription, fullDescription || '', sku, basePrice, brandId, isActive, isFeatured]
+      ) VALUES (?, ?, ?, ?, ?, ?, 'in_stock', 'active', ?, ?, NOW(), NOW())`,
+      [name, finalSlug, shortDescription, fullDescription || '', sku, basePrice, isActive, isFeatured]
     );
 
     const productId = productResult.insertId;
@@ -385,7 +343,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
     } else if (role === 'vendor') {
       // Vendor creating their own product
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_id FROM vendor_info WHERE user_id = ?',
+        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
         [userId]
       );
       
@@ -403,7 +361,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
             vendor_description
           ) VALUES (?, ?, ?, ?, 100, 1, 7, 1, ?)`,
           [
-            vendorInfo[0].vendor_id,
+            vendorInfo[0].vendor_info_id,
             productId,
             sku,
             basePrice,

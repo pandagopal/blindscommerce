@@ -461,11 +461,9 @@ export const getProductBySlug = async (slug: string): Promise<any | null> => {
     `SELECT 
       p.*,
       c.name as category_name,
-      c.slug as category_slug,
-      b.name as brand_name
+      c.slug as category_slug
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.category_id
-    LEFT JOIN brands b ON p.brand_id = b.brand_id
     WHERE p.slug = ? AND p.is_active = 1
     LIMIT 1`,
     [slug]
@@ -516,8 +514,6 @@ export const getProductsBySlugPattern = async (slug: string): Promise<any[]> => 
       p.category_id,
       c.name as category_name,
       c.slug as category_slug,
-      p.brand_id,
-      b.name as brand_name,
       p.primary_image_url,
       p.rating,
       p.review_count,
@@ -527,7 +523,6 @@ export const getProductsBySlugPattern = async (slug: string): Promise<any[]> => 
       p.updated_at
     FROM products p
     LEFT JOIN categories c ON p.category_id = c.category_id
-    LEFT JOIN brands b ON p.brand_id = b.brand_id
     WHERE p.slug LIKE ? AND p.is_active = 1
     ORDER BY 
       CASE WHEN p.slug = ? THEN 1 ELSE 2 END,

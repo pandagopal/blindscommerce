@@ -30,6 +30,16 @@ export interface Room {
   privacy_requirements?: string;
 }
 
+export interface Review {
+  review_id: number;
+  product_name: string;
+  user_name: string;
+  rating: number;
+  title: string;
+  review_text: string;
+  created_at: string;
+}
+
 export class ContentService extends BaseService {
   async getHeroBanners(): Promise<{ banners: HeroBanner[] }> {
     try {
@@ -80,6 +90,37 @@ export class ContentService extends BaseService {
     } catch (error) {
       console.error('Error fetching rooms:', error);
       return { rooms: [] };
+    }
+  }
+
+  async getReviews(limit: number = 10): Promise<{ reviews: Review[] }> {
+    try {
+      // Validate limit is a positive integer
+      const validatedLimit = Math.max(1, Math.floor(limit));
+      
+      const query = `
+        SELECT 
+          pr.review_id,
+          p.name as product_name,
+          COALESCE(CONCAT(u.first_name, ' ', u.last_name), pr.guest_name) as user_name,
+          pr.rating,
+          pr.title,
+          pr.review_text,
+          pr.created_at
+        FROM product_reviews pr
+        LEFT JOIN products p ON pr.product_id = p.product_id
+        LEFT JOIN users u ON pr.user_id = u.user_id
+        WHERE pr.is_approved = 1
+        AND pr.rating >= 4
+        ORDER BY pr.created_at DESC
+        LIMIT ${validatedLimit}
+      `;
+
+      const result = await this.executeQuery<Review>(query);
+      return { reviews: result };
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      return { reviews: [] };
     }
   }
 }

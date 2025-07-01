@@ -18,7 +18,6 @@ interface Product extends RowDataPacket {
   base_price: number;
   cost_price?: number;
   category_id?: number;
-  brand_id?: number;
   primary_image_url?: string;
   is_active: boolean;
   is_featured: boolean;
@@ -31,7 +30,6 @@ interface Product extends RowDataPacket {
 interface ProductWithDetails extends Product {
   category_name?: string;
   category_slug?: string;
-  brand_name?: string;
   vendor_price?: number;
   discount_type?: string;
   discount_value?: number;
@@ -147,12 +145,12 @@ export class ProductService extends BaseService {
     maxPrice?: number;
     isActive?: boolean;
     isFeatured?: boolean;
-    brands?: number[];
     features?: Record<number, string[]>;
     sortBy?: 'name' | 'price' | 'rating' | 'created_at';
     sortOrder?: 'ASC' | 'DESC';
     limit?: number;
     offset?: number;
+    vendorOnly?: boolean;
   }): Promise<{ products: ProductWithDetails[]; total: number }> {
     const {
       categoryId,
@@ -162,12 +160,12 @@ export class ProductService extends BaseService {
       maxPrice,
       isActive = true,
       isFeatured,
-      brands,
       features,
       sortBy = 'name',
       sortOrder = 'ASC',
       limit = 20,
-      offset = 0
+      offset = 0,
+      vendorOnly = false
     } = options;
 
     // Build complex WHERE conditions
@@ -210,10 +208,10 @@ export class ProductService extends BaseService {
       whereParams.push(isFeatured ? 1 : 0);
     }
 
-    if (brands && brands.length > 0) {
-      const brandPlaceholders = brands.map(() => '?').join(',');
-      whereConditions.push(`p.brand_id IN (${brandPlaceholders})`);
-      whereParams.push(...brands);
+    // Add vendor-only filter if requested
+    if (vendorOnly) {
+      // Only show products that have a vendor (either in products.vendor_id or vendor_products)
+      whereConditions.push('(p.vendor_id IS NOT NULL OR vp.vendor_id IS NOT NULL)');
     }
 
     const whereClause = whereConditions.length > 0 
@@ -275,7 +273,6 @@ export class ProductService extends BaseService {
         p.*,
         c.name as category_name,
         c.slug as category_slug,
-        b.name as brand_name,
         MIN(vp.vendor_price) as vendor_price,
         MIN(vd.discount_type) as discount_type,
         MIN(vd.discount_value) as discount_value,
@@ -284,7 +281,6 @@ export class ProductService extends BaseService {
         COUNT(DISTINCT pr.review_id) as review_count
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
         AND vd.is_active = 1
@@ -295,9 +291,9 @@ export class ProductService extends BaseService {
       ${features ? 'LEFT JOIN product_features pf ON p.product_id = pf.product_id' : ''}
       ${whereClause}
       GROUP BY p.product_id, p.name, p.slug, p.sku, p.short_description, 
-               p.full_description, p.base_price, p.cost_price, p.category_id, p.brand_id, 
+               p.full_description, p.base_price, p.cost_price, p.category_id, 
                p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count, 
-               p.created_at, p.updated_at, c.name, c.slug, b.name, pi.image_url
+               p.created_at, p.updated_at, c.name, c.slug, pi.image_url
       ${havingClause}
       ORDER BY ${sortColumn} ${sortOrder}
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}

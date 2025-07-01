@@ -169,6 +169,7 @@ export default async function ProductsPage({
         sortOrder: sortOrderParam.toUpperCase() as 'ASC' | 'DESC',
         search: searchParam,
         isActive: true,
+        vendorOnly: true,
         limit: 50,
         offset: 0
       })

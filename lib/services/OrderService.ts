@@ -253,8 +253,8 @@ export class OrderService extends BaseService {
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.order_id
       JOIN products p ON oi.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
-      LEFT JOIN vendor_info ovi ON o.vendor_id = ovi.user_id
+      LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info ovi ON o.vendor_id = ovi.vendor_info_id
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id
     `;
@@ -393,7 +393,7 @@ export class OrderService extends BaseService {
           vi.business_name as vendor_name
         FROM order_items oi
         JOIN products p ON oi.product_id = p.product_id
-        LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
+        LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
         WHERE oi.order_id IN (${placeholders})
         ORDER BY oi.order_id, oi.order_item_id
       `;

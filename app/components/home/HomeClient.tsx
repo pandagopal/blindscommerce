@@ -35,11 +35,13 @@ interface Room {
 }
 
 interface Review {
-  id: number;
-  author: string;
+  review_id: number;
+  product_name: string;
+  user_name: string;
   rating: number;
-  text: string;
-  date: string;
+  title: string;
+  review_text: string;
+  created_at: string;
 }
 
 interface HeroBanner {
@@ -322,6 +324,23 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         .hero-swiper .swiper-button-prev:hover {
           background: rgba(0,0,0,0.5);
         }
+        
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+        
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+        }
+        
+        .animate-scroll:hover {
+          animation-play-state: paused;
+        }
       `}</style>
 
       {/* Promotion Banner Strip */}
@@ -408,30 +427,57 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         </div>
       </section>
 
-      {/* Customer Reviews */}
-      <section className="py-16 bg-white">
+      {/* Customer Reviews - Moving Carousel */}
+      <section className="py-16 bg-white overflow-hidden">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">What Our Customers Say</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {Array.isArray(reviews) && reviews.map((review) => (
-              <div key={review.id} className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex items-center mb-4">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-5 h-5 ${
-                        i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
-                      }`}
-                    />
-                  ))}
+          <div className="relative">
+            <div className="flex gap-6 animate-scroll">
+              {/* First set of reviews */}
+              {Array.isArray(reviews) && reviews.length > 0 && reviews.map((review) => (
+                <div key={review.review_id} className="flex-shrink-0 w-80 bg-white p-6 rounded-lg shadow-lg border border-gray-100">
+                  <div className="flex items-center mb-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <h4 className="font-semibold text-lg mb-2">{review.title}</h4>
+                  <p className="text-gray-600 mb-4 line-clamp-3">&quot;{review.review_text}&quot;</p>
+                  <div className="border-t pt-4">
+                    <p className="font-semibold text-sm">{review.user_name}</p>
+                    <p className="text-xs text-gray-500">{review.product_name}</p>
+                    <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <p className="text-gray-600 mb-4">&quot;{review.text}&quot;</p>
-                <div className="flex justify-between items-center">
-                  <span className="font-semibold">{review.author}</span>
-                  <span className="text-sm text-gray-500">{review.date}</span>
+              ))}
+              {/* Duplicate set for continuous scroll */}
+              {Array.isArray(reviews) && reviews.length > 0 && reviews.map((review) => (
+                <div key={`dup-${review.review_id}`} className="flex-shrink-0 w-80 bg-white p-6 rounded-lg shadow-lg border border-gray-100">
+                  <div className="flex items-center mb-3">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${
+                          i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <h4 className="font-semibold text-lg mb-2">{review.title}</h4>
+                  <p className="text-gray-600 mb-4 line-clamp-3">&quot;{review.review_text}&quot;</p>
+                  <div className="border-t pt-4">
+                    <p className="font-semibold text-sm">{review.user_name}</p>
+                    <p className="text-xs text-gray-500">{review.product_name}</p>
+                    <p className="text-xs text-gray-400">{new Date(review.created_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -440,7 +486,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
       <section className="py-16 bg-gradient-to-br from-purple-50 to-blue-50">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {Array.isArray(products) && products.map((product) => (
               <Link href={`/products/configure/${product.slug}`} key={product.product_id}>
                 <div className="group">

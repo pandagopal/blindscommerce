@@ -156,6 +156,7 @@ export class CommerceHandler extends BaseHandler {
       sortOrder: searchParams.get('sortOrder') as any || 'ASC',
       limit,
       offset,
+      vendorOnly: true,  // Always show only vendor products in public API
     };
 
     const { products, total } = await this.productService.getProducts(options);

@@ -141,6 +141,17 @@ export class VendorsHandler extends BaseHandler {
   }
 
   /**
+   * Handle PATCH requests
+   */
+  async handlePATCH(req: NextRequest, action: string[], user: any): Promise<any> {
+    const routes = {
+      'products/:id': () => this.patchProduct(action[1], req, user),
+    };
+
+    return this.routeAction(action, routes);
+  }
+
+  /**
    * Handle DELETE requests
    */
   async handleDELETE(req: NextRequest, action: string[], user: any): Promise<any> {
@@ -215,6 +226,7 @@ export class VendorsHandler extends BaseHandler {
 
     await this.vendorService.update(vendorId, {
       business_name: data.businessName,
+      brand_name: data.brandName,
       business_description: data.businessDescription,
       business_phone: data.businessPhone || data.phone,
       business_email: data.businessEmail || data.contactEmail,
@@ -583,8 +595,8 @@ export class VendorsHandler extends BaseHandler {
       const [result] = await conn.execute(
         `INSERT INTO products (
           name, slug, sku, short_description, full_description, 
-          base_price, is_active, is_featured, category_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          base_price, vendor_id, is_active, is_featured, category_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           data.name,
           data.slug,
@@ -592,6 +604,7 @@ export class VendorsHandler extends BaseHandler {
           data.short_description,
           data.full_description || data.description || data.short_description,
           data.base_price,
+          vendorId,
           data.is_active ? 1 : 0,
           data.is_featured ? 1 : 0,
           categoryId
@@ -1348,6 +1361,35 @@ export class VendorsHandler extends BaseHandler {
     } finally {
       conn.release();
     }
+  }
+
+  private async patchProduct(id: string, req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const productId = parseInt(id);
+    
+    if (isNaN(productId)) {
+      throw new ApiError('Invalid product ID', 400);
+    }
+
+    const body = await req.json();
+    
+    // For now, we only support toggling is_active status via PATCH
+    if (body.hasOwnProperty('is_active')) {
+      const pool = await getPool();
+      
+      // Update vendor_products table
+      await pool.execute(
+        'UPDATE vendor_products SET is_active = ? WHERE vendor_id = ? AND product_id = ?',
+        [body.is_active ? 1 : 0, vendorId, productId]
+      );
+      
+      return { 
+        success: true,
+        message: `Product ${body.is_active ? 'activated' : 'deactivated'} successfully` 
+      };
+    }
+    
+    throw new ApiError('Invalid patch operation', 400);
   }
 
   private async deleteProduct(id: string, user: any) {
