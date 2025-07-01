@@ -60,7 +60,6 @@ export async function POST(request: NextRequest) {
         
       default:
         // Unhandled PayPal event type
-        console.log(`Unhandled PayPal event type: ${event.event_type}`);
     }
 
     return NextResponse.json({ status: 'SUCCESS' });

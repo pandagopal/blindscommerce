@@ -101,14 +101,11 @@ export default function CheckoutPage() {
       try {
         // Check authentication and load user info
         const authResponse = await fetch('/api/v2/auth/me');
-        console.log('Auth response status:', authResponse.status);
         if (!authResponse.ok) {
           setIsGuest(true);
         } else {
           const authData = await authResponse.json();
-          console.log('Auth data received:', authData);
           if (authData.user) {
-            console.log('Setting form data with user:', authData.user);
             setFormData(prev => ({
               ...prev,
               firstName: authData.user.firstName || '',
@@ -121,15 +118,12 @@ export default function CheckoutPage() {
             // Load default address
             try {
               const addressResponse = await fetch('/api/v2/users/addresses');
-              console.log('Address response status:', addressResponse.status);
               if (addressResponse.ok) {
                 const addressData = await addressResponse.json();
-                console.log('Address data received:', addressData);
                 const addresses = addressData.data?.addresses || addressData.addresses || [];
                 const defaultAddress = addresses.find((addr: any) => addr.isDefault);
                 
                 if (defaultAddress) {
-                  console.log('Setting default address:', defaultAddress);
                   setFormData(prev => ({
                     ...prev,
                     address: defaultAddress.addressLine1 || '',
@@ -153,13 +147,10 @@ export default function CheckoutPage() {
 
         // Load available payment methods based on order total
         const amount = total || 100; // Use 100 as default if total is 0
-        console.log('Fetching payment methods for amount:', amount);
         const paymentResponse = await fetch(`/api/v2/commerce/payment-methods?amount=${amount}&currency=USD&country=US`);
-        console.log('Payment response status:', paymentResponse.status);
         
         if (paymentResponse.ok) {
           const paymentData = await paymentResponse.json();
-          console.log('Payment data received:', paymentData);
           setPaymentMethods(paymentData.payment_methods || []);
           // Auto-select the first recommended method
           const recommended = paymentData.payment_methods?.find((m: any) => m.recommended);

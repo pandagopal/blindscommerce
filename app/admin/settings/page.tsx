@@ -135,7 +135,6 @@ export default function AdminSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      console.log('Loading settings from API...');
       const res = await fetch('/api/v2/admin/settings', {
         // Add cache-busting headers to ensure fresh data
         headers: {
@@ -148,15 +147,12 @@ export default function AdminSettingsPage() {
         throw new Error('Failed to load settings');
       }
       const data = await res.json();
-      console.log('Full API Response:', JSON.stringify(data, null, 2));
       
       // Handle V2 API response format
       const settings = data.data?.settings || data.settings;
       
-      console.log('Settings extracted:', settings);
       if (settings) {
         setSettings(settings);
-        console.log('Settings state updated to:', settings);
       } else {
         console.error('No settings returned from API. Response was:', data);
         // Keep default settings

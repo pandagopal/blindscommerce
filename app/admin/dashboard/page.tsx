@@ -131,7 +131,6 @@ export default function AdminDashboard() {
           description: `Cleared ${result.refreshResult.clearedEntries} cache entries`
         });
         setCacheStats(result.currentStats);
-        console.log('Cache refresh result:', result);
       } else {
         toast.error('Failed to refresh caches');
       }

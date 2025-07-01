@@ -54,12 +54,10 @@ export const authOptions: NextAuthOptions = {
           
           // Only allow social login for CUSTOMER role users
           if (existingUser.role !== 'customer') {
-            console.log(`Social login denied for non-customer user: ${user.email}, role: ${existingUser.role}`);
             return false;
           }
 
           if (!existingUser.is_active) {
-            console.log(`Social login denied for inactive user: ${user.email}`);
             return false;
           }
 
@@ -106,7 +104,6 @@ export const authOptions: NextAuthOptions = {
           ]
         );
 
-        console.log(`New customer created via ${account.provider} social login: ${user.email}`);
         return true;
 
       } catch (error) {

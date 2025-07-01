@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
         break;
         
       default:
-        console.log(`Unhandled Afterpay event type: ${event.eventType}`);
     }
 
     return NextResponse.json({ status: 'OK' });
