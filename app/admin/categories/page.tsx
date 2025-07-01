@@ -102,14 +102,23 @@ export default function AdminCategoriesPage() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          name: formData.name,
+          slug: formData.slug,
+          description: formData.description || undefined,
+          image_url: formData.image_url || undefined,
+          featured: Boolean(formData.featured),
+          display_order: Number(formData.display_order) || 0
+        })
       });
 
       if (response.ok) {
         fetchCategories();
         resetForm();
       } else {
-        alert('Failed to save category');
+        const errorData = await response.json();
+        console.error('Error saving category:', errorData);
+        alert(errorData.error || 'Failed to save category');
       }
     } catch (error) {
       console.error('Error saving category:', error);
@@ -143,8 +152,8 @@ export default function AdminCategoriesPage() {
       slug: category.slug,
       description: category.description || '',
       image_url: category.image_url || '',
-      featured: category.featured,
-      display_order: category.display_order
+      featured: Boolean(category.featured),
+      display_order: Number(category.display_order) || 0
     });
     setShowModal(true);
   };
@@ -420,7 +429,7 @@ export default function AdminCategoriesPage() {
                 <input
                   type="number"
                   value={formData.display_order}
-                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

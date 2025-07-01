@@ -11,7 +11,7 @@ async function getHomePageData() {
     
     // Fetch all data in parallel
     const [categoriesResult, productsResult, heroBannersResult, roomsResult] = await Promise.all([
-      categoryService.getCategories({ isFeatured: true, limit: 8 }),
+      categoryService.getCategories({ isFeatured: true }),
       productService.getProducts({ 
         isFeatured: true, 
         isActive: true,
