@@ -505,19 +505,28 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => {
-                            console.error(`Failed to load image for ${product.name}:`, e.currentTarget.src);
                             e.currentTarget.style.display = 'none';
                             e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                           }}
                           unoptimized={true}
                         />
-                        <div className="hidden absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center fallback-icon">
-                          <span className="text-4xl text-gray-400">📦</span>
+                        <div className="hidden absolute inset-0 fallback-icon">
+                          <Image
+                            src="/images/no-image-found.svg"
+                            alt="No image found"
+                            fill
+                            className="object-contain p-8"
+                          />
                         </div>
                       </>
                     ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        <span className="text-4xl text-gray-400">📦</span>
+                      <div className="absolute inset-0">
+                        <Image
+                          src="/images/no-image-available.svg"
+                          alt="No image available"
+                          fill
+                          className="object-contain p-8"
+                        />
                       </div>
                     )}
                   </div>

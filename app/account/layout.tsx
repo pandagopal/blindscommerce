@@ -13,7 +13,9 @@ import {
   LogOut,
   User,
   ChevronRight,
-  Shield
+  Shield,
+  Heart,
+  MapPin
 } from 'lucide-react';
 
 interface UserData {
@@ -66,6 +68,8 @@ function AccountLayoutContent({
     { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
     { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
     { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
+    { href: '/account/wishlist', label: 'Wishlist', icon: <Heart size={18} /> },
+    { href: '/account/addresses', label: 'Addresses', icon: <MapPin size={18} /> },
     { href: '/account/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
@@ -144,13 +148,23 @@ function AccountLayoutContent({
               <h3 className="font-medium text-gray-800 mb-2">Quick Access</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link href="/account/measurements/new" className="text-red-600 hover:text-red-700 flex items-center">
-                    <span className="mr-2">📏</span> Add New Measurement
+                  <Link href="/account/measurements" className="text-red-600 hover:text-red-700 flex items-center">
+                    <span className="mr-2">📏</span> View Measurements
                   </Link>
                 </li>
                 <li>
                   <Link href="/account/orders" className="text-red-600 hover:text-red-700 flex items-center">
                     <span className="mr-2">📦</span> Track Orders
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account/recently-viewed" className="text-red-600 hover:text-red-700 flex items-center">
+                    <span className="mr-2">👁️</span> Recently Viewed
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/account/warranty" className="text-red-600 hover:text-red-700 flex items-center">
+                    <span className="mr-2">🛡️</span> Warranty Info
                   </Link>
                 </li>
               </ul>

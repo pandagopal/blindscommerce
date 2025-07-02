@@ -51,11 +51,11 @@ const createFormSchema = (isAdmin: boolean) => z.object({
 });
 
 interface Vendor {
-  id: number;
-  companyName: string;
-  email: string;
-  approvalStatus: string;
-  isActive: boolean;
+  user_id: number;
+  business_name: string;
+  business_email: string;
+  approval_status: string;
+  is_active: boolean;
 }
 
 interface Category {
@@ -249,17 +249,17 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                       </SelectItem>
                     ) : (
                       vendors.map((vendor) => (
-                        <SelectItem key={vendor.id} value={vendor.id.toString()}>
+                        <SelectItem key={vendor.user_id} value={vendor.user_id.toString()}>
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center space-x-2">
                               <User className="h-4 w-4" />
-                              <span>{vendor.companyName}</span>
+                              <span>{vendor.business_name}</span>
                             </div>
                             <Badge 
-                              variant={vendor.isActive && vendor.approvalStatus === 'approved' ? 'default' : 'secondary'} 
+                              variant={vendor.is_active && vendor.approval_status === 'approved' ? 'default' : 'secondary'} 
                               className="ml-2"
                             >
-                              {vendor.isActive && vendor.approvalStatus === 'approved' ? 'active' : vendor.approvalStatus}
+                              {vendor.is_active && vendor.approval_status === 'approved' ? 'active' : vendor.approval_status}
                             </Badge>
                           </div>
                         </SelectItem>

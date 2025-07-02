@@ -65,7 +65,6 @@ export class ProductService extends BaseService {
         p.*,
         c.name as category_name,
         c.slug as category_slug,
-        b.name as brand_name,
         COALESCE(vp.vendor_id, p.vendor_id) as vendor_id,
         vp.vendor_price,
         vd.discount_type,
@@ -73,7 +72,6 @@ export class ProductService extends BaseService {
         COALESCE(vp.vendor_price, p.base_price) as effective_price
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id 
         ${vendorId ? 'AND vp.vendor_id = ?' : ''}
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
