@@ -94,10 +94,12 @@ export class ProductService extends BaseService {
     
     const product = parseProductPrices(rows[0]);
     
-    // Get images and features in parallel
+    // Get images, features, fabric options, and control types in parallel
     const result = await this.executeParallel<{
       images: any[] | null;
       features: any[] | null;
+      fabricOptions: any[] | null;
+      controlTypes: any[] | null;
     }>({
       images: {
         query: 'SELECT * FROM product_images WHERE product_id = ? ORDER BY display_order',
@@ -112,12 +114,34 @@ export class ProductService extends BaseService {
           ORDER BY f.display_order
         `,
         params: [productId]
+      },
+      fabricOptions: {
+        query: `
+          SELECT fabric_option_id, product_id, vendor_id, fabric_type, 
+                 fabric_name, description, texture_url, opacity
+          FROM product_fabric_options 
+          WHERE product_id = ? AND is_enabled = 1
+          ORDER BY render_priority, fabric_name
+        `,
+        params: [productId]
+      },
+      controlTypes: {
+        query: `
+          SELECT control_type_id, name, description, operation_method, 
+                 automation_compatible, child_safety_features
+          FROM control_types 
+          WHERE is_active = 1
+          ORDER BY is_popular DESC, name
+        `,
+        params: []
       }
     });
 
     // Safely handle null values and transform field names
     const images = result?.images || [];
     const features = result?.features || [];
+    const fabricOptions = result?.fabricOptions || [];
+    const controlTypes = result?.controlTypes || [];
 
     // Transform image field names to match frontend expectations
     product.images = images.map(img => ({
@@ -128,6 +152,8 @@ export class ProductService extends BaseService {
       display_order: img.display_order || 0
     }));
     product.features = features;
+    product.fabricOptions = fabricOptions;
+    product.controlTypes = controlTypes;
     
     return product;
   }

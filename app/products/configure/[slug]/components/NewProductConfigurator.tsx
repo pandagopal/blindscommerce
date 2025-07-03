@@ -365,7 +365,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4">
         {/* Back link */}
         <div className="mb-6">
           <Link
@@ -379,16 +379,16 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
           {/* Left Side - Configuration (scrolls naturally) */}
-          <div className="space-y-6 lg:h-auto">
+          <div className="space-y-3 lg:h-auto">
 
             {/* Choose Your Room */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+            <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
               activeSection === 'room' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
             }`}
               onFocus={() => setActiveSection('room')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
                 Choose Your Room 
                 <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
               </h2>
@@ -396,7 +396,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               <select
                 value={config.roomType}
                 onChange={(e) => handleRoomTypeChange(e.target.value)}
-                className={`w-full p-4 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 ${
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 ${
                   errors.roomType ? 'border-red-300' : 'border-gray-300'
                 }`}
               >
@@ -416,21 +416,21 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             </div>
 
             {/* Choose Inside or Outside Mount */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+            <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
               activeSection === 'mount' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
             }`}
               onFocus={() => setActiveSection('mount')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
                 Choose Mount Type 
                 <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
               </h2>
               
-              <div className="space-y-4">
+              <div className="space-y-2">
                 {/* Inside Mount */}
                 <div
-                  className={`border-2 rounded-xl p-5 cursor-pointer transition-all hover:shadow-md ${
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                     config.mountType === 'inside'
                       ? 'border-blue-500 bg-blue-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300'
@@ -438,7 +438,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   onClick={() => handleMountTypeChange('inside')}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
                       <div className="w-10 h-10 bg-white rounded shadow-sm"></div>
                     </div>
                     <div className="flex-1">
@@ -457,7 +457,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
                 {/* Outside Mount */}
                 <div
-                  className={`border-2 rounded-xl p-5 cursor-pointer transition-all hover:shadow-md ${
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                     config.mountType === 'outside'
                       ? 'border-blue-500 bg-blue-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300'
@@ -465,7 +465,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   onClick={() => handleMountTypeChange('outside')}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
+                    <div className="w-14 h-14 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center">
                       <div className="w-12 h-10 bg-white rounded shadow-sm"></div>
                     </div>
                     <div className="flex-1">
@@ -492,180 +492,177 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             </div>
 
             {/* Enter Size */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+            <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
               activeSection === 'dimensions' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
             }`}
               onFocus={() => setActiveSection('dimensions')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
                 Enter Size <span className="text-sm text-gray-500 font-normal">(inches)</span>
                 <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
               </h2>
               
-              <div className="flex items-start space-x-6">
-                {/* Window illustration */}
-                <div className="hidden sm:block">
-                  <div className="w-24 h-28 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-3">
-                    <div className="w-full h-full bg-white rounded shadow-inner grid grid-cols-2 grid-rows-2">
-                      <div className="border-r border-b border-gray-200"></div>
-                      <div className="border-b border-gray-200"></div>
-                      <div className="border-r border-gray-200"></div>
-                      <div></div>
+              <div className="flex items-start space-x-4">
+                <div className="flex-1 space-y-3">
+                  <div className="flex space-x-4">
+                    {/* Window illustration - moved inside and centered */}
+                    <div className="hidden sm:flex items-center justify-center">
+                      <div className="w-20 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-2">
+                        <div className="w-full h-full bg-white rounded shadow-inner grid grid-cols-2 grid-rows-2">
+                          <div className="border-r border-b border-gray-200"></div>
+                          <div className="border-b border-gray-200"></div>
+                          <div className="border-r border-gray-200"></div>
+                          <div></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1 space-y-3">
+                      {/* Width Section */}
+                      <div>
+                        <div className="flex items-end space-x-2 mb-2">
+                          <div className="w-20">
+                            <label className="block text-sm font-medium text-gray-700">Width</label>
+                          </div>
+                          <div className="w-16">
+                            <label className="block text-sm font-medium text-gray-700">Eighths</label>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="number"
+                            value={config.width}
+                            onChange={(e) => handleDimensionChange('width', e.target.value)}
+                            placeholder="0"
+                            min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth}
+                            max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth}
+                            step="0.125"
+                            className={`w-20 p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                              errors.width ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                          />
+                          <select
+                            value={config.widthFraction}
+                            onChange={(e) => {
+                              setConfig(prev => ({ ...prev, widthFraction: e.target.value }));
+                              // Re-validate width when fraction changes
+                              if (config.width) {
+                                const error = validateDimension(config.width, 'width');
+                                setErrors(prev => ({ ...prev, width: error }));
+                              }
+                            }}
+                            disabled={isWidthEighthsDisabled()}
+                            className={`w-16 p-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              isWidthEighthsDisabled() ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <option value="0">0</option>
+                            <option value="0.125">1/8</option>
+                            <option value="0.25">1/4</option>
+                            <option value="0.375">3/8</option>
+                            <option value="0.5">1/2</option>
+                            <option value="0.625">5/8</option>
+                            <option value="0.75">3/4</option>
+                            <option value="0.875">7/8</option>
+                          </select>
+                          <span className="text-sm text-gray-600">inches</span>
+                        </div>
+                      </div>
+
+                      {/* Height Section */}
+                      <div>
+                        <div className="flex items-end space-x-2 mb-2">
+                          <div className="w-20">
+                            <label className="block text-sm font-medium text-gray-700">Height</label>
+                          </div>
+                          <div className="w-16">
+                            <label className="block text-sm font-medium text-gray-700">Eighths</label>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="number"
+                            value={config.height}
+                            onChange={(e) => handleDimensionChange('height', e.target.value)}
+                            placeholder="0"
+                            min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight}
+                            max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight}
+                            step="0.125"
+                            className={`w-20 p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                              errors.height ? 'border-red-300' : 'border-gray-300'
+                            }`}
+                          />
+                          <select
+                            value={config.heightFraction}
+                            onChange={(e) => {
+                              setConfig(prev => ({ ...prev, heightFraction: e.target.value }));
+                              // Re-validate height when fraction changes
+                              if (config.height) {
+                                const error = validateDimension(config.height, 'height');
+                                setErrors(prev => ({ ...prev, height: error }));
+                              }
+                            }}
+                            disabled={isHeightEighthsDisabled()}
+                            className={`w-16 p-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              isHeightEighthsDisabled() ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
+                            }`}
+                          >
+                            <option value="0">0</option>
+                            <option value="0.125">1/8</option>
+                            <option value="0.25">1/4</option>
+                            <option value="0.375">3/8</option>
+                            <option value="0.5">1/2</option>
+                            <option value="0.625">5/8</option>
+                            <option value="0.75">3/4</option>
+                            <option value="0.875">7/8</option>
+                          </select>
+                          <span className="text-sm text-gray-600">inches</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex-1">
-                  {/* Labels Row */}
-                  <div className="flex items-end space-x-8 mb-2">
-                    <div className="flex items-end space-x-2">
-                      <div className="w-20">
-                        <label className="block text-sm font-medium text-gray-700">Width</label>
-                      </div>
-                      <div className="w-16">
-                        <label className="block text-sm font-medium text-gray-700">Eighths</label>
-                      </div>
-                      <div className="w-12">
-                        <span className="text-xs text-gray-500"></span>
-                      </div>
-                    </div>
-                    <div className="flex items-end space-x-2">
-                      <div className="w-20">
-                        <label className="block text-sm font-medium text-gray-700">Height</label>
-                      </div>
-                      <div className="w-16">
-                        <label className="block text-sm font-medium text-gray-700">Eighths</label>
-                      </div>
-                      <div className="w-12">
-                        <span className="text-xs text-gray-500"></span>
-                      </div>
-                    </div>
+                {/* Error Messages, Notices and Tips - moved outside the flex container */}
+                {(errors.width || errors.height) && (
+                  <div className="mt-2 space-y-1">
+                    {errors.width && <p className="text-red-500 text-sm">{errors.width}</p>}
+                    {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
                   </div>
+                )}
 
-                  {/* Inputs Row */}
-                  <div className="flex items-center space-x-8">
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={config.width}
-                        onChange={(e) => handleDimensionChange('width', e.target.value)}
-                        placeholder="0"
-                        min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth}
-                        max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth}
-                        step="0.125"
-                        className={`w-20 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.width ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                      />
-                      <select
-                        value={config.widthFraction}
-                        onChange={(e) => {
-                          setConfig(prev => ({ ...prev, widthFraction: e.target.value }));
-                          // Re-validate width when fraction changes
-                          if (config.width) {
-                            const error = validateDimension(config.width, 'width');
-                            setErrors(prev => ({ ...prev, width: error }));
-                          }
-                        }}
-                        disabled={isWidthEighthsDisabled()}
-                        className={`w-16 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          isWidthEighthsDisabled() ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <option value="0">0</option>
-                        <option value="0.125">1/8</option>
-                        <option value="0.25">1/4</option>
-                        <option value="0.375">3/8</option>
-                        <option value="0.5">1/2</option>
-                        <option value="0.625">5/8</option>
-                        <option value="0.75">3/4</option>
-                        <option value="0.875">7/8</option>
-                      </select>
-                      <span className="text-sm text-gray-600">inches</span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="number"
-                        value={config.height}
-                        onChange={(e) => handleDimensionChange('height', e.target.value)}
-                        placeholder="0"
-                        min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight}
-                        max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight}
-                        step="0.125"
-                        className={`w-20 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
-                          errors.height ? 'border-red-300' : 'border-gray-300'
-                        }`}
-                      />
-                      <select
-                        value={config.heightFraction}
-                        onChange={(e) => {
-                          setConfig(prev => ({ ...prev, heightFraction: e.target.value }));
-                          // Re-validate height when fraction changes
-                          if (config.height) {
-                            const error = validateDimension(config.height, 'height');
-                            setErrors(prev => ({ ...prev, height: error }));
-                          }
-                        }}
-                        disabled={isHeightEighthsDisabled()}
-                        className={`w-16 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                          isHeightEighthsDisabled() ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        <option value="0">0</option>
-                        <option value="0.125">1/8</option>
-                        <option value="0.25">1/4</option>
-                        <option value="0.375">3/8</option>
-                        <option value="0.5">1/2</option>
-                        <option value="0.625">5/8</option>
-                        <option value="0.75">3/4</option>
-                        <option value="0.875">7/8</option>
-                      </select>
-                      <span className="text-sm text-gray-600">inches</span>
-                    </div>
+                {/* Eighths Disabled Notice */}
+                {(isWidthEighthsDisabled() || isHeightEighthsDisabled()) && (
+                  <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-700 text-sm">
+                      <Info size={14} className="inline mr-1" />
+                      Eighths fractions are disabled when you enter the maximum dimension to prevent exceeding size limits.
+                    </p>
                   </div>
+                )}
 
-                  {/* Error Messages */}
-                  {(errors.width || errors.height) && (
-                    <div className="mt-2 space-y-1">
-                      {errors.width && <p className="text-red-500 text-sm">{errors.width}</p>}
-                      {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
-                    </div>
-                  )}
-
-                  {/* Eighths Disabled Notice */}
-                  {(isWidthEighthsDisabled() || isHeightEighthsDisabled()) && (
-                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                      <p className="text-amber-700 text-sm">
-                        <Info size={14} className="inline mr-1" />
-                        Eighths fractions are disabled when you enter the maximum dimension to prevent exceeding size limits.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Measurement Tips */}
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <div className="text-xs text-blue-700">
-                      <p className="font-medium">Measurement Instructions:</p>
-                      <ul className="space-y-1 ml-2 mt-1">
-                        <li>• Measure the exact window opening</li>
-                        <li>• Enter precise dimensions for best fit</li>
-                      </ul>
-                    </div>
+                {/* Measurement Tips */}
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg">
+                  <div className="text-xs text-blue-700">
+                    <p className="font-medium">Measurement Instructions:</p>
+                    <ul className="space-y-1 ml-2 mt-1">
+                      <li>• Measure the exact window opening</li>
+                      <li>• Enter precise dimensions for best fit</li>
+                    </ul>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Fabric Selection - Tab Based UI */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+            <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
               activeSection === 'fabric' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
             }`}
               onFocus={() => setActiveSection('fabric')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
                 Choose Fabric
                 <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
               </h2>
@@ -673,7 +670,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               {fabricTypes.length > 0 ? (
                 <div>
                   {/* Fabric Type Tabs */}
-                  <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-6">
+                  <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg mb-4">
                     {fabricTypes.map((fabricTypeGroup) => (
                       <button
                         key={fabricTypeGroup.type}
@@ -690,7 +687,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   </div>
 
                   {/* Fabric Options for Active Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {fabricTypes
                       .find(ft => ft.type === activeFabricType)
                       ?.fabrics.map((fabric) => {
@@ -727,7 +724,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         return (
                           <div
                             key={fabric.fabric_option_id}
-                            className={`border-2 rounded-xl p-4 cursor-pointer transition-all hover:shadow-md ${
+                            className={`border-2 rounded-lg p-3 cursor-pointer transition-all hover:shadow-md ${
                               config.fabricType === fabric.fabric_option_id.toString()
                                 ? 'border-blue-500 bg-blue-50 shadow-md'
                                 : 'border-gray-200 hover:border-gray-300'
@@ -738,7 +735,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             }}
                           >
                             <div className="flex items-start space-x-3">
-                              <div className={`w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden border-2 ${
+                              <div className={`w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden border-2 ${
                                 config.fabricType === fabric.fabric_option_id.toString() ? 'border-blue-500' : 'border-gray-200'
                               }`}>
                                 {fabric.fabric_image_url ? (
@@ -790,7 +787,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               )}
 
               {config.fabricType && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-xl">
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                   <div className="flex items-center text-blue-700">
                     <Info size={20} className="mr-2" />
                     <div>
@@ -812,20 +809,20 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
 
             {/* Control Options */}
-            <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+            <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
               activeSection === 'controls' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
             }`}
               onFocus={() => setActiveSection('controls')}
               onBlur={() => setActiveSection(null)}
             >
-              <h2 className="text-lg font-semibold mb-4 text-gray-900">
+              <h2 className="text-lg font-semibold mb-3 text-gray-900">
                 Choose Control Option
                 <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
               </h2>
               <p className="text-sm text-gray-600 mb-4">Select one control option for your blind</p>
               
               {product?.controlTypes ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {/* Flatten all control types into a single list */}
                   {(() => {
                     const allControls = [];
@@ -915,7 +912,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                     
                     
                     return allControls.map(control => (
-                      <label key={control.id} className={`flex items-start p-4 border-2 rounded-xl cursor-pointer transition-all hover:shadow-md ${
+                      <label key={control.id} className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
                         config.controlOption === control.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
                       }`}>
                         <input
@@ -959,18 +956,18 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             {/* Rail Options - Only show if there are any enabled options */}
             {((product?.controlTypes?.valanceOptions && product.controlTypes.valanceOptions.filter(o => o.enabled).length > 0) || 
               (product?.controlTypes?.bottomRailOptions && product.controlTypes.bottomRailOptions.filter(o => o.enabled).length > 0)) && (
-              <div className={`bg-white rounded-2xl shadow-lg p-6 border transition-all ${
+              <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
                 activeSection === 'rails' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
               }`}
                 onFocus={() => setActiveSection('rails')}
                 onBlur={() => setActiveSection(null)}
               >
-                <h2 className="text-lg font-semibold mb-4 text-gray-900">
+                <h2 className="text-lg font-semibold mb-3 text-gray-900">
                   Rail Options
                   <span className="text-red-500 text-sm font-normal ml-2">* Required</span>
                 </h2>
                 
-                <div className="space-y-4">
+                <div className="space-y-2">
                 {/* Valance Options */}
                 {product?.controlTypes?.valanceOptions && product.controlTypes.valanceOptions.length > 0 && (
                   <div>
@@ -981,7 +978,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         setConfig(prev => ({ ...prev, valanceOption: e.target.value }));
                         setErrors(prev => ({ ...prev, valanceOption: '' }));
                       }}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
                         errors.valanceOption ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
@@ -1010,7 +1007,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         setConfig(prev => ({ ...prev, bottomRailOption: e.target.value }));
                         setErrors(prev => ({ ...prev, bottomRailOption: '' }));
                       }}
-                      className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
                         errors.bottomRailOption ? 'border-red-300' : 'border-gray-300'
                       }`}
                     >
@@ -1033,13 +1030,13 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             )}
 
             {/* Action Buttons - Mobile Responsive */}
-            <div className="space-y-3 md:space-y-0 md:flex md:gap-3">
+            <div className="space-y-2 md:space-y-0 md:flex md:gap-2">
               {/* Add to Cart Button - Only show for customers or guests */}
               {(!userRole || userRole === 'customer') ? (
                 <button
                   onClick={handleAddToCart}
                   disabled={!areMandatoryFieldsComplete()}
-                  className={`w-full md:flex-1 font-semibold py-4 px-4 md:px-6 rounded-xl transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
+                  className={`w-full md:flex-1 font-semibold py-3 px-4 md:px-5 rounded-lg transition-all transform shadow-lg flex items-center justify-center text-sm md:text-base ${
                     areMandatoryFieldsComplete()
                       ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:scale-[1.02] hover:shadow-xl cursor-pointer'
                       : 'bg-gray-400 text-gray-600 cursor-not-allowed'
@@ -1056,7 +1053,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   </span>
                 </button>
               ) : (
-                <div className="w-full md:flex-1 bg-gray-100 border border-gray-300 rounded-xl py-4 px-4 md:px-6 text-center">
+                <div className="w-full md:flex-1 bg-gray-100 border border-gray-300 rounded-lg py-3 px-4 md:px-5 text-center">
                   <p className="text-gray-600 font-medium">
                     Only customers can add items to cart
                   </p>
@@ -1069,7 +1066,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               {/* View Cart Button - Only show for customers or guests */}
               {(!userRole || userRole === 'customer') && (
                 <Link href="/cart" className="block w-full md:w-auto">
-                  <button className="w-full md:w-auto font-semibold py-4 px-4 md:px-6 rounded-xl transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
+                  <button className="w-full md:w-auto font-semibold py-3 px-4 md:px-5 rounded-lg transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
                     <ShoppingCart size={16} className="mr-1 md:mr-2 flex-shrink-0" />
                     <span>View Cart</span>
                     {itemCount > 0 && <span className="ml-1 md:ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-1 flex-shrink-0">({itemCount})</span>}
@@ -1080,7 +1077,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
             {/* Mandatory Fields Notice */}
             {!areMandatoryFieldsComplete() && (
-              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-700 text-sm">
                   <Info size={14} className="inline mr-1" />
                   Please complete all required fields: Room Type, Mount Type, Width, and Height.
@@ -1089,24 +1086,24 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             )}
 
             {/* Trust Badges */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white rounded-xl p-4 text-center">
-                <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-white rounded-lg p-3 text-center">
+                <Shield className="w-6 h-6 text-green-600 mx-auto mb-1" />
                 <p className="text-xs text-gray-600">100% Secure</p>
               </div>
-              <div className="bg-white rounded-xl p-4 text-center">
-                <Truck className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <div className="bg-white rounded-lg p-3 text-center">
+                <Truck className="w-6 h-6 text-blue-600 mx-auto mb-1" />
                 <p className="text-xs text-gray-600">Free Shipping</p>
               </div>
-              <div className="bg-white rounded-xl p-4 text-center">
-                <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+              <div className="bg-white rounded-lg p-3 text-center">
+                <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-1" />
                 <p className="text-xs text-gray-600">Quick Delivery</p>
               </div>
             </div>
           </div>
 
           {/* Right Side - Product Preview (fixed position, scrollable content) */}
-          <div className="lg:sticky lg:top-8 lg:h-[calc(100vh-4rem)] lg:overflow-y-auto lg:pr-4 space-y-6 
+          <div className="lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:overflow-y-auto lg:pr-4 space-y-3 
             [&::-webkit-scrollbar]:w-2
             [&::-webkit-scrollbar-track]:bg-gray-100
             [&::-webkit-scrollbar-track]:rounded-full
@@ -1114,15 +1111,15 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             [&::-webkit-scrollbar-thumb]:rounded-full
             [&::-webkit-scrollbar-thumb]:hover:bg-gray-400">
             {/* Header Card */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-              <div className="flex items-center mb-4">
-                <Sparkles className="text-blue-600 mr-2" size={24} />
-                <h1 className="text-2xl font-bold text-gray-900">Configure Your Perfect Blind</h1>
+            <div className="bg-white rounded-xl shadow-lg p-3 border border-gray-100">
+              <div className="flex items-center mb-2">
+                <Sparkles className="text-blue-600 mr-2" size={20} />
+                <h1 className="text-lg font-bold text-gray-900">Configure Your Perfect Blind</h1>
               </div>
-              <p className="text-gray-600">Customize every detail to match your style and needs</p>
+              <p className="text-sm text-gray-600">Customize every detail to match your style and needs</p>
               
               {/* Progress Steps */}
-              <div className="mt-6 flex items-center justify-between">
+              <div className="mt-3 flex items-center justify-between">
                 {[
                   { id: 'room', label: 'Room' },
                   { id: 'mount', label: 'Mount' },
@@ -1133,7 +1130,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 ].map((step, index, array) => (
                   <React.Fragment key={step.id}>
                     <div className="flex flex-col items-center">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
                         isStepCompleted(step.id)
                           ? 'bg-green-500 text-white'
                           : 'bg-gray-200 text-gray-400'
@@ -1152,8 +1149,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               </div>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-              <div className="mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+              <div className="mb-4">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900">{product?.name || 'Premium Roller Shades'}</h2>
@@ -1240,7 +1237,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               </div>
 
               {/* Shipping Info */}
-              <div className="mt-6 p-4 bg-blue-50 rounded-xl">
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <div className="flex items-center text-blue-700">
                   <Calendar size={20} className="mr-2" />
                   <div>
@@ -1252,9 +1249,9 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             </div>
 
             {/* Configuration Summary */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-              <h3 className="font-semibold text-gray-900 mb-4">Your Configuration</h3>
-              <div className="space-y-3">
+            <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
+              <h3 className="font-semibold text-gray-900 mb-3">Your Configuration</h3>
+              <div className="space-y-2">
                 {config.roomType && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Room:</span>

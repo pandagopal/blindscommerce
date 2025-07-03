@@ -58,7 +58,15 @@ export default function ProductConfiguratorPage() {
             const detailRes = await fetch(`/api/v2/commerce/products/${product.product_id}`);
             if (detailRes.ok) {
               const detailData = await detailRes.json();
-              setProduct(detailData.data || detailData);
+              const productToSet = detailData.data || detailData;
+              console.log('Setting product with:', {
+                hasData: !!detailData.data,
+                hasFabricOptions: !!productToSet.fabricOptions,
+                fabricCount: productToSet.fabricOptions?.length,
+                hasControlTypes: !!productToSet.controlTypes,
+                controlCount: productToSet.controlTypes?.length
+              });
+              setProduct(productToSet);
             } else {
               setProduct(product);
             }
