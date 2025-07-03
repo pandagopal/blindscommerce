@@ -32,6 +32,7 @@ interface ProductConfiguratorProps {
 
 export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole }: ProductConfiguratorProps) {
   const { itemCount } = useCart();
+  const [showZoom, setShowZoom] = useState(false);
   
   
   const [config, setConfig] = useState({
@@ -771,121 +772,158 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               <p className="text-sm text-gray-600 mb-4">Select one control option for your blind</p>
               
               {product?.controlTypes ? (
-                <div className="space-y-2">
-                  {/* Flatten all control types into a single list */}
-                  {(() => {
-                    const allControls = [];
-                    
-                    // Add lift systems
-                    if (product.controlTypes.liftSystems) {
-                      product.controlTypes.liftSystems.forEach(system => {
-                        if (system.enabled) {
-                          allControls.push({
-                            id: system.name.toLowerCase().replace(/\s+/g, '-'),
-                            name: system.name,
-                            category: 'Lift System',
-                            description: getControlDescription('liftSystem', system.name),
-                            price: system.price_adjustment
-                          });
-                        }
-                      });
-                    }
-                    
-                    // Add wand systems
-                    if (product.controlTypes.wandSystem) {
-                      product.controlTypes.wandSystem.forEach(system => {
-                        if (system.enabled) {
-                          allControls.push({
-                            id: system.name.toLowerCase().replace(/\s+/g, '-'),
-                            name: system.name,
-                            category: 'Wand System',
-                            description: getControlDescription('wandSystem', system.name),
-                            price: system.price_adjustment
-                          });
-                        }
-                      });
-                    }
-                    
-                    // Add string systems
-                    if (product.controlTypes.stringSystem) {
-                      product.controlTypes.stringSystem.forEach(system => {
-                        if (system.enabled) {
-                          allControls.push({
-                            id: system.name.toLowerCase().replace(/\s+/g, '-'),
-                            name: system.name,
-                            category: 'String System',
-                            description: getControlDescription('stringSystem', system.name),
-                            price: system.price_adjustment
-                          });
-                        }
-                      });
-                    }
-                    
-                    // Add remote controls
-                    if (product.controlTypes.remoteControl) {
-                      product.controlTypes.remoteControl.forEach(system => {
-                        if (system.enabled) {
-                          allControls.push({
-                            id: system.name.toLowerCase().replace(/\s+/g, '-'),
-                            name: system.name,
-                            category: 'Remote Control',
-                            description: getControlDescription('remoteControl', system.name),
-                            price: system.price_adjustment
-                          });
-                        }
-                      });
-                    }
-                    
-                    // Helper functions for descriptions and prices
-                    function getControlDescription(type, name) {
-                      const descriptions = {
-                        'liftSystem': {
-                          'Cordless': 'Child-safe cordless operation',
-                          'Continuous Loop': 'Smooth chain control system'
-                        },
-                        'wandSystem': {
-                          'Standard Wand': 'Easy twist wand control',
-                          'Extended Wand': 'Longer wand for high windows'
-                        },
-                        'stringSystem': {
-                          'String Lift': 'Traditional pull string operation',
-                          'Chain System': 'Durable chain operation'
-                        },
-                        'remoteControl': {
-                          'Basic Remote': 'Motorized with handheld remote',
-                          'Smart Home Compatible': 'Works with Alexa, Google Home & more'
-                        }
-                      };
-                      return descriptions[type]?.[name] || `${name} control option`;
-                    }
-                    
-                    
-                    return allControls.map(control => (
-                      <label key={control.id} className={`flex items-start p-3 border-2 rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                        config.controlOption === control.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}>
-                        <input
-                          type="radio"
-                          name="controlOption"
-                          value={control.id}
-                          checked={config.controlOption === control.id}
-                          onChange={(e) => {
-                            setConfig(prev => ({ ...prev, controlOption: e.target.value }));
-                            setErrors(prev => ({ ...prev, liftSystem: '' }));
-                          }}
-                          className="mt-1 text-blue-600 focus:ring-blue-500"
-                        />
-                        <div className="ml-3">
-                          <h4 className="font-medium text-gray-900">{control.name}</h4>
-                          <p className="text-sm text-gray-500">{control.category}</p>
-                          <p className="text-sm text-gray-600 mt-1">{control.description}</p>
-                          <p className="text-sm text-blue-600 font-medium mt-1">
-                            {control.price === 0 ? 'Standard (No additional cost)' : `+$${control.price.toFixed(2)}`}
-                          </p>
-                        </div>
-                      </label>
-                    ));
-                  })()}
+                <div className="space-y-3">
+                  {/* Lift Systems */}
+                  {product.controlTypes.liftSystems && product.controlTypes.liftSystems.some(s => s.enabled) && (
+                    <div className="border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Lift Systems</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {product.controlTypes.liftSystems
+                          .filter(system => system.enabled)
+                          .map(system => {
+                            const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
+                            return (
+                              <label key={controlId} className={`flex items-start p-2 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
+                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                                <input
+                                  type="radio"
+                                  name="controlOption"
+                                  value={controlId}
+                                  checked={config.controlOption === controlId}
+                                  onChange={(e) => {
+                                    setConfig(prev => ({ ...prev, controlOption: e.target.value }));
+                                    setErrors(prev => ({ ...prev, controlOption: '' }));
+                                  }}
+                                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                                />
+                                <div className="ml-2">
+                                  <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
+                                  <p className="text-xs text-gray-600">{system.name === 'Cordless' ? 'Child-safe' : 'Chain control'}</p>
+                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                    {system.price_adjustment === 0 ? 'Standard' : `+$${system.price_adjustment}`}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Wand System */}
+                  {product.controlTypes.wandSystem && product.controlTypes.wandSystem.some(s => s.enabled) && (
+                    <div className="border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Wand System</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {product.controlTypes.wandSystem
+                          .filter(system => system.enabled)
+                          .map(system => {
+                            const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
+                            return (
+                              <label key={controlId} className={`flex items-start p-2 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
+                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                                <input
+                                  type="radio"
+                                  name="controlOption"
+                                  value={controlId}
+                                  checked={config.controlOption === controlId}
+                                  onChange={(e) => {
+                                    setConfig(prev => ({ ...prev, controlOption: e.target.value }));
+                                    setErrors(prev => ({ ...prev, controlOption: '' }));
+                                  }}
+                                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                                />
+                                <div className="ml-2">
+                                  <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
+                                  <p className="text-xs text-gray-600">{system.name === 'Standard Wand' ? 'Twist control' : 'Extended reach'}</p>
+                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                    {system.price_adjustment === 0 ? 'Standard' : `+$${system.price_adjustment}`}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* String System */}
+                  {product.controlTypes.stringSystem && product.controlTypes.stringSystem.some(s => s.enabled) && (
+                    <div className="border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">String System</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {product.controlTypes.stringSystem
+                          .filter(system => system.enabled)
+                          .map(system => {
+                            const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
+                            return (
+                              <label key={controlId} className={`flex items-start p-2 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
+                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                                <input
+                                  type="radio"
+                                  name="controlOption"
+                                  value={controlId}
+                                  checked={config.controlOption === controlId}
+                                  onChange={(e) => {
+                                    setConfig(prev => ({ ...prev, controlOption: e.target.value }));
+                                    setErrors(prev => ({ ...prev, controlOption: '' }));
+                                  }}
+                                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                                />
+                                <div className="ml-2">
+                                  <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
+                                  <p className="text-xs text-gray-600">{system.name === 'String Lift' ? 'Pull string' : 'Chain operation'}</p>
+                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                    {system.price_adjustment === 0 ? 'Standard' : `+$${system.price_adjustment}`}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Remote Control */}
+                  {product.controlTypes.remoteControl && product.controlTypes.remoteControl.some(s => s.enabled) && (
+                    <div className="border border-gray-200 rounded-lg p-3">
+                      <h3 className="text-sm font-medium text-gray-700 mb-2">Remote Control</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {product.controlTypes.remoteControl
+                          .filter(system => system.enabled)
+                          .map(system => {
+                            const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
+                            return (
+                              <label key={controlId} className={`flex items-start p-2 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
+                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                                <input
+                                  type="radio"
+                                  name="controlOption"
+                                  value={controlId}
+                                  checked={config.controlOption === controlId}
+                                  onChange={(e) => {
+                                    setConfig(prev => ({ ...prev, controlOption: e.target.value }));
+                                    setErrors(prev => ({ ...prev, controlOption: '' }));
+                                  }}
+                                  className="mt-1 text-blue-600 focus:ring-blue-500"
+                                />
+                                <div className="ml-2">
+                                  <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
+                                  <p className="text-xs text-gray-600">{system.name === 'Basic Remote' ? 'Handheld remote' : 'Smart home'}</p>
+                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                    {system.price_adjustment === 0 ? 'Standard' : `+$${system.price_adjustment}`}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8">
@@ -1137,7 +1175,10 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               {/* Product Preview */}
               <div className="relative bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl overflow-hidden shadow-inner" style={{ height: '400px' }}>
                 <div className="absolute top-4 right-4 z-10">
-                  <button className="bg-white/90 backdrop-blur text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all hover:bg-white">
+                  <button 
+                    onClick={() => setShowZoom(true)}
+                    className="bg-white/90 backdrop-blur text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all hover:bg-white"
+                  >
                     <ZoomIn size={16} className="mr-2" />
                     Zoom In
                   </button>
@@ -1245,6 +1286,96 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
           </div>
         </div>
       </div>
+
+      {/* Zoom Modal */}
+      {showZoom && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => setShowZoom(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative z-10 max-w-5xl max-h-[90vh] w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Product Preview</h3>
+              <button
+                onClick={() => setShowZoom(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Image Container */}
+            <div className="p-4 bg-gray-50">
+              <div className="relative bg-white rounded-lg shadow-inner overflow-hidden" style={{ height: '70vh' }}>
+                {(() => {
+                  // Get the current image URL
+                  let imageUrl = null;
+                  
+                  // Check if a fabric is selected and has an image
+                  if (config.fabricType && product?.fabricOptions) {
+                    const selectedFabric = product.fabricOptions.find(
+                      f => f.fabric_option_id.toString() === config.fabricType
+                    );
+                    if (selectedFabric?.fabric_image_url) {
+                      imageUrl = selectedFabric.fabric_image_url;
+                    }
+                  }
+                  
+                  // Default to product image if no fabric selected
+                  if (!imageUrl && product?.images && product.images.length > 0) {
+                    imageUrl = product.images[0].image_url;
+                  }
+                  
+                  if (imageUrl) {
+                    return (
+                      <img 
+                        src={imageUrl}
+                        alt={product?.name || 'Product preview'}
+                        className="w-full h-full object-contain"
+                      />
+                    );
+                  }
+                  
+                  // Fallback placeholder
+                  return (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                      <div className="text-center">
+                        <div className="text-8xl mb-4">🏠</div>
+                        <p className="text-xl font-medium">No image available</p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+            
+            {/* Footer with product info */}
+            <div className="p-4 bg-gray-50 border-t">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-semibold text-gray-900">{product?.name || 'Premium Roller Shades'}</h4>
+                  {config.fabricType && product?.fabricOptions && (
+                    <p className="text-sm text-gray-600">
+                      Fabric: {product.fabricOptions.find(f => f.fabric_option_id.toString() === config.fabricType)?.fabric_name || 'Selected'}
+                    </p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-gray-900">${calculatePrice().toFixed(2)}</p>
+                  <p className="text-sm text-gray-500">Current configuration</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
