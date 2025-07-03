@@ -443,8 +443,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold mb-1 text-gray-900">Inside Mount</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Provide exact window opening dimensions. There will be visible light gaps of approximately 1/2 inch on both sides of your roller shade to allow clearance for operating.
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        Provide exact window opening dimensions. There will be visible light gaps of approximately 1/4 on inch on non-operting side,and 1/2 inch on operting side of your roller shade to allow clearance for operating.
                       </p>
                     </div>
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
@@ -470,7 +470,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                     </div>
                     <div className="flex-1">
                       <h3 className="font-semibold mb-1 text-gray-900">Outside Mount</h3>
-                      <p className="text-sm text-gray-600 leading-relaxed">
+                      <p className="text-xs text-gray-600 leading-relaxed">
                         Provide the exact size of your shade, not the window. Because the fabric is narrower than the roller, you should add a minimum of 1½ inch to width.
                       </p>
                     </div>
@@ -647,8 +647,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   <div className="text-xs text-blue-700">
                     <p className="font-medium">Measurement Instructions:</p>
                     <ul className="space-y-1 ml-2 mt-1">
-                      <li>• Measure the exact window opening</li>
-                      <li>• Enter precise dimensions for best fit</li>
+                      <li>• Enter precise dimensions for best fit(-1/4 inches)</li>
                     </ul>
                   </div>
                 </div>
@@ -686,15 +685,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                     ))}
                   </div>
 
-                  {/* Fabric Options for Active Type */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Fabric Options for Active Type - Simplified to Image and Name only */}
+                  <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {fabricTypes
                       .find(ft => ft.type === activeFabricType)
                       ?.fabrics.map((fabric) => {
-                        // Find pricing for this fabric
-                        const fabricPricing = product?.fabricPricing?.find(p => p.fabric_option_id === fabric.fabric_option_id);
-                        const pricePerSqft = fabricPricing?.price_per_sqft || 0;
-                        
                         // Generate background class based on fabric type
                         const getBgClass = (fabricType) => {
                           switch(fabricType?.toLowerCase()) {
@@ -708,64 +703,38 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           }
                         };
                         
-                        // Get fabric type description
-                        const getFabricTypeDescription = (fabricType) => {
-                          switch(fabricType?.toLowerCase()) {
-                            case 'sheer': return 'Allows natural light while maintaining privacy';
-                            case 'blackout': return 'Blocks 99% of light - perfect for bedrooms and media rooms';
-                            case 'colored': return 'Standard colored fabrics with good light filtering';
-                            case 'woven': return 'Textured fabrics add depth and sophistication';
-                            case 'natural': return 'Eco-friendly natural fibers with organic appeal';
-                            case 'designer': return 'Premium patterns and textures for luxury finish';
-                            default: return '';
-                          }
-                        };
-                        
                         return (
                           <div
                             key={fabric.fabric_option_id}
-                            className={`border-2 rounded-lg p-3 cursor-pointer transition-all hover:shadow-md ${
+                            className={`cursor-pointer transition-all hover:scale-105 ${
                               config.fabricType === fabric.fabric_option_id.toString()
-                                ? 'border-blue-500 bg-blue-50 shadow-md'
-                                : 'border-gray-200 hover:border-gray-300'
+                                ? 'ring-2 ring-blue-500 ring-offset-2 rounded-lg'
+                                : ''
                             }`}
                             onClick={() => {
                               setConfig(prev => ({ ...prev, fabricType: fabric.fabric_option_id.toString() }));
                               setErrors(prev => ({ ...prev, fabricType: '' }));
                             }}
                           >
-                            <div className="flex items-start space-x-3">
-                              <div className={`w-14 h-14 rounded-lg flex items-center justify-center overflow-hidden border-2 ${
+                            <div className="space-y-2">
+                              <div className={`aspect-square rounded-lg overflow-hidden border-2 ${
                                 config.fabricType === fabric.fabric_option_id.toString() ? 'border-blue-500' : 'border-gray-200'
                               }`}>
                                 {fabric.fabric_image_url ? (
                                   <img 
                                     src={fabric.fabric_image_url} 
                                     alt={fabric.fabric_name}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-200"
                                   />
                                 ) : (
                                   <div className={`w-full h-full bg-gradient-to-br ${getBgClass(fabric.fabric_type)} flex items-center justify-center`}>
-                                    <div className="w-10 h-10 bg-white/80 rounded shadow-sm"></div>
+                                    <div className="w-3/4 h-3/4 bg-white/80 rounded shadow-sm"></div>
                                   </div>
                                 )}
                               </div>
-                              <div className="flex-1">
-                                <h3 className="font-semibold mb-1 text-gray-900">{fabric.fabric_name}</h3>
-                                <p className="text-sm text-gray-600 leading-relaxed mb-2">
-                                  {fabric.description || getFabricTypeDescription(fabric.fabric_type)}
-                                </p>
-                                {pricePerSqft > 0 && (
-                                  <p className="text-sm text-blue-600 font-medium">
-                                    +${parseFloat(pricePerSqft).toFixed(2)}/sq ft
-                                  </p>
-                                )}
-                              </div>
-                              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                config.fabricType === fabric.fabric_option_id.toString() ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                              }`}>
-                                {config.fabricType === fabric.fabric_option_id.toString() && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                              </div>
+                              <p className="text-xs text-center font-medium text-gray-700 truncate px-1">
+                                {fabric.fabric_name}
+                              </p>
                             </div>
                           </div>
                         );
@@ -784,26 +753,6 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   <Info size={14} className="mr-1" />
                   {errors.fabricType}
                 </p>
-              )}
-
-              {config.fabricType && (
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center text-blue-700">
-                    <Info size={20} className="mr-2" />
-                    <div>
-                      <p className="font-medium text-sm">
-                        {(() => {
-                          const selectedFabric = product?.fabricOptions?.find(f => f.fabric_option_id.toString() === config.fabricType);
-                          if (selectedFabric) {
-                            return selectedFabric.description || `${selectedFabric.fabric_name} - ${selectedFabric.fabric_type} fabric option selected.`;
-                          }
-                          return 'Fabric option selected.';
-                        })()}
-                      </p>
-                      <p className="text-xs text-blue-600 mt-1">Free fabric swatches available upon request</p>
-                    </div>
-                  </div>
-                </div>
               )}
             </div>
 
