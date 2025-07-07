@@ -377,22 +377,52 @@ export class CommerceHandler extends BaseHandler {
     const searchParams = this.getSearchParams(req);
     const sessionId = searchParams.get('sessionId');
     
-    const data = await this.getValidatedBody(req, AddToCartSchema);
+    try {
+      const body = await req.json();
+      console.log('Raw request body:', JSON.stringify(body, null, 2));
+      
+      // Manually validate to see what's happening
+      let data;
+      try {
+        data = AddToCartSchema.parse(body);
+      } catch (validationError) {
+        console.error('Validation error details:', validationError);
+        throw new ApiError(`Validation error: ${validationError.message}`, 400);
+      }
+      
+      console.log('AddToCart validated data:', {
+        userId: user?.user_id,
+        sessionId: !user ? sessionId : 'authenticated user',
+        data: JSON.stringify(data, null, 2)
+      });
 
-    const result = await this.cartService.addToCart({
-      userId: user?.user_id,
-      sessionId: !user ? sessionId || undefined : undefined,
-      productId: data.productId,
-      vendorId: data.vendorId,
-      quantity: data.quantity,
-      configuration: data.configuration,
-    });
+      const result = await this.cartService.addToCart({
+        userId: user?.user_id,
+        sessionId: !user ? sessionId || undefined : undefined,
+        productId: data.productId,
+        vendorId: data.vendorId,
+        quantity: data.quantity,
+        configuration: data.configuration,
+      });
 
-    if (!result) {
-      throw new ApiError('Failed to add item to cart', 500);
+      if (!result) {
+        throw new ApiError('Failed to add item to cart', 500);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('AddToCart error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        isApiError: error instanceof ApiError,
+        error
+      });
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(`Cart error: ${error.message}`, 500);
     }
-
-    return result;
   }
 
   private async updateCartItem(id: string, req: NextRequest, user: any) {

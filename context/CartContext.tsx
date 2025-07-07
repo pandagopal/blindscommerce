@@ -301,33 +301,94 @@ export function CartProvider({ children }: CartProviderProps) {
     try {
       // Check user role - only customers and guests can add to cart
       const response = await fetch('/api/v2/auth/me');
+      console.log('Auth check response status:', response.status);
       if (response.ok) {
         const result = await response.json();
+        console.log('Auth check full result:', JSON.stringify(result, null, 2));
         const data = result.data || result;
-        if (data.user && data.user.role !== 'customer') {
+        // Check if user exists and their role
+        const userRole = data.user?.role || data.role;
+        console.log('Extracted user role:', userRole);
+        if (userRole && userRole !== 'customer') {
           // User is logged in but not a customer
           alert('Only customers can add items to cart. Please log in with a customer account.');
           return;
         }
+      } else {
+        console.log('Auth check failed:', response.status, 'Treating as guest user');
       }
       // If response is not ok, user is not authenticated (guest user) - allow them to proceed
       
       const authenticated = await isAuthenticated();
       
       if (authenticated) {
+        // Extract only the fields the API expects
+        const productId = newItem.productId || newItem.product_id;
+        const vendorId = newItem.vendorId || newItem.vendor_id;
+        
+        // Validate required fields
+        if (!productId || !vendorId) {
+          console.error('Missing required fields:', { productId, vendorId, newItem });
+          alert('Unable to add item to cart. Product information is incomplete.');
+          return;
+        }
+        
+        const apiData = {
+          productId: parseInt(productId),
+          vendorId: parseInt(vendorId),
+          quantity: newItem.quantity || 1,
+          configuration: newItem.configuration || {
+            width: newItem.width?.toString() || '0',
+            height: newItem.height?.toString() || '0',
+            widthFraction: newItem.widthFraction?.toString() || '0',
+            heightFraction: newItem.heightFraction?.toString() || '0',
+            roomType: newItem.roomType || '',
+            mountType: newItem.mountType || '',
+            fabricType: newItem.fabricType || '',
+            fabricName: newItem.fabricName || '',
+            colorOption: newItem.colorOption || '',
+            controlOption: newItem.controlOption || newItem.controlType || '',
+            valanceOption: newItem.valanceOption || '',
+            bottomRailOption: newItem.bottomRailOption || ''
+          }
+        };
+        
+        console.log('Sending to cart API:', apiData);
+        
         const response = await fetch('/api/v2/commerce/cart/add', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newItem)
+          body: JSON.stringify(apiData)
         });
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
-            const data = result.data || result;
-            setItems(data.items || []);
+            // After successfully adding item, reload the entire cart
+            const cartResponse = await fetch('/api/v2/commerce/cart');
+            if (cartResponse.ok) {
+              const cartResult = await cartResponse.json();
+              if (cartResult.success) {
+                const cartData = cartResult.data || cartResult;
+                setItems(cartData.items || []);
+              }
+            }
           }
         } else {
           // API error adding item
+          let errorMessage = 'Failed to add item to cart';
+          try {
+            const errorData = await response.json();
+            console.error('Error adding to cart:', {
+              status: response.status,
+              statusText: response.statusText,
+              errorData,
+              sentData: apiData
+            });
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch (e) {
+            console.error('Error parsing error response:', e);
+          }
+          alert(`${errorMessage}. Please try again.`);
         }
       } else {
         // Handle guest cart with localStorage

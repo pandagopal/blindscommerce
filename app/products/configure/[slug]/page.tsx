@@ -133,6 +133,9 @@ export default function ProductConfiguratorPage() {
       cart_item_id: Date.now(), // Temporary ID until saved to database
       cart_id: 0, // Will be set by cart context
       product_id: product.product_id,
+      productId: product.product_id, // API expects productId (camelCase)
+      vendor_id: product.vendor_id, // Add vendor_id for the API
+      vendorId: product.vendor_id, // API expects vendorId (camelCase)
       quantity: 1,
       width: parseFloat(config.width || 0),
       height: parseFloat(config.height || 0),
@@ -146,6 +149,21 @@ export default function ProductConfiguratorPage() {
       ...config, // This includes all fields from the configurator
       controlType: config.controlOption, // Map controlOption to controlType for consistency
       fabricName: fabricName, // Add the fabric name for display
+      configuration: {
+        roomType: config.roomType,
+        mountType: config.mountType,
+        width: config.width,
+        height: config.height,
+        widthFraction: config.widthFraction,
+        heightFraction: config.heightFraction,
+        fabricType: config.fabricType,
+        fabricOption: config.fabricOption,
+        colorOption: config.colorOption,
+        liftSystem: config.liftSystem,
+        controlOption: config.controlOption,
+        valanceOption: config.valanceOption,
+        bottomRailOption: config.bottomRailOption
+      } // API expects configuration object
     };
     
     if (editCartItemId) {

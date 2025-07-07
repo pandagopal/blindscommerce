@@ -68,19 +68,26 @@ export class CartService extends BaseService {
       return this.getEmptyCart();
     }
 
-    // Build WHERE clause
-    const whereConditions: string[] = [];
-    const whereParams: any[] = [];
-
+    // First get the cart
+    let cartId: number | null = null;
+    
     if (userId) {
-      whereConditions.push('ci.user_id = ?');
-      whereParams.push(userId);
+      const [cart] = await this.executeQuery<{cart_id: number}>(
+        'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
+        [userId]
+      );
+      cartId = cart?.cart_id || null;
     } else if (sessionId) {
-      whereConditions.push('ci.session_id = ?');
-      whereParams.push(sessionId);
+      const [cart] = await this.executeQuery<{cart_id: number}>(
+        'SELECT cart_id FROM carts WHERE session_id = ? AND status = "active" LIMIT 1',
+        [sessionId]
+      );
+      cartId = cart?.cart_id || null;
     }
 
-    const whereClause = whereConditions.join(' AND ');
+    if (!cartId) {
+      return this.getEmptyCart();
+    }
 
     // Get cart items with all product and pricing details
     const itemsQuery = `
@@ -91,14 +98,14 @@ export class CartService extends BaseService {
         p.sku as product_sku,
         p.primary_image_url as product_image,
         p.base_price,
+        JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')) as vendor_id,
         vi.business_name as vendor_name,
         vp.vendor_price,
         vp.quantity_available as stock_quantity,
         
-        -- Calculate final price with discounts
+        -- Calculate final price
         GREATEST(0,
           COALESCE(vp.vendor_price, p.base_price) * ci.quantity
-          - COALESCE(ci.discount_amount, 0)
         ) as final_price,
         
         -- Stock status
@@ -109,15 +116,16 @@ export class CartService extends BaseService {
         
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.product_id
-      JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-      JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
-      WHERE ${whereClause}
+      JOIN vendor_products vp ON ci.product_id = vp.product_id 
+        AND vp.vendor_id = JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId'))
+      JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
+      WHERE ci.cart_id = ?
       ORDER BY ci.created_at DESC
     `;
 
-    const rawItems = await this.executeQuery<CartItemWithDetails>(itemsQuery, whereParams);
+    const rawItems = await this.executeQuery<CartItemWithDetails>(itemsQuery, [cartId]);
     const items = parseArrayPrices(rawItems, [
-      'unit_price', 'vendor_price', 'base_price', 'discount_amount', 'tax_amount', 'final_price'
+      'price_at_add', 'vendor_price', 'base_price', 'seasonal_discount_amount', 'final_price'
     ]);
 
     if (items.length === 0) {
@@ -132,7 +140,7 @@ export class CartService extends BaseService {
     items.forEach(item => {
       const itemSubtotal = parseDecimal(item.vendor_price || item.base_price) * item.quantity;
       subtotal += itemSubtotal;
-      totalDiscount += parseDecimal(item.discount_amount);
+      totalDiscount += parseDecimal(item.seasonal_discount_amount || 0);
 
       // Vendor breakdown
       if (!vendorMap.has(item.vendor_id)) {
@@ -147,7 +155,7 @@ export class CartService extends BaseService {
 
       const vendor = vendorMap.get(item.vendor_id);
       vendor.subtotal += itemSubtotal;
-      vendor.discount += item.discount_amount || 0;
+      vendor.discount += item.seasonal_discount_amount || 0;
       vendor.itemCount++;
     });
 
@@ -182,28 +190,68 @@ export class CartService extends BaseService {
       configuration?: any;
     }
   ): Promise<CartItemWithDetails | null> {
+    console.log('CartService.addToCart called with:', JSON.stringify(data, null, 2));
+    
     const pool = await getPool();
     const connection = await pool.getConnection();
 
     try {
       await connection.beginTransaction();
 
+      // First, get or create cart
+      let cartId: number;
+      
+      if (data.userId) {
+        // For authenticated users
+        const [existingCart] = await connection.execute<RowDataPacket[]>(
+          'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
+          [data.userId]
+        );
+        
+        if (existingCart[0]) {
+          cartId = existingCart[0].cart_id;
+        } else {
+          const [newCart] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO carts (user_id, status) VALUES (?, "active")',
+            [data.userId]
+          );
+          cartId = newCart.insertId;
+        }
+      } else if (data.sessionId) {
+        // For guest users
+        const [existingCart] = await connection.execute<RowDataPacket[]>(
+          'SELECT cart_id FROM carts WHERE session_id = ? AND status = "active" LIMIT 1',
+          [data.sessionId]
+        );
+        
+        if (existingCart[0]) {
+          cartId = existingCart[0].cart_id;
+        } else {
+          const [newCart] = await connection.execute<ResultSetHeader>(
+            'INSERT INTO carts (session_id, status) VALUES (?, "active")',
+            [data.sessionId]
+          );
+          cartId = newCart.insertId;
+        }
+      } else {
+        throw new Error('User ID or Session ID required');
+      }
+
       // Check if item already exists in cart
+      // For now, just check product_id and vendor_id to avoid complex configuration matching
       const existingQuery = `
         SELECT cart_item_id, quantity 
         FROM cart_items 
-        WHERE ${data.userId ? 'user_id = ?' : 'session_id = ?'}
+        WHERE cart_id = ?
           AND product_id = ? 
-          AND vendor_id = ?
-          AND configuration = ?
+          AND JSON_UNQUOTE(JSON_EXTRACT(configuration, '$.vendorId')) = ?
         LIMIT 1
       `;
 
       const existingParams = [
-        data.userId || data.sessionId,
+        cartId,
         data.productId,
-        data.vendorId,
-        JSON.stringify(data.configuration || {})
+        data.vendorId.toString()
       ];
 
       const [existing] = await connection.execute<RowDataPacket[]>(
@@ -235,23 +283,26 @@ export class CartService extends BaseService {
 
         const price = priceResult[0]?.price || 0;
 
-        // Insert new item
+        // Insert new item - include vendor_id in configuration
+        const configWithVendor = {
+          ...(data.configuration || {}),
+          vendorId: data.vendorId
+        };
+        
         const insertQuery = `
           INSERT INTO cart_items (
-            user_id, session_id, product_id, vendor_id, 
-            quantity, configuration, price, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            cart_id, product_id, quantity, configuration, 
+            price_at_add, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
         `;
 
         const [result] = await connection.execute<ResultSetHeader>(
           insertQuery,
           [
-            data.userId || null,
-            data.sessionId || null,
+            cartId,
             data.productId,
-            data.vendorId,
             data.quantity,
-            JSON.stringify(data.configuration || {}),
+            JSON.stringify(configWithVendor),
             price
           ]
         );
@@ -270,6 +321,7 @@ export class CartService extends BaseService {
           p.sku as product_sku,
           p.primary_image_url as product_image,
           p.base_price,
+          JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')) as vendor_id,
           vi.business_name as vendor_name,
           vp.vendor_price,
           vp.quantity_available as stock_quantity,
@@ -277,8 +329,9 @@ export class CartService extends BaseService {
           CASE WHEN vp.quantity_available >= ci.quantity THEN 1 ELSE 0 END as in_stock
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
-        JOIN vendor_products vp ON ci.product_id = vp.product_id AND ci.vendor_id = vp.vendor_id
-        JOIN vendor_info vi ON ci.vendor_id = vi.vendor_info_id
+        JOIN vendor_products vp ON ci.product_id = vp.product_id 
+          AND vp.vendor_id = JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId'))
+        JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
         WHERE ci.cart_item_id = ?`,
         [cartItemId]
       );
@@ -305,19 +358,25 @@ export class CartService extends BaseService {
       return this.removeFromCart(cartItemId, userId);
     }
 
-    const whereConditions = ['cart_item_id = ?'];
-    const params = [quantity, cartItemId];
-
+    // If userId provided, verify the cart item belongs to user's cart
     if (userId) {
-      whereConditions.push('user_id = ?');
-      params.push(userId);
+      const [item] = await this.executeQuery<{cart_id: number}>(
+        `SELECT ci.cart_id FROM cart_items ci 
+         JOIN carts c ON ci.cart_id = c.cart_id 
+         WHERE ci.cart_item_id = ? AND c.user_id = ?`,
+        [cartItemId, userId]
+      );
+      
+      if (!item) {
+        return false; // Item doesn't belong to user
+      }
     }
 
     const result = await this.executeMutation(
       `UPDATE cart_items 
        SET quantity = ?, updated_at = NOW() 
-       WHERE ${whereConditions.join(' AND ')}`,
-      params
+       WHERE cart_item_id = ?`,
+      [quantity, cartItemId]
     );
 
     return result.affectedRows > 0;
@@ -330,17 +389,23 @@ export class CartService extends BaseService {
     cartItemId: number,
     userId?: number
   ): Promise<boolean> {
-    const whereConditions = ['cart_item_id = ?'];
-    const params = [cartItemId];
-
+    // If userId provided, verify the cart item belongs to user's cart
     if (userId) {
-      whereConditions.push('user_id = ?');
-      params.push(userId);
+      const [item] = await this.executeQuery<{cart_id: number}>(
+        `SELECT ci.cart_id FROM cart_items ci 
+         JOIN carts c ON ci.cart_id = c.cart_id 
+         WHERE ci.cart_item_id = ? AND c.user_id = ?`,
+        [cartItemId, userId]
+      );
+      
+      if (!item) {
+        return false; // Item doesn't belong to user
+      }
     }
 
     const result = await this.executeMutation(
-      `DELETE FROM cart_items WHERE ${whereConditions.join(' AND ')}`,
-      params
+      `DELETE FROM cart_items WHERE cart_item_id = ?`,
+      [cartItemId]
     );
 
     return result.affectedRows > 0;
@@ -352,20 +417,28 @@ export class CartService extends BaseService {
   async clearCart(userId?: number, sessionId?: string): Promise<boolean> {
     if (!userId && !sessionId) return false;
 
-    const whereConditions: string[] = [];
-    const params: any[] = [];
-
+    // Get the cart first
+    let cartId: number | null = null;
+    
     if (userId) {
-      whereConditions.push('user_id = ?');
-      params.push(userId);
+      const [cart] = await this.executeQuery<{cart_id: number}>(
+        'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
+        [userId]
+      );
+      cartId = cart?.cart_id || null;
     } else if (sessionId) {
-      whereConditions.push('session_id = ?');
-      params.push(sessionId);
+      const [cart] = await this.executeQuery<{cart_id: number}>(
+        'SELECT cart_id FROM carts WHERE session_id = ? AND status = "active" LIMIT 1',
+        [sessionId]
+      );
+      cartId = cart?.cart_id || null;
     }
 
+    if (!cartId) return false;
+
     const result = await this.executeMutation(
-      `DELETE FROM cart_items WHERE ${whereConditions.join(' AND ')}`,
-      params
+      'DELETE FROM cart_items WHERE cart_id = ?',
+      [cartId]
     );
 
     return result.affectedRows > 0;
