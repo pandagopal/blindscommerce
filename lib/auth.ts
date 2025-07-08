@@ -32,7 +32,11 @@ export async function generateToken(user: User): Promise<string> {
     role: user.role || 'customer'
   };
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'Blinds_secret');
+  const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  const secret = new TextEncoder().encode(jwtSecret);
   const alg = 'HS256';
 
   const token = await new jose.SignJWT(payload)
@@ -63,7 +67,11 @@ export async function verifyToken(tokenOrRequest: string | NextRequest): Promise
       }
     }
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'Blinds_secret');
+    const jwtSecret = process.env.JWT_SECRET;
+  if (!jwtSecret) {
+    throw new Error('JWT_SECRET environment variable is not set');
+  }
+  const secret = new TextEncoder().encode(jwtSecret);
     const { payload } = await jose.jwtVerify(token, secret);
     return payload;
   } catch (error) {
@@ -112,42 +120,42 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
-    // FIXED: Direct database query to avoid circular dependency with V2 API
-    const { getPool } = await import('@/lib/db');
-    const pool = await getPool();
-    const [rows] = await pool.execute<any[]>(
-      `SELECT 
-        u.user_id,
-        u.email,
-        u.first_name,
-        u.last_name,
-        u.phone,
-        u.role,
-        u.is_active,
-        vi.vendor_info_id as vendor_id
-      FROM users u
-      LEFT JOIN vendor_info vi ON u.user_id = vi.user_id
-      WHERE u.user_id = ? AND u.is_active = 1`,
-      [decoded.userId]
-    );
+    // Use the userService to get user data to follow proper architecture
+    // This avoids direct database calls from auth layer
+    const { userService } = await import('@/lib/services/singletons');
+    
+    try {
+      const userData = await userService.getUserById(decoded.userId);
+      
+      if (!userData || userData.is_active !== 1) {
+        return null;
+      }
 
-    if (rows.length === 0) {
+      // Get vendor info if applicable
+      let vendorId = null;
+      if (userData.role === 'vendor' || userData.role === 'sales_representative') {
+        const [vendorInfo] = await userService.raw(
+          'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+          [decoded.userId]
+        );
+        vendorId = vendorInfo?.vendor_info_id || null;
+      }
+
+      // Transform to expected format
+      return {
+        userId: userData.user_id,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        phone: userData.phone,
+        isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
+        role: userData.role,
+        vendorId: vendorId
+      };
+    } catch (error) {
+      console.error('Error fetching user data:', error);
       return null;
     }
-
-    const userData = rows[0];
-
-    // Transform to expected format
-    return {
-      userId: userData.user_id,
-      email: userData.email,
-      firstName: userData.first_name,
-      lastName: userData.last_name,
-      phone: userData.phone,
-      isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
-      role: userData.role,
-      vendorId: userData.vendor_id
-    };
   } catch (error) {
     console.error('Error getting current user:', error);
     return null;

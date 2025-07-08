@@ -77,6 +77,7 @@ interface CartContextType {
   addItem: (item: CartItem) => Promise<void>;
   removeItem: (cart_item_id: number) => Promise<void>;
   updateQuantity: (cart_item_id: number, quantity: number) => Promise<void>;
+  updateItem: (cart_item_id: number, item: CartItem) => Promise<void>;
   clearCart: () => Promise<void>;
   itemCount: number;
   subtotal: number;
@@ -108,6 +109,7 @@ const CartContext = createContext<CartContextType>({
   addItem: async () => {},
   removeItem: async () => {},
   updateQuantity: async () => {},
+  updateItem: async () => {},
   clearCart: async () => {},
   itemCount: 0,
   subtotal: 0,
@@ -513,6 +515,73 @@ export function CartProvider({ children }: CartProviderProps) {
     }
   };
 
+  // Update an entire cart item (for editing)
+  const updateItem = async (cart_item_id: number, newItem: CartItem) => {
+    try {
+      // Check user role - only customers and guests can modify cart
+      const response = await fetch('/api/v2/auth/me');
+      if (response.ok) {
+        const result = await response.json();
+        const data = result.data || result;
+        if (data.user && data.user.role !== 'customer') {
+          alert('Only customers can modify cart items. Please log in with a customer account.');
+          return;
+        }
+      }
+      
+      const authenticated = await isAuthenticated();
+      
+      if (authenticated) {
+        // Extract configuration from newItem
+        const configuration = {
+          roomType: newItem.roomType || '',
+          mountType: newItem.mountType || '',
+          width: newItem.width?.toString() || '0',
+          height: newItem.height?.toString() || '0',
+          widthFraction: newItem.widthFraction?.toString() || '0',
+          heightFraction: newItem.heightFraction?.toString() || '0',
+          fabricType: newItem.fabricType || '',
+          fabricName: newItem.fabricName || '',
+          colorOption: newItem.colorOption || '',
+          controlOption: newItem.controlOption || newItem.controlType || '',
+          valanceOption: newItem.valanceOption || '',
+          bottomRailOption: newItem.bottomRailOption || ''
+        };
+        
+        const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/full`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            quantity: newItem.quantity || 1,
+            configuration
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const cartData = result.data || result;
+            setItems(cartData.items || []);
+          }
+        } else {
+          alert('Failed to update cart item. Please try again.');
+        }
+      } else {
+        // Handle guest cart update
+        const updatedItems = items.map(item => 
+          item.cart_item_id === cart_item_id 
+            ? { ...newItem, cart_item_id } // Keep the same cart_item_id
+            : item
+        );
+        setItems(updatedItems);
+        saveGuestCart(updatedItems);
+      }
+    } catch (error) {
+      console.error('Error updating cart item:', error);
+      alert('Failed to update cart item. Please try again.');
+    }
+  };
+
   // Clear cart
   const clearCart = async () => {
     try {
@@ -598,6 +667,7 @@ export function CartProvider({ children }: CartProviderProps) {
         addItem,
         removeItem,
         updateQuantity,
+        updateItem,
         clearCart,
         itemCount,
         subtotal,

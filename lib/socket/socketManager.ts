@@ -1,3 +1,16 @@
+/**
+ * Socket Manager for Real-time Communication
+ * 
+ * NOTE: This service requires direct database access and does not use V2 API because:
+ * 1. Real-time operations need minimal latency
+ * 2. Socket connections maintain persistent state
+ * 3. Authentication happens at connection time, not per-request
+ * 4. Bulk operations and broadcasts need efficient DB access
+ * 5. This is a server-side service, not an API endpoint
+ * 
+ * This is an acceptable exception to the V2 API migration pattern.
+ */
+
 import { Server, Socket } from 'socket.io';
 import { getPool } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';

@@ -25,6 +25,11 @@ const UpdateCartSchema = z.object({
   quantity: z.number().min(0),
 });
 
+const UpdateCartItemSchema = z.object({
+  quantity: z.number().positive().default(1),
+  configuration: z.record(z.any()).optional(),
+});
+
 const ApplyCouponSchema = z.object({
   code: z.string().min(1),
 });
@@ -98,6 +103,7 @@ export class CommerceHandler extends BaseHandler {
       'orders/create-guest': () => this.createGuestOrder(req),
       'orders/:id/cancel': () => this.cancelOrder(action[1], user),
       'payment/process': () => this.processPayment(req, user),
+      'bulk-uploads': () => this.storeBulkUpload(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -109,6 +115,7 @@ export class CommerceHandler extends BaseHandler {
   async handlePUT(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'cart/items/:id': () => this.updateCartItem(action[2], req, user),
+      'cart/items/:id/full': () => this.updateCartItemFull(action[2], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -238,6 +245,24 @@ export class CommerceHandler extends BaseHandler {
             ORDER BY is_primary DESC, display_order ASC
           `,
           params: [productId]
+        },
+        pricingMatrix: {
+          query: `
+            SELECT id, width_min, width_max, height_min, height_max, 
+                   base_price, price_per_sqft
+            FROM product_pricing_matrix
+            WHERE product_id = ? AND is_active = 1
+            ORDER BY width_min, height_min
+          `,
+          params: [productId]
+        },
+        fabricPricing: {
+          query: `
+            SELECT fabric_option_id, price_per_sqft
+            FROM product_fabric_pricing
+            WHERE product_id = ? AND is_active = 1
+          `,
+          params: [productId]
         }
       });
 
@@ -303,7 +328,9 @@ export class CommerceHandler extends BaseHandler {
         controlTypes,
         rooms: configData.rooms?.map(r => r.room_type) || [],
         features: configData.features || [],
-        images: configData.images || []
+        images: configData.images || [],
+        pricingMatrix: configData.pricingMatrix || [],
+        fabricPricing: configData.fabricPricing || []
       };
     } catch (error) {
       console.error('Error loading product configuration:', error);
@@ -444,6 +471,42 @@ export class CommerceHandler extends BaseHandler {
     }
 
     return { message: 'Cart item updated successfully' };
+  }
+
+  private async updateCartItemFull(id: string, req: NextRequest, user: any) {
+    const searchParams = this.getSearchParams(req);
+    const sessionId = searchParams.get('sessionId');
+    const cartItemId = parseInt(id);
+    
+    if (isNaN(cartItemId)) {
+      throw new ApiError('Invalid cart item ID', 400);
+    }
+
+    const data = await this.getValidatedBody(req, UpdateCartItemSchema);
+
+    // Get the current cart to ensure the item exists and belongs to the user
+    const cart = await this.cartService.getCart(user?.user_id, sessionId || undefined);
+    const cartItem = cart.items.find(item => item.cart_item_id === cartItemId);
+    
+    if (!cartItem) {
+      throw new ApiError('Cart item not found', 404);
+    }
+
+    // Update the cart item with new configuration
+    const success = await this.cartService.updateCartItemConfiguration(
+      cartItemId,
+      data.quantity,
+      data.configuration,
+      user?.user_id
+    );
+
+    if (!success) {
+      throw new ApiError('Failed to update cart item', 500);
+    }
+
+    // Return the updated cart
+    const updatedCart = await this.cartService.getCart(user?.user_id, sessionId || undefined);
+    return updatedCart;
   }
 
   private async removeCartItem(id: string, user: any) {
@@ -777,6 +840,60 @@ export class CommerceHandler extends BaseHandler {
       success: true,
       orderNumber,
       message: 'Order created successfully'
+    };
+  }
+
+  /**
+   * Store bulk upload record
+   */
+  private async storeBulkUpload(req: NextRequest, user: any) {
+    this.requireAuth(user);
+    
+    const body = await this.getRequestBody(req);
+    const {
+      uploadId,
+      templateId,
+      fileName,
+      fileHash,
+      rowCount,
+      validRows,
+      invalidRows,
+      status,
+      validationErrors,
+      validationWarnings
+    } = body;
+
+    // Validate required fields
+    if (!uploadId || !templateId || !fileName || !fileHash) {
+      throw new ApiError('Missing required fields', 400);
+    }
+
+    const pool = await getPool();
+    
+    await pool.execute(`
+      INSERT INTO customer_bulk_uploads (
+        upload_id, customer_id, template_id, file_name, file_hash,
+        row_count, valid_rows, invalid_rows, status,
+        validation_errors, validation_warnings, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    `, [
+      uploadId,
+      user.userId,
+      templateId,
+      fileName,
+      fileHash,
+      rowCount || 0,
+      validRows || 0,
+      invalidRows || 0,
+      status || 'uploaded',
+      JSON.stringify(validationErrors || []),
+      JSON.stringify(validationWarnings || [])
+    ]);
+
+    return {
+      success: true,
+      uploadId,
+      message: 'Bulk upload record stored successfully'
     };
   }
 }

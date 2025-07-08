@@ -14,7 +14,7 @@ export default function ProductConfiguratorPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const { addItem, updateQuantity, removeItem, items } = useCart();
+  const { addItem, updateItem, items } = useCart();
   const { user } = useAuth();
   const editCartItemId = searchParams.get('edit');
 
@@ -64,7 +64,10 @@ export default function ProductConfiguratorPage() {
                 hasFabricOptions: !!productToSet.fabricOptions,
                 fabricCount: productToSet.fabricOptions?.length,
                 hasControlTypes: !!productToSet.controlTypes,
-                controlCount: productToSet.controlTypes?.length
+                controlCount: productToSet.controlTypes?.length,
+                hasPricingMatrix: !!productToSet.pricingMatrix,
+                pricingMatrixCount: productToSet.pricingMatrix?.length,
+                basePrice: productToSet.base_price
               });
               setProduct(productToSet);
             } else {
@@ -115,7 +118,7 @@ export default function ProductConfiguratorPage() {
     );
   }
 
-  const handleAddToCart = (config: any) => {
+  const handleAddToCart = (config: any, calculatedPrice: number) => {
     // Find fabric name from product data if fabricType is an ID
     let fabricName = config.fabricOption || '';
     if (config.fabricType && product.fabricOptions) {
@@ -139,12 +142,12 @@ export default function ProductConfiguratorPage() {
       quantity: 1,
       width: parseFloat(config.width || 0),
       height: parseFloat(config.height || 0),
-      unit_price: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
+      unit_price: calculatedPrice,
       // UI fields
       name: product.name,
       slug: product.slug,
       image: product.images?.[0]?.image_url || '',
-      totalPrice: parseFloat(config.width || 0) * parseFloat(config.height || 0) * 0.10 + (product.base_price || 33.99),
+      totalPrice: calculatedPrice,
       // Pass ALL configuration options
       ...config, // This includes all fields from the configurator
       controlType: config.controlOption, // Map controlOption to controlType for consistency
@@ -167,12 +170,8 @@ export default function ProductConfiguratorPage() {
     };
     
     if (editCartItemId) {
-      // If editing, remove old item and add new one
-      const oldItem = items.find(item => item.cart_item_id === parseInt(editCartItemId));
-      if (oldItem) {
-        removeItem(oldItem.cart_item_id);
-      }
-      addItem(cartItem);
+      // If editing, update the existing item
+      updateItem(parseInt(editCartItemId), cartItem);
       toast.success('Item updated in cart!');
     } else {
       addItem(cartItem);

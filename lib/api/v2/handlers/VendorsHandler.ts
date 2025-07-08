@@ -9,6 +9,7 @@ import { vendorService, productService, orderService } from '@/lib/services/sing
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getPool } from '@/lib/db';
+import { createHash } from 'crypto';
 
 // Validation schemas
 const UpdateVendorSchema = z.object({
@@ -101,6 +102,10 @@ export class VendorsHandler extends BaseHandler {
       'storefront': () => this.getStorefront(user),
       'shipments': () => this.getShipments(req, user),
       'shipments/:id': () => this.getShipment(action[1], user),
+      'validate/:userId': () => this.validateVendorAccess(action[1]),
+      'files': () => this.getFiles(req, user),
+      'files/stats': () => this.getFileStats(user),
+      'files/:fileId': () => this.getFile(action[2], user),
     };
 
     return this.routeAction(action, routes);
@@ -118,6 +123,8 @@ export class VendorsHandler extends BaseHandler {
       'sales-team': () => this.addSalesRep(req, user),
       'payouts/request': () => this.requestPayout(req, user),
       'upload': () => this.uploadFile(req, user),
+      'files/metadata': () => this.storeFileMetadata(req, user),
+      'files/duplicate-check': () => this.checkFileDuplicate(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -160,6 +167,7 @@ export class VendorsHandler extends BaseHandler {
       'discounts/:id': () => this.deleteDiscount(action[1], user),
       'coupons/:id': () => this.deleteCoupon(action[1], user),
       'sales-team/:id': () => this.removeSalesRep(action[2], user),
+      'files/:fileId': () => this.deleteFile(action[2], user),
     };
 
     return this.routeAction(action, routes);
@@ -2569,5 +2577,313 @@ export class VendorsHandler extends BaseHandler {
       if (error instanceof ApiError) throw error;
       throw new ApiError('Failed to upload file', 500);
     }
+  }
+
+  /**
+   * Validate vendor access for a user ID
+   * This is used internally by other services to check vendor permissions
+   */
+  private async validateVendorAccess(userId: string) {
+    const id = parseInt(userId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    const [rows] = await this.vendorService.raw(
+      `SELECT vendor_info_id, approval_status, is_approved, is_verified 
+       FROM vendor_info 
+       WHERE user_id = ?`,
+      [id]
+    );
+
+    if (!rows || rows.length === 0) {
+      return {
+        isValid: false,
+        error: 'No vendor account found for this user'
+      };
+    }
+
+    const vendor = rows[0] as any;
+
+    if (!vendor.is_approved) {
+      return {
+        isValid: false,
+        error: 'Vendor account is not approved'
+      };
+    }
+
+    if (vendor.approval_status !== 'approved') {
+      return {
+        isValid: false,
+        error: 'Vendor account approval status is not approved'
+      };
+    }
+
+    return {
+      isValid: true,
+      vendorId: vendor.vendor_info_id
+    };
+  }
+
+  /**
+   * Store file metadata in the database
+   * This endpoint is used by the vendorFileManager to store file information
+   */
+  private async storeFileMetadata(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const data = await this.getRequestBody(req);
+
+    // Validate required fields
+    const requiredFields = ['fileId', 'originalName', 'category', 'uploadType', 'fileSize', 'fileFormat', 'fileHash', 'filePath'];
+    for (const field of requiredFields) {
+      if (!data[field]) {
+        throw new ApiError(`Missing required field: ${field}`, 400);
+      }
+    }
+
+    // Store file metadata
+    await this.vendorService.raw(
+      `INSERT INTO vendor_files (
+        vendor_info_id, file_id, original_name, category, upload_type,
+        file_size, file_format, file_hash, file_path,
+        width, height, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        vendorId,
+        data.fileId,
+        data.originalName,
+        data.category,
+        data.uploadType,
+        data.fileSize,
+        data.fileFormat,
+        data.fileHash,
+        data.filePath,
+        data.dimensions?.width || null,
+        data.dimensions?.height || null
+      ]
+    );
+
+    return {
+      success: true,
+      message: 'File metadata stored successfully',
+      fileId: data.fileId
+    };
+  }
+
+  /**
+   * Get all files for the vendor
+   */
+  private async getFiles(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const searchParams = this.getSearchParams(req);
+    const category = searchParams.get('category');
+    
+    let query = `
+      SELECT vf.file_id, vf.original_name, vf.category, vf.file_hash,
+             vf.file_size, vf.width, vf.height, vf.created_at,
+             vf.upload_type, vf.file_format
+      FROM vendor_files vf
+      WHERE vf.vendor_info_id = ? AND vf.deleted_at IS NULL
+    `;
+    const params = [vendorId];
+
+    if (category) {
+      query += ' AND vf.category = ?';
+      params.push(category);
+    }
+
+    query += ' ORDER BY vf.category, vf.created_at DESC';
+
+    const [rows] = await this.vendorService.raw(query, params);
+    const files = rows as any[];
+
+    const filesByCategory = new Map<string, any[]>();
+
+    for (const file of files) {
+      const existingFile = {
+        fileId: file.file_id,
+        originalName: file.original_name,
+        category: file.category,
+        fileHash: file.file_hash,
+        uploadDate: file.created_at,
+        fileSize: file.file_size,
+        dimensions: file.width && file.height ? { width: file.width, height: file.height } : undefined,
+        url: this.generateFileUrl(vendorId, file.file_id, file.category, file.original_name)
+      };
+
+      if (!filesByCategory.has(file.category)) {
+        filesByCategory.set(file.category, []);
+      }
+      filesByCategory.get(file.category)!.push(existingFile);
+    }
+
+    return {
+      success: true,
+      files: Object.fromEntries(filesByCategory),
+      total: files.length
+    };
+  }
+
+  /**
+   * Get file upload statistics
+   */
+  private async getFileStats(user: any) {
+    const vendorId = await this.getVendorId(user);
+    
+    const [rows] = await this.vendorService.raw(`
+      SELECT category, upload_type, COUNT(*) as file_count, SUM(file_size) as total_size
+      FROM vendor_files 
+      WHERE vendor_info_id = ? AND deleted_at IS NULL
+      GROUP BY category, upload_type
+    `, [vendorId]);
+
+    const stats = rows as any[];
+    const filesByCategory = new Map<string, number>();
+    const storageByCategory = new Map<string, number>();
+    let totalFiles = 0;
+    let totalStorage = 0;
+
+    for (const stat of stats) {
+      filesByCategory.set(stat.category, stat.file_count);
+      storageByCategory.set(stat.category, stat.total_size);
+      totalFiles += stat.file_count;
+      totalStorage += stat.total_size;
+    }
+
+    // Define limits per category
+    const maxFilesPerCategory = new Map([
+      ['productImages', 10],
+      ['productVideos', 3],
+      ['csvFiles', 5]
+    ]);
+
+    const remainingQuota = new Map<string, number>();
+    for (const [category, limit] of maxFilesPerCategory) {
+      const used = filesByCategory.get(category) || 0;
+      remainingQuota.set(category, Math.max(0, limit - used));
+    }
+
+    return {
+      success: true,
+      totalFiles,
+      filesByCategory: Object.fromEntries(filesByCategory),
+      totalStorage,
+      storageByCategory: Object.fromEntries(storageByCategory),
+      limits: {
+        maxFilesPerCategory: Object.fromEntries(maxFilesPerCategory),
+        remainingQuota: Object.fromEntries(remainingQuota)
+      }
+    };
+  }
+
+  /**
+   * Get a specific file
+   */
+  private async getFile(fileId: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+    
+    const [rows] = await this.vendorService.raw(`
+      SELECT file_id, original_name, category, file_hash,
+             file_size, width, height, created_at,
+             upload_type, file_format
+      FROM vendor_files
+      WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
+    `, [vendorId, fileId]);
+
+    if (rows.length === 0) {
+      throw new ApiError('File not found', 404);
+    }
+
+    const file = rows[0];
+    
+    return {
+      success: true,
+      file: {
+        fileId: file.file_id,
+        originalName: file.original_name,
+        category: file.category,
+        fileHash: file.file_hash,
+        uploadDate: file.created_at,
+        fileSize: file.file_size,
+        dimensions: file.width && file.height ? { width: file.width, height: file.height } : undefined,
+        url: this.generateFileUrl(vendorId, file.file_id, file.category, file.original_name)
+      }
+    };
+  }
+
+  /**
+   * Check if file is duplicate
+   */
+  private async checkFileDuplicate(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const data = await this.getRequestBody(req);
+    
+    if (!data.fileHash || !data.category) {
+      throw new ApiError('Missing required fields: fileHash, category', 400);
+    }
+
+    const [rows] = await this.vendorService.raw(`
+      SELECT file_id, original_name 
+      FROM vendor_files 
+      WHERE vendor_info_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
+      LIMIT 1
+    `, [vendorId, data.category, data.fileHash]);
+
+    const duplicateFiles = rows as any[];
+
+    if (duplicateFiles.length > 0) {
+      return {
+        success: true,
+        isDuplicate: true,
+        existingFileId: duplicateFiles[0].file_id,
+        existingFileName: duplicateFiles[0].original_name
+      };
+    }
+
+    return {
+      success: true,
+      isDuplicate: false
+    };
+  }
+
+  /**
+   * Delete a file
+   */
+  private async deleteFile(fileId: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+    
+    // Get file info
+    const [rows] = await pool.execute(`
+      SELECT file_path, category FROM vendor_files 
+      WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
+    `, [vendorId, fileId]);
+
+    const files = rows as any[];
+    if (files.length === 0) {
+      throw new ApiError('File not found', 404);
+    }
+
+    // Mark as deleted in database (soft delete)
+    await pool.execute(`
+      UPDATE vendor_files 
+      SET deleted_at = NOW(), deleted_by = ?
+      WHERE file_id = ?
+    `, [vendorId, fileId]);
+
+    return {
+      success: true,
+      message: 'File deleted successfully',
+      fileId: fileId
+    };
+  }
+
+  /**
+   * Generate file URL helper
+   */
+  private generateFileUrl(vendorId: number, fileId: string, category: string, originalName: string): string {
+    const vendorName = `vendor_${vendorId}`; // Simplified for now
+    const path = require('path');
+    return `/uploads/${vendorName}/${category}/${fileId}${path.extname(originalName)}`;
   }
 }

@@ -21,6 +21,8 @@ export class ContentHandler extends BaseHandler {
       'rooms': () => this.getRooms(user),
       'hero-banners': () => this.getHeroBanners(),
       'recently-viewed': () => this.getRecentlyViewed(req),
+      'email-templates': () => this.getEmailTemplates(user),
+      'email-templates/:name': () => this.getEmailTemplate(action[1]),
     };
 
     return this.routeAction(action, routes);
@@ -31,6 +33,8 @@ export class ContentHandler extends BaseHandler {
       'recently-viewed': () => this.addRecentlyViewed(req),
       'rooms': () => this.createRoom(req, user),
       'rooms/upload': () => this.uploadRoomImage(req, user),
+      'email-queue': () => this.queueEmail(req, user),
+      'email-queue/process': () => this.processEmailQueue(user),
     };
 
     return this.routeAction(action, routes);
@@ -380,6 +384,183 @@ export class ContentHandler extends BaseHandler {
       console.error('Error uploading room image:', error);
       if (error instanceof ApiError) throw error;
       throw new ApiError('Failed to upload image', 500);
+    }
+  }
+
+  /**
+   * Get all email templates
+   */
+  private async getEmailTemplates(user: any) {
+    try {
+      // Only admins can view email templates
+      if (user?.role !== 'ADMIN') {
+        throw new ApiError('Unauthorized', 403);
+      }
+
+      const pool = await getPool();
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        `SELECT 
+          template_id,
+          name,
+          subject,
+          body,
+          variables,
+          is_active
+        FROM email_templates
+        ORDER BY name ASC`
+      );
+
+      return {
+        success: true,
+        templates: rows.map(row => ({
+          ...row,
+          variables: JSON.parse(row.variables || '{}')
+        }))
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error fetching email templates:', error);
+      throw new ApiError('Failed to fetch email templates', 500);
+    }
+  }
+
+  /**
+   * Get a specific email template by name
+   */
+  private async getEmailTemplate(templateName: string) {
+    try {
+      const pool = await getPool();
+      const [rows] = await pool.execute<RowDataPacket[]>(
+        'SELECT * FROM email_templates WHERE name = ? AND is_active = 1',
+        [templateName]
+      );
+
+      if (rows.length === 0) {
+        throw new ApiError('Email template not found', 404);
+      }
+
+      const template = rows[0];
+      return {
+        success: true,
+        template: {
+          ...template,
+          variables: JSON.parse(template.variables || '{}')
+        }
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error fetching email template:', error);
+      throw new ApiError('Failed to fetch email template', 500);
+    }
+  }
+
+  /**
+   * Queue an email for sending
+   */
+  private async queueEmail(req: NextRequest, user: any) {
+    try {
+      const body = await this.getRequestBody(req);
+      const { templateName, recipientEmail, recipientName, variables } = body;
+
+      if (!templateName || !recipientEmail) {
+        throw new ApiError('Missing required fields: templateName, recipientEmail', 400);
+      }
+
+      // Get the email template
+      const pool = await getPool();
+      const [templateRows] = await pool.execute<RowDataPacket[]>(
+        'SELECT * FROM email_templates WHERE name = ? AND is_active = 1',
+        [templateName]
+      );
+
+      if (templateRows.length === 0) {
+        throw new ApiError(`Email template '${templateName}' not found`, 404);
+      }
+
+      const template = templateRows[0];
+
+      // Replace variables in subject and body
+      const replaceVariables = (text: string, vars: Record<string, any>) => {
+        return text.replace(/\{([^}]+)\}/g, (match, key) => {
+          return vars[key] || match;
+        });
+      };
+
+      const subject = replaceVariables(template.subject, variables || {});
+      const emailBody = replaceVariables(template.body, variables || {});
+
+      // Queue the email
+      const [result] = await pool.execute<ResultSetHeader>(
+        `INSERT INTO email_queue (
+          template_id,
+          recipient_email,
+          recipient_name,
+          subject,
+          body,
+          variables,
+          status,
+          next_retry_at
+        ) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+        [
+          template.template_id,
+          recipientEmail,
+          recipientName || null,
+          subject,
+          emailBody,
+          JSON.stringify(variables || {}),
+        ]
+      );
+
+      return {
+        success: true,
+        emailId: result.insertId,
+        message: 'Email queued successfully'
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error queueing email:', error);
+      throw new ApiError('Failed to queue email', 500);
+    }
+  }
+
+  /**
+   * Process email queue - admin only
+   */
+  private async processEmailQueue(user: any) {
+    try {
+      // Only admins can process email queue
+      if (user?.role !== 'ADMIN') {
+        throw new ApiError('Unauthorized', 403);
+      }
+
+      const pool = await getPool();
+      
+      // Get pending emails that are ready to be sent
+      const [emails] = await pool.execute<RowDataPacket[]>(
+        `SELECT * FROM email_queue 
+         WHERE status = 'pending' 
+         AND next_retry_at <= NOW() 
+         AND retry_count < 3 
+         ORDER BY created_at ASC 
+         LIMIT 10`
+      );
+
+      return {
+        success: true,
+        message: `Found ${emails.length} emails to process`,
+        count: emails.length,
+        emails: emails.map(email => ({
+          email_id: email.email_id,
+          recipient_email: email.recipient_email,
+          subject: email.subject,
+          status: email.status,
+          retry_count: email.retry_count
+        }))
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error processing email queue:', error);
+      throw new ApiError('Failed to process email queue', 500);
     }
   }
 }

@@ -291,6 +291,15 @@ export class ProductService extends BaseService {
     const sortColumn = sortBy === 'price' 
       ? 'COALESCE(vp.vendor_price, p.base_price)' 
       : `p.${sortBy}`;
+    
+    // Validate sortBy column to prevent SQL injection
+    const allowedSortColumns = ['name', 'price', 'rating', 'created_at'];
+    if (!allowedSortColumns.includes(sortBy)) {
+      throw new Error('Invalid sort column');
+    }
+    
+    // Validate sortOrder to prevent SQL injection
+    const validatedSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
     const query = `
       SELECT DISTINCT
@@ -319,7 +328,7 @@ export class ProductService extends BaseService {
                p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count, 
                p.created_at, p.updated_at, c.name, c.slug, pi.image_url
       ${havingClause}
-      ORDER BY ${sortColumn} ${sortOrder}
+      ORDER BY ${sortColumn} ${validatedSortOrder}
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     `;
 

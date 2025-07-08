@@ -1,3 +1,15 @@
+/**
+ * Email Cron Jobs
+ * 
+ * NOTE: This file runs as a background service and requires direct database access.
+ * It does not go through the V2 API layer because:
+ * 1. It runs as a scheduled job without user context
+ * 2. It needs efficient bulk processing of records
+ * 3. It's not exposed as an API endpoint
+ * 
+ * This is an acceptable exception to the V2 API migration pattern.
+ */
+
 import cron from 'node-cron';
 import { emailService } from './emailService';
 import { getPool } from '@/lib/db';

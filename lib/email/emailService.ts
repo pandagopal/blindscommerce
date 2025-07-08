@@ -1,5 +1,4 @@
 import nodemailer from 'nodemailer';
-import { getPool } from '@/lib/db';
 
 interface EmailTemplate {
   template_id: number;
@@ -38,12 +37,29 @@ class EmailService {
   }
 
   private async getTemplate(templateName: string): Promise<EmailTemplate | null> {
-    const pool = await getPool();
-    const [rows] = await pool.execute<EmailTemplate[]>(
-      'SELECT * FROM email_templates WHERE name = ? AND is_active = 1',
-      [templateName]
-    );
-    return rows[0] || null;
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const response = await fetch(`${apiUrl}/v2/content/email-templates/${encodeURIComponent(templateName)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const result = await response.json();
+      if (result.success && result.template) {
+        return result.template;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error fetching template:', error);
+      return null;
+    }
   }
 
   private replaceVariables(text: string, variables: Record<string, any>): string {
@@ -59,40 +75,27 @@ class EmailService {
     variables: Record<string, any>
   ): Promise<boolean> {
     try {
-      // Get the email template
-      const template = await this.getTemplate(templateName);
-      if (!template) {
-        throw new Error(`Email template '${templateName}' not found`);
-      }
-
-      // Replace variables in subject and body
-      const subject = this.replaceVariables(template.subject, variables);
-      const body = this.replaceVariables(template.body, variables);
-
-      // Queue the email
-      const pool = await getPool();
-      await pool.execute(
-        `INSERT INTO email_queue (
-          template_id,
-          recipient_email,
-          recipient_name,
-          subject,
-          body,
-          variables,
-          status,
-          next_retry_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())`,
-        [
-          template.template_id,
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const response = await fetch(`${apiUrl}/v2/content/email-queue`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          templateName,
           recipientEmail,
           recipientName,
-          subject,
-          body,
-          JSON.stringify(variables),
-        ]
-      );
+          variables
+        }),
+        cache: 'no-store'
+      });
 
-      return true;
+      if (!response.ok) {
+        throw new Error(`Failed to queue email: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result.success;
     } catch (error) {
       console.error('Error queueing email:', error);
       return false;
@@ -100,6 +103,12 @@ class EmailService {
   }
 
   async processEmailQueue(): Promise<void> {
+    // NOTE: This method needs direct DB access as it's called from a cron job
+    // and actually sends emails. It should remain with DB access or be moved
+    // to a separate service that runs with proper authentication.
+    // For now, importing getPool only for this method
+    const { getPool } = require('@/lib/db');
+    
     try {
       const pool = await getPool();
       

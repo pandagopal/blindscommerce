@@ -41,6 +41,7 @@ export class AuthHandler extends BaseHandler {
     const routes = {
       'me': () => this.getCurrentUser(user),
       'verify': () => this.verifyToken(req),
+      'user': () => this.getUserById(action[1], user),
     };
 
     return this.routeAction(action, routes);
@@ -291,5 +292,51 @@ export class AuthHandler extends BaseHandler {
   private async refreshToken(req: NextRequest) {
     // TODO: Implement token refresh
     throw new ApiError('Not implemented', 501);
+  }
+
+  private async getUserById(userId: string, requestingUser: any) {
+    // Internal endpoint for auth system only
+    if (!requestingUser || !requestingUser.user_id) {
+      throw new ApiError('Not authenticated', 401);
+    }
+
+    const id = parseInt(userId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    // For security, users can only fetch their own data unless admin
+    if (requestingUser.user_id !== id && requestingUser.role !== 'admin' && requestingUser.role !== 'super_admin') {
+      throw new ApiError('Not authorized', 403);
+    }
+
+    const user = await this.userService.getUserById(id);
+    if (!user) {
+      throw new ApiError('User not found', 404);
+    }
+
+    // Get vendor info if applicable
+    let vendorId = null;
+    if (user.role === 'vendor' || user.role === 'sales_representative') {
+      const [vendorInfo] = await this.userService.raw(
+        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+        [id]
+      );
+      vendorId = vendorInfo?.vendor_info_id || null;
+    }
+
+    return {
+      user: {
+        userId: user.user_id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        role: user.role,
+        isAdmin: user.role === 'admin' || user.role === 'super_admin',
+        vendorId: vendorId,
+        isActive: user.is_active === 1
+      }
+    };
   }
 }

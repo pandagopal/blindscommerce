@@ -95,25 +95,59 @@ export const productSearchSchema = z.object({
 
 // File upload validation
 export const validateFileUpload = (file: File): { isValid: boolean; error?: string } => {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  const maxSize = 5 * 1024 * 1024; // 5MB for images
+  const maxPdfSize = 10 * 1024 * 1024; // 10MB for PDFs
   
+  // Validate MIME type
   if (!allowedTypes.includes(file.type)) {
-    return { isValid: false, error: 'File type not allowed. Only JPEG, PNG, and WebP are supported.' };
+    return { isValid: false, error: 'File type not allowed. Only JPEG, PNG, WebP, and PDF are supported.' };
   }
   
-  if (file.size > maxSize) {
-    return { isValid: false, error: 'File size too large. Maximum size is 5MB.' };
+  // Validate file size based on type
+  const sizeLimit = file.type === 'application/pdf' ? maxPdfSize : maxSize;
+  if (file.size > sizeLimit) {
+    return { isValid: false, error: `File size too large. Maximum size is ${sizeLimit / (1024 * 1024)}MB.` };
   }
   
-  // Check for malicious file extensions
+  // Extract actual file extension
   const fileName = file.name.toLowerCase();
-  const dangerousExtensions = ['.php', '.js', '.html', '.htm', '.exe', '.bat', '.cmd'];
+  const lastDotIndex = fileName.lastIndexOf('.');
+  if (lastDotIndex === -1) {
+    return { isValid: false, error: 'File must have an extension.' };
+  }
   
-  for (const ext of dangerousExtensions) {
-    if (fileName.includes(ext)) {
-      return { isValid: false, error: 'File contains dangerous extension.' };
+  const fileExtension = fileName.substring(lastDotIndex);
+  
+  // Map allowed MIME types to expected extensions
+  const allowedExtensions: Record<string, string[]> = {
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+    'application/pdf': ['.pdf']
+  };
+  
+  // Validate that extension matches MIME type
+  const expectedExtensions = allowedExtensions[file.type];
+  if (!expectedExtensions || !expectedExtensions.includes(fileExtension)) {
+    return { isValid: false, error: 'File extension does not match file type.' };
+  }
+  
+  // Check for double extensions or dangerous patterns
+  const dangerousPatterns = [
+    /\.(php|js|html|htm|exe|bat|cmd|sh|asp|aspx|jsp|cgi)/i,
+    /\.(jpg|jpeg|png|webp|pdf)\.(php|js|html|htm|exe|bat|cmd|sh)/i
+  ];
+  
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(fileName)) {
+      return { isValid: false, error: 'File contains dangerous pattern.' };
     }
+  }
+  
+  // Additional security: check for null bytes
+  if (fileName.includes('\0')) {
+    return { isValid: false, error: 'File name contains invalid characters.' };
   }
   
   return { isValid: true };
@@ -180,43 +214,29 @@ export interface VendorValidation {
 
 export const validateVendorAccess = async (userId: number): Promise<VendorValidation> => {
   try {
-    // Import here to avoid circular dependencies
-    const { getPool } = await import('@/lib/db/index');
-    const pool = await getPool();
-    
-    const [rows] = await pool.execute(
-      `SELECT vendor_info_id, approval_status, is_approved, is_verified 
-       FROM vendor_info 
-       WHERE user_id = ?`,
-      [userId]
-    );
-    
-    if (!Array.isArray(rows) || rows.length === 0) {
+    // Use V2 API to validate vendor access
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/v2/vendors/validate/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
       return {
         isValid: false,
-        error: 'No vendor account found for this user'
+        error: 'Failed to validate vendor access'
       };
     }
-    
-    const vendor = rows[0] as any;
-    
-    if (!vendor.is_approved) {
-      return {
-        isValid: false,
-        error: 'Vendor account is not approved'
-      };
-    }
-    
-    if (vendor.approval_status !== 'approved') {
-      return {
-        isValid: false,
-        error: 'Vendor account approval status is not approved'
-      };
-    }
-    
+
+    const result = await response.json();
+    const data = result.data || result;
+
     return {
-      isValid: true,
-      vendorId: vendor.vendor_info_id
+      isValid: data.isValid,
+      vendorId: data.vendorId,
+      error: data.error
     };
   } catch (error) {
     console.error('Error validating vendor access:', error);

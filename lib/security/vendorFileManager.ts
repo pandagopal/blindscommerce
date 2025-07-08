@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { getPool } from '@/lib/db';
 import { validateImage, validateVideo, validateCSV } from './fileValidators';
 
 export interface VendorFileStructure {
@@ -40,12 +39,35 @@ export class VendorFileManager {
   private vendorName: string;
   private basePath: string;
   private uploadsRoot: string;
+  private authToken?: string;
 
-  constructor(vendorId: number, vendorName: string) {
+  constructor(vendorId: number, vendorName: string, authToken?: string) {
     this.vendorId = vendorId; // This is vendor_info_id from database
     this.vendorName = this.sanitizeVendorName(vendorName);
     this.uploadsRoot = path.join(process.cwd(), 'public', 'uploads');
     this.basePath = path.join(this.uploadsRoot, `vendor_${vendorId}_${this.vendorName}`);
+    this.authToken = authToken;
+  }
+
+  /**
+   * Get auth headers for API calls
+   */
+  private async getAuthHeaders(): Promise<Record<string, string>> {
+    const headers: Record<string, string> = {};
+    
+    if (this.authToken) {
+      headers['Authorization'] = `Bearer ${this.authToken}`;
+    } else if (typeof window !== 'undefined') {
+      // Try to get token from cookies in browser
+      const cookies = document.cookie.split(';');
+      const authCookie = cookies.find(c => c.trim().startsWith('auth-token='));
+      if (authCookie) {
+        const token = authCookie.split('=')[1];
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+    
+    return headers;
   }
 
   /**
@@ -92,48 +114,44 @@ export class VendorFileManager {
    * Get all existing files for vendor with category organization
    */
   async getExistingFiles(category?: string): Promise<Map<string, ExistingFile[]>> {
-    const pool = await getPool();
-    
-    let query = `
-      SELECT vf.file_id, vf.original_name, vf.category, vf.file_hash,
-             vf.file_size, vf.width, vf.height, vf.created_at,
-             vf.upload_type, vf.file_format
-      FROM vendor_files vf
-      WHERE vf.vendor_info_id = ? AND vf.deleted_at IS NULL
-    `;
-    const params = [this.vendorId];
-
-    if (category) {
-      query += ' AND vf.category = ?';
-      params.push(category);
-    }
-
-    query += ' ORDER BY vf.category, vf.created_at DESC';
-
-    const [rows] = await pool.execute(query, params);
-    const files = rows as any[];
-
-    const filesByCategory = new Map<string, ExistingFile[]>();
-
-    for (const file of files) {
-      const existingFile: ExistingFile = {
-        fileId: file.file_id,
-        originalName: file.original_name,
-        category: file.category,
-        fileHash: file.file_hash,
-        uploadDate: file.created_at,
-        fileSize: file.file_size,
-        dimensions: file.width && file.height ? { width: file.width, height: file.height } : undefined,
-        url: this.generateFileUrl(file.file_id, file.category, file.original_name)
-      };
-
-      if (!filesByCategory.has(file.category)) {
-        filesByCategory.set(file.category, []);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers = await this.getAuthHeaders();
+      
+      const url = new URL(`${apiUrl}/v2/vendors/files`);
+      if (category) {
+        url.searchParams.append('category', category);
       }
-      filesByCategory.get(file.category)!.push(existingFile);
-    }
+      
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
 
-    return filesByCategory;
+      if (!response.ok) {
+        throw new Error(`Failed to fetch files: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch files');
+      }
+
+      // Convert object to Map
+      const filesByCategory = new Map<string, ExistingFile[]>();
+      if (result.files) {
+        for (const [cat, files] of Object.entries(result.files)) {
+          filesByCategory.set(cat, files as ExistingFile[]);
+        }
+      }
+
+      return filesByCategory;
+    } catch (error) {
+      console.error('Error fetching existing files:', error);
+      return new Map();
+    }
   }
 
   /**
@@ -145,26 +163,40 @@ export class VendorFileManager {
     existingFileName?: string;
   }> {
     const fileHash = createHash('sha256').update(fileBuffer).digest('hex');
-    const pool = await getPool();
+    
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers = await this.getAuthHeaders();
+      
+      const response = await fetch(`${apiUrl}/v2/vendors/files/duplicate-check`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ fileHash, category }),
+        cache: 'no-store'
+      });
 
-    const [rows] = await pool.execute(`
-      SELECT file_id, original_name 
-      FROM vendor_files 
-      WHERE vendor_info_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
-      LIMIT 1
-    `, [this.vendorId, category, fileHash]);
+      if (!response.ok) {
+        throw new Error(`Failed to check duplicate: ${response.statusText}`);
+      }
 
-    const duplicateFiles = rows as any[];
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to check duplicate');
+      }
 
-    if (duplicateFiles.length > 0) {
       return {
-        isDuplicate: true,
-        existingFileId: duplicateFiles[0].file_id,
-        existingFileName: duplicateFiles[0].original_name
+        isDuplicate: result.isDuplicate,
+        existingFileId: result.existingFileId,
+        existingFileName: result.existingFileName
       };
+    } catch (error) {
+      console.error('Error checking duplicate:', error);
+      return { isDuplicate: false };
     }
-
-    return { isDuplicate: false };
   }
 
   /**
@@ -302,51 +334,79 @@ export class VendorFileManager {
       remainingQuota: Map<string, number>;
     };
   }> {
-    const pool = await getPool();
-    
-    const [rows] = await pool.execute(`
-      SELECT category, upload_type, COUNT(*) as file_count, SUM(file_size) as total_size
-      FROM vendor_files 
-      WHERE vendor_info_id = ? AND deleted_at IS NULL
-      GROUP BY category, upload_type
-    `, [this.vendorId]);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers = await this.getAuthHeaders();
+      
+      const response = await fetch(`${apiUrl}/v2/vendors/files/stats`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
 
-    const stats = rows as any[];
-    const filesByCategory = new Map<string, number>();
-    const storageByCategory = new Map<string, number>();
-    let totalFiles = 0;
-    let totalStorage = 0;
-
-    for (const stat of stats) {
-      filesByCategory.set(stat.category, stat.file_count);
-      storageByCategory.set(stat.category, stat.total_size);
-      totalFiles += stat.file_count;
-      totalStorage += stat.total_size;
-    }
-
-    // Define limits per category
-    const maxFilesPerCategory = new Map([
-      ['productImages', 10],
-      ['productVideos', 3],
-      ['csvFiles', 5]
-    ]);
-
-    const remainingQuota = new Map<string, number>();
-    for (const [category, limit] of maxFilesPerCategory) {
-      const used = filesByCategory.get(category) || 0;
-      remainingQuota.set(category, Math.max(0, limit - used));
-    }
-
-    return {
-      totalFiles,
-      filesByCategory,
-      totalStorage,
-      storageByCategory,
-      limits: {
-        maxFilesPerCategory,
-        remainingQuota
+      if (!response.ok) {
+        throw new Error(`Failed to fetch stats: ${response.statusText}`);
       }
-    };
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch stats');
+      }
+
+      // Convert objects to Maps
+      const filesByCategory = new Map<string, number>();
+      const storageByCategory = new Map<string, number>();
+      const maxFilesPerCategory = new Map<string, number>();
+      const remainingQuota = new Map<string, number>();
+
+      if (result.filesByCategory) {
+        for (const [cat, count] of Object.entries(result.filesByCategory)) {
+          filesByCategory.set(cat, count as number);
+        }
+      }
+
+      if (result.storageByCategory) {
+        for (const [cat, size] of Object.entries(result.storageByCategory)) {
+          storageByCategory.set(cat, size as number);
+        }
+      }
+
+      if (result.limits?.maxFilesPerCategory) {
+        for (const [cat, limit] of Object.entries(result.limits.maxFilesPerCategory)) {
+          maxFilesPerCategory.set(cat, limit as number);
+        }
+      }
+
+      if (result.limits?.remainingQuota) {
+        for (const [cat, quota] of Object.entries(result.limits.remainingQuota)) {
+          remainingQuota.set(cat, quota as number);
+        }
+      }
+
+      return {
+        totalFiles: result.totalFiles || 0,
+        filesByCategory,
+        totalStorage: result.totalStorage || 0,
+        storageByCategory,
+        limits: {
+          maxFilesPerCategory,
+          remainingQuota
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching upload stats:', error);
+      return {
+        totalFiles: 0,
+        filesByCategory: new Map(),
+        totalStorage: 0,
+        storageByCategory: new Map(),
+        limits: {
+          maxFilesPerCategory: new Map(),
+          remainingQuota: new Map()
+        }
+      };
+    }
   }
 
   /**
@@ -354,37 +414,51 @@ export class VendorFileManager {
    */
   async deleteFile(fileId: string): Promise<boolean> {
     try {
-      const pool = await getPool();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers = await this.getAuthHeaders();
       
-      // Get file info
-      const [rows] = await pool.execute(`
-        SELECT file_path, category FROM vendor_files 
-        WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
-      `, [this.vendorId, fileId]);
+      // First get file info from API to get the file path
+      const getResponse = await fetch(`${apiUrl}/v2/vendors/files/${fileId}`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
 
-      const files = rows as any[];
-      if (files.length === 0) {
+      if (!getResponse.ok) {
         throw new Error('File not found');
       }
 
-      const file = files[0];
+      const fileInfo = await getResponse.json();
+      
+      // Delete via API
+      const response = await fetch(`${apiUrl}/v2/vendors/files/${fileId}`, {
+        method: 'DELETE',
+        headers,
+        cache: 'no-store'
+      });
 
-      // Mark as deleted in database (soft delete)
-      await pool.execute(`
-        UPDATE vendor_files 
-        SET deleted_at = NOW(), deleted_by = ?
-        WHERE file_id = ?
-      `, [this.vendorId, fileId]);
+      if (!response.ok) {
+        throw new Error(`Failed to delete file: ${response.statusText}`);
+      }
 
-      // Remove physical file
-      try {
-        await fs.unlink(file.file_path);
-        
-        // Remove thumbnail if exists
-        const thumbnailPath = path.join(this.basePath, file.category, 'thumbnails', `${fileId}_thumb.jpg`);
-        await fs.unlink(thumbnailPath).catch(() => {}); // Ignore if thumbnail doesn't exist
-      } catch (error) {
-        console.warn(`Could not delete physical file: ${error}`);
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete file');
+      }
+
+      // Remove physical file if we have the path
+      if (fileInfo.file?.url) {
+        try {
+          const filePath = path.join(process.cwd(), 'public', fileInfo.file.url);
+          await fs.unlink(filePath);
+          
+          // Remove thumbnail if exists
+          const thumbnailPath = path.join(this.basePath, fileInfo.file.category, 'thumbnails', `${fileId}_thumb.jpg`);
+          await fs.unlink(thumbnailPath).catch(() => {}); // Ignore if thumbnail doesn't exist
+        } catch (error) {
+          console.warn(`Could not delete physical file: ${error}`);
+        }
       }
 
       return true;
@@ -451,26 +525,32 @@ export class VendorFileManager {
     filePath: string;
     dimensions?: { width: number; height: number };
   }): Promise<void> {
-    const pool = await getPool();
-    
-    await pool.execute(`
-      INSERT INTO vendor_files (
-        vendor_info_id, file_id, original_name, category, upload_type,
-        file_size, file_format, file_hash, file_path,
-        width, height, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    `, [
-      metadata.vendorId,
-      metadata.fileId,
-      metadata.originalName,
-      metadata.category,
-      metadata.uploadType,
-      metadata.fileSize,
-      metadata.fileFormat,
-      metadata.fileHash,
-      metadata.filePath,
-      metadata.dimensions?.width || null,
-      metadata.dimensions?.height || null
-    ]);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers = await this.getAuthHeaders();
+      
+      const response = await fetch(`${apiUrl}/v2/vendors/files/metadata`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(metadata),
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to store metadata: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to store metadata');
+      }
+    } catch (error) {
+      console.error('Error storing file metadata:', error);
+      throw error;
+    }
   }
 }

@@ -245,7 +245,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
   const handleAddToCart = () => {
     if (validateForm()) {
-      onAddToCart(config);
+      const calculatedPrice = calculatePrice();
+      onAddToCart(config, calculatedPrice);
     }
   };
 

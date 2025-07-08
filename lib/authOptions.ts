@@ -3,9 +3,8 @@ import GoogleProvider from 'next-auth/providers/google';
 import FacebookProvider from 'next-auth/providers/facebook';
 import AppleProvider from 'next-auth/providers/apple';
 import TwitterProvider from 'next-auth/providers/twitter';
-import { getPool } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { RowDataPacket } from 'mysql2';
+import { userService } from '@/lib/services/singletons';
 
 interface SocialUser {
   id: string;
@@ -41,16 +40,10 @@ export const authOptions: NextAuthOptions = {
           return false;
         }
 
-        const pool = await getPool();
-        
-        // Check if user already exists
-        const [existingUsers] = await pool.execute<RowDataPacket[]>(
-          'SELECT user_id, role, is_active FROM users WHERE email = ?',
-          [user.email]
-        );
+        // Check if user already exists using userService
+        const existingUser = await userService.getUserByEmail(user.email);
 
-        if (existingUsers.length > 0) {
-          const existingUser = existingUsers[0];
+        if (existingUser) {
           
           // Only allow social login for CUSTOMER role users
           if (existingUser.role !== 'customer') {
@@ -62,16 +55,13 @@ export const authOptions: NextAuthOptions = {
           }
 
           // Update social login information
-          await pool.execute(
-            `UPDATE users SET 
-             social_provider = ?, 
-             social_id = ?, 
-             profile_image = ?,
-             last_login = NOW(),
-             updated_at = NOW()
-             WHERE user_id = ?`,
-            [account.provider, account.providerAccountId, user.image, existingUser.user_id]
-          );
+          await userService.update(existingUser.user_id, {
+            social_provider: account.provider,
+            social_id: account.providerAccountId,
+            profile_image: user.image || null,
+            last_login: new Date(),
+            updated_at: new Date()
+          });
 
           return true;
         }
@@ -84,25 +74,19 @@ export const authOptions: NextAuthOptions = {
         const randomPassword = Math.random().toString(36).slice(-12);
         const hashedPassword = await bcrypt.hash(randomPassword, 12);
 
-        const [result] = await pool.execute(
-          `INSERT INTO users (
-            first_name, last_name, email, password_hash, role, 
-            is_active, social_provider, social_id, profile_image,
-            email_verified, created_at, updated_at, last_login
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), NOW())`,
-          [
-            firstName,
-            lastName, 
-            user.email,
-            hashedPassword,
-            'customer', // ONLY create customer accounts via social login
-            1,
-            account.provider,
-            account.providerAccountId,
-            user.image,
-            1 // Social login users are considered email verified
-          ]
-        );
+        // Create new user using userService
+        await userService.createUser({
+          first_name: firstName,
+          last_name: lastName,
+          email: user.email,
+          password: randomPassword, // Service will hash it
+          role: 'customer', // ONLY create customer accounts via social login
+          is_active: 1,
+          social_provider: account.provider,
+          social_id: account.providerAccountId,
+          profile_image: user.image || null,
+          email_verified: 1 // Social login users are considered email verified
+        });
 
         return true;
 
@@ -115,14 +99,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }): Promise<any> {
       if (account && user) {
         try {
-          const pool = await getPool();
-          const [users] = await pool.execute<RowDataPacket[]>(
-            'SELECT user_id, role, first_name, last_name, is_active FROM users WHERE email = ?',
-            [user.email]
-          );
+          const dbUser = await userService.getUserByEmail(user.email!);
 
-          if (users.length > 0) {
-            const dbUser = users[0];
+          if (dbUser) {
             token.userId = dbUser.user_id;
             token.role = dbUser.role;
             token.firstName = dbUser.first_name;

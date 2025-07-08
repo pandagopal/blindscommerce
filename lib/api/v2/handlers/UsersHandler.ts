@@ -68,6 +68,7 @@ export class UsersHandler extends BaseHandler {
       'activity': () => this.getActivity(req, user),
       'wishlist': () => this.getWishlist(req, user),
       'loyalty': () => this.getLoyaltyInfo(user),
+      'commercial-eligibility': () => this.getCommercialEligibility(user),
     };
 
     return this.routeAction(action, routes);
@@ -530,6 +531,53 @@ export class UsersHandler extends BaseHandler {
     }
 
     return loyalty;
+  }
+
+  // Commercial eligibility
+  private async getCommercialEligibility(user: any) {
+    this.requireAuth(user);
+    
+    // Check customer order history
+    const [orderStats] = await this.userService.raw(`
+      SELECT COUNT(*) as order_count, SUM(total_amount) as total_spent
+      FROM orders 
+      WHERE user_id = ? AND status IN ('completed', 'delivered')
+    `, [user.userId]);
+
+    const orderHistory = orderStats as any;
+
+    const requirements: string[] = [];
+    let eligible = true;
+    let reason = '';
+
+    // Business email check
+    if (!user.email.match(/\.(com|org|net|edu|gov)$/)) {
+      requirements.push('Business email address');
+    }
+
+    // Order history check
+    if (orderHistory.order_count < 2) {
+      eligible = false;
+      reason = 'Minimum 2 completed orders required for commercial templates';
+      requirements.push('At least 2 completed orders');
+    }
+
+    // Spending threshold check
+    if (orderHistory.total_spent < 500) {
+      eligible = false;
+      reason = 'Minimum $500 in completed orders required';
+      requirements.push('At least $500 in completed orders');
+    }
+
+    return {
+      eligible,
+      reason: eligible ? undefined : reason,
+      requirements: requirements.length > 0 ? requirements : undefined,
+      orderHistory: {
+        orderCount: orderHistory.order_count || 0,
+        totalSpent: orderHistory.total_spent || 0
+      }
+    };
   }
 
   // Email verification

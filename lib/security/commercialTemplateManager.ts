@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs/promises';
-import { getPool } from '@/lib/db';
 import { validateCSV } from './fileValidators';
 
 export interface BulkOrderTemplate {
@@ -377,7 +376,8 @@ export class CommercialTemplateManager {
     customerId: number,
     templateId: string,
     csvContent: string,
-    fileName: string
+    fileName: string,
+    authToken?: string
   ): Promise<BulkOrderUpload> {
     const template = this.getTemplate(templateId);
     if (!template) {
@@ -445,7 +445,7 @@ export class CommercialTemplateManager {
     };
 
     // Store upload record
-    await this.storeUploadRecord(upload);
+    await this.storeUploadRecord(upload, authToken);
 
     return upload;
   }
@@ -453,59 +453,46 @@ export class CommercialTemplateManager {
   /**
    * Check if customer is eligible for commercial templates
    */
-  static async isCustomerEligibleForCommercial(customerId: number): Promise<{
+  static async isCustomerEligibleForCommercial(customerId: number, authToken?: string): Promise<{
     eligible: boolean;
     reason?: string;
     requirements?: string[];
   }> {
-    const pool = await getPool();
-    
-    // Check customer order history
-    const [orders] = await pool.execute(`
-      SELECT COUNT(*) as order_count, SUM(total_amount) as total_spent
-      FROM orders 
-      WHERE user_id = ? AND order_status IN ('completed', 'delivered')
-    `, [customerId]);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch(`${apiUrl}/v2/users/commercial-eligibility`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
 
-    const orderHistory = (orders as any)[0];
+      if (!response.ok) {
+        throw new Error(`Failed to check eligibility: ${response.statusText}`);
+      }
 
-    // Check if customer has business account
-    const [userInfo] = await pool.execute(`
-      SELECT role, email, first_name, last_name 
-      FROM users 
-      WHERE user_id = ?
-    `, [customerId]);
-
-    const user = (userInfo as any)[0];
-
-    const requirements: string[] = [];
-    let eligible = true;
-    let reason = '';
-
-    // Business email check
-    if (!user.email.match(/\.(com|org|net|edu|gov)$/)) {
-      requirements.push('Business email address');
+      const result = await response.json();
+      
+      return {
+        eligible: result.eligible || false,
+        reason: result.reason,
+        requirements: result.requirements
+      };
+    } catch (error) {
+      console.error('Error checking commercial eligibility:', error);
+      return {
+        eligible: false,
+        reason: 'Unable to verify eligibility',
+        requirements: ['Please try again later']
+      };
     }
-
-    // Order history check
-    if (orderHistory.order_count < 2) {
-      eligible = false;
-      reason = 'Minimum 2 completed orders required for commercial templates';
-      requirements.push('At least 2 completed orders');
-    }
-
-    // Spending threshold check
-    if (orderHistory.total_spent < 500) {
-      eligible = false;
-      reason = 'Minimum $500 in completed orders required';
-      requirements.push('At least $500 in completed orders');
-    }
-
-    return {
-      eligible,
-      reason: eligible ? undefined : reason,
-      requirements: requirements.length > 0 ? requirements : undefined
-    };
   }
 
   // Private helper methods
@@ -714,27 +701,41 @@ export class CommercialTemplateManager {
     return `bulk_${customerId}_${timestamp}_${random}`;
   }
 
-  private static async storeUploadRecord(upload: BulkOrderUpload): Promise<void> {
-    const pool = await getPool();
-    
-    await pool.execute(`
-      INSERT INTO customer_bulk_uploads (
-        upload_id, customer_id, template_id, file_name, file_hash,
-        row_count, valid_rows, invalid_rows, status,
-        validation_errors, validation_warnings, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    `, [
-      upload.uploadId,
-      upload.customerId,
-      upload.templateId,
-      upload.fileName,
-      upload.fileHash,
-      upload.rowCount,
-      upload.validRows,
-      upload.invalidRows,
-      upload.status,
-      JSON.stringify(upload.validationErrors),
-      JSON.stringify(upload.validationWarnings)
-    ]);
+  private static async storeUploadRecord(upload: BulkOrderUpload, authToken?: string): Promise<void> {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      
+      const response = await fetch(`${apiUrl}/v2/commerce/bulk-uploads`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          uploadId: upload.uploadId,
+          templateId: upload.templateId,
+          fileName: upload.fileName,
+          fileHash: upload.fileHash,
+          rowCount: upload.rowCount,
+          validRows: upload.validRows,
+          invalidRows: upload.invalidRows,
+          status: upload.status,
+          validationErrors: upload.validationErrors,
+          validationWarnings: upload.validationWarnings
+        }),
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to store upload record: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error storing upload record:', error);
+      throw error;
+    }
   }
 }

@@ -383,6 +383,40 @@ export class CartService extends BaseService {
   }
 
   /**
+   * Update cart item configuration (for editing items)
+   */
+  async updateCartItemConfiguration(
+    cartItemId: number,
+    quantity: number,
+    configuration: any,
+    userId?: number
+  ): Promise<boolean> {
+    // If userId provided, verify the cart item belongs to user's cart
+    if (userId) {
+      const [item] = await this.executeQuery<{cart_id: number}>(
+        `SELECT ci.cart_id FROM cart_items ci 
+         JOIN carts c ON ci.cart_id = c.cart_id 
+         WHERE ci.cart_item_id = ? AND c.user_id = ?`,
+        [cartItemId, userId]
+      );
+      
+      if (!item) {
+        return false; // Item doesn't belong to user
+      }
+    }
+
+    // Update both quantity and configuration
+    const result = await this.executeMutation(
+      `UPDATE cart_items 
+       SET quantity = ?, configuration = ?, updated_at = NOW() 
+       WHERE cart_item_id = ?`,
+      [quantity, JSON.stringify(configuration), cartItemId]
+    );
+
+    return result.affectedRows > 0;
+  }
+
+  /**
    * Remove item from cart
    */
   async removeFromCart(
