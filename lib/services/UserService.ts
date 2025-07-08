@@ -74,7 +74,7 @@ export class UserService extends BaseService {
         vi.is_approved as vendor_is_approved,
         
         -- Sales rep info
-        sr.vendor_info_id as sales_vendor_info_id,
+        sr.vendor_id as sales_vendor_info_id,
         sr.commission_rate as sales_commission_rate,
         COALESCE(sr_stats.total_sales, 0) as sales_total_sales,
         
@@ -88,12 +88,12 @@ export class UserService extends BaseService {
       LEFT JOIN sales_staff sr ON u.user_id = sr.user_id AND u.role = 'sales_representative'
       LEFT JOIN (
         SELECT 
-          sales_rep_id,
+          assigned_to as sales_rep_id,
           COUNT(*) as total_sales
-        FROM sales_leads
-        WHERE status = 'converted'
-        GROUP BY sales_rep_id
-      ) sr_stats ON sr.sales_rep_id = sr_stats.sales_rep_id
+        FROM leads
+        WHERE status = 'closed_won'
+        GROUP BY assigned_to
+      ) sr_stats ON u.user_id = sr_stats.sales_rep_id
       LEFT JOIN (
         SELECT 
           user_id,
@@ -103,7 +103,17 @@ export class UserService extends BaseService {
         WHERE status NOT IN ('cancelled', 'refunded')
         GROUP BY user_id
       ) c_stats ON u.user_id = c_stats.user_id AND u.role = 'customer'
-      LEFT JOIN loyalty_points lp ON u.user_id = lp.user_id
+      LEFT JOIN (
+        SELECT 
+          user_id,
+          SUM(CASE 
+            WHEN transaction_type IN ('earned', 'bonus', 'referral', 'adjusted') THEN points_amount 
+            WHEN transaction_type IN ('redeemed', 'expired') THEN -points_amount 
+            ELSE 0 
+          END) as points_balance
+        FROM loyalty_points_transactions
+        GROUP BY user_id
+      ) lp ON u.user_id = lp.user_id
       WHERE u.user_id = ?
       LIMIT 1
     `;

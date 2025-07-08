@@ -125,9 +125,9 @@ export async function getCurrentUser(): Promise<User | null> {
     const { userService } = await import('@/lib/services/singletons');
     
     try {
-      const userData = await userService.getUserById(decoded.userId);
+      const userData = await userService.getUserWithDetails(decoded.userId);
       
-      if (!userData || userData.is_active !== 1) {
+      if (!userData || !userData.is_active) {
         return null;
       }
 
