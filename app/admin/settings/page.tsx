@@ -643,15 +643,18 @@ export default function AdminSettingsPage() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Webhook Secret
+                          Webhook Secret (Optional)
                         </label>
                         <Input
                           type="password"
                           value={safeSettings.payments.stripe_webhook_secret}
                           onChange={(e) => handleSettingChange('payments', 'stripe_webhook_secret', e.target.value)}
-                          placeholder="whsec_..."
+                          placeholder="whsec_... (Leave empty to disable webhooks)"
                           className="font-mono text-sm"
                         />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Optional: Only needed for webhook events like payment confirmations and disputes
+                        </p>
                       </div>
                       <p className="text-xs text-gray-500">
                         Get your keys from the <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Stripe Dashboard</a>

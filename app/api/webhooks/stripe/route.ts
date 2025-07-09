@@ -34,9 +34,18 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!stripeSettings.stripe_secret_key || !stripeSettings.stripe_webhook_secret) {
+    // Check if webhook secret is configured - if not, webhooks are disabled
+    if (!stripeSettings.stripe_webhook_secret) {
+      console.log('Stripe webhook secret not configured - webhooks disabled');
       return NextResponse.json(
-        { error: 'Stripe credentials not configured' },
+        { message: 'Stripe webhooks are disabled (no webhook secret configured)' },
+        { status: 200 }
+      );
+    }
+    
+    if (!stripeSettings.stripe_secret_key) {
+      return NextResponse.json(
+        { error: 'Stripe secret key not configured' },
         { status: 500 }
       );
     }

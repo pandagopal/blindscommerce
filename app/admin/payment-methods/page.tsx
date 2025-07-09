@@ -47,7 +47,7 @@ const paymentProviders: PaymentMethod[] = [
     testMode: true,
     credentials: {
       configured: false,
-      fields: ['Secret Key', 'Publishable Key', 'Webhook Secret'],
+      fields: ['Secret Key', 'Publishable Key', 'Webhook Secret (Optional)'],
     },
     supportedCurrencies: ['USD', 'EUR', 'GBP', 'CAD', 'AUD'],
     transactionFees: { percentage: 2.9, fixed: 0.30 },
