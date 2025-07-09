@@ -205,7 +205,7 @@ export default function AdminSettingsPage() {
       } else {
         // Save all settings
         response = await fetch('/api/v2/admin/settings', {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },

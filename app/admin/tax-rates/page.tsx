@@ -36,6 +36,8 @@ interface UploadResult {
   updated: number;
   errors: string[];
   preview?: any[];
+  records?: any[];
+  valid?: number;
   total_errors?: number;
 }
 
@@ -46,35 +48,45 @@ export default function TaxRatesPage() {
   const [loading, setLoading] = useState(true);
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [fileSelected, setFileSelected] = useState(false);
   const itemsPerPage = 50;
 
+  // Debounce search term
   useEffect(() => {
-    // Admin layout already handles auth, so just load tax rates
-    const initializePage = async () => {
-      try {
-        await loadTaxRates();
-      } catch (error) {
-        console.error('Error loading page:', error);
-      } finally {
-        setLoading(false);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to first page when searching
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
       }
-    };
+    }, 300);
 
-    initializePage();
-  }, [currentPage, searchTerm]);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    // Load tax rates when component mounts or when search/pagination changes
+    loadTaxRates();
+  }, [currentPage, debouncedSearchTerm]);
+
+  useEffect(() => {
+    // Set loading to false after initial mount
+    setLoading(false);
+  }, []);
 
   const loadTaxRates = async () => {
     try {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
-        ...(searchTerm && { search: searchTerm })
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm })
       });
 
       const res = await fetch(`/api/v2/admin/tax-rates?${params}`, {
@@ -84,8 +96,10 @@ export default function TaxRatesPage() {
         const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
         throw new Error(`Failed to load tax rates: ${errorData.error || res.statusText}`);
       }
-      const data = await res.json();
-      // V2 API returns data.rates
+      const result = await res.json();
+      // V2 API wraps response in { success, data }
+      const data = result.data || result;
+      console.log('Tax rates loaded:', data);
       setTaxRates(data.rates || []);
       setTotalRecords(data.pagination?.total || data.total || 0);
       setTotalPages(Math.ceil((data.pagination?.total || data.total || 0) / itemsPerPage));
@@ -112,18 +126,38 @@ export default function TaxRatesPage() {
       const response = await fetch('/api/v2/admin/tax-rates/upload', {
         method: 'POST',
         body: formData,
+        credentials: 'include'
       });
 
-      const result = await response.json();
-      setUploadResult(result);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || errorData.message || 'Upload failed');
+      }
 
-      if (result.success && !preview) {
+      const result = await response.json();
+      // Handle V2 API response format
+      const uploadData = result.data || result;
+      
+      // Ensure errors array exists
+      if (!uploadData.errors) {
+        uploadData.errors = [];
+      }
+      
+      // Map records to preview for consistency
+      if (uploadData.records && !uploadData.preview) {
+        uploadData.preview = uploadData.records;
+      }
+      
+      setUploadResult(uploadData);
+
+      if (uploadData.success && !preview) {
         // Reload tax rates after successful upload
         await loadTaxRates();
         // Clear file input
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
+        setFileSelected(false);
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -225,7 +259,10 @@ export default function TaxRatesPage() {
                     type="file"
                     accept=".csv"
                     className="hidden"
-                    onChange={() => setUploadResult(null)}
+                    onChange={(e) => {
+                      setFileSelected(!!e.target.files?.[0]);
+                      setUploadResult(null);
+                    }}
                   />
                   <Button
                     onClick={() => fileInputRef.current?.click()}
@@ -237,7 +274,7 @@ export default function TaxRatesPage() {
                   </Button>
                   <Button
                     onClick={() => handleFileUpload(true)}
-                    disabled={!fileInputRef.current?.files?.[0] || uploading}
+                    disabled={!fileSelected || uploading}
                     variant="outline"
                     className="flex items-center gap-2"
                   >
@@ -246,7 +283,7 @@ export default function TaxRatesPage() {
                   </Button>
                   <Button
                     onClick={() => handleFileUpload(false)}
-                    disabled={!fileInputRef.current?.files?.[0] || uploading}
+                    disabled={!fileSelected || uploading}
                     className="bg-primary-red hover:bg-primary-red-dark text-white flex items-center gap-2"
                   >
                     {uploading ? (
@@ -305,15 +342,15 @@ export default function TaxRatesPage() {
                             </p>
                           </>
                         )}
-                        {uploadResult.errors.length > 0 && (
+                        {uploadResult.errors && uploadResult.errors.length > 0 && (
                           <p className="text-sm text-orange-700">
-                            Errors: <strong>{showPreview ? uploadResult.total_errors : uploadResult.errors.length}</strong>
+                            Errors: <strong>{showPreview ? (uploadResult.total_errors || uploadResult.errors.length) : uploadResult.errors.length}</strong>
                           </p>
                         )}
                       </div>
                     )}
 
-                    {uploadResult.errors.length > 0 && (
+                    {uploadResult.errors && uploadResult.errors.length > 0 && (
                       <div className="mt-3">
                         <h5 className="text-sm font-medium text-gray-800 mb-2">Errors:</h5>
                         <div className="max-h-32 overflow-y-auto">
@@ -331,7 +368,7 @@ export default function TaxRatesPage() {
                       </div>
                     )}
 
-                    {showPreview && uploadResult.preview && (
+                    {showPreview && uploadResult.preview && Array.isArray(uploadResult.preview) && (
                       <div className="mt-3">
                         <h5 className="text-sm font-medium text-gray-800 mb-2">Preview (first 10 rows):</h5>
                         <div className="overflow-x-auto">
@@ -341,7 +378,7 @@ export default function TaxRatesPage() {
                                 <th className="text-left p-1">ZIP Code</th>
                                 <th className="text-left p-1">City</th>
                                 <th className="text-left p-1">State</th>
-                                <th className="text-left p-1">Total Rate</th>
+                                <th className="text-left p-1">Tax Rate</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -349,8 +386,8 @@ export default function TaxRatesPage() {
                                 <tr key={index} className="border-b">
                                   <td className="p-1">{row.zip_code}</td>
                                   <td className="p-1">{row.city}</td>
-                                  <td className="p-1">{row.state_code}</td>
-                                  <td className="p-1">{row.total_tax_rate}%</td>
+                                  <td className="p-1">{row.state}</td>
+                                  <td className="p-1">{row.tax_rate}%</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -387,36 +424,42 @@ export default function TaxRatesPage() {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <table className="min-w-full">
+              <table className="min-w-full text-sm">
                 <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3">ZIP Code</th>
-                    <th className="text-left p-3">City</th>
-                    <th className="text-left p-3">County</th>
-                    <th className="text-left p-3">State</th>
-                    <th className="text-left p-3">Total Rate</th>
-                    <th className="text-left p-3">Jurisdiction</th>
-                    <th className="text-left p-3">Status</th>
-                    <th className="text-left p-3">Updated</th>
+                  <tr className="border-b bg-gray-50">
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">ZIP Code</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">City</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">County</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">State</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">Total Rate</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">Jurisdiction</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">Status</th>
+                    <th className="text-left p-2 text-xs font-medium text-gray-700">Updated</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="text-xs">
                   {taxRates.map((rate) => (
                     <tr key={rate.tax_rate_id} className="border-b hover:bg-gray-50">
-                      <td className="p-3 font-mono">{rate.zip_code}</td>
-                      <td className="p-3">{rate.city}</td>
-                      <td className="p-3">{rate.county}</td>
-                      <td className="p-3">
-                        <Badge variant="outline">{rate.state_code}</Badge>
+                      <td className="p-2 font-mono text-gray-900">{rate.zip_code}</td>
+                      <td className="p-2 text-gray-800">{rate.city}</td>
+                      <td className="p-2 text-gray-600">{rate.county || '-'}</td>
+                      <td className="p-2">
+                        <span className="inline-flex px-1.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-800 rounded">
+                          {rate.state_code}
+                        </span>
                       </td>
-                      <td className="p-3 font-semibold">{rate.total_tax_rate}%</td>
-                      <td className="p-3 text-sm text-gray-600">{rate.tax_jurisdiction}</td>
-                      <td className="p-3">
-                        <Badge variant={rate.is_active ? "default" : "secondary"}>
+                      <td className="p-2 text-gray-900">{rate.total_tax_rate}%</td>
+                      <td className="p-2 text-gray-600">{rate.tax_jurisdiction || '-'}</td>
+                      <td className="p-2">
+                        <span className={`inline-flex px-1.5 py-0.5 text-xs rounded ${
+                          rate.is_active 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
                           {rate.is_active ? 'Active' : 'Inactive'}
-                        </Badge>
+                        </span>
                       </td>
-                      <td className="p-3 text-sm text-gray-500">
+                      <td className="p-2 text-gray-500">
                         {new Date(rate.updated_at).toLocaleDateString()}
                       </td>
                     </tr>
@@ -433,20 +476,21 @@ export default function TaxRatesPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-between items-center mt-6">
-                <p className="text-sm text-gray-600">
+              <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                <p className="text-xs text-gray-600">
                   Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalRecords)} of {totalRecords} results
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-1 items-center">
                   <Button
                     onClick={() => setCurrentPage(currentPage - 1)}
                     disabled={currentPage === 1}
                     variant="outline"
                     size="sm"
+                    className="h-7 text-xs"
                   >
                     Previous
                   </Button>
-                  <span className="px-3 py-2 text-sm">
+                  <span className="px-2 text-xs text-gray-600">
                     Page {currentPage} of {totalPages}
                   </span>
                   <Button
@@ -454,6 +498,7 @@ export default function TaxRatesPage() {
                     disabled={currentPage === totalPages}
                     variant="outline"
                     size="sm"
+                    className="h-7 text-xs"
                   >
                     Next
                   </Button>

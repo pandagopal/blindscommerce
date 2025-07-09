@@ -37,6 +37,7 @@ export class AdminHandler extends BaseHandler {
       'hero-banners/:id': () => this.getHeroBanner(action[1]),
       'tax-rates': () => this.getTaxRates(req),
       'tax-rates/:id': () => this.getTaxRate(action[1]),
+      'tax-rates/upload/template': () => this.getTaxRatesTemplate(),
       'settings': () => this.getSettings(req),
       'rooms': () => this.getRooms(req),
       'rooms/:id': () => this.getRoom(action[1]),
@@ -55,10 +56,12 @@ export class AdminHandler extends BaseHandler {
       'upload/categories': () => this.uploadCategoryImage(req),
       'hero-banners': () => this.createHeroBanner(req),
       'tax-rates': () => this.createTaxRate(req),
+      'tax-rates/upload': () => this.uploadTaxRates(req),
       'rooms': () => this.createRoom(req),
       'products': () => this.createProduct(req),
       'vendors': () => this.createVendor(req),
       'users': () => this.createUser(req),
+      'settings/test-taxjar': () => this.testTaxJar(req),
     };
 
     return this.routeAction(action, routes);
@@ -664,20 +667,32 @@ export class AdminHandler extends BaseHandler {
     const searchParams = new URL(req.url).searchParams;
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search') || '';
     const offset = (page - 1) * limit;
     
     try {
       const pool = await getPool();
       
+      let whereClause = '';
+      const queryParams: any[] = [];
+      
+      if (search) {
+        whereClause = ' WHERE zip_code LIKE ? OR city LIKE ? OR state_code LIKE ?';
+        const searchPattern = `%${search}%`;
+        queryParams.push(searchPattern, searchPattern, searchPattern);
+      }
+      
       // Get total count
       const [countResult] = await pool.execute(
-        'SELECT COUNT(*) as total FROM tax_rates'
+        `SELECT COUNT(*) as total FROM tax_rates${whereClause}`,
+        queryParams
       );
       const total = (countResult as any[])[0].total;
       
       // Get paginated results
       const [rates] = await pool.execute(
-        `SELECT * FROM tax_rates ORDER BY state_code ASC, city ASC LIMIT ${limit} OFFSET ${offset}`
+        `SELECT * FROM tax_rates${whereClause} ORDER BY state_code ASC, city ASC LIMIT ${limit} OFFSET ${offset}`,
+        queryParams
       );
       
       return {
@@ -764,6 +779,177 @@ export class AdminHandler extends BaseHandler {
     }
   }
 
+  private async getTaxRatesTemplate() {
+    // Return CSV template for tax rates upload
+    const csvContent = `zip_code,city,state,tax_rate
+10001,New York,NY,8.875
+90210,Beverly Hills,CA,9.5
+60601,Chicago,IL,10.25
+33101,Miami,FL,7.0
+98101,Seattle,WA,10.25
+30301,Atlanta,GA,8.9
+85001,Phoenix,AZ,8.6
+80201,Denver,CO,8.81
+02101,Boston,MA,6.25
+78701,Austin,TX,8.25`;
+
+    // Return a NextResponse directly for file download
+    return new Response(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': 'attachment; filename="tax_rates_template.csv"'
+      }
+    });
+  }
+
+  private async uploadTaxRates(req: NextRequest) {
+    try {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      const preview = formData.get('preview') === 'true';
+
+      if (!file) {
+        throw new ApiError('No file uploaded', 400);
+      }
+
+      // Read the CSV file
+      const text = await file.text();
+      const lines = text.trim().split('\n');
+      
+      if (lines.length < 2) {
+        throw new ApiError('CSV file is empty or invalid', 400);
+      }
+
+      // Parse CSV header
+      const header = lines[0].toLowerCase().split(',').map(h => h.trim());
+      const requiredColumns = ['zip_code', 'city', 'state', 'tax_rate'];
+      
+      for (const col of requiredColumns) {
+        if (!header.includes(col)) {
+          throw new ApiError(`Missing required column: ${col}`, 400);
+        }
+      }
+
+      const zipIndex = header.indexOf('zip_code');
+      const cityIndex = header.indexOf('city');
+      const stateIndex = header.indexOf('state');
+      const rateIndex = header.indexOf('tax_rate');
+
+      const records = [];
+      const errors = [];
+
+      // Parse data lines
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const values = line.split(',').map(v => v.trim());
+        
+        try {
+          const zipCode = values[zipIndex];
+          const city = values[cityIndex];
+          const state = values[stateIndex];
+          const taxRate = parseFloat(values[rateIndex]);
+
+          // Validate data
+          if (!zipCode || !city || !state || isNaN(taxRate)) {
+            errors.push(`Line ${i + 1}: Invalid data`);
+            continue;
+          }
+
+          if (!/^\d{5}$/.test(zipCode)) {
+            errors.push(`Line ${i + 1}: Invalid ZIP code format`);
+            continue;
+          }
+
+          if (!/^[A-Z]{2}$/i.test(state)) {
+            errors.push(`Line ${i + 1}: State must be a 2-letter code (e.g., NY, CA)`);
+            continue;
+          }
+
+          if (taxRate < 0 || taxRate > 100) {
+            errors.push(`Line ${i + 1}: Tax rate must be between 0 and 100`);
+            continue;
+          }
+
+          records.push({ zip_code: zipCode, city, state: state.toUpperCase(), tax_rate: taxRate });
+        } catch (error) {
+          errors.push(`Line ${i + 1}: ${error}`);
+        }
+      }
+
+      if (preview) {
+        // Return preview data without saving
+        return {
+          success: true,
+          preview: true,
+          processed: lines.length - 1,
+          valid: records.length,
+          errors: errors,
+          records: records.slice(0, 10) // Show first 10 records
+        };
+      }
+
+      // Import to database
+      const pool = await getPool();
+      let imported = 0;
+      let updated = 0;
+
+      for (const record of records) {
+        try {
+          // Check if exists
+          const [existing] = await pool.execute(
+            'SELECT tax_rate_id FROM tax_rates WHERE zip_code = ?',
+            [record.zip_code]
+          );
+
+          if ((existing as any[]).length > 0) {
+            // Update existing
+            await pool.execute(
+              'UPDATE tax_rates SET city = ?, state_code = ?, total_tax_rate = ?, updated_at = NOW() WHERE zip_code = ?',
+              [record.city, record.state, record.tax_rate, record.zip_code]
+            );
+            updated++;
+          } else {
+            // Insert new - set required fields with defaults for others
+            await pool.execute(
+              `INSERT INTO tax_rates (
+                zip_code, city, state_code, total_tax_rate,
+                state_tax_rate, county_tax_rate, city_tax_rate, special_district_tax_rate,
+                created_at, updated_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              [
+                record.zip_code, 
+                record.city, 
+                record.state, 
+                record.tax_rate,
+                0, // state_tax_rate default
+                0, // county_tax_rate default
+                0, // city_tax_rate default
+                0  // special_district_tax_rate default
+              ]
+            );
+            imported++;
+          }
+        } catch (error) {
+          errors.push(`ZIP ${record.zip_code}: ${error}`);
+        }
+      }
+
+      return {
+        success: true,
+        processed: lines.length - 1,
+        imported,
+        updated,
+        errors
+      };
+
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to process CSV file', 500);
+    }
+  }
+
   // Settings
   private async getSettings(req: NextRequest) {
     try {
@@ -798,6 +984,47 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       console.error('Error updating settings:', error);
       throw new ApiError('Failed to update settings', 500);
+    }
+  }
+
+  private async testTaxJar(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const { taxjar_api_key, taxjar_environment } = body;
+
+      if (!taxjar_api_key) {
+        throw new ApiError('TaxJar API key is required', 400);
+      }
+
+      // TaxJar API endpoint based on environment
+      const baseUrl = taxjar_environment === 'sandbox' 
+        ? 'https://api.sandbox.taxjar.com/v2' 
+        : 'https://api.taxjar.com/v2';
+
+      // Test the API key by making a request to categories endpoint (lightweight endpoint)
+      const response = await fetch(`${baseUrl}/categories`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${taxjar_api_key}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        return {
+          success: true,
+          message: 'TaxJar API key is valid'
+        };
+      } else if (response.status === 401) {
+        throw new ApiError('Invalid TaxJar API key', 401);
+      } else {
+        const error = await response.text();
+        throw new ApiError(`TaxJar API error: ${error}`, response.status);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error testing TaxJar:', error);
+      throw new ApiError('Failed to test TaxJar connection', 500);
     }
   }
 

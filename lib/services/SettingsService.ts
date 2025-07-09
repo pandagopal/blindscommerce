@@ -246,16 +246,16 @@ export class SettingsService {
     const pool = await getPool();
     
     for (const [key, value] of Object.entries(settings)) {
-      // Check if setting exists
+      // Check if setting exists (setting_key is unique across all categories)
       const [existing] = await pool.execute(
-        'SELECT setting_id FROM company_settings WHERE category = ? AND setting_key = ?',
-        [category, key]
+        'SELECT setting_id, category FROM company_settings WHERE setting_key = ?',
+        [key]
       );
       
       if ((existing as any[]).length > 0) {
-        // Update existing setting
+        // Update existing setting - update both value and category
         await pool.execute(
-          'UPDATE company_settings SET setting_value = ?, updated_at = NOW() WHERE category = ? AND setting_key = ?',
+          'UPDATE company_settings SET setting_value = ?, category = ?, updated_at = NOW() WHERE setting_key = ?',
           [JSON.stringify(value), category, key]
         );
       } else {

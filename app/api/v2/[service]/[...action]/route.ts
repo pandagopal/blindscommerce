@@ -130,6 +130,11 @@ async function handleRequest(
     // Call the handler
     const result = await methodHandler.call(handler, req, action, user);
 
+    // Check if the result is already a Response object (for file downloads, etc.)
+    if (result instanceof Response) {
+      return result;
+    }
+
     // Return success response
     return successResponse(result, service, actionPath, startTime);
 
