@@ -114,6 +114,21 @@ export class AuthHandler extends BaseHandler {
       [user.user_id]
     );
 
+    // Merge guest cart with user cart for customers
+    if (user.role === 'customer') {
+      const searchParams = this.getSearchParams(req);
+      const sessionId = searchParams.get('sessionId');
+      if (sessionId) {
+        const { cartService } = await import('@/lib/services/singletons');
+        try {
+          await cartService.mergeCart(sessionId, user.user_id);
+        } catch (error) {
+          // Log error but don't fail login
+          console.error('Error merging cart:', error);
+        }
+      }
+    }
+
     // Set JWT cookie
     const cookieStore = await cookies();
     cookieStore.set('auth_token', token, {

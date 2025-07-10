@@ -24,7 +24,23 @@ function LoginForm() {
     setError('');
 
     try {
-      const response = await fetch('/api/v2/auth/login', {
+      // Get sessionId from localStorage for cart merging
+      let sessionId = null;
+      try {
+        const guestCart = localStorage.getItem('guest_cart');
+        if (guestCart) {
+          // Generate a simple sessionId based on the cart data
+          sessionId = btoa(guestCart).substring(0, 32);
+        }
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+
+      const loginUrl = sessionId 
+        ? `/api/v2/auth/login?sessionId=${encodeURIComponent(sessionId)}`
+        : '/api/v2/auth/login';
+
+      const response = await fetch(loginUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,6 +99,15 @@ function LoginForm() {
       } else {
           targetUrl = '/';
         }
+      }
+
+      // Trigger cart reload for other tabs/windows
+      try {
+        localStorage.setItem('auth_changed', Date.now().toString());
+        // Clean up immediately
+        setTimeout(() => localStorage.removeItem('auth_changed'), 100);
+      } catch (e) {
+        // Ignore localStorage errors
       }
 
       // Use replace to prevent back button from returning to login

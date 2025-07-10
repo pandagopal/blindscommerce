@@ -518,7 +518,7 @@ export class CommerceHandler extends BaseHandler {
 
     const success = await this.cartService.removeFromCart(
       cartItemId,
-      user?.user_id
+      user?.userId || user?.user_id
     );
 
     if (!success) {

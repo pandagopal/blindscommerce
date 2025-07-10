@@ -582,44 +582,78 @@ export class CartService extends BaseService {
     try {
       await connection.beginTransaction();
 
-      // Get guest cart items
-      const [guestItems] = await connection.execute<RowDataPacket[]>(
-        'SELECT * FROM cart_items WHERE session_id = ?',
+      // Get guest cart
+      const [guestCart] = await connection.execute<RowDataPacket[]>(
+        'SELECT cart_id FROM carts WHERE session_id = ? AND status = "active" LIMIT 1',
         [sessionId]
       );
 
+      if (!guestCart[0]) {
+        await connection.commit();
+        return; // No guest cart to merge
+      }
+
+      const guestCartId = guestCart[0].cart_id;
+
+      // Get or create user cart
+      let userCartId: number;
+      const [userCart] = await connection.execute<RowDataPacket[]>(
+        'SELECT cart_id FROM carts WHERE user_id = ? AND status = "active" LIMIT 1',
+        [userId]
+      );
+
+      if (userCart[0]) {
+        userCartId = userCart[0].cart_id;
+      } else {
+        const [newCart] = await connection.execute<ResultSetHeader>(
+          'INSERT INTO carts (user_id, status) VALUES (?, "active")',
+          [userId]
+        );
+        userCartId = newCart.insertId;
+      }
+
+      // Get guest cart items
+      const [guestItems] = await connection.execute<RowDataPacket[]>(
+        'SELECT * FROM cart_items WHERE cart_id = ?',
+        [guestCartId]
+      );
+
       for (const guestItem of guestItems) {
+        // Extract vendor_id from configuration if needed
+        const vendorId = guestItem.configuration 
+          ? JSON.parse(guestItem.configuration).vendorId 
+          : null;
+
         // Check if user already has this item
         const [existing] = await connection.execute<RowDataPacket[]>(
           `SELECT cart_item_id, quantity 
            FROM cart_items 
-           WHERE user_id = ? 
+           WHERE cart_id = ? 
              AND product_id = ? 
-             AND vendor_id = ?
-             AND configuration = ?`,
-          [userId, guestItem.product_id, guestItem.vendor_id, guestItem.configuration]
+             AND JSON_UNQUOTE(JSON_EXTRACT(configuration, '$.vendorId')) = ?`,
+          [userCartId, guestItem.product_id, vendorId]
         );
 
         if (existing[0]) {
           // Update quantity
           await connection.execute(
-            'UPDATE cart_items SET quantity = quantity + ? WHERE cart_item_id = ?',
+            'UPDATE cart_items SET quantity = quantity + ?, updated_at = NOW() WHERE cart_item_id = ?',
             [guestItem.quantity, existing[0].cart_item_id]
           );
-          
-          // Delete guest item
-          await connection.execute(
-            'DELETE FROM cart_items WHERE cart_item_id = ?',
-            [guestItem.cart_item_id]
-          );
         } else {
-          // Transfer to user
+          // Transfer to user cart
           await connection.execute(
-            'UPDATE cart_items SET user_id = ?, session_id = NULL WHERE cart_item_id = ?',
-            [userId, guestItem.cart_item_id]
+            'UPDATE cart_items SET cart_id = ?, updated_at = NOW() WHERE cart_item_id = ?',
+            [userCartId, guestItem.cart_item_id]
           );
         }
       }
+
+      // Mark guest cart as merged
+      await connection.execute(
+        'UPDATE carts SET status = "merged", updated_at = NOW() WHERE cart_id = ?',
+        [guestCartId]
+      );
 
       await connection.commit();
 

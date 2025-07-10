@@ -259,14 +259,24 @@ export function CartProvider({ children }: CartProviderProps) {
       setIsLoading(true);
       try {
         const authenticated = await isAuthenticated();
+        console.log('CartContext: Loading cart, authenticated:', authenticated);
         
         if (authenticated) {
           const response = await fetch('/api/v2/commerce/cart');
+          console.log('CartContext: Cart API response status:', response.status);
           if (response.ok) {
             const result = await response.json();
+            console.log('CartContext: Cart API result:', result);
             if (result.success) {
               const data = result.data || result;
               setItems(data.items || []);
+              console.log('CartContext: Loaded', data.items?.length || 0, 'items from API');
+              // Clear localStorage after successful load from API
+              try {
+                localStorage.removeItem('guest_cart');
+              } catch (e) {
+                // Ignore localStorage errors
+              }
             }
           }
         } else {
@@ -291,6 +301,26 @@ export function CartProvider({ children }: CartProviderProps) {
       }
     };
     loadCart();
+    
+    // Listen for storage events to reload cart after login
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_changed') {
+        console.log('CartContext: Auth changed, reloading cart');
+        loadCart();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for login success in URL
+    if (window.location.search.includes('login=success')) {
+      console.log('CartContext: Login success detected, reloading cart');
+      setTimeout(loadCart, 1000); // Delay to ensure auth cookie is set
+    }
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Recalculate pricing when items or ZIP code changes
@@ -457,10 +487,16 @@ export function CartProvider({ children }: CartProviderProps) {
           method: 'DELETE'
         });
         if (response.ok) {
-          const result = await response.json();
-          if (result.success) {
-            const data = result.data || result;
-            setItems(data.items || []);
+          // After successful deletion, fetch the updated cart
+          const cartResponse = await fetch('/api/v2/commerce/cart');
+          if (cartResponse.ok) {
+            const cartResult = await cartResponse.json();
+            if (cartResult.success) {
+              const cartData = cartResult.data || cartResult;
+              setItems(cartData.items || []);
+              // Recalculate pricing
+              await calculatePricing(cartData.items || [], appliedCoupon);
+            }
           }
         }
       } else {
@@ -468,6 +504,8 @@ export function CartProvider({ children }: CartProviderProps) {
         const updatedItems = items.filter(item => item.cart_item_id !== cart_item_id);
         setItems(updatedItems);
         saveGuestCart(updatedItems);
+        // Recalculate pricing
+        await calculatePricing(updatedItems, appliedCoupon);
       }
     } catch (error) {
       // Error removing item from cart
