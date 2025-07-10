@@ -335,10 +335,27 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
         totalPrice += parseFloat(selectedControl.price_adjustment) || 0;
       }
     }
-    if (config.valanceOption === 'circular-fabric') totalPrice += 45;
-    if (config.valanceOption === 'square-without') totalPrice += 35;
-    if (config.valanceOption === 'fabric-wrapped') totalPrice += 55;
-    if (config.bottomRailOption === 'fabric-wrapped') totalPrice += 25;
+    // 5. Add valance options pricing
+    if (config.valanceOption && product?.controlTypes?.valanceOptions) {
+      const selectedValance = product.controlTypes.valanceOptions.find(valance => 
+        valance.name.toLowerCase().replace(/\s+/g, '-') === config.valanceOption
+      );
+      
+      if (selectedValance && selectedValance.enabled) {
+        totalPrice += parseFloat(selectedValance.price_adjustment) || 0;
+      }
+    }
+    
+    // 6. Add bottom rail options pricing
+    if (config.bottomRailOption && product?.controlTypes?.bottomRailOptions) {
+      const selectedBottomRail = product.controlTypes.bottomRailOptions.find(rail => 
+        rail.name.toLowerCase().replace(/\s+/g, '-') === config.bottomRailOption
+      );
+      
+      if (selectedBottomRail && selectedBottomRail.enabled) {
+        totalPrice += parseFloat(selectedBottomRail.price_adjustment) || 0;
+      }
+    }
     
     // Ensure we always return a number
     return isNaN(totalPrice) ? 0 : totalPrice;
