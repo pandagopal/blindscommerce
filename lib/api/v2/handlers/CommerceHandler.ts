@@ -9,7 +9,8 @@ import {
   productService, 
   cartService, 
   orderService,
-  categoryService 
+  categoryService,
+  settingsService 
 } from '@/lib/services/singletons';
 import { z } from 'zod';
 
@@ -728,9 +729,18 @@ export class CommerceHandler extends BaseHandler {
     const currency = searchParams.get('currency') || 'USD';
     const country = searchParams.get('country') || 'US';
     
-    // Return available payment methods based on amount and country
-    const paymentMethods = [
-      {
+    // Get payment settings from database
+    const settings = await settingsService.getAllSettings();
+    const paymentSettings = settings.payments;
+    
+    // Return available payment methods based on settings and amount
+    const paymentMethods = [];
+    
+    // Check if Stripe is enabled and has credentials
+    if (paymentSettings.stripe_enabled && 
+        paymentSettings.stripe_secret_key && 
+        paymentSettings.stripe_publishable_key) {
+      paymentMethods.push({
         id: 'stripe_card',
         provider: 'stripe',
         type: 'card',
@@ -742,12 +752,16 @@ export class CommerceHandler extends BaseHandler {
         countries: ['US'],
         estimated_fee: 0,
         recommended: true,
-        popular: true
-      }
-    ];
+        popular: true,
+        publishable_key: paymentSettings.stripe_publishable_key
+      });
+    }
     
-    // Add PayPal
-    if (amount >= 10) {
+    // Check if PayPal is enabled
+    if (paymentSettings.paypal_enabled && 
+        paymentSettings.paypal_client_id && 
+        paymentSettings.paypal_client_secret &&
+        amount >= 10) {
       paymentMethods.push({
         id: 'paypal',
         provider: 'paypal',
@@ -760,12 +774,17 @@ export class CommerceHandler extends BaseHandler {
         countries: ['US'],
         estimated_fee: 0,
         recommended: false,
-        popular: true
+        popular: true,
+        client_id: paymentSettings.paypal_client_id
       });
     }
     
-    // Add BNPL options for larger amounts
-    if (amount >= 50) {
+    // Check if Klarna is enabled
+    if (paymentSettings.klarna_enabled && 
+        paymentSettings.klarna_api_key && 
+        paymentSettings.klarna_username &&
+        paymentSettings.klarna_password &&
+        amount >= 50) {
       paymentMethods.push({
         id: 'klarna',
         provider: 'klarna',
@@ -783,7 +802,11 @@ export class CommerceHandler extends BaseHandler {
       });
     }
     
-    if (amount >= 100) {
+    // Check if Afterpay is enabled
+    if (paymentSettings.afterpay_enabled && 
+        paymentSettings.afterpay_merchant_id && 
+        paymentSettings.afterpay_secret_key &&
+        amount >= 100) {
       paymentMethods.push({
         id: 'afterpay',
         provider: 'afterpay',
@@ -796,6 +819,50 @@ export class CommerceHandler extends BaseHandler {
         countries: ['US'],
         estimated_fee: 0,
         installments: 4,
+        recommended: false,
+        popular: false
+      });
+    }
+    
+    // Check if Affirm is enabled
+    if (paymentSettings.affirm_enabled && 
+        paymentSettings.affirm_public_api_key && 
+        paymentSettings.affirm_private_api_key &&
+        amount >= 50) {
+      paymentMethods.push({
+        id: 'affirm',
+        provider: 'affirm',
+        type: 'bnpl',
+        name: 'Affirm',
+        description: 'Flexible payment plans from 3-36 months',
+        min_amount: 50,
+        max_amount: 30000,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        installments: 'flexible',
+        recommended: false,
+        popular: false,
+        public_key: paymentSettings.affirm_public_api_key
+      });
+    }
+    
+    // Check if Braintree is enabled
+    if (paymentSettings.braintree_enabled && 
+        paymentSettings.braintree_merchant_id && 
+        paymentSettings.braintree_public_key &&
+        paymentSettings.braintree_private_key) {
+      paymentMethods.push({
+        id: 'braintree',
+        provider: 'braintree',
+        type: 'all',
+        name: 'Braintree',
+        description: 'Multiple payment options including cards and PayPal',
+        min_amount: 0,
+        max_amount: 999999,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
         recommended: false,
         popular: false
       });

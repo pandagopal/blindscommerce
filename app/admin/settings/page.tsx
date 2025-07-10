@@ -136,11 +136,6 @@ export default function AdminSettingsPage() {
   const loadSettings = async () => {
     try {
       const res = await fetch('/api/v2/admin/settings', {
-        // Add cache-busting headers to ensure fresh data
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        },
         credentials: 'include' // Include cookies for authentication
       });
       if (!res.ok) {
@@ -241,18 +236,16 @@ export default function AdminSettingsPage() {
       // Dispatch event to notify other components (like Navbar) to refresh
       window.dispatchEvent(new CustomEvent('settingsUpdated'));
       
-      // If general settings were saved, also clear company info cache
-      if (category === 'general') {
-        // Clear cache by calling the cache refresh API
-        fetch('/api/v2/admin/cache/refresh', { method: 'POST' }).catch(() => {
-          // Ignore errors - cache will expire naturally
-        });
-      }
       
       // Clear success message after 5 seconds
       setTimeout(() => setSuccessMessage(''), 5000);
       
-      // Don't reload settings immediately - the local state is already correct
+      // Reload settings for payment category to ensure we get encrypted values back
+      if (category === 'payments') {
+        setTimeout(() => {
+          loadSettings();
+        }, 500);
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
       setErrors({ 

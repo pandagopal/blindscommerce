@@ -8,7 +8,6 @@ import { BaseHandler, ApiError } from '../BaseHandler';
 import { getPool } from '@/lib/db';
 import { z } from 'zod';
 import { userService, vendorService, orderService, productService, settingsService } from '@/lib/services/singletons';
-import { clearSettingsCache } from '@/lib/settings';
 import bcrypt from 'bcryptjs';
 
 // Validation schemas
@@ -977,10 +976,13 @@ export class AdminHandler extends BaseHandler {
         }
       }
       
-      // Clear the settings cache
-      clearSettingsCache();
+      // Reload settings after update to ensure consistency
+      const updatedSettings = await settingsService.getAllSettings();
       
-      return { success: true };
+      return { 
+        success: true,
+        settings: updatedSettings 
+      };
     } catch (error) {
       console.error('Error updating settings:', error);
       throw new ApiError('Failed to update settings', 500);
