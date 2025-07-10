@@ -657,18 +657,17 @@ export class CommerceHandler extends BaseHandler {
 
   // New methods for cart pricing, payment, and guest orders
   private async calculateCartPricing(req: NextRequest, user: any) {
+    const searchParams = this.getSearchParams(req);
+    const sessionId = searchParams.get('sessionId');
     const body = await req.json();
     
-    // Calculate pricing for cart items
-    let subtotal = 0;
+    // Get the actual cart to have vendor information
+    const cart = await this.cartService.getCart(user?.userId || user?.user_id, sessionId || undefined);
+    
+    let subtotal = cart.subtotal;
     let totalDiscount = 0;
     const vendorDiscounts: any[] = [];
     const vendorCoupons: any[] = [];
-    
-    // Calculate subtotal
-    for (const item of body.items) {
-      subtotal += item.base_price * item.quantity;
-    }
     
     // Apply customer-specific pricing if authenticated
     if ((user?.userId || user?.user_id) && body.customer_id) {
@@ -677,7 +676,27 @@ export class CommerceHandler extends BaseHandler {
     
     // Apply coupon if provided
     if (body.coupon_code) {
-      // Coupon validation and discount calculation
+      // Use CartService to validate and apply coupon
+      const couponResult = await this.cartService.applyCoupon(
+        body.coupon_code,
+        user?.userId || user?.user_id,
+        sessionId || undefined
+      );
+      
+      if (couponResult.success && couponResult.discount) {
+        totalDiscount += couponResult.discount;
+        // Add to vendor coupons list if we have the details
+        vendorCoupons.push({
+          type: 'vendor_coupon',
+          coupon_code: body.coupon_code,
+          name: `Promo Code: ${body.coupon_code}`,
+          discount_type: 'percentage',
+          amount: couponResult.discount
+        });
+      } else {
+        // If coupon failed, throw error so the frontend knows
+        throw new ApiError(couponResult.message || 'Invalid coupon code', 400);
+      }
     }
     
     // Calculate tax if ZIP code provided
@@ -689,11 +708,11 @@ export class CommerceHandler extends BaseHandler {
     if (body.zip_code) {
       // Simple tax calculation - in real app, use tax API
       taxRate = 0.0825; // Default 8.25% tax rate
-      tax = subtotal * taxRate;
+      tax = (subtotal - totalDiscount) * taxRate;
       taxBreakdown = {
-        state_tax: subtotal * 0.0625,
-        county_tax: subtotal * 0.01,
-        city_tax: subtotal * 0.01,
+        state_tax: (subtotal - totalDiscount) * 0.0625,
+        county_tax: (subtotal - totalDiscount) * 0.01,
+        city_tax: (subtotal - totalDiscount) * 0.01,
         special_district_tax: 0
       };
       taxJurisdiction = "Texas";
@@ -717,7 +736,7 @@ export class CommerceHandler extends BaseHandler {
         tax_jurisdiction: taxJurisdiction,
         zip_code: body.zip_code,
         total,
-        vendors_in_cart: 1,
+        vendors_in_cart: cart.vendorBreakdown.length,
         applied_promotions: body.coupon_code ? { coupon_code: body.coupon_code } : {}
       }
     };

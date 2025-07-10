@@ -98,7 +98,7 @@ export class CartService extends BaseService {
         p.sku as product_sku,
         p.primary_image_url as product_image,
         p.base_price,
-        JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')) as vendor_id,
+        COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')), p.vendor_id) as vendor_id,
         vi.business_name as vendor_name,
         vp.vendor_price,
         vp.quantity_available as stock_quantity,
@@ -117,7 +117,7 @@ export class CartService extends BaseService {
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.product_id
       JOIN vendor_products vp ON ci.product_id = vp.product_id 
-        AND vp.vendor_id = JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId'))
+        AND vp.vendor_id = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')), p.vendor_id)
       JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       WHERE ci.cart_id = ?
       ORDER BY ci.created_at DESC
@@ -565,38 +565,11 @@ export class CartService extends BaseService {
       discountAmount = Math.min(coupon.discount_value, applicableSubtotal);
     }
 
-    // Apply discount to items
-    const pool = await getPool();
-    const connection = await pool.getConnection();
-
-    try {
-      await connection.beginTransaction();
-
-      // Update cart items with discount
-      for (const item of applicableItems) {
-        const itemDiscount = (discountAmount / applicableSubtotal) * 
-          ((item.vendor_price || item.base_price) * item.quantity);
-        
-        await connection.execute(
-          'UPDATE cart_items SET discount_amount = ?, coupon_code = ? WHERE cart_item_id = ?',
-          [itemDiscount, couponCode, item.cart_item_id]
-        );
-      }
-
-      await connection.commit();
-
-      return {
-        success: true,
-        message: `Coupon applied successfully! You saved $${discountAmount.toFixed(2)}`,
-        discount: discountAmount
-      };
-
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    return {
+      success: true,
+      message: `Coupon applied successfully! You saved $${discountAmount.toFixed(2)}`,
+      discount: discountAmount
+    };
   }
 
   /**
