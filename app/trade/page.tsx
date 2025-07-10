@@ -48,36 +48,23 @@ export default function TradeDashboard() {
     creditLimit: 25000,
   });
 
-  const [recentActivity, setRecentActivity] = useState([
-    {
-      id: 1,
-      type: 'order',
-      description: 'Order #TR-2024-156 shipped to Marriott Hotel Project',
-      date: '2 hours ago',
-      status: 'shipped',
-    },
-    {
-      id: 2,
-      type: 'proposal',
-      description: 'Proposal approved for Downtown Office Complex',
-      date: '5 hours ago',
-      status: 'approved',
-    },
-    {
-      id: 3,
-      type: 'client',
-      description: 'New client registration: Pacific Design Group',
-      date: '1 day ago',
-      status: 'new',
-    },
-    {
-      id: 4,
-      type: 'payment',
-      description: 'Payment received for Order #TR-2024-148',
-      date: '2 days ago',
-      status: 'completed',
-    },
-  ]);
+  const [recentActivity, setRecentActivity] = useState([]);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const response = await fetch('/api/v2/trade/activity');
+        if (response.ok) {
+          const data = await response.json();
+          setRecentActivity(data.data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch activity:', error);
+      }
+    };
+    
+    fetchActivity();
+  }, []);
 
   const quickActions = [
     {
@@ -274,8 +261,17 @@ export default function TradeDashboard() {
             </Link>
           </div>
           <div className="flow-root">
-            <ul className="-mb-8">
-              {recentActivity.map((activity, index) => (
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-sm font-medium text-gray-700 mb-2">No recent activity</h3>
+                <p className="text-sm text-gray-500">
+                  Your recent orders, proposals, and client activities will appear here.
+                </p>
+              </div>
+            ) : (
+              <ul className="-mb-8">
+                {recentActivity.map((activity, index) => (
                 <li key={activity.id}>
                   <div className="relative pb-8">
                     {index !== recentActivity.length - 1 && (
@@ -302,6 +298,7 @@ export default function TradeDashboard() {
                 </li>
               ))}
             </ul>
+            )}
           </div>
         </div>
 

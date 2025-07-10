@@ -121,46 +121,33 @@ export default function SuperAdminDashboard() {
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
-        // Set mock data for demonstration
+        // Set empty stats on error
         setStats({
-          totalUsers: 1247,
-          totalVendors: 89,
-          totalOrders: 5632,
-          totalRevenue: 892456,
-          systemUptime: '45 days, 12 hours',
-          serverHealth: 'excellent',
-          databaseSize: '2.4 GB',
-          lastBackup: '2 hours ago',
-          securityAlerts: 3,
-          apiRequests24h: 45623
+          totalUsers: 0,
+          totalVendors: 0,
+          totalOrders: 0,
+          totalRevenue: 0,
+          systemUptime: 'N/A',
+          serverHealth: 'unknown',
+          databaseSize: '0 GB',
+          lastBackup: 'unknown',
+          securityAlerts: 0,
+          apiRequests24h: 0
         });
 
-        setAlerts([
-          {
-            id: 1,
-            type: 'login_attempt',
-            message: 'Multiple failed login attempts from IP 192.168.1.100',
-            timestamp: '2 hours ago',
-            severity: 'medium',
-            resolved: false
-          },
-          {
-            id: 2,
-            type: 'suspicious_activity',
-            message: 'Unusual API usage pattern detected',
-            timestamp: '4 hours ago',
-            severity: 'low',
-            resolved: false
-          },
-          {
-            id: 3,
-            type: 'system_error',
-            message: 'Database connection timeout in payment processing',
-            timestamp: '6 hours ago',
-            severity: 'high',
-            resolved: true
+        // Fetch real alerts from API
+        try {
+          const alertsResponse = await fetch('/api/v2/admin/security-alerts');
+          if (alertsResponse.ok) {
+            const alertsData = await alertsResponse.json();
+            setAlerts(alertsData.data || []);
+          } else {
+            setAlerts([]);
           }
-        ]);
+        } catch (error) {
+          console.error('Failed to fetch alerts:', error);
+          setAlerts([]);
+        }
       }
     };
 

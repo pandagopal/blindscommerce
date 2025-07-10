@@ -43,7 +43,9 @@ export default function OrdersPage() {
         throw new Error(response.error || 'Failed to fetch orders');
       }
       
-      setOrders(response.data || []);
+      // Ensure we have an array for orders
+      const ordersData = Array.isArray(response.data) ? response.data : [];
+      setOrders(ordersData);
       setTotalOrders(response.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -166,7 +168,7 @@ export default function OrdersPage() {
                     </span>
                   </td>
                   <td className="px-4 py-4 text-gray-600">{order.item_count}</td>
-                  <td className="px-4 py-4 font-medium">${(parseFloat(order?.total_amount) || 0).toFixed(2)}</td>
+                  <td className="px-4 py-4 font-medium">${(typeof order.total_amount === 'number' ? order.total_amount : parseFloat(order.total_amount) || 0).toFixed(2)}</td>
                   <td className="px-4 py-4 text-right">
                     <Link
                       href={`/account/orders/${order.order_id}`}

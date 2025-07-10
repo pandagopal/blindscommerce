@@ -13,7 +13,9 @@ import {
   ShoppingCart,
   Target,
   Award,
-  Calendar
+  Calendar,
+  BarChart3,
+  Package
 } from 'lucide-react';
 import {
   Select,
@@ -39,30 +41,6 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-// Mock data for charts
-const salesData = [
-  { month: 'Jan', sales: 12500, target: 15000 },
-  { month: 'Feb', sales: 18500, target: 17000 },
-  { month: 'Mar', sales: 22000, target: 20000 },
-  { month: 'Apr', sales: 19500, target: 22000 },
-  { month: 'May', sales: 25000, target: 24000 },
-  { month: 'Jun', sales: 28500, target: 26000 },
-];
-
-const productCategoryData = [
-  { name: 'Motorized Blinds', value: 35, color: '#3B82F6' },
-  { name: 'Wood Blinds', value: 25, color: '#10B981' },
-  { name: 'Roller Shades', value: 20, color: '#F59E0B' },
-  { name: 'Cellular Shades', value: 12, color: '#8B5CF6' },
-  { name: 'Other', value: 8, color: '#6B7280' },
-];
-
-const leadsData = [
-  { week: 'Week 1', leads: 45, converted: 12 },
-  { week: 'Week 2', leads: 52, converted: 18 },
-  { week: 'Week 3', leads: 48, converted: 15 },
-  { week: 'Week 4', leads: 58, converted: 22 },
-];
 
 interface SalesMetrics {
   totalSales: number;
@@ -78,15 +56,55 @@ interface SalesMetrics {
 export default function SalesAnalyticsPage() {
   const [timeframe, setTimeframe] = useState('month');
   const [metrics, setMetrics] = useState<SalesMetrics>({
-    totalSales: 28500,
-    totalOrders: 87,
-    conversionRate: 32.5,
-    avgOrderValue: 327.59,
-    monthlyTarget: 26000,
-    achievedPercentage: 109.6,
-    totalLeads: 203,
-    activeQuotes: 24,
+    totalSales: 0,
+    totalOrders: 0,
+    conversionRate: 0,
+    avgOrderValue: 0,
+    monthlyTarget: 0,
+    achievedPercentage: 0,
+    totalLeads: 0,
+    activeQuotes: 0,
   });
+  const [salesData, setSalesData] = useState<any[]>([]);
+  const [productCategoryData, setProductCategoryData] = useState<any[]>([]);
+  const [leadsData, setLeadsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/v2/sales/analytics?timeframe=${timeframe}`, {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics(data.metrics || {
+            totalSales: 0,
+            totalOrders: 0,
+            conversionRate: 0,
+            avgOrderValue: 0,
+            monthlyTarget: 0,
+            achievedPercentage: 0,
+            totalLeads: 0,
+            activeQuotes: 0,
+          });
+          setSalesData(data.salesData || []);
+          setProductCategoryData(data.productCategoryData || []);
+          setLeadsData(data.leadsData || []);
+        }
+      } catch (error) {
+        console.error('Error fetching analytics:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalytics();
+  }, [timeframe]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -95,6 +113,14 @@ export default function SalesAnalyticsPage() {
       minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-red"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -182,7 +208,15 @@ export default function SalesAnalyticsPage() {
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+            {salesData.length === 0 ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <BarChart3 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No sales data available for this period</p>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
               <LineChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
@@ -206,6 +240,7 @@ export default function SalesAnalyticsPage() {
                 />
               </LineChart>
             </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -221,8 +256,16 @@ export default function SalesAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+              {productCategoryData.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No category data available</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
                   <Pie
                     data={productCategoryData}
                     cx="50%"
@@ -240,6 +283,7 @@ export default function SalesAnalyticsPage() {
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -254,8 +298,16 @@ export default function SalesAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={leadsData}>
+              {leadsData.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">No leads data available</p>
+                  </div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={leadsData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="week" />
                   <YAxis />
@@ -265,6 +317,7 @@ export default function SalesAnalyticsPage() {
                   <Bar dataKey="converted" fill="#10B981" name="Converted" />
                 </BarChart>
               </ResponsiveContainer>
+              )}
             </div>
           </CardContent>
         </Card>

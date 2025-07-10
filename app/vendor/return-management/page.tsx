@@ -56,49 +56,35 @@ interface ReturnRequest {
   notes?: string;
 }
 
-const mockReturns: ReturnRequest[] = [
-  {
-    return_id: 1,
-    order_id: 'ORD-12345',
-    customer_name: 'John Smith',
-    customer_email: 'john.smith@example.com',
-    product_name: 'Premium Motorized Blinds - 48x60',
-    reason: 'Wrong size ordered',
-    status: 'pending',
-    requested_date: new Date(Date.now() - 86400000).toISOString(),
-    amount: 299.99,
-  },
-  {
-    return_id: 2,
-    order_id: 'ORD-12346',
-    customer_name: 'Sarah Johnson',
-    customer_email: 'sarah.j@example.com',
-    product_name: 'Blackout Roller Shades - 36x48',
-    reason: 'Defective motor',
-    status: 'approved',
-    requested_date: new Date(Date.now() - 172800000).toISOString(),
-    amount: 199.99,
-    refund_amount: 199.99,
-  },
-  {
-    return_id: 3,
-    order_id: 'ORD-12347',
-    customer_name: 'Mike Davis',
-    customer_email: 'mike.d@example.com',
-    product_name: 'Wood Blinds - 60x72',
-    reason: 'Changed mind',
-    status: 'processing',
-    requested_date: new Date(Date.now() - 259200000).toISOString(),
-    amount: 399.99,
-    refund_amount: 359.99, // Minus restocking fee
-  },
-];
-
 export default function ReturnManagementPage() {
-  const [returns, setReturns] = useState<ReturnRequest[]>(mockReturns);
+  const [returns, setReturns] = useState<ReturnRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedReturn, setSelectedReturn] = useState<ReturnRequest | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDetails, setShowDetails] = useState(false);
+
+  useEffect(() => {
+    fetchReturns();
+  }, []);
+
+  const fetchReturns = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/v2/vendors/returns');
+      
+      if (res.ok) {
+        const data = await res.json();
+        setReturns(data.data || []);
+      } else {
+        setReturns([]);
+      }
+    } catch (error) {
+      console.error('Error fetching returns:', error);
+      setReturns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -134,10 +120,28 @@ export default function ReturnManagementPage() {
     }
   };
 
-  const handleStatusUpdate = (returnId: number, newStatus: string) => {
-    setReturns(returns.map(r => 
-      r.return_id === returnId ? { ...r, status: newStatus as any } : r
-    ));
+  const handleStatusUpdate = async (returnId: number, newStatus: string) => {
+    try {
+      const res = await fetch(`/api/v2/vendors/returns/${returnId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      
+      if (res.ok) {
+        setReturns(returns.map(r => 
+          r.return_id === returnId ? { ...r, status: newStatus as any } : r
+        ));
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update return status');
+      }
+    } catch (error) {
+      console.error('Error updating return status:', error);
+      alert('Failed to update return status. Please try again.');
+    }
   };
 
   const filteredReturns = returns.filter(r => 
@@ -276,59 +280,78 @@ export default function ReturnManagementPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Product</TableHead>
-                <TableHead>Reason</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredReturns.map((returnRequest) => (
-                <TableRow key={returnRequest.return_id}>
-                  <TableCell className="font-mono text-sm">
-                    {returnRequest.order_id}
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{returnRequest.customer_name}</p>
-                      <p className="text-xs text-gray-500">{returnRequest.customer_email}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    {returnRequest.product_name}
-                  </TableCell>
-                  <TableCell>{returnRequest.reason}</TableCell>
-                  <TableCell>${returnRequest.amount.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(returnRequest.status)}
-                      <Badge variant={getStatusColor(returnRequest.status) as any}>
-                        {returnRequest.status}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedReturn(returnRequest);
-                        setShowDetails(true);
-                      }}
-                    >
-                      Manage
-                    </Button>
-                  </TableCell>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                <p className="mt-4 text-sm text-gray-600">Loading returns...</p>
+              </div>
+            </div>
+          ) : filteredReturns.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Returns Found</h3>
+              <p className="text-gray-600">
+                {statusFilter !== 'all' 
+                  ? `No ${statusFilter} returns to display.`
+                  : "You haven't received any return requests yet."}
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredReturns.map((returnRequest) => (
+                  <TableRow key={returnRequest.return_id}>
+                    <TableCell className="font-mono text-sm">
+                      {returnRequest.order_id}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{returnRequest.customer_name}</p>
+                        <p className="text-xs text-gray-500">{returnRequest.customer_email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate">
+                      {returnRequest.product_name}
+                    </TableCell>
+                    <TableCell>{returnRequest.reason}</TableCell>
+                    <TableCell>${returnRequest.amount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(returnRequest.status)}
+                        <Badge variant={getStatusColor(returnRequest.status) as any}>
+                          {returnRequest.status}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedReturn(returnRequest);
+                          setShowDetails(true);
+                        }}
+                      >
+                        Manage
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
 

@@ -112,106 +112,15 @@ export default function InstallerJobsPage() {
         setJobs(result.data.jobs);
         setStats(result.data.stats);
       } else {
-        // Mock data for demonstration
-        const mockJobs: InstallerJob[] = [
-          {
-            id: 'JOB-001',
-            customer_name: 'Sarah Johnson',
-            customer_phone: '+1-555-0123',
-            address: '123 Maple St, Austin, TX 78701',
-            job_type: 'installation',
-            status: 'scheduled',
-            priority: 'high',
-            scheduled_date: '2023-10-25',
-            scheduled_time: '09:00',
-            estimated_duration: 240,
-            products: [
-              {
-                id: 'PROD-001',
-                name: 'Premium Wood Blinds',
-                quantity: 4,
-                room: 'Living Room',
-                specifications: '72" x 48", Mahogany finish'
-              },
-              {
-                id: 'PROD-002',
-                name: 'Plantation Shutters',
-                quantity: 2,
-                room: 'Master Bedroom',
-                specifications: '60" x 36", White painted'
-              }
-            ],
-            materials_needed: ['Mounting brackets', 'Wood screws', 'Wall anchors', 'Level'],
-            special_instructions: 'Customer prefers morning installation. Use dust sheets.',
-            notes: 'High-end installation. Take extra care with finishing.',
-            created_at: '2023-10-20',
-            assigned_installer: 'Mike Rodriguez'
-          },
-          {
-            id: 'JOB-002',
-            customer_name: 'David Thompson',
-            customer_phone: '+1-555-0456',
-            address: '456 Oak Ave, Dallas, TX 75201',
-            job_type: 'repair',
-            status: 'in_progress',
-            priority: 'medium',
-            scheduled_date: '2023-10-24',
-            scheduled_time: '14:00',
-            estimated_duration: 120,
-            products: [
-              {
-                id: 'PROD-003',
-                name: 'Cellular Shades',
-                quantity: 3,
-                room: 'Office',
-                specifications: 'Cord repair and cleaning'
-              }
-            ],
-            materials_needed: ['Replacement cord', 'Cord locks', 'Cleaning supplies'],
-            special_instructions: 'Commercial building. Check in with security.',
-            notes: 'Customer reported cord mechanism failure.',
-            created_at: '2023-10-22',
-            assigned_installer: 'Lisa Martinez'
-          },
-          {
-            id: 'JOB-003',
-            customer_name: 'Jennifer Martinez',
-            customer_phone: '+1-555-0789',
-            address: '789 Pine Rd, Houston, TX 77001',
-            job_type: 'measurement',
-            status: 'completed',
-            priority: 'low',
-            scheduled_date: '2023-10-23',
-            scheduled_time: '10:30',
-            estimated_duration: 90,
-            products: [
-              {
-                id: 'PROD-004',
-                name: 'Roller Shades',
-                quantity: 5,
-                room: 'Multiple Rooms',
-                specifications: 'Measure for quote'
-              }
-            ],
-            materials_needed: ['Measuring tape', 'Notebook', 'Camera'],
-            special_instructions: 'Potential large order. Provide detailed measurements.',
-            notes: 'Customer interested in motorized options.',
-            completion_notes: 'All measurements taken. Quote to follow.',
-            customer_satisfaction: 5,
-            created_at: '2023-10-21',
-            completed_at: '2023-10-23',
-            assigned_installer: 'Carlos Santos'
-          }
-        ];
-
-        setJobs(mockJobs);
+        // Set empty state on error
+        setJobs([]);
         setStats({
-          total_jobs: 156,
-          completed_jobs: 142,
-          pending_jobs: 14,
-          today_jobs: 3,
-          avg_completion_time: 185,
-          customer_rating: 4.8
+          total_jobs: 0,
+          completed_jobs: 0,
+          pending_jobs: 0,
+          today_jobs: 0,
+          avg_completion_time: 0,
+          customer_rating: 0
         });
       }
     } catch (error) {
@@ -483,7 +392,18 @@ export default function InstallerJobsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {filteredJobs.map((job) => (
+              {filteredJobs.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No jobs found</h3>
+                  <p className="text-gray-500">
+                    {filterStatus !== 'all' || filterType !== 'all' 
+                      ? 'No jobs match your current filters.' 
+                      : 'You have no jobs scheduled at this time.'}
+                  </p>
+                </div>
+              ) : (
+                filteredJobs.map((job) => (
                 <div key={job.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
@@ -677,7 +597,8 @@ export default function InstallerJobsPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </CardContent>
         </Card>

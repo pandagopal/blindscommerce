@@ -78,81 +78,36 @@ export default function AdminLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockLogs: LogEntry[] = [
-        {
-          id: 'log-001',
-          timestamp: '2023-10-25 15:30:22',
-          level: 'error',
-          category: 'payment',
-          message: 'Payment processing failed for order #12345',
-          user_id: 'user-456',
-          ip_address: '192.168.1.100',
-          user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          stack_trace: 'Error: Payment gateway timeout\n  at processPayment (payment.js:45)\n  at handleCheckout (checkout.js:123)',
-          request_id: 'req-789'
+      const response = await fetch('/api/v2/admin/logs', {
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          id: 'log-002',
-          timestamp: '2023-10-25 15:25:15',
-          level: 'warning',
-          category: 'auth',
-          message: 'Multiple failed login attempts detected',
-          ip_address: '192.168.1.150',
-          user_agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
-        },
-        {
-          id: 'log-003',
-          timestamp: '2023-10-25 15:20:08',
-          level: 'info',
-          category: 'order',
-          message: 'New order created successfully',
-          user_id: 'user-123',
-          ip_address: '192.168.1.75',
-          request_id: 'req-456'
-        },
-        {
-          id: 'log-004',
-          timestamp: '2023-10-25 15:15:45',
-          level: 'error',
-          category: 'database',
-          message: 'Database connection timeout',
-          ip_address: '127.0.0.1',
-          stack_trace: 'Error: Connection timeout\n  at Database.connect (db.js:89)\n  at Server.start (server.js:45)'
-        },
-        {
-          id: 'log-005',
-          timestamp: '2023-10-25 15:10:33',
-          level: 'debug',
-          category: 'api',
-          message: 'API request processed successfully',
-          user_id: 'user-789',
-          ip_address: '192.168.1.200',
-          request_id: 'req-123'
-        },
-        {
-          id: 'log-006',
-          timestamp: '2023-10-25 15:05:21',
-          level: 'warning',
-          category: 'security',
-          message: 'Suspicious activity detected from IP address',
-          ip_address: '10.0.0.50',
-          user_agent: 'curl/7.68.0'
-        }
-      ];
+      });
 
-      const mockStats: LogStats = {
-        total_entries: 1247,
-        errors_today: 12,
-        warnings_today: 8,
-        most_common_error: 'Database connection timeout',
-        last_error_time: '2023-10-25 15:30:22'
-      };
+      if (!response.ok) {
+        throw new Error('Failed to fetch logs');
+      }
 
-      setLogs(mockLogs);
-      setStats(mockStats);
+      const data = await response.json();
+      setLogs(data.logs || []);
+      setStats(data.stats || {
+        total_entries: 0,
+        errors_today: 0,
+        warnings_today: 0,
+        most_common_error: '',
+        last_error_time: ''
+      });
     } catch (error) {
       console.error('Error fetching logs:', error);
+      // Ensure empty state on error
+      setLogs([]);
+      setStats({
+        total_entries: 0,
+        errors_today: 0,
+        warnings_today: 0,
+        most_common_error: '',
+        last_error_time: ''
+      });
     } finally {
       setLoading(false);
     }
@@ -160,9 +115,24 @@ export default function AdminLogsPage() {
 
   const exportLogs = async () => {
     try {
-      // Mock export functionality
-      const filename = `system-logs-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
-      alert(`Exporting ${filename}...`);
+      const response = await fetch(`/api/v2/admin/logs/export?dateRange=${dateRange}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `system-logs-${dateRange}-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        throw new Error('Export failed');
+      }
     } catch (error) {
       console.error('Error exporting logs:', error);
     }
@@ -171,9 +141,18 @@ export default function AdminLogsPage() {
   const clearLogs = async () => {
     if (confirm('Are you sure you want to clear old logs? This action cannot be undone.')) {
       try {
-        // Mock clear logs functionality
-        alert('Clearing logs older than 30 days...');
-        fetchLogs(); // Refresh data
+        const response = await fetch('/api/v2/admin/logs/clear', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          fetchLogs(); // Refresh data
+        } else {
+          throw new Error('Failed to clear logs');
+        }
       } catch (error) {
         console.error('Error clearing logs:', error);
       }

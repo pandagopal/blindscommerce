@@ -73,83 +73,30 @@ export default function AdminDatabasePage() {
   const fetchDatabaseInfo = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockTables: DatabaseTable[] = [
-        {
-          name: 'users',
-          rows: 1247,
-          size: '2.4 MB',
-          last_updated: '2023-10-25 14:30:00',
-          status: 'healthy'
-        },
-        {
-          name: 'products',
-          rows: 892,
-          size: '5.8 MB',
-          last_updated: '2023-10-25 13:45:00',
-          status: 'healthy'
-        },
-        {
-          name: 'orders',
-          rows: 3456,
-          size: '12.1 MB',
-          last_updated: '2023-10-25 15:22:00',
-          status: 'healthy'
-        },
-        {
-          name: 'cart_items',
-          rows: 15234,
-          size: '8.9 MB',
-          last_updated: '2023-10-25 15:20:00',
-          status: 'warning'
-        },
-        {
-          name: 'payment_transactions',
-          rows: 2891,
-          size: '4.2 MB',
-          last_updated: '2023-10-25 15:15:00',
-          status: 'healthy'
-        },
-        {
-          name: 'vendor_products',
-          rows: 1567,
-          size: '3.1 MB',
-          last_updated: '2023-10-25 12:00:00',
-          status: 'error'
-        }
-      ];
+      
+      // Fetch database info from API
+      const [tablesRes, backupsRes] = await Promise.all([
+        fetch('/api/v2/admin/database/tables'),
+        fetch('/api/v2/admin/database/backups')
+      ]);
 
-      const mockBackups: BackupInfo[] = [
-        {
-          id: 'backup-001',
-          filename: 'blindscommerce_2023-10-25_daily.sql',
-          size: '45.2 MB',
-          created_at: '2023-10-25 02:00:00',
-          type: 'automatic',
-          status: 'completed'
-        },
-        {
-          id: 'backup-002',
-          filename: 'blindscommerce_2023-10-24_daily.sql',
-          size: '44.8 MB',
-          created_at: '2023-10-24 02:00:00',
-          type: 'automatic',
-          status: 'completed'
-        },
-        {
-          id: 'backup-003',
-          filename: 'blindscommerce_2023-10-23_manual.sql',
-          size: '44.5 MB',
-          created_at: '2023-10-23 16:30:00',
-          type: 'manual',
-          status: 'completed'
-        }
-      ];
+      if (tablesRes.ok) {
+        const tablesData = await tablesRes.json();
+        setTables(tablesData.data || []);
+      } else {
+        setTables([]);
+      }
 
-      setTables(mockTables);
-      setBackups(mockBackups);
+      if (backupsRes.ok) {
+        const backupsData = await backupsRes.json();
+        setBackups(backupsData.data || []);
+      } else {
+        setBackups([]);
+      }
     } catch (error) {
       console.error('Error fetching database info:', error);
+      setTables([]);
+      setBackups([]);
     } finally {
       setLoading(false);
     }
@@ -160,25 +107,23 @@ export default function AdminDatabasePage() {
     
     setExecutingQuery(true);
     try {
-      // Mock query execution
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const res = await fetch('/api/v2/admin/database/query', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: sqlQuery })
+      });
       
-      // Mock result based on query type
-      if (sqlQuery.toLowerCase().includes('select')) {
+      const data = await res.json();
+      
+      if (!res.ok) {
         setQueryResult({
-          type: 'select',
-          rows: [
-            { id: 1, name: 'John Doe', email: 'john@example.com' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com' }
-          ],
-          count: 2
+          type: 'error',
+          message: data.error || 'Query execution failed'
         });
       } else {
-        setQueryResult({
-          type: 'modify',
-          message: 'Query executed successfully',
-          affected_rows: 1
-        });
+        setQueryResult(data.result);
       }
     } catch (error) {
       setQueryResult({
@@ -192,20 +137,46 @@ export default function AdminDatabasePage() {
 
   const createBackup = async () => {
     try {
-      // Mock backup creation
-      alert('Backup creation initiated. You will be notified when complete.');
+      const res = await fetch('/api/v2/admin/database/backup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Failed to create backup');
+      } else {
+        alert('Backup creation initiated. You will be notified when complete.');
+        fetchDatabaseInfo(); // Refresh backup list
+      }
     } catch (error) {
       console.error('Error creating backup:', error);
+      alert('Failed to create backup. Please try again.');
     }
   };
 
   const optimizeTable = async (tableName: string) => {
     try {
-      // Mock table optimization
-      alert(`Optimizing table: ${tableName}...`);
-      fetchDatabaseInfo(); // Refresh data
+      const res = await fetch('/api/v2/admin/database/optimize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ table: tableName })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || `Failed to optimize table: ${tableName}`);
+      } else {
+        alert(`Successfully optimized table: ${tableName}`);
+        fetchDatabaseInfo(); // Refresh data
+      }
     } catch (error) {
       console.error('Error optimizing table:', error);
+      alert(`Failed to optimize table: ${tableName}`);
     }
   };
 
@@ -303,68 +274,80 @@ export default function AdminDatabasePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {tables.map((table) => (
-                    <div key={table.name} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium text-lg">{table.name}</h4>
-                          {getStatusBadge(table.status)}
+                {tables.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Tables Found</h3>
+                    <p className="text-gray-600 mb-4">Unable to fetch database table information.</p>
+                    <Button onClick={fetchDatabaseInfo} variant="outline">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {tables.map((table) => (
+                      <div key={table.name} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium text-lg">{table.name}</h4>
+                            {getStatusBadge(table.status)}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {table.rows.toLocaleString()} rows • {table.size} • Last updated: {table.last_updated}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {table.rows.toLocaleString()} rows • {table.size} • Last updated: {table.last_updated}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => optimizeTable(table.name)}
-                        >
-                          <RefreshCw className="h-4 w-4 mr-1" />
-                          Optimize
-                        </Button>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Database className="h-4 w-4 mr-1" />
-                              Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Table Details - {table.name}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <strong>Rows:</strong> {table.rows.toLocaleString()}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => optimizeTable(table.name)}
+                          >
+                            <RefreshCw className="h-4 w-4 mr-1" />
+                            Optimize
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Database className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Table Details - {table.name}</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <strong>Rows:</strong> {table.rows.toLocaleString()}
+                                  </div>
+                                  <div>
+                                    <strong>Size:</strong> {table.size}
+                                  </div>
+                                  <div>
+                                    <strong>Status:</strong> {getStatusBadge(table.status)}
+                                  </div>
+                                  <div>
+                                    <strong>Last Updated:</strong> {table.last_updated}
+                                  </div>
                                 </div>
-                                <div>
-                                  <strong>Size:</strong> {table.size}
-                                </div>
-                                <div>
-                                  <strong>Status:</strong> {getStatusBadge(table.status)}
-                                </div>
-                                <div>
-                                  <strong>Last Updated:</strong> {table.last_updated}
+                                <div className="flex gap-2 pt-4">
+                                  <Button size="sm">View Structure</Button>
+                                  <Button variant="outline" size="sm">Export Data</Button>
+                                  <Button variant="outline" size="sm" className="text-red-600">
+                                    <Trash2 className="h-4 w-4 mr-1" />
+                                    Truncate
+                                  </Button>
                                 </div>
                               </div>
-                              <div className="flex gap-2 pt-4">
-                                <Button size="sm">View Structure</Button>
-                                <Button variant="outline" size="sm">Export Data</Button>
-                                <Button variant="outline" size="sm" className="text-red-600">
-                                  <Trash2 className="h-4 w-4 mr-1" />
-                                  Truncate
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -386,37 +369,52 @@ export default function AdminDatabasePage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {backups.map((backup) => (
-                    <div key={backup.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium">{backup.filename}</h4>
-                          {getStatusBadge(backup.status)}
-                          <Badge variant="outline">
-                            {backup.type.toUpperCase()}
-                          </Badge>
+                {backups.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Save className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Backups Found</h3>
+                    <p className="text-gray-600 mb-4">Start creating backups to protect your data.</p>
+                    <Button
+                      onClick={createBackup}
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Create First Backup
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {backups.map((backup) => (
+                      <div key={backup.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h4 className="font-medium">{backup.filename}</h4>
+                            {getStatusBadge(backup.status)}
+                            <Badge variant="outline">
+                              {backup.type.toUpperCase()}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {backup.size} • Created: {backup.created_at}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {backup.size} • Created: {backup.created_at}
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-1" />
+                            Download
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Upload className="h-4 w-4 mr-1" />
+                            Restore
+                          </Button>
+                          <Button variant="outline" size="sm" className="text-red-600">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Download className="h-4 w-4 mr-1" />
-                          Download
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Upload className="h-4 w-4 mr-1" />
-                          Restore
-                        </Button>
-                        <Button variant="outline" size="sm" className="text-red-600">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

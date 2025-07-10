@@ -62,73 +62,41 @@ interface BackupSchedule {
   next_run: string;
 }
 
-// Mock data
-const mockBackups: Backup[] = [
-  {
-    backup_id: 1,
-    backup_type: 'full',
-    status: 'completed',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    size_mb: 2048,
-    duration_seconds: 180,
-    location: 'aws-s3',
-    includes_db: true,
-    includes_files: true,
-    retention_days: 30,
-  },
-  {
-    backup_id: 2,
-    backup_type: 'incremental',
-    status: 'completed',
-    created_at: new Date(Date.now() - 43200000).toISOString(),
-    size_mb: 256,
-    duration_seconds: 45,
-    location: 'aws-s3',
-    includes_db: true,
-    includes_files: false,
-    retention_days: 7,
-  },
-  {
-    backup_id: 3,
-    backup_type: 'incremental',
-    status: 'in_progress',
-    created_at: new Date().toISOString(),
-    size_mb: 0,
-    duration_seconds: 0,
-    location: 'aws-s3',
-    includes_db: true,
-    includes_files: false,
-    retention_days: 7,
-  },
-];
-
-const mockSchedules: BackupSchedule[] = [
-  {
-    schedule_id: 1,
-    name: 'Daily Database Backup',
-    frequency: 'daily',
-    time: '02:00',
-    type: 'incremental',
-    is_active: true,
-    last_run: new Date(Date.now() - 43200000).toISOString(),
-    next_run: new Date(Date.now() + 43200000).toISOString(),
-  },
-  {
-    schedule_id: 2,
-    name: 'Weekly Full Backup',
-    frequency: 'weekly',
-    time: '03:00',
-    type: 'full',
-    is_active: true,
-    last_run: new Date(Date.now() - 86400000).toISOString(),
-    next_run: new Date(Date.now() + 518400000).toISOString(),
-  },
-];
 
 export default function BackupsPage() {
-  const [backups, setBackups] = useState<Backup[]>(mockBackups);
-  const [schedules, setSchedules] = useState<BackupSchedule[]>(mockSchedules);
-  const [loading, setLoading] = useState(false);
+  const [backups, setBackups] = useState<Backup[]>([]);
+  const [schedules, setSchedules] = useState<BackupSchedule[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchBackups();
+  }, []);
+
+  const fetchBackups = async () => {
+    try {
+      setLoading(true);
+      const [backupsRes, schedulesRes] = await Promise.all([
+        fetch('/api/v2/admin/backups'),
+        fetch('/api/v2/admin/backup-schedules')
+      ]);
+
+      if (backupsRes.ok) {
+        const backupsData = await backupsRes.json();
+        setBackups(backupsData.data || []);
+      }
+
+      if (schedulesRes.ok) {
+        const schedulesData = await schedulesRes.json();
+        setSchedules(schedulesData.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching backups:', error);
+      setBackups([]);
+      setSchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  };
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [selectedBackup, setSelectedBackup] = useState<Backup | null>(null);
   const [backupProgress, setBackupProgress] = useState(0);

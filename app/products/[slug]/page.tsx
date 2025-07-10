@@ -142,104 +142,6 @@ type ProductData = {
   }>;
 };
 
-// Mock product data for static export
-const mockProducts: Record<string, ProductData> = {
-  "premium-wooden-blinds": {
-    product_id: 1,
-    name: "Premium Wooden Blinds",
-    slug: "premium-wooden-blinds",
-    category_name: "Blinds",
-    category_slug: "blinds",
-    base_price: 89.99,
-    rating: 4.7,
-    review_count: 28,
-    short_description: "Elegant wooden blinds that add warmth and style to any room. Made from premium quality wood.",
-    full_description: "<p>Our Premium Wooden Blinds are crafted from the finest hardwoods, offering exceptional durability and a timeless aesthetic that complements any interior style.</p><p>Available in a variety of stains and finishes, these blinds provide excellent light control while enhancing your home's natural charm.</p>",
-    is_on_sale: false,
-    sale_price: null,
-    primary_image: "https://source.unsplash.com/random/600x400/?wooden-blinds",
-    images: [
-      {
-        image_id: 1,
-        image_url: "https://source.unsplash.com/random/600x400/?wooden-blinds",
-        is_primary: true
-      },
-      {
-        image_id: 2,
-        image_url: "https://source.unsplash.com/random/600x400/?wood-texture",
-        is_primary: false
-      },
-      {
-        image_id: 3,
-        image_url: "https://source.unsplash.com/random/600x400/?window-blinds",
-        is_primary: false
-      }
-    ],
-    features: [
-      {
-        name: "Premium Hardwood",
-        description: "Made from sustainably sourced premium hardwood for durability and natural beauty"
-      },
-      {
-        name: "Custom Sizing",
-        description: "Available in custom sizes to fit any window perfectly"
-      },
-      {
-        name: "Multiple Finishes",
-        description: "Choose from 12 rich wood finishes to match your decor"
-      },
-      {
-        name: "Cordless Option",
-        description: "Available with cordless lift for enhanced safety and clean appearance"
-      }
-    ]
-  },
-  "blackout-roller-shades": {
-    product_id: 2,
-    name: "Blackout Roller Shades",
-    slug: "blackout-roller-shades",
-    category_name: "Shades",
-    category_slug: "shades",
-    base_price: 69.99,
-    rating: 4.5,
-    review_count: 42,
-    short_description: "Block out light completely with these premium blackout roller shades. Perfect for bedrooms and media rooms.",
-    full_description: "<p>Our Blackout Roller Shades offer 100% light-blocking technology, creating total darkness whenever you need it. The thermal backing also helps insulate your windows for improved energy efficiency.</p><p>These roller shades come in a wide variety of colors and patterns to match any decor while providing the functionality you need.</p>",
-    is_on_sale: true,
-    sale_price: 79.99,
-    primary_image: "https://source.unsplash.com/random/600x400/?roller-shades",
-    images: [
-      {
-        image_id: 4,
-        image_url: "https://source.unsplash.com/random/600x400/?roller-shades",
-        is_primary: true
-      },
-      {
-        image_id: 5,
-        image_url: "https://source.unsplash.com/random/600x400/?blackout-shade",
-        is_primary: false
-      }
-    ],
-    features: [
-      {
-        name: "100% Blackout",
-        description: "Complete light blocking technology for total darkness"
-      },
-      {
-        name: "Thermal Insulation",
-        description: "Helps keep rooms cooler in summer and warmer in winter"
-      },
-      {
-        name: "Easy Operation",
-        description: "Smooth rolling mechanism for simple use"
-      },
-      {
-        name: "Variety of Colors",
-        description: "Available in over 20 designer colors to match any decor"
-      }
-    ]
-  }
-};
 
 export async function generateMetadata({
   params,
@@ -278,14 +180,6 @@ export async function generateMetadata({
     console.error('Error fetching product for metadata:', error);
   }
 
-  // Fallback to mock data
-  const product = mockProducts[slug];
-  if (product) {
-    return {
-      title: `${product.name} | Smart Blinds Hub`,
-      description: product.short_description || "Custom window treatments from Smart Blinds Hub",
-    };
-  }
 
   // Final fallback
   const categoryName = slug.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -322,14 +216,6 @@ export default async function ProductDetailPage({
     console.error('Error fetching products:', error);
   }
   
-  // Fallback to mock data if API fails
-  if (!products || products.length === 0) {
-    const mockProduct = mockProducts[slug];
-    if (mockProduct) {
-      products = [mockProduct];
-      isMultiple = false;
-    }
-  }
 
   if (!products || products.length === 0) {
     notFound();

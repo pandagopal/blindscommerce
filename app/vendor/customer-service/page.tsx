@@ -67,45 +67,32 @@ interface MessageThread {
   }[];
 }
 
-const mockMessages: CustomerMessage[] = [
-  {
-    message_id: 1,
-    customer_name: 'Emily Chen',
-    customer_email: 'emily.chen@example.com',
-    subject: 'Question about motorized blinds',
-    message: 'Hi, I ordered motorized blinds last week but I have some questions about the smart home integration. Can you help?',
-    status: 'new',
-    priority: 'medium',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    order_id: 'ORD-12345',
-    category: 'Product Support',
-  },
-  {
-    message_id: 2,
-    customer_name: 'Robert Johnson',
-    customer_email: 'robert.j@example.com',
-    subject: 'Installation scheduling',
-    message: 'I need to reschedule my installation appointment. The current date doesnt work for me anymore.',
-    status: 'in_progress',
-    priority: 'high',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    category: 'Installation',
-  },
-  {
-    message_id: 3,
-    customer_name: 'Lisa Martinez',
-    customer_email: 'lisa.m@example.com',
-    subject: 'Custom size inquiry',
-    message: 'Do you offer custom sizes for bay windows? I have an unusual window shape.',
-    status: 'resolved',
-    priority: 'low',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    category: 'Sales Inquiry',
-  },
-];
-
 export default function CustomerServicePage() {
-  const [messages, setMessages] = useState<CustomerMessage[]>(mockMessages);
+  const [messages, setMessages] = useState<CustomerMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch('/api/v2/vendors/customer-messages', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMessages(data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, []);
   const [selectedMessage, setSelectedMessage] = useState<CustomerMessage | null>(null);
   const [replyText, setReplyText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -299,7 +286,22 @@ export default function CustomerServicePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
+          {loading ? (
+            <div className="flex justify-center items-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
+            </div>
+          ) : filteredMessages.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-700 mb-2">No messages found</h3>
+              <p className="text-gray-500">
+                {searchQuery || statusFilter !== 'all' 
+                  ? 'No messages match your current filters.' 
+                  : 'You have no customer messages at this time.'}
+              </p>
+            </div>
+          ) : (
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Customer</TableHead>
@@ -377,6 +379,7 @@ export default function CustomerServicePage() {
               ))}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 

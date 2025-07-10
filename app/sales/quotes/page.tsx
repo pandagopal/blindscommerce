@@ -92,167 +92,30 @@ export default function SalesQuotesPage() {
   const fetchQuotes = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockQuotes: Quote[] = [
-        {
-          id: 'quote-001',
-          quote_number: 'Q-2023-001',
-          customer_name: 'Sarah Johnson',
-          customer_email: 'sarah@example.com',
-          customer_phone: '(555) 123-4567',
-          project_name: 'Living Room & Kitchen Blinds',
-          status: 'sent',
-          total_amount: 1250.00,
-          created_date: '2023-10-20',
-          valid_until: '2023-11-19',
-          sent_date: '2023-10-21',
-          items: [
-            {
-              id: 'item-1',
-              product_name: 'Premium Wood Blinds',
-              description: 'Custom 48" x 60" wood blinds with cord lift',
-              quantity: 3,
-              unit_price: 285.00,
-              total_price: 855.00,
-              room: 'Living Room'
-            },
-            {
-              id: 'item-2',
-              product_name: 'Cellular Shades',
-              description: 'Light filtering cellular shades 36" x 48"',
-              quantity: 2,
-              unit_price: 165.00,
-              total_price: 330.00,
-              room: 'Kitchen'
-            },
-            {
-              id: 'item-3',
-              product_name: 'Installation Service',
-              description: 'Professional installation for all windows',
-              quantity: 1,
-              unit_price: 65.00,
-              total_price: 65.00,
-              room: 'All'
-            }
-          ],
-          notes: 'Customer interested in motorization upgrade',
-          follow_up_date: '2023-10-28'
-        },
-        {
-          id: 'quote-002',
-          quote_number: 'Q-2023-002',
-          customer_name: 'Mike Wilson',
-          customer_email: 'mike@example.com',
-          customer_phone: '(555) 234-5678',
-          project_name: 'Office Building - Conference Rooms',
-          status: 'accepted',
-          total_amount: 3500.00,
-          created_date: '2023-10-18',
-          valid_until: '2023-11-17',
-          sent_date: '2023-10-19',
-          items: [
-            {
-              id: 'item-4',
-              product_name: 'Commercial Roller Shades',
-              description: 'Blackout roller shades for conference rooms',
-              quantity: 8,
-              unit_price: 375.00,
-              total_price: 3000.00,
-              room: 'Conference Rooms'
-            },
-            {
-              id: 'item-5',
-              product_name: 'Commercial Installation',
-              description: 'Professional installation with warranty',
-              quantity: 1,
-              unit_price: 500.00,
-              total_price: 500.00,
-              room: 'All'
-            }
-          ]
-        },
-        {
-          id: 'quote-003',
-          quote_number: 'Q-2023-003',
-          customer_name: 'Lisa Chen',
-          customer_email: 'lisa@example.com',
-          customer_phone: '(555) 345-6789',
-          project_name: 'Bedroom & Bathroom Updates',
-          status: 'draft',
-          total_amount: 890.00,
-          created_date: '2023-10-25',
-          valid_until: '2023-11-24',
-          items: [
-            {
-              id: 'item-6',
-              product_name: 'Privacy Cellular Shades',
-              description: 'Top-down bottom-up cellular shades',
-              quantity: 4,
-              unit_price: 195.00,
-              total_price: 780.00,
-              room: 'Bedrooms'
-            },
-            {
-              id: 'item-7',
-              product_name: 'Bathroom Blinds',
-              description: 'Moisture-resistant faux wood blinds',
-              quantity: 2,
-              unit_price: 55.00,
-              total_price: 110.00,
-              room: 'Bathroom'
-            }
-          ],
-          notes: 'Customer wants to see samples before finalizing'
-        },
-        {
-          id: 'quote-004',
-          quote_number: 'Q-2023-004',
-          customer_name: 'David Thompson',
-          customer_email: 'david@example.com',
-          customer_phone: '(555) 456-7890',
-          project_name: 'Smart Home Integration',
-          status: 'viewed',
-          total_amount: 2100.00,
-          created_date: '2023-10-22',
-          valid_until: '2023-11-21',
-          sent_date: '2023-10-23',
-          items: [
-            {
-              id: 'item-8',
-              product_name: 'Motorized Blinds',
-              description: 'Smart motorized blinds with app control',
-              quantity: 6,
-              unit_price: 320.00,
-              total_price: 1920.00,
-              room: 'Whole House'
-            },
-            {
-              id: 'item-9',
-              product_name: 'Smart Hub Setup',
-              description: 'Installation and configuration of smart hub',
-              quantity: 1,
-              unit_price: 180.00,
-              total_price: 180.00,
-              room: 'Main'
-            }
-          ],
-          follow_up_date: '2023-10-30'
-        }
-      ];
+      
+      // Fetch quotes and stats from API
+      const [quotesRes, statsRes] = await Promise.all([
+        fetch('/api/v2/commerce/quotes'),
+        fetch('/api/v2/commerce/quote-stats')
+      ]);
 
-      const mockStats: QuoteStats = {
-        total_quotes: 48,
-        pending_quotes: 12,
-        accepted_quotes: 28,
-        total_value: 125000,
-        conversion_rate: 68.5
-      };
+      if (quotesRes.ok) {
+        const quotesData = await quotesRes.json();
+        setQuotes(quotesData.data || []);
+      } else {
+        setQuotes([]);
+      }
 
-      setQuotes(mockQuotes);
-      setStats(mockStats);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setStats(statsData.data || null);
+      } else {
+        setStats(null);
+      }
     } catch (error) {
       console.error('Error fetching quotes:', error);
       setQuotes([]);
+      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -260,30 +123,69 @@ export default function SalesQuotesPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      // Mock API call
-      alert('Quote sent successfully! Customer will receive an email.');
-      fetchQuotes(); // Refresh data
+      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Failed to send quote');
+      } else {
+        alert('Quote sent successfully! Customer will receive an email.');
+        fetchQuotes(); // Refresh data
+      }
     } catch (error) {
       console.error('Error sending quote:', error);
+      alert('Failed to send quote. Please try again.');
     }
   };
 
   const duplicateQuote = async (quoteId: string) => {
     try {
-      // Mock API call
-      alert('Quote duplicated successfully!');
-      fetchQuotes(); // Refresh data
+      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Failed to duplicate quote');
+      } else {
+        alert('Quote duplicated successfully!');
+        fetchQuotes(); // Refresh data
+      }
     } catch (error) {
       console.error('Error duplicating quote:', error);
+      alert('Failed to duplicate quote. Please try again.');
     }
   };
 
   const downloadQuote = async (quoteId: string) => {
     try {
-      // Mock download functionality
-      alert(`Downloading quote ${quoteId} as PDF...`);
+      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/download`);
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || 'Failed to download quote');
+      } else {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quote-${quoteId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
     } catch (error) {
       console.error('Error downloading quote:', error);
+      alert('Failed to download quote. Please try again.');
     }
   };
 

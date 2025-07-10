@@ -68,71 +68,14 @@ export default function InstallerRoutesPage() {
   const fetchRoutes = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockRoutes: DailyRoute[] = [
-        {
-          id: 'ROUTE-001',
-          date: '2023-10-25',
-          total_stops: 5,
-          estimated_duration: 480,
-          total_distance: 35.2,
-          status: 'planned',
-          stops: [
-            {
-              id: 'STOP-001',
-              customerName: 'Sarah Johnson',
-              address: '123 Maple St, Austin, TX 78701',
-              appointment_time: '09:00',
-              type: 'installation',
-              estimated_duration: 120,
-              status: 'pending',
-              notes: 'Premium wood blinds - 4 windows'
-            },
-            {
-              id: 'STOP-002',
-              customerName: 'Mike Wilson',
-              address: '456 Oak Ave, Austin, TX 78702',
-              appointment_time: '11:30',
-              type: 'measurement',
-              estimated_duration: 60,
-              status: 'pending',
-              notes: 'Whole house measurement for quote'
-            },
-            {
-              id: 'STOP-003',
-              customerName: 'Lisa Chen',
-              address: '789 Pine Rd, Austin, TX 78703',
-              appointment_time: '14:00',
-              type: 'repair',
-              estimated_duration: 90,
-              status: 'pending',
-              notes: 'Cord replacement on cellular shades'
-            }
-          ]
-        },
-        {
-          id: 'ROUTE-002',
-          date: '2023-10-24',
-          total_stops: 4,
-          estimated_duration: 420,
-          actual_duration: 395,
-          total_distance: 28.7,
-          status: 'completed',
-          stops: [
-            {
-              id: 'STOP-004',
-              customerName: 'David Thompson',
-              address: '321 Elm St, Austin, TX 78704',
-              appointment_time: '09:00',
-              type: 'installation',
-              estimated_duration: 150,
-              status: 'completed',
-              notes: 'Plantation shutters - master bedroom'
-            }
-          ]
-        }
-      ];
-      setRoutes(mockRoutes);
+      const res = await fetch('/api/v2/installer/routes');
+      
+      if (res.ok) {
+        const data = await res.json();
+        setRoutes(data.data || []);
+      } else {
+        setRoutes([]);
+      }
     } catch (error) {
       console.error('Error fetching routes:', error);
       setRoutes([]);
@@ -218,43 +161,51 @@ export default function InstallerRoutesPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {(routes || []).map((route) => (
-                    <div
-                      key={route.id}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedRoute?.id === route.id
-                          ? 'border-purple-300 bg-purple-50'
-                          : 'border-gray-200 hover:border-purple-200 hover:bg-purple-25'
-                      }`}
-                      onClick={() => setSelectedRoute(route)}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium">{formatDate(route.date)}</h4>
-                        {getStatusBadge(route.status)}
+                {routes.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Route className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-md font-medium text-gray-900 mb-2">No Routes Found</h3>
+                    <p className="text-sm text-gray-600">No routes have been assigned yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {routes.map((route) => (
+                      <div
+                        key={route.id}
+                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                          selectedRoute?.id === route.id
+                            ? 'border-purple-300 bg-purple-50'
+                            : 'border-gray-200 hover:border-purple-200 hover:bg-purple-25'
+                        }`}
+                        onClick={() => setSelectedRoute(route)}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium">{formatDate(route.date)}</h4>
+                          {getStatusBadge(route.status)}
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            <span>{route.total_stops} stops</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>
+                              {route.actual_duration 
+                                ? `${formatDuration(route.actual_duration)} (actual)`
+                                : `${formatDuration(route.estimated_duration)} (estimated)`
+                              }
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Car className="h-4 w-4" />
+                            <span>{route.total_distance} miles</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-600 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{route.total_stops} stops</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            {route.actual_duration 
-                              ? `${formatDuration(route.actual_duration)} (actual)`
-                              : `${formatDuration(route.estimated_duration)} (estimated)`
-                            }
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Car className="h-4 w-4" />
-                          <span>{route.total_distance} miles</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

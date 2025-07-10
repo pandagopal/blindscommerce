@@ -77,95 +77,14 @@ export default function InstallerCustomersPage() {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockCustomers: Customer[] = [
-        {
-          id: 'CUST-001',
-          name: 'Sarah Johnson',
-          email: 'sarah.johnson@email.com',
-          phone: '+1-555-0123',
-          address: '123 Maple St, Austin, TX 78701',
-          total_jobs: 3,
-          last_service: '2023-09-15',
-          satisfaction_rating: 5,
-          notes: 'Prefers afternoon appointments. Very detail-oriented.',
-          preferred_time: 'afternoon',
-          communication_preference: 'email',
-          job_history: [
-            {
-              id: 'JOB-001',
-              date: '2023-09-15',
-              type: 'installation',
-              description: 'Premium wood blinds - 4 windows',
-              status: 'completed',
-              rating: 5,
-              notes: 'Customer very satisfied with quality'
-            },
-            {
-              id: 'JOB-002',
-              date: '2023-06-10',
-              type: 'measurement',
-              description: 'Initial measurement for quote',
-              status: 'completed'
-            }
-          ]
-        },
-        {
-          id: 'CUST-002',
-          name: 'Mike Wilson',
-          email: 'mike.w@company.com',
-          phone: '+1-555-0456',
-          address: '456 Oak Ave, Austin, TX 78702',
-          total_jobs: 1,
-          last_service: '2023-10-12',
-          satisfaction_rating: 4,
-          notes: 'Commercial customer. Requires detailed documentation.',
-          preferred_time: 'morning',
-          communication_preference: 'phone',
-          job_history: [
-            {
-              id: 'JOB-003',
-              date: '2023-10-12',
-              type: 'installation',
-              description: 'Cellular shades - office building',
-              status: 'completed',
-              rating: 4
-            }
-          ]
-        },
-        {
-          id: 'CUST-003',
-          name: 'Lisa Chen',
-          email: 'lisa.chen@email.com',
-          phone: '+1-555-0789',
-          address: '789 Pine Rd, Austin, TX 78703',
-          total_jobs: 2,
-          last_service: '2023-08-20',
-          satisfaction_rating: 5,
-          notes: 'Loyal customer. Refers friends frequently.',
-          preferred_time: 'flexible',
-          communication_preference: 'sms',
-          job_history: [
-            {
-              id: 'JOB-004',
-              date: '2023-08-20',
-              type: 'repair',
-              description: 'Cord replacement on roller shades',
-              status: 'completed',
-              rating: 5
-            },
-            {
-              id: 'JOB-005',
-              date: '2023-03-15',
-              type: 'installation',
-              description: 'Plantation shutters - living room',
-              status: 'completed',
-              rating: 5
-            }
-          ]
-        }
-      ];
-      setCustomers(mockCustomers);
+      const res = await fetch('/api/v2/installer/customers');
+      
+      if (res.ok) {
+        const data = await res.json();
+        setCustomers(data.data || []);
+      } else {
+        setCustomers([]);
+      }
     } catch (error) {
       console.error('Error fetching customers:', error);
       setCustomers([]);

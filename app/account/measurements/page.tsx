@@ -69,40 +69,9 @@ export default function MeasurementsPage() {
       setAvailableRooms(data.rooms || []);
     } catch (error) {
       console.error('Error fetching measurements:', error);
-      // For now, use mock data if the API call fails
-      setMeasurements([
-        {
-          id: 1,
-          name: 'Living Room Main Window',
-          room: 'Living Room',
-          window_type: 'Double-Hung',
-          width: 36.5,
-          height: 72.25,
-          notes: 'Inside mount, old trim needs replacing',
-          created_at: '2023-09-15T14:32:00Z'
-        },
-        {
-          id: 2,
-          name: 'Master Bedroom - North',
-          room: 'Master Bedroom',
-          window_type: 'Casement',
-          width: 24.0,
-          height: 48.0,
-          notes: 'Outside mount preferred',
-          created_at: '2023-09-10T10:15:00Z'
-        },
-        {
-          id: 3,
-          name: 'Kitchen Sink Window',
-          room: 'Kitchen',
-          window_type: 'Single-Hung',
-          width: 30.25,
-          height: 36.0,
-          notes: 'Moisture concern, consider faux wood',
-          created_at: '2023-09-05T16:45:00Z'
-        }
-      ]);
-      setAvailableRooms(['Living Room', 'Master Bedroom', 'Kitchen', 'Office', 'Bathroom']);
+      // Set empty state on error
+      setMeasurements([]);
+      setAvailableRooms([]);
     } finally {
       setLoading(false);
     }

@@ -43,48 +43,28 @@ export default function VendorNotificationsPage() {
 
   // Lazy load notifications data only when this route is active
   const fetchNotificationsData = async () => {
-    // TODO: Replace with actual API call
-    // For now, using mock data
-    const mockNotifications: Notification[] = [
-      {
-        notification_id: 1,
-        type: 'order',
-        title: 'New Order Received',
-        message: 'You have received a new order #12345 for $299.99',
-        is_read: false,
-        action_url: '/vendor/orders/12345',
-        created_at: new Date().toISOString(),
-      },
-      {
-        notification_id: 2,
-        type: 'payment',
-        title: 'Payment Processed',
-        message: 'Payment of $1,234.56 has been deposited to your account',
-        is_read: false,
-        created_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        notification_id: 3,
-        type: 'product',
-        title: 'Low Stock Alert',
-        message: 'Product "Premium Roller Blind" is running low on stock',
-        is_read: true,
-        action_url: '/vendor/products',
-        created_at: new Date(Date.now() - 172800000).toISOString(),
-        read_at: new Date(Date.now() - 86400000).toISOString(),
-      },
-      {
-        notification_id: 4,
-        type: 'system',
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance on Dec 15, 2024 from 2-4 AM EST',
-        is_read: true,
-        created_at: new Date(Date.now() - 259200000).toISOString(),
-        read_at: new Date(Date.now() - 172800000).toISOString(),
-      },
-    ];
-    
-    return { notifications: mockNotifications, settings };
+    try {
+      const response = await fetch('/api/v2/vendors/notifications', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
+
+      const data = await response.json();
+      
+      return { 
+        notifications: data.data || [], 
+        settings: data.settings || settings 
+      };
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // Return empty array on error to ensure the page doesn't break
+      return { notifications: [], settings };
+    }
   };
 
   const { 
@@ -228,7 +208,11 @@ export default function VendorNotificationsPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Bell className="h-12 w-12 text-gray-300 mb-4" />
-                  <p className="text-gray-500">No notifications yet</p>
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">No notifications yet</h3>
+                  <p className="text-gray-500 text-center max-w-md">
+                    You'll receive notifications here when there are new orders, payments, 
+                    or important updates about your store.
+                  </p>
                 </CardContent>
               </Card>
             ) : (

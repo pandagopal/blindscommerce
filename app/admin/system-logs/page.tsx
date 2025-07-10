@@ -66,75 +66,18 @@ const logCategories = [
   { value: 'security', label: 'Security' },
 ];
 
-// Mock data for demonstration
-const mockLogs: SystemLog[] = [
-  {
-    log_id: 1,
-    timestamp: new Date().toISOString(),
-    level: 'success',
-    category: 'auth',
-    message: 'User login successful',
-    user_id: 1,
-    user_email: 'admin@example.com',
-    ip_address: '192.168.1.1',
-  },
-  {
-    log_id: 2,
-    timestamp: new Date(Date.now() - 300000).toISOString(),
-    level: 'error',
-    category: 'payment',
-    message: 'Payment processing failed',
-    details: {
-      error: 'Card declined',
-      amount: 299.99,
-      order_id: 'ORD-12345',
-    },
-  },
-  {
-    log_id: 3,
-    timestamp: new Date(Date.now() - 600000).toISOString(),
-    level: 'warning',
-    category: 'api',
-    message: 'API rate limit approaching',
-    details: {
-      endpoint: '/api/v2/products',
-      requests: 95,
-      limit: 100,
-    },
-  },
-  {
-    log_id: 4,
-    timestamp: new Date(Date.now() - 900000).toISOString(),
-    level: 'info',
-    category: 'order',
-    message: 'New order placed',
-    user_id: 42,
-    details: {
-      order_id: 'ORD-12346',
-      total: 599.99,
-    },
-  },
-  {
-    log_id: 5,
-    timestamp: new Date(Date.now() - 1200000).toISOString(),
-    level: 'error',
-    category: 'security',
-    message: 'Failed login attempt - invalid credentials',
-    ip_address: '10.0.0.1',
-    details: {
-      email: 'test@example.com',
-      attempts: 3,
-    },
-  },
-];
-
 export default function SystemLogsPage() {
-  const [logs, setLogs] = useState<SystemLog[]>(mockLogs);
+  const [logs, setLogs] = useState<SystemLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
+
+  useEffect(() => {
+    // Fetch logs on component mount
+    fetchLogs();
+  }, []);
 
   useEffect(() => {
     if (autoRefresh) {
@@ -146,11 +89,22 @@ export default function SystemLogsPage() {
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // In real implementation, fetch from /api/v2/admin/logs
+      const response = await fetch('/api/v2/admin/logs', {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch logs');
+      }
+
+      const data = await response.json();
+      setLogs(data.data || []);
     } catch (err) {
       console.error('Failed to fetch logs:', err);
+      // Ensure logs is always an array even on error
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -335,8 +289,14 @@ export default function SystemLogsPage() {
           </div>
 
           {filteredLogs.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-gray-500">No logs found matching your filters</p>
+            <div className="text-center py-16">
+              <AlertCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-700 mb-2">No logs found</h3>
+              <p className="text-gray-500">
+                {searchQuery || selectedLevel !== 'all' || selectedCategory !== 'all' 
+                  ? 'Try adjusting your filters to see more results' 
+                  : 'System logs will appear here when activities are recorded'}
+              </p>
             </div>
           )}
         </CardContent>

@@ -72,74 +72,14 @@ export default function InstallerCompletedJobsPage() {
   const fetchCompletedJobs = async () => {
     try {
       setLoading(true);
-      // Mock data since API might not exist yet
-      const mockJobs: CompletedJob[] = [
-        {
-          id: 'JOB-001',
-          customerName: 'Sarah Johnson',
-          customerPhone: '+1-555-0123',
-          address: '123 Maple St, Austin, TX 78701',
-          type: 'installation',
-          completedDate: '2023-10-20',
-          duration: 180,
-          products: ['Premium Wood Blinds (4 units)', 'Mounting Hardware'],
-          satisfaction_rating: 5,
-          notes: 'Customer extremely satisfied. Perfect installation with no issues.',
-          before_photos: ['before1.jpg', 'before2.jpg'],
-          after_photos: ['after1.jpg', 'after2.jpg'],
-          invoice_amount: 1299.99,
-          warranty_period: 24
-        },
-        {
-          id: 'JOB-002',
-          customerName: 'Mike Wilson',
-          customerPhone: '+1-555-0456',
-          address: '456 Oak Ave, Austin, TX 78702',
-          type: 'repair',
-          completedDate: '2023-10-18',
-          duration: 90,
-          products: ['Cord Replacement Kit', 'Cord Locks'],
-          satisfaction_rating: 4,
-          notes: 'Successful repair. Customer satisfied with quick turnaround.',
-          before_photos: ['repair_before.jpg'],
-          after_photos: ['repair_after.jpg'],
-          invoice_amount: 85.00,
-          warranty_period: 6
-        },
-        {
-          id: 'JOB-003',
-          customerName: 'Lisa Chen',
-          customerPhone: '+1-555-0789',
-          address: '789 Pine Rd, Austin, TX 78703',
-          type: 'measurement',
-          completedDate: '2023-10-15',
-          duration: 60,
-          products: ['Measurement Service'],
-          satisfaction_rating: 5,
-          notes: 'Detailed measurements taken. Quote provided on-site.',
-          before_photos: [],
-          after_photos: [],
-          invoice_amount: 0,
-          warranty_period: 0
-        },
-        {
-          id: 'JOB-004',
-          customerName: 'David Thompson',
-          customerPhone: '+1-555-0321',
-          address: '321 Elm St, Austin, TX 78704',
-          type: 'installation',
-          completedDate: '2023-10-12',
-          duration: 240,
-          products: ['Plantation Shutters (6 panels)', 'Custom Hardware'],
-          satisfaction_rating: 5,
-          notes: 'Complex installation completed perfectly. Customer loves the result.',
-          before_photos: ['shutters_before1.jpg', 'shutters_before2.jpg'],
-          after_photos: ['shutters_after1.jpg', 'shutters_after2.jpg'],
-          invoice_amount: 2499.99,
-          warranty_period: 36
-        }
-      ];
-      setCompletedJobs(mockJobs);
+      const res = await fetch('/api/v2/installer/completed-jobs');
+      
+      if (res.ok) {
+        const data = await res.json();
+        setCompletedJobs(data.data || []);
+      } else {
+        setCompletedJobs([]);
+      }
     } catch (error) {
       console.error('Error fetching completed jobs:', error);
       setCompletedJobs([]);

@@ -26,6 +26,152 @@ interface OrderStats {
   completedOrders: number;
 }
 
+interface RecentOrder {
+  order_id: number;
+  order_number: string;
+  created_at: string;
+  status: string;
+  total_amount: number | string;
+  items?: Array<{
+    product_name: string;
+    quantity: number;
+  }>;
+  tracking_number?: string;
+  item_count?: number;
+}
+
+function RecentOrdersList() {
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecentOrders = async () => {
+      try {
+        const response = await fetch('/api/v2/commerce/orders?limit=2', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Orders API response:', data);
+          
+          // Ensure we have an array
+          const orders = Array.isArray(data.data) ? data.data : [];
+          setRecentOrders(orders);
+        } else {
+          console.error('Failed to fetch orders:', response.status, response.statusText);
+          setRecentOrders([]);
+        }
+      } catch (error) {
+        console.error('Error fetching recent orders:', error);
+        setRecentOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchRecentOrders();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="border rounded-lg p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-48"></div>
+        </div>
+        <div className="border rounded-lg p-4 animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-24 mb-2"></div>
+          <div className="h-3 bg-gray-200 rounded w-48"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (recentOrders.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500 mb-4">No orders yet</p>
+        <Link href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
+          Start Shopping →
+        </Link>
+      </div>
+    );
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      case 'shipped':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <>
+      {recentOrders.map((order) => (
+        <div key={order.order_id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h4 className="font-medium">Order #{order.order_number}</h4>
+              <p className="text-sm text-gray-600">
+                {order.items && order.items.length > 0 
+                  ? (
+                    <>
+                      {order.items[0].product_name}
+                      {order.items.length > 1 && ` and ${order.items.length - 1} more item${order.items.length > 2 ? 's' : ''}`}
+                    </>
+                  )
+                  : order.item_count 
+                    ? `${order.item_count} item${order.item_count > 1 ? 's' : ''}`
+                    : 'Order details'
+                }
+              </p>
+            </div>
+            <span className={`text-xs px-2 py-1 rounded ${getStatusColor(order.status)}`}>
+              {order.status}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-600">Ordered: {formatDate(order.created_at)}</span>
+            <span className="font-medium">${(typeof order.total_amount === 'number' ? order.total_amount : parseFloat(order.total_amount) || 0).toFixed(2)}</span>
+          </div>
+          {order.tracking_number && (
+            <div className="flex items-center mt-2 text-sm text-gray-600">
+              <Truck className="w-4 h-4 mr-1" />
+              Tracking: {order.tracking_number}
+            </div>
+          )}
+        </div>
+      ))}
+      
+      <div className="text-center pt-4">
+        <Link href="/account/orders" className="text-blue-600 hover:text-blue-700 font-medium">
+          View All Orders →
+        </Link>
+      </div>
+    </>
+  );
+}
+
 function AccountPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -94,13 +240,39 @@ function AccountPageContent() {
           sessionStorage.removeItem('AdminViewId');
         }
 
-        // Mock order stats for now
-        setOrderStats({
-          totalOrders: 12,
-          totalSpent: 2450.00,
-          pendingOrders: 2,
-          completedOrders: 10
-        });
+        // Fetch order stats from API
+        try {
+          const statsResponse = await fetch('/api/v2/commerce/order-stats', {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            setOrderStats(statsData.data || {
+              totalOrders: 0,
+              totalSpent: 0,
+              pendingOrders: 0,
+              completedOrders: 0
+            });
+          } else {
+            setOrderStats({
+              totalOrders: 0,
+              totalSpent: 0,
+              pendingOrders: 0,
+              completedOrders: 0
+            });
+          }
+        } catch (error) {
+          console.error('Error fetching order stats:', error);
+          setOrderStats({
+            totalOrders: 0,
+            totalSpent: 0,
+            pendingOrders: 0,
+            completedOrders: 0
+          });
+        }
 
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -229,42 +401,7 @@ function AccountPageContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Mock recent orders */}
-                <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium">Order #12345</h4>
-                      <p className="text-sm text-gray-600">Roller Shades - White, 36" x 48"</p>
-                    </div>
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">
-                      Shipped
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Ordered: Dec 15, 2024</span>
-                    <span className="font-medium">$289.99</span>
-                  </div>
-                  <div className="flex items-center mt-2 text-sm text-gray-600">
-                    <Truck className="w-4 h-4 mr-1" />
-                    Tracking: 1Z999AA1234567890
-                  </div>
-                </div>
-
-                <div className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-medium">Order #12344</h4>
-                      <p className="text-sm text-gray-600">Venetian Blinds - Wood, 48" x 60"</p>
-                    </div>
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                      Delivered
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Ordered: Dec 10, 2024</span>
-                    <span className="font-medium">$445.50</span>
-                  </div>
-                </div>
+                <RecentOrdersList />
 
                 <div className="text-center pt-4">
                   <Link href="/account/orders" className="text-blue-600 hover:text-blue-700 font-medium">
