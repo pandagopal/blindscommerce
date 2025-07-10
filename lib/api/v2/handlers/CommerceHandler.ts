@@ -352,7 +352,7 @@ export class CommerceHandler extends BaseHandler {
 
     const pricing = await this.productService.getProductPricing(
       productId,
-      user?.user_id,
+      user?.userId || user?.user_id,
       quantity,
       couponCode || undefined
     );
@@ -387,7 +387,7 @@ export class CommerceHandler extends BaseHandler {
     const searchParams = this.getSearchParams(req);
     const sessionId = searchParams.get('sessionId');
 
-    return this.cartService.getCart(user?.user_id, sessionId || undefined);
+    return this.cartService.getCart(user?.userId || user?.user_id, sessionId || undefined);
   }
 
   private async getCartSummary(req: NextRequest, user: any) {
@@ -419,13 +419,13 @@ export class CommerceHandler extends BaseHandler {
       }
       
       console.log('AddToCart validated data:', {
-        userId: user?.user_id,
+        userId: user?.userId || user?.user_id,
         sessionId: !user ? sessionId : 'authenticated user',
         data: JSON.stringify(data, null, 2)
       });
 
       const result = await this.cartService.addToCart({
-        userId: user?.user_id,
+        userId: user?.userId || user?.user_id,
         sessionId: !user ? sessionId || undefined : undefined,
         productId: data.productId,
         vendorId: data.vendorId,
@@ -486,7 +486,7 @@ export class CommerceHandler extends BaseHandler {
     const data = await this.getValidatedBody(req, UpdateCartItemSchema);
 
     // Get the current cart to ensure the item exists and belongs to the user
-    const cart = await this.cartService.getCart(user?.user_id, sessionId || undefined);
+    const cart = await this.cartService.getCart(user?.userId || user?.user_id, sessionId || undefined);
     const cartItem = cart.items.find(item => item.cart_item_id === cartItemId);
     
     if (!cartItem) {
@@ -506,7 +506,7 @@ export class CommerceHandler extends BaseHandler {
     }
 
     // Return the updated cart
-    const updatedCart = await this.cartService.getCart(user?.user_id, sessionId || undefined);
+    const updatedCart = await this.cartService.getCart(user?.userId || user?.user_id, sessionId || undefined);
     return updatedCart;
   }
 
@@ -548,7 +548,7 @@ export class CommerceHandler extends BaseHandler {
 
     const result = await this.cartService.applyCoupon(
       data.code,
-      user?.user_id,
+      user?.userId || user?.user_id,
       sessionId || undefined
     );
 
@@ -671,7 +671,7 @@ export class CommerceHandler extends BaseHandler {
     }
     
     // Apply customer-specific pricing if authenticated
-    if (user?.user_id && body.customer_id) {
+    if ((user?.userId || user?.user_id) && body.customer_id) {
       // Customer-specific pricing logic here
     }
     
