@@ -2,11 +2,11 @@
   "metadata": {
     "title": "Claude's BlindsCommerce Application Reference",
     "format": "machine_readable_json",
-    "last_updated": "2025-06-29",
-    "version": "3.2",
+    "last_updated": "2025-07-10",
+    "version": "3.3",
     "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
     "consolidated_from": "26 documentation files merged into single reference",
-    "latest_changes": "Added unified_product_page_ui_fixes section with Pricing and Fabric tab UI improvements"
+    "latest_changes": "Added v2_api_response_wrapping_fix documenting double-wrapping issue resolution"
   },
   
   "project_overview": {
@@ -516,6 +516,42 @@
         "/app/vendor/products/components/tabs/PricingTab.tsx",
         "/app/vendor/products/components/tabs/FabricTab.tsx"
       ]
+    },
+    "v2_api_response_wrapping_fix": {
+      "issue": "Double-wrapped API responses causing frontend validation failures",
+      "date_fixed": "2025-07-10",
+      "problem_description": {
+        "symptom": "Coupon validation always returned 'not valid for items in cart' despite backend working correctly",
+        "root_cause": "Handler methods returning { success: true, data: {...} } which route handler wrapped again",
+        "affected_endpoints": [
+          "/api/v2/commerce/cart/calculate-pricing",
+          "potentially all V2 API endpoints returning structured responses"
+        ]
+      },
+      "incorrect_response_structure": {
+        "handler_returns": "{ success: true, data: { pricing_data } }",
+        "route_wraps_to": "{ success: true, data: { success: true, data: { pricing_data } } }",
+        "frontend_expects": "{ success: true, data: { pricing_data } }"
+      },
+      "solution": {
+        "change": "Handler methods should return data directly without success wrapper",
+        "route_handler": "Automatically wraps all responses in standard format",
+        "frontend_handling": "Added fallback: const data = result.data?.data || result.data"
+      },
+      "implementation_details": {
+        "handler_pattern": "return { subtotal, discounts, ... } // data only",
+        "route_pattern": "return successResponse(result, service, action, startTime)",
+        "frontend_pattern": "const data = result.data?.data || result.data // handle both formats"
+      },
+      "files_modified": [
+        "/lib/api/v2/handlers/CommerceHandler.ts - removed success wrapper from calculateCartPricing",
+        "/context/CartContext.tsx - added double-wrap handling in applyCoupon"
+      ],
+      "prevention": {
+        "rule": "V2 API handlers must return raw data, NOT wrapped responses",
+        "exception": "Only return Response objects for file downloads or special cases",
+        "validation": "Route handler checks if result instanceof Response before wrapping"
+      }
     }
   },
   
@@ -710,6 +746,7 @@
     "test_everything": "verify UI and data flow completely",
     "check_claude_md": "this is the single source of truth",
     "verify_sql_first": "ALWAYS check database schema before writing SQL",
-    "no_assumptions": "NEVER assume column names or data types"
+    "no_assumptions": "NEVER assume column names or data types",
+    "v2_api_handlers": "ALWAYS return raw data, NEVER wrap in { success: true, data: {...} }"
   }
 }

@@ -342,7 +342,7 @@ function AccountPageContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                <p className="text-2xl font-bold text-gray-900">${orderStats.totalSpent.toFixed(2)}</p>
+                <p className="text-2xl font-bold text-gray-900">${(orderStats.totalSpent || 0).toFixed(2)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-600" />
             </div>

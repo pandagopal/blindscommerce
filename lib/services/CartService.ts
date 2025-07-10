@@ -218,8 +218,6 @@ export class CartService extends BaseService {
       configuration?: any;
     }
   ): Promise<CartItemWithDetails | null> {
-    console.log('CartService.addToCart called with:', JSON.stringify(data, null, 2));
-    
     const pool = await getPool();
     const connection = await pool.getConnection();
 
@@ -556,19 +554,6 @@ export class CartService extends BaseService {
     });
     
     if (applicableItems.length === 0) {
-      // Debug: log vendor IDs to help identify the issue
-      console.log('Coupon validation failed:', {
-        couponVendorId: coupon.vendor_id,
-        couponVendorName: coupon.vendor_name,
-        cartItemVendorIds: cart.items.map(item => ({
-          itemId: item.cart_item_id,
-          productName: item.name,
-          vendor_id: item.vendor_id,
-          configVendorId: item.configuration?.vendorId,
-          productVendorId: item.product_vendor_id
-        }))
-      });
-      
       return { 
         success: false, 
         message: `This coupon is only valid for ${coupon.vendor_name} products` 

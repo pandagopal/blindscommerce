@@ -631,7 +631,6 @@ export function CartProvider({ children }: CartProviderProps) {
         saveGuestCart(updatedItems);
       }
     } catch (error) {
-      console.error('Error updating cart item:', error);
       alert('Failed to update cart item. Please try again.');
     }
   };
@@ -697,6 +696,8 @@ export function CartProvider({ children }: CartProviderProps) {
         coupon_code: code
       };
 
+      console.log('Applying coupon with request:', pricingRequest);
+      
       const response = await fetch('/api/v2/commerce/cart/calculate-pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -705,15 +706,26 @@ export function CartProvider({ children }: CartProviderProps) {
 
       if (!response.ok) {
         const error = await response.json();
+        console.error('Coupon application failed:', error);
         throw new Error(error.message || error.error || 'Failed to apply coupon');
       }
 
       const result = await response.json();
+      console.log('Coupon API response:', result);
+      
       if (!result.success) {
         throw new Error(result.message || 'Failed to apply coupon');
       }
       
-      const data = result.data;
+      // Handle double-wrapped response from calculate-pricing endpoint
+      const data = result.data?.data || result.data;
+      console.log('Extracted pricing data:', data);
+      console.log('Coupon validation result:', {
+        hasVendorCoupons: data.vendor_coupons?.length > 0,
+        vendorCoupons: data.vendor_coupons,
+        appliedPromotions: data.applied_promotions,
+        totalDiscount: data.total_discount_amount
+      });
       
       // Update pricing state with new data
       const pricingData = {
@@ -734,12 +746,34 @@ export function CartProvider({ children }: CartProviderProps) {
       };
 
       setPricing(pricingData);
-      setAppliedCoupon(code);
+      
+      // Only set applied coupon if we actually have discounts
+      if (data.vendor_coupons?.length > 0 || data.total_discount_amount > 0) {
+        setAppliedCoupon(code);
+      }
       
       // Check if coupon was successfully applied
-      if (data.vendor_coupons?.length > 0 || data.applied_promotions?.coupon_code === code) {
+      console.log('Checking coupon success:', {
+        vendorCouponsLength: data.vendor_coupons?.length,
+        vendorCoupons: data.vendor_coupons,
+        vendorCouponsType: typeof data.vendor_coupons,
+        vendorCouponsIsArray: Array.isArray(data.vendor_coupons),
+        appliedPromotionsCode: data.applied_promotions?.coupon_code,
+        providedCode: code,
+        condition1: data.vendor_coupons?.length > 0,
+        condition2: data.applied_promotions?.coupon_code === code,
+        dataKeys: Object.keys(data)
+      });
+      
+      // Force success if we have vendor coupons in the response
+      const hasCoupons = Array.isArray(data.vendor_coupons) && data.vendor_coupons.length > 0;
+      const hasAppliedPromotion = data.applied_promotions?.coupon_code === code;
+      
+      if (hasCoupons || hasAppliedPromotion) {
+        console.log('Coupon successfully applied!', { hasCoupons, hasAppliedPromotion });
         return { success: true, message: 'Coupon applied successfully' };
       } else {
+        console.log('Coupon validation failed in frontend', { hasCoupons, hasAppliedPromotion });
         setAppliedCoupon(null);
         return { success: false, message: 'Coupon code not valid for items in cart' };
       }

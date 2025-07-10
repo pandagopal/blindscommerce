@@ -11,18 +11,26 @@ export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
   const [promoCode, setPromoCode] = useState("");
   const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [couponSuccess, setCouponSuccess] = useState("");
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [editingItems, setEditingItems] = useState<Set<number>>(new Set());
   const router = useRouter();
 
   const applyPromoCode = async () => {
     setApplyingCoupon(true);
+    setCouponError("");
+    setCouponSuccess("");
+    
     const result = await applyCoupon(promoCode);
     
     if (result.success) {
       setPromoCode("");
+      setCouponSuccess("Coupon applied successfully!");
+      // Clear success message after 3 seconds
+      setTimeout(() => setCouponSuccess(""), 3000);
     } else {
-      alert(result.message || "Invalid promo code");
+      setCouponError(result.message || "Invalid promo code");
     }
     setApplyingCoupon(false);
   };
@@ -404,7 +412,10 @@ export default function CartPage() {
                     <input
                       type="text"
                       value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value)}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value);
+                        setCouponError("");
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && promoCode.trim()) {
                           applyPromoCode();
@@ -415,17 +426,37 @@ export default function CartPage() {
                     />
                     <button
                       onClick={applyPromoCode}
-                      disabled={applyingCoupon || isLoading}
+                      disabled={applyingCoupon || isLoading || !promoCode.trim()}
                       className="px-4 bg-gray-100 border border-l-0 border-gray-300 rounded-r disabled:opacity-50"
                     >
                       {applyingCoupon ? 'Applying...' : 'Apply'}
                     </button>
                   </div>
-                  {pricing?.applied_promotions?.coupon_code && (
+                  
+                  {/* Error message */}
+                  {couponError && (
+                    <div className="mt-2 text-sm text-red-600">
+                      {couponError}
+                    </div>
+                  )}
+                  
+                  {/* Success message */}
+                  {couponSuccess && (
+                    <div className="mt-2 text-sm text-green-600">
+                      {couponSuccess}
+                    </div>
+                  )}
+                  
+                  {/* Applied coupon */}
+                  {pricing?.applied_promotions?.coupon_code && !couponError && (
                     <div className="mt-2 text-sm text-green-600 flex items-center justify-between">
                       <span>Promo code {pricing.applied_promotions.coupon_code} applied!</span>
                       <button
-                        onClick={removeCoupon}
+                        onClick={() => {
+                          removeCoupon();
+                          setCouponError("");
+                          setCouponSuccess("");
+                        }}
                         className="text-red-600 hover:text-red-800 text-xs"
                       >
                         Remove

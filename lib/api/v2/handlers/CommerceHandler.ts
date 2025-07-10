@@ -14,6 +14,7 @@ import {
 } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { getPool } from '@/lib/db';
+import { parseDecimal } from '@/lib/utils/priceUtils';
 
 // Validation schemas
 const AddToCartSchema = z.object({
@@ -473,7 +474,11 @@ export class CommerceHandler extends BaseHandler {
       throw new ApiError('Failed to update cart item', 404);
     }
 
-    return { message: 'Cart item updated successfully' };
+    // Return the updated cart instead of just a message
+    const searchParams = this.getSearchParams(req);
+    const sessionId = searchParams.get('sessionId');
+    const updatedCart = await this.cartService.getCart(user?.userId || user?.user_id, sessionId || undefined);
+    return updatedCart;
   }
 
   private async updateCartItemFull(id: string, req: NextRequest, user: any) {
@@ -611,15 +616,60 @@ export class CommerceHandler extends BaseHandler {
   }
 
   private async getOrderStats(user: any) {
-    // Return empty stats for now
-    return {
-      totalOrders: 0,
-      pendingOrders: 0,
-      completedOrders: 0,
-      totalRevenue: 0,
-      averageOrderValue: 0,
-      recentOrders: []
-    };
+    this.requireAuth(user);
+    
+    // Only allow customers to see their own stats
+    if (user.role !== 'customer') {
+      return {
+        totalOrders: 0,
+        totalSpent: 0,
+        pendingOrders: 0,
+        completedOrders: 0
+      };
+    }
+    
+    const pool = await getPool();
+    
+    try {
+      // Get the user ID - handle both userId and user_id formats
+      const userId = user.user_id || user.userId;
+      
+      if (!userId) {
+        return {
+          totalOrders: 0,
+          totalSpent: 0,
+          pendingOrders: 0,
+          completedOrders: 0
+        };
+      }
+      
+      // Get order statistics
+      const [stats] = await pool.execute(
+        `SELECT 
+          COUNT(DISTINCT o.order_id) as totalOrders,
+          COALESCE(SUM(o.total_amount), 0) as totalSpent,
+          COUNT(DISTINCT CASE WHEN o.status IN ('pending', 'processing') THEN o.order_id END) as pendingOrders,
+          COUNT(DISTINCT CASE WHEN o.status = 'delivered' THEN o.order_id END) as completedOrders
+        FROM orders o
+        WHERE o.user_id = ?`,
+        [userId]
+      );
+      
+      return {
+        totalOrders: stats[0].totalOrders || 0,
+        totalSpent: parseFloat(stats[0].totalSpent) || 0,
+        pendingOrders: stats[0].pendingOrders || 0,
+        completedOrders: stats[0].completedOrders || 0
+      };
+    } catch (error) {
+      // Return default values on error
+      return {
+        totalOrders: 0,
+        totalSpent: 0,
+        pendingOrders: 0,
+        completedOrders: 0
+      };
+    }
   }
 
   private async createOrder(req: NextRequest, user: any) {
@@ -683,29 +733,53 @@ export class CommerceHandler extends BaseHandler {
     const vendorDiscounts: any[] = [];
     const vendorCoupons: any[] = [];
     
-    // Apply volume discounts
-    const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-    
-    // Query volume discounts
+    // Apply volume discounts from vendor_discounts table
     const pool = await getPool();
-    const [volumeDiscounts] = await pool.execute(
-      `SELECT * FROM volume_discounts 
-       WHERE is_active = 1 
-       AND (valid_from IS NULL OR valid_from <= NOW())
-       AND (valid_until IS NULL OR valid_until >= NOW())
-       ORDER BY discount_id`,
-      []
-    );
     
-    if (volumeDiscounts.length > 0) {
-      for (const discount of volumeDiscounts) {
+    // Group items by vendor to check volume discounts per vendor
+    const itemsByVendor = cart.items.reduce((acc, item) => {
+      const vendorId = item.vendor_id || item.configuration?.vendorId || item.product_vendor_id;
+      if (!vendorId) return acc;
+      
+      if (!acc[vendorId]) {
+        acc[vendorId] = {
+          items: [],
+          totalQuantity: 0,
+          subtotal: 0
+        };
+      }
+      
+      acc[vendorId].items.push(item);
+      acc[vendorId].totalQuantity += item.quantity;
+      acc[vendorId].subtotal += (item.unit_price * item.quantity);
+      
+      return acc;
+    }, {});
+    
+    
+    // Check volume discounts for each vendor
+    for (const [vendorId, vendorData] of Object.entries(itemsByVendor)) {
+      const [vendorVolumeDiscounts] = await pool.execute(
+        `SELECT * FROM vendor_discounts 
+         WHERE vendor_id = ?
+         AND volume_tiers IS NOT NULL
+         AND is_active = 1 
+         AND (valid_from IS NULL OR valid_from <= NOW())
+         AND (valid_until IS NULL OR valid_until >= NOW())
+         ORDER BY priority DESC, discount_id`,
+        [vendorId]
+      );
+      
+      
+      if (vendorVolumeDiscounts.length > 0) {
+        for (const discount of vendorVolumeDiscounts) {
         // Check total usage limit
-        if (discount.max_usage_total && discount.usage_count >= discount.max_usage_total) {
+        if (discount.usage_limit_total && discount.usage_count >= discount.usage_limit_total) {
           continue; // Skip this discount as it has reached its total usage limit
         }
         
         // Check per-customer usage limit if user is authenticated
-        if (user?.user_id && discount.max_usage_per_customer) {
+        if (user?.user_id && discount.usage_limit_per_customer) {
           const [customerUsage] = await pool.execute(
             `SELECT COUNT(*) as usage_count 
              FROM vendor_discount_usage 
@@ -716,7 +790,7 @@ export class CommerceHandler extends BaseHandler {
             [discount.discount_id, user.user_id]
           );
           
-          if (customerUsage[0].usage_count >= discount.max_usage_per_customer) {
+          if (customerUsage[0].usage_count >= discount.usage_limit_per_customer) {
             continue; // Skip this discount as customer has reached their usage limit
           }
         }
@@ -725,13 +799,16 @@ export class CommerceHandler extends BaseHandler {
           ? JSON.parse(discount.volume_tiers || '[]')
           : discount.volume_tiers || [];
         
-        // Find applicable tier based on total quantity
+        // Find applicable tier based on vendor-specific quantity
+        const vendorQuantity = vendorData.totalQuantity;
+        const vendorSubtotal = vendorData.subtotal;
+        
         const applicableTier = tiers
-          .filter(tier => totalQuantity >= tier.min_qty && (!tier.max_qty || totalQuantity <= tier.max_qty))
+          .filter(tier => vendorQuantity >= tier.min_qty && (!tier.max_qty || vendorQuantity <= tier.max_qty))
           .sort((a, b) => b.discount_percent - a.discount_percent)[0];
         
         if (applicableTier) {
-          let discountAmount = subtotal * (applicableTier.discount_percent / 100);
+          let discountAmount = vendorSubtotal * (applicableTier.discount_percent / 100);
           
           // Apply maximum discount percent limit if set
           if (discount.max_total_discount_percent) {
@@ -743,23 +820,25 @@ export class CommerceHandler extends BaseHandler {
           
           vendorDiscounts.push({
             type: 'volume_discount',
+            vendor_id: vendorId,
             discount_id: discount.discount_id,
-            name: `${discount.discount_name} (${totalQuantity} items - ${applicableTier.discount_percent}% off)`,
+            name: `${discount.discount_name} (${vendorQuantity} items - ${applicableTier.discount_percent}% off)`,
             discount_type: 'percentage',
             amount: discountAmount,
-            quantity: totalQuantity,
+            quantity: vendorQuantity,
             tier: applicableTier,
             // Include usage info for tracking
-            usage_remaining: discount.max_usage_total ? 
-              Math.max(0, discount.max_usage_total - discount.usage_count) : null,
-            customer_usage_remaining: user?.user_id && discount.max_usage_per_customer ? 
-              Math.max(0, discount.max_usage_per_customer - (customerUsage?.[0]?.usage_count || 0)) : null
+            usage_remaining: discount.usage_limit_total ? 
+              Math.max(0, discount.usage_limit_total - discount.usage_count) : null,
+            customer_usage_remaining: user?.user_id && discount.usage_limit_per_customer ? 
+              Math.max(0, discount.usage_limit_per_customer - (customerUsage?.[0]?.usage_count || 0)) : null
           });
           
-          // Usually only one volume discount applies
+          // Usually only one volume discount applies per vendor
           break;
         }
       }
+    }
     }
     
     // Apply vendor-specific automatic discounts
@@ -876,26 +955,96 @@ export class CommerceHandler extends BaseHandler {
     
     // Apply coupon if provided
     if (body.coupon_code) {
-      // Use CartService to validate and apply coupon
-      const couponResult = await this.cartService.applyCoupon(
-        body.coupon_code,
-        user?.userId || user?.user_id,
-        sessionId || undefined
+      // Validate coupon directly here since we already have the cart
+      const [coupon] = await pool.execute(
+        `SELECT 
+          vc.*,
+          vi.business_name as vendor_name
+        FROM vendor_coupons vc
+        JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
+        WHERE vc.coupon_code = ?
+          AND vc.is_active = 1
+          AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())
+          AND (vc.valid_until IS NULL OR vc.valid_until >= NOW())
+          AND (vc.usage_limit_total IS NULL OR vc.usage_count < vc.usage_limit_total)
+        LIMIT 1`,
+        [body.coupon_code]
       );
+
+      if (!coupon || coupon.length === 0) {
+        throw new ApiError('Invalid or expired coupon code', 400);
+      }
+
+      const couponData = coupon[0];
       
-      if (couponResult.success && couponResult.discount) {
-        totalDiscount += couponResult.discount;
-        // Add to vendor coupons list if we have the details
-        vendorCoupons.push({
+      // Check if coupon applies to any items in cart
+      const applicableItems = cart.items.filter(item => {
+        const itemVendorId = item.vendor_id || 
+                            item.configuration?.vendorId || 
+                            item.configuration?.vendor_id ||
+                            item.product_vendor_id;
+        const matches = itemVendorId == couponData.vendor_id;
+        return matches;
+      });
+      
+      if (applicableItems.length === 0) {
+        throw new ApiError(`This coupon is only valid for ${couponData.vendor_name} products`, 400);
+      }
+
+      // Check per-customer usage limit if user is authenticated
+      if (user?.user_id && couponData.usage_limit_per_customer) {
+        const [customerUsage] = await pool.execute(
+          `SELECT COUNT(*) as usage_count 
+           FROM vendor_discount_usage 
+           WHERE coupon_id = ? 
+           AND user_id = ? 
+           AND usage_type = 'coupon'
+           AND order_completed_at IS NOT NULL`,
+          [couponData.coupon_id, user.user_id]
+        );
+        
+        if (customerUsage[0].usage_count >= couponData.usage_limit_per_customer) {
+          throw new ApiError('You have reached the usage limit for this coupon', 400);
+        }
+      }
+
+      // Calculate discount
+      const applicableSubtotal = applicableItems.reduce(
+        (sum, item) => sum + (item.unit_price * item.quantity), 0
+      );
+
+      // Check minimum order value
+      if (couponData.minimum_order_value && applicableSubtotal < couponData.minimum_order_value) {
+        throw new ApiError(`Minimum order value of $${couponData.minimum_order_value} required for this coupon`, 400);
+      }
+
+      let discountAmount = 0;
+      if (couponData.discount_type === 'percentage') {
+        discountAmount = applicableSubtotal * (couponData.discount_value / 100);
+      } else if (couponData.discount_type === 'fixed') {
+        discountAmount = Math.min(couponData.discount_value, applicableSubtotal);
+      }
+
+      // Apply maximum discount amount if set
+      if (couponData.maximum_discount_amount && discountAmount > couponData.maximum_discount_amount) {
+        discountAmount = couponData.maximum_discount_amount;
+      }
+
+      if (discountAmount > 0) {
+        totalDiscount += discountAmount;
+        const couponEntry = {
           type: 'vendor_coupon',
+          vendor_id: couponData.vendor_id,
+          vendor_name: couponData.vendor_name,
+          coupon_id: couponData.coupon_id,
           coupon_code: body.coupon_code,
-          name: `Promo Code: ${body.coupon_code}`,
-          discount_type: 'percentage',
-          amount: couponResult.discount
-        });
-      } else {
-        // If coupon failed, throw error so the frontend knows
-        throw new ApiError(couponResult.message || 'Invalid coupon code', 400);
+          name: couponData.display_name || `Promo Code: ${body.coupon_code}`,
+          discount_type: couponData.discount_type,
+          amount: discountAmount,
+          vendor_subtotal: applicableSubtotal,
+          vendor_subtotal_after: applicableSubtotal - discountAmount
+        };
+        vendorCoupons.push(couponEntry);
       }
     }
     
@@ -921,24 +1070,22 @@ export class CommerceHandler extends BaseHandler {
     const shipping = subtotal >= 100 ? 0 : 15; // Free shipping over $100
     const total = subtotal - totalDiscount + shipping + tax;
     
+    // Return data directly - the route handler will wrap it in success response
     return {
-      success: true,
-      data: {
-        subtotal,
-        vendor_discounts: vendorDiscounts,
-        vendor_coupons: vendorCoupons,
-        total_discount_amount: totalDiscount,
-        applied_discounts_list: [...vendorDiscounts, ...vendorCoupons],
-        shipping,
-        tax,
-        tax_rate: taxRate,
-        tax_breakdown: taxBreakdown,
-        tax_jurisdiction: taxJurisdiction,
-        zip_code: body.zip_code,
-        total,
-        vendors_in_cart: cart.vendorBreakdown.length,
-        applied_promotions: body.coupon_code ? { coupon_code: body.coupon_code } : {}
-      }
+      subtotal,
+      vendor_discounts: vendorDiscounts,
+      vendor_coupons: vendorCoupons,
+      total_discount_amount: totalDiscount,
+      applied_discounts_list: [...vendorDiscounts, ...vendorCoupons],
+      shipping,
+      tax,
+      tax_rate: taxRate,
+      tax_breakdown: taxBreakdown,
+      tax_jurisdiction: taxJurisdiction,
+      zip_code: body.zip_code,
+      total,
+      vendors_in_cart: cart.vendorBreakdown.length,
+      applied_promotions: body.coupon_code ? { coupon_code: body.coupon_code } : {}
     };
   }
 

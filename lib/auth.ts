@@ -142,8 +142,10 @@ export async function getCurrentUser(): Promise<User | null> {
       }
 
       // Transform to expected format
+      // Include both userId and user_id for backward compatibility
       return {
         userId: userData.user_id,
+        user_id: userData.user_id,  // Add snake_case version
         email: userData.email,
         firstName: userData.first_name,
         lastName: userData.last_name,
