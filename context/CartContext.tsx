@@ -339,7 +339,13 @@ export function CartProvider({ children }: CartProviderProps) {
           productId: parseInt(productId),
           vendorId: parseInt(vendorId),
           quantity: newItem.quantity || 1,
-          configuration: newItem.configuration || {
+          configuration: {
+            // Include display fields that cart page needs
+            name: newItem.name || '',
+            slug: newItem.slug || '',
+            image: newItem.image || '',
+            unit_price: newItem.unit_price || 0,
+            // Configuration details
             width: newItem.width?.toString() || '0',
             height: newItem.height?.toString() || '0',
             widthFraction: newItem.widthFraction?.toString() || '0',
@@ -351,7 +357,9 @@ export function CartProvider({ children }: CartProviderProps) {
             colorOption: newItem.colorOption || '',
             controlOption: newItem.controlOption || newItem.controlType || '',
             valanceOption: newItem.valanceOption || '',
-            bottomRailOption: newItem.bottomRailOption || ''
+            bottomRailOption: newItem.bottomRailOption || '',
+            // Include any other fields from the original configuration
+            ...(newItem.configuration || {})
           }
         };
         

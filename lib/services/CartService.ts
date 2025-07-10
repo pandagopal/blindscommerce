@@ -165,8 +165,34 @@ export class CartService extends BaseService {
     // Calculate shipping (simplified - should use actual shipping calculation)
     const shippingCost = subtotal >= 100 ? 0 : 9.99; // Free shipping over $100
 
+    // Transform items to ensure proper field mapping
+    const transformedItems = items.map(item => {
+      // Parse configuration if it's a string
+      let config = item.configuration;
+      if (typeof config === 'string') {
+        try {
+          config = JSON.parse(config);
+        } catch (e) {
+          config = {};
+        }
+      }
+      
+      return {
+        ...item,
+        // Extract display fields from configuration or use product fields
+        name: config?.name || item.product_name,
+        slug: config?.slug || item.product_slug,
+        image: config?.image || item.product_image,
+        unit_price: config?.unit_price || item.price_at_add || item.vendor_price || item.base_price,
+        // Ensure configuration is an object
+        configuration: config || {},
+        // Ensure vendor_id is available
+        vendor_id: item.vendor_id || config?.vendorId || config?.vendor_id
+      };
+    });
+
     return {
-      items,
+      items: transformedItems,
       subtotal,
       totalDiscount,
       totalTax,
