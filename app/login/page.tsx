@@ -72,7 +72,10 @@ function LoginForm() {
               targetUrl = '/installer';
               break;
             case 'customer':
-              targetUrl = '/?login=success';
+              // For customers, check if there's a redirect URL
+              // If they came from product configurator, return them there
+              // Otherwise go to home page
+              targetUrl = (redirectUrl && redirectUrl !== '/') ? redirectUrl : '/?login=success';
               break;
             default:
               targetUrl = '/';

@@ -187,7 +187,16 @@ const Navbar = () => {
   };
 
   const handleSignIn = () => {
-    router.push('/login');
+    // Include current URL as redirect parameter for customers
+    const currentPath = window.location.pathname + window.location.search;
+    // Only include redirect for product pages or cart/checkout
+    if (currentPath.includes('/products/configure') || 
+        currentPath.includes('/cart') || 
+        currentPath.includes('/checkout')) {
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+    } else {
+      router.push('/login');
+    }
   };
 
   return (
