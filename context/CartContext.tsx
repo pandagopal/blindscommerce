@@ -542,6 +542,12 @@ export function CartProvider({ children }: CartProviderProps) {
       if (authenticated) {
         // Extract configuration from newItem
         const configuration = {
+          // Include display fields that cart page needs
+          name: newItem.name || '',
+          slug: newItem.slug || '',
+          image: newItem.image || '',
+          unit_price: newItem.unit_price || 0,
+          // Configuration details
           roomType: newItem.roomType || '',
           mountType: newItem.mountType || '',
           width: newItem.width?.toString() || '0',
@@ -553,7 +559,9 @@ export function CartProvider({ children }: CartProviderProps) {
           colorOption: newItem.colorOption || '',
           controlOption: newItem.controlOption || newItem.controlType || '',
           valanceOption: newItem.valanceOption || '',
-          bottomRailOption: newItem.bottomRailOption || ''
+          bottomRailOption: newItem.bottomRailOption || '',
+          // Include any other fields from the original configuration
+          ...(newItem.configuration || {})
         };
         
         const response = await fetch(`/api/v2/commerce/cart/items/${cart_item_id}/full`, {

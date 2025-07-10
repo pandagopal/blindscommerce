@@ -53,12 +53,12 @@ export default function CartPage() {
 
   const handleEditItem = (item: CartItem) => {
     // Navigate to product configurator with current configuration
-    // Get slug from configuration if not directly on item
+    // Get slug from configuration or item
     const slug = item.slug || item.configuration?.slug;
     const configParams = new URLSearchParams();
     
     // Add current configuration as URL params
-    // Configuration fields are directly on the item object
+    // Check both item.configuration and direct item properties
     const configFields = [
       'roomType', 'mountType', 'width', 'height', 'widthFraction', 'heightFraction',
       'fabricType', 'fabricOption', 'fabricName', 'colorOption', 'colorName',
@@ -67,8 +67,10 @@ export default function CartPage() {
     ];
     
     configFields.forEach(field => {
-      if (item[field] !== undefined && item[field] !== null && item[field] !== '') {
-        configParams.set(field, String(item[field]));
+      // First check in configuration object, then on item directly
+      const value = item.configuration?.[field] || item[field];
+      if (value !== undefined && value !== null && value !== '') {
+        configParams.set(field, String(value));
       }
     });
     
