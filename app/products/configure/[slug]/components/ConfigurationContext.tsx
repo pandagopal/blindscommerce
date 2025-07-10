@@ -299,35 +299,51 @@ export function ConfigProvider({
       // 3. Calculate vendor options price
       let optionsPrice = 0;
       
-      // Use mount types and control types from the product data
-      if (mountTypes && config.mountType) {
-        const mountType = mountTypes.find(mt => mt.id === config.mountType);
-        if (mountType && mountType.price_adjustment) {
-          optionsPrice += mountType.price_adjustment || 0;
+      // Mount type price from product options
+      if (product.options?.mountTypes && config.mountType) {
+        const mountTypeName = mountTypes.find(mt => mt.id === config.mountType)?.name;
+        const mountTypeOption = product.options.mountTypes.find((mt: any) => 
+          mt.enabled && mt.name === mountTypeName
+        );
+        if (mountTypeOption && mountTypeOption.price_adjustment) {
+          optionsPrice += mountTypeOption.price_adjustment || 0;
         }
       }
 
-      // Control type price
-      if (controlTypes && config.controlType) {
-        const controlType = controlTypes.find((ct: any) => ct.name === config.controlType);
-        if (controlType && controlType.price_adjustment) {
-          optionsPrice += controlType.price_adjustment || 0;
+      // Control type price from product options
+      if (product.options?.controlTypes && config.controlType) {
+        // Find in all control type categories
+        const allControlTypes = [
+          ...(product.options.controlTypes.liftSystems || []),
+          ...(product.options.controlTypes.wandSystem || []),
+          ...(product.options.controlTypes.stringSystem || []),
+          ...(product.options.controlTypes.remoteControl || [])
+        ];
+        const controlTypeOption = allControlTypes.find((ct: any) => 
+          ct.enabled && ct.name === config.controlType
+        );
+        if (controlTypeOption && controlTypeOption.price_adjustment) {
+          optionsPrice += controlTypeOption.price_adjustment || 0;
         }
       }
 
       // Valance (headrail) price
-      if (headrailOptions && config.headrailId) {
-        const headrailOption = headrailOptions.find(ho => ho.id === config.headrailId);
-        if (headrailOption && headrailOption.priceModifier) {
-          optionsPrice += headrailOption.priceModifier || 0;
+      if (product.options?.valanceOptions && config.headrailId) {
+        const valanceOption = product.options.valanceOptions.find((vo: any) => 
+          vo.enabled && vo.name === headrailOptions.find(ho => ho.id === config.headrailId)?.name
+        );
+        if (valanceOption && valanceOption.price_adjustment) {
+          optionsPrice += valanceOption.price_adjustment || 0;
         }
       }
 
       // Bottom rail price
-      if (bottomRailOptions && config.bottomRailId) {
-        const bottomRailOption = bottomRailOptions.find(bro => bro.id === config.bottomRailId);
-        if (bottomRailOption && bottomRailOption.priceModifier) {
-          optionsPrice += bottomRailOption.priceModifier || 0;
+      if (product.options?.bottomRailOptions && config.bottomRailId) {
+        const bottomRailOption = product.options.bottomRailOptions.find((bro: any) => 
+          bro.enabled && bro.name === bottomRailOptions.find(br => br.id === config.bottomRailId)?.name
+        );
+        if (bottomRailOption && bottomRailOption.price_adjustment) {
+          optionsPrice += bottomRailOption.price_adjustment || 0;
         }
       }
 

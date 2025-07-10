@@ -331,7 +331,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             primaryCategory: product.primary_category || ''
           },
           options: optionsData || {
-            dimensions: {
+            dimensions: optionsData?.dimensions || {
               minWidth: 12,
               maxWidth: 96,
               minHeight: 12,
@@ -339,15 +339,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
               widthIncrement: 0.125,
               heightIncrement: 0.125
             },
-            mountTypes: [],
-            controlTypes: {
+            mountTypes: optionsData?.mountTypes || [],
+            controlTypes: optionsData?.controlTypes || {
               liftSystems: [],
               wandSystem: [],
               stringSystem: [],
               remoteControl: []
             },
-            valanceOptions: [],
-            bottomRailOptions: []
+            valanceOptions: optionsData?.valanceOptions || [],
+            bottomRailOptions: optionsData?.bottomRailOptions || []
           },
           pricing: { 
             matrixEntries: Array.isArray(product.pricing_matrix) ? product.pricing_matrix : [],
