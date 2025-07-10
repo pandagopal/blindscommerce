@@ -435,22 +435,27 @@ export default function CartPage() {
                 </div>
 
                 <div className="border-b pb-4 space-y-2">
-                  {(pricing?.volume_discount || 0) > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Volume Discount</span>
-                      <span>-${Number(pricing?.volume_discount || 0).toFixed(2)}</span>
+                  {/* Show vendor-specific discounts */}
+                  {pricing?.vendor_discounts?.map((discount, idx) => (
+                    <div key={`discount-${idx}`} className="flex justify-between text-green-600">
+                      <span>{discount.name}</span>
+                      <span>-${Number(discount.amount || 0).toFixed(2)}</span>
                     </div>
-                  )}
-                  {(pricing?.coupon_discount || 0) > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Coupon Discount</span>
-                      <span>-${Number(pricing?.coupon_discount || 0).toFixed(2)}</span>
+                  ))}
+                  
+                  {/* Show vendor coupons */}
+                  {pricing?.vendor_coupons?.map((coupon, idx) => (
+                    <div key={`coupon-${idx}`} className="flex justify-between text-green-600">
+                      <span>{coupon.name || `Coupon: ${coupon.coupon_code}`}</span>
+                      <span>-${Number(coupon.amount || 0).toFixed(2)}</span>
                     </div>
-                  )}
-                  {(pricing?.campaign_discount || 0) > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Promotional Discount</span>
-                      <span>-${Number(pricing?.campaign_discount || 0).toFixed(2)}</span>
+                  ))}
+                  
+                  {/* Show total discount if any */}
+                  {(pricing?.total_discount_amount || 0) > 0 && (
+                    <div className="flex justify-between text-green-600 font-semibold">
+                      <span>Total Discounts</span>
+                      <span>-${Number(pricing?.total_discount_amount || 0).toFixed(2)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">

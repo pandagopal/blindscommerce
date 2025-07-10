@@ -153,6 +153,7 @@ export default function ProductConfiguratorPage() {
       controlType: config.controlOption, // Map controlOption to controlType for consistency
       fabricName: fabricName, // Add the fabric name for display
       configuration: {
+        vendorId: product.vendor_id, // Always include vendor_id in configuration
         roomType: config.roomType,
         mountType: config.mountType,
         width: config.width,

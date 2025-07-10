@@ -1666,11 +1666,291 @@ export class VendorsHandler extends BaseHandler {
 
   // Placeholder methods for remaining endpoints
   private async updateDiscount(id: string, req: NextRequest, user: any) {
-    throw new ApiError('Not implemented', 501);
+    const vendorId = await this.getVendorId(user);
+    const discountId = parseInt(id);
+    
+    if (isNaN(discountId)) {
+      throw new ApiError('Invalid discount ID', 400);
+    }
+
+    // Verify the discount belongs to this vendor
+    const [existingDiscount] = await this.vendorService.raw(
+      'SELECT discount_id FROM vendor_discounts WHERE discount_id = ? AND vendor_id = ?',
+      [discountId, vendorId]
+    );
+
+    if (!existingDiscount) {
+      throw new ApiError('Discount not found', 404);
+    }
+
+    const body = await req.json();
+    
+    // Build update query dynamically based on provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (body.discount_name !== undefined) {
+      updates.push('discount_name = ?');
+      values.push(body.discount_name);
+    }
+    
+    if (body.display_name !== undefined) {
+      updates.push('display_name = ?');
+      values.push(body.display_name);
+    }
+    
+    if (body.description !== undefined) {
+      updates.push('description = ?');
+      values.push(body.description);
+    }
+    
+    if (body.discount_type !== undefined) {
+      updates.push('discount_type = ?');
+      values.push(body.discount_type);
+    }
+    
+    if (body.discount_value !== undefined) {
+      updates.push('discount_value = ?');
+      values.push(body.discount_value);
+    }
+    
+    if (body.minimum_order_value !== undefined) {
+      updates.push('minimum_order_value = ?');
+      values.push(body.minimum_order_value);
+    }
+    
+    if (body.minimum_quantity !== undefined) {
+      updates.push('minimum_quantity = ?');
+      values.push(body.minimum_quantity);
+    }
+    
+    if (body.maximum_discount_amount !== undefined) {
+      updates.push('maximum_discount_amount = ?');
+      values.push(body.maximum_discount_amount);
+    }
+    
+    if (body.is_automatic !== undefined) {
+      updates.push('is_automatic = ?');
+      values.push(body.is_automatic ? 1 : 0);
+    }
+    
+    if (body.is_active !== undefined) {
+      updates.push('is_active = ?');
+      values.push(body.is_active ? 1 : 0);
+    }
+    
+    if (body.valid_from !== undefined) {
+      updates.push('valid_from = ?');
+      values.push(body.valid_from || null);
+    }
+    
+    if (body.valid_until !== undefined) {
+      updates.push('valid_until = ?');
+      values.push(body.valid_until || null);
+    }
+    
+    if (body.applies_to !== undefined) {
+      updates.push('applies_to = ?');
+      values.push(body.applies_to);
+    }
+    
+    if (body.target_ids !== undefined) {
+      updates.push('target_ids = ?');
+      values.push(JSON.stringify(body.target_ids || []));
+    }
+    
+    if (body.volume_tiers !== undefined) {
+      updates.push('volume_tiers = ?');
+      values.push(JSON.stringify(body.volume_tiers || []));
+    }
+    
+    if (body.customer_types !== undefined) {
+      updates.push('customer_types = ?');
+      values.push(JSON.stringify(body.customer_types || []));
+    }
+    
+    if (body.stackable_with_coupons !== undefined) {
+      updates.push('stackable_with_coupons = ?');
+      values.push(body.stackable_with_coupons ? 1 : 0);
+    }
+    
+    if (updates.length === 0) {
+      throw new ApiError('No fields to update', 400);
+    }
+    
+    // Always update the updated_at timestamp
+    updates.push('updated_at = NOW()');
+    
+    // Add discount ID and vendor ID for WHERE clause
+    values.push(discountId, vendorId);
+    
+    const updateQuery = `
+      UPDATE vendor_discounts 
+      SET ${updates.join(', ')}
+      WHERE discount_id = ? AND vendor_id = ?
+    `;
+    
+    await this.vendorService.raw(updateQuery, values);
+    
+    // Return the updated discount
+    const [updatedDiscount] = await this.vendorService.raw(
+      'SELECT * FROM vendor_discounts WHERE discount_id = ? AND vendor_id = ?',
+      [discountId, vendorId]
+    );
+    
+    return {
+      success: true,
+      discount: updatedDiscount
+    };
   }
 
   private async updateCoupon(id: string, req: NextRequest, user: any) {
-    throw new ApiError('Not implemented', 501);
+    const vendorId = await this.getVendorId(user);
+    const couponId = parseInt(id);
+    
+    if (isNaN(couponId)) {
+      throw new ApiError('Invalid coupon ID', 400);
+    }
+
+    // Verify the coupon belongs to this vendor
+    const [existingCoupon] = await this.vendorService.raw(
+      'SELECT coupon_id FROM vendor_coupons WHERE coupon_id = ? AND vendor_id = ?',
+      [couponId, vendorId]
+    );
+
+    if (!existingCoupon) {
+      throw new ApiError('Coupon not found', 404);
+    }
+
+    const body = await req.json();
+    
+    // Build update query dynamically based on provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+    
+    if (body.coupon_code !== undefined) {
+      updates.push('coupon_code = ?');
+      values.push(body.coupon_code);
+    }
+    
+    if (body.coupon_name !== undefined) {
+      updates.push('coupon_name = ?');
+      values.push(body.coupon_name);
+    }
+    
+    if (body.display_name !== undefined) {
+      updates.push('display_name = ?');
+      values.push(body.display_name);
+    }
+    
+    if (body.description !== undefined) {
+      updates.push('description = ?');
+      values.push(body.description);
+    }
+    
+    if (body.discount_type !== undefined) {
+      updates.push('discount_type = ?');
+      values.push(body.discount_type);
+    }
+    
+    if (body.discount_value !== undefined) {
+      updates.push('discount_value = ?');
+      values.push(body.discount_value);
+    }
+    
+    if (body.minimum_order_value !== undefined) {
+      updates.push('minimum_order_value = ?');
+      values.push(body.minimum_order_value);
+    }
+    
+    if (body.minimum_quantity !== undefined) {
+      updates.push('minimum_quantity = ?');
+      values.push(body.minimum_quantity);
+    }
+    
+    if (body.maximum_discount_amount !== undefined) {
+      updates.push('maximum_discount_amount = ?');
+      values.push(body.maximum_discount_amount);
+    }
+    
+    if (body.is_active !== undefined) {
+      updates.push('is_active = ?');
+      values.push(body.is_active ? 1 : 0);
+    }
+    
+    if (body.valid_from !== undefined) {
+      updates.push('valid_from = ?');
+      values.push(body.valid_from || null);
+    }
+    
+    if (body.valid_until !== undefined) {
+      updates.push('valid_until = ?');
+      values.push(body.valid_until || null);
+    }
+    
+    if (body.usage_limit_total !== undefined) {
+      updates.push('usage_limit_total = ?');
+      values.push(body.usage_limit_total);
+    }
+    
+    if (body.usage_limit_per_customer !== undefined) {
+      updates.push('usage_limit_per_customer = ?');
+      values.push(body.usage_limit_per_customer);
+    }
+    
+    if (body.applies_to !== undefined) {
+      updates.push('applies_to = ?');
+      values.push(body.applies_to);
+    }
+    
+    if (body.target_ids !== undefined) {
+      updates.push('target_ids = ?');
+      values.push(JSON.stringify(body.target_ids || []));
+    }
+    
+    if (body.customer_types !== undefined) {
+      updates.push('customer_types = ?');
+      values.push(JSON.stringify(body.customer_types || []));
+    }
+    
+    if (body.stackable_with_discounts !== undefined) {
+      updates.push('stackable_with_discounts = ?');
+      values.push(body.stackable_with_discounts ? 1 : 0);
+    }
+    
+    if (body.stackable_with_other_coupons !== undefined) {
+      updates.push('stackable_with_other_coupons = ?');
+      values.push(body.stackable_with_other_coupons ? 1 : 0);
+    }
+    
+    if (updates.length === 0) {
+      throw new ApiError('No fields to update', 400);
+    }
+    
+    // Always update the updated_at timestamp
+    updates.push('updated_at = NOW()');
+    
+    // Add coupon ID and vendor ID for WHERE clause
+    values.push(couponId, vendorId);
+    
+    const updateQuery = `
+      UPDATE vendor_coupons 
+      SET ${updates.join(', ')}
+      WHERE coupon_id = ? AND vendor_id = ?
+    `;
+    
+    await this.vendorService.raw(updateQuery, values);
+    
+    // Return the updated coupon
+    const [updatedCoupon] = await this.vendorService.raw(
+      'SELECT * FROM vendor_coupons WHERE coupon_id = ? AND vendor_id = ?',
+      [couponId, vendorId]
+    );
+    
+    return {
+      success: true,
+      coupon: updatedCoupon
+    };
   }
 
   private async deleteDiscount(id: string, user: any) {

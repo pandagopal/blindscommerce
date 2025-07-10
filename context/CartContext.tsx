@@ -682,14 +682,75 @@ export function CartProvider({ children }: CartProviderProps) {
       return { success: false, message: 'Please enter a coupon code' };
     }
 
-    setAppliedCoupon(code);
-    await calculatePricing(items, code);
+    try {
+      setIsLoading(true);
+      setPricingError(null);
 
-    if (pricingError) {
-      return { success: false, message: pricingError };
+      const pricingRequest = {
+        items: items.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          base_price: item.unit_price
+        })),
+        customer_id: customerData?.id,
+        customer_type: customerData?.type,
+        coupon_code: code
+      };
+
+      const response = await fetch('/api/v2/commerce/cart/calculate-pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pricingRequest)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || 'Failed to apply coupon');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to apply coupon');
+      }
+      
+      const data = result.data;
+      
+      // Update pricing state with new data
+      const pricingData = {
+        subtotal: data.subtotal || 0,
+        vendor_discounts: data.vendor_discounts || [],
+        vendor_coupons: data.vendor_coupons || [],
+        total_discount_amount: data.total_discount_amount || 0,
+        applied_discounts_list: data.applied_discounts_list || [],
+        shipping: data.shipping || 0,
+        tax: data.tax || 0,
+        tax_rate: data.tax_rate || 0,
+        tax_breakdown: data.tax_breakdown,
+        tax_jurisdiction: data.tax_jurisdiction,
+        zip_code: data.zip_code,
+        total: data.total || 0,
+        vendors_in_cart: data.vendors_in_cart || 0,
+        applied_promotions: data.applied_promotions || {}
+      };
+
+      setPricing(pricingData);
+      setAppliedCoupon(code);
+      
+      // Check if coupon was successfully applied
+      if (data.vendor_coupons?.length > 0 || data.applied_promotions?.coupon_code === code) {
+        return { success: true, message: 'Coupon applied successfully' };
+      } else {
+        setAppliedCoupon(null);
+        return { success: false, message: 'Coupon code not valid for items in cart' };
+      }
+      
+    } catch (error) {
+      setPricingError(error instanceof Error ? error.message : 'Failed to apply coupon');
+      setAppliedCoupon(null);
+      return { success: false, message: error instanceof Error ? error.message : 'Failed to apply coupon' };
+    } finally {
+      setIsLoading(false);
     }
-
-    return { success: true, message: 'Coupon applied successfully' };
   };
 
   // Remove coupon

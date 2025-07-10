@@ -98,6 +98,7 @@ export class CartService extends BaseService {
         p.sku as product_sku,
         p.primary_image_url as product_image,
         p.base_price,
+        p.vendor_id as product_vendor_id,
         COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')), p.vendor_id) as vendor_id,
         vi.business_name as vendor_name,
         vp.vendor_price,
@@ -186,8 +187,9 @@ export class CartService extends BaseService {
         unit_price: config?.unit_price || item.price_at_add || item.vendor_price || item.base_price,
         // Ensure configuration is an object
         configuration: config || {},
-        // Ensure vendor_id is available
-        vendor_id: item.vendor_id || config?.vendorId || config?.vendor_id
+        // Ensure vendor_id is available from multiple sources
+        vendor_id: item.vendor_id || config?.vendorId || config?.vendor_id || item.product_vendor_id,
+        product_vendor_id: item.product_vendor_id // Keep this for coupon validation
       };
     });
 
@@ -543,9 +545,30 @@ export class CartService extends BaseService {
     }
 
     // Check if coupon applies to any items in cart
-    const applicableItems = cart.items.filter(item => item.vendor_id === coupon.vendor_id);
+    // Need to handle both vendor_id from item and from product
+    const applicableItems = cart.items.filter(item => {
+      // Try to get vendor_id from multiple sources
+      const itemVendorId = item.vendor_id || 
+                          item.configuration?.vendorId || 
+                          item.configuration?.vendor_id ||
+                          item.product_vendor_id;
+      return itemVendorId == coupon.vendor_id; // Use == to handle string/number comparison
+    });
     
     if (applicableItems.length === 0) {
+      // Debug: log vendor IDs to help identify the issue
+      console.log('Coupon validation failed:', {
+        couponVendorId: coupon.vendor_id,
+        couponVendorName: coupon.vendor_name,
+        cartItemVendorIds: cart.items.map(item => ({
+          itemId: item.cart_item_id,
+          productName: item.name,
+          vendor_id: item.vendor_id,
+          configVendorId: item.configuration?.vendorId,
+          productVendorId: item.product_vendor_id
+        }))
+      });
+      
       return { 
         success: false, 
         message: `This coupon is only valid for ${coupon.vendor_name} products` 

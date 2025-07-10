@@ -13,6 +13,7 @@ import {
   settingsService 
 } from '@/lib/services/singletons';
 import { z } from 'zod';
+import { getPool } from '@/lib/db';
 
 // Validation schemas
 const AddToCartSchema = z.object({
@@ -85,6 +86,7 @@ export class CommerceHandler extends BaseHandler {
       'cart/summary': () => this.getCartSummary(req, user),
       'orders': () => this.getOrders(req, user),
       'orders/:id': () => this.getOrder(action[1], user),
+      'order-stats': () => this.getOrderStats(user),
       'payment-methods': () => this.getPaymentMethods(req),
     };
 
@@ -608,6 +610,18 @@ export class CommerceHandler extends BaseHandler {
     return order;
   }
 
+  private async getOrderStats(user: any) {
+    // Return empty stats for now
+    return {
+      totalOrders: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      totalRevenue: 0,
+      averageOrderValue: 0,
+      recentOrders: []
+    };
+  }
+
   private async createOrder(req: NextRequest, user: any) {
     this.requireAuth(user);
 
@@ -668,6 +682,192 @@ export class CommerceHandler extends BaseHandler {
     let totalDiscount = 0;
     const vendorDiscounts: any[] = [];
     const vendorCoupons: any[] = [];
+    
+    // Apply volume discounts
+    const totalQuantity = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Query volume discounts
+    const pool = await getPool();
+    const [volumeDiscounts] = await pool.execute(
+      `SELECT * FROM volume_discounts 
+       WHERE is_active = 1 
+       AND (valid_from IS NULL OR valid_from <= NOW())
+       AND (valid_until IS NULL OR valid_until >= NOW())
+       ORDER BY discount_id`,
+      []
+    );
+    
+    if (volumeDiscounts.length > 0) {
+      for (const discount of volumeDiscounts) {
+        // Check total usage limit
+        if (discount.max_usage_total && discount.usage_count >= discount.max_usage_total) {
+          continue; // Skip this discount as it has reached its total usage limit
+        }
+        
+        // Check per-customer usage limit if user is authenticated
+        if (user?.user_id && discount.max_usage_per_customer) {
+          const [customerUsage] = await pool.execute(
+            `SELECT COUNT(*) as usage_count 
+             FROM vendor_discount_usage 
+             WHERE discount_id = ? 
+             AND user_id = ? 
+             AND usage_type = 'discount'
+             AND order_completed_at IS NOT NULL`,
+            [discount.discount_id, user.user_id]
+          );
+          
+          if (customerUsage[0].usage_count >= discount.max_usage_per_customer) {
+            continue; // Skip this discount as customer has reached their usage limit
+          }
+        }
+        
+        const tiers = typeof discount.volume_tiers === 'string' 
+          ? JSON.parse(discount.volume_tiers || '[]')
+          : discount.volume_tiers || [];
+        
+        // Find applicable tier based on total quantity
+        const applicableTier = tiers
+          .filter(tier => totalQuantity >= tier.min_qty && (!tier.max_qty || totalQuantity <= tier.max_qty))
+          .sort((a, b) => b.discount_percent - a.discount_percent)[0];
+        
+        if (applicableTier) {
+          let discountAmount = subtotal * (applicableTier.discount_percent / 100);
+          
+          // Apply maximum discount percent limit if set
+          if (discount.max_total_discount_percent) {
+            const maxAllowedDiscount = subtotal * (discount.max_total_discount_percent / 100);
+            discountAmount = Math.min(discountAmount, maxAllowedDiscount);
+          }
+          
+          totalDiscount += discountAmount;
+          
+          vendorDiscounts.push({
+            type: 'volume_discount',
+            discount_id: discount.discount_id,
+            name: `${discount.discount_name} (${totalQuantity} items - ${applicableTier.discount_percent}% off)`,
+            discount_type: 'percentage',
+            amount: discountAmount,
+            quantity: totalQuantity,
+            tier: applicableTier,
+            // Include usage info for tracking
+            usage_remaining: discount.max_usage_total ? 
+              Math.max(0, discount.max_usage_total - discount.usage_count) : null,
+            customer_usage_remaining: user?.user_id && discount.max_usage_per_customer ? 
+              Math.max(0, discount.max_usage_per_customer - (customerUsage?.[0]?.usage_count || 0)) : null
+          });
+          
+          // Usually only one volume discount applies
+          break;
+        }
+      }
+    }
+    
+    // Apply vendor-specific automatic discounts
+    const vendorIds = [...new Set(cart.items.map(item => 
+      item.vendor_id || item.configuration?.vendorId || item.product_vendor_id
+    ))];
+    
+    for (const vendorId of vendorIds) {
+      if (!vendorId) continue;
+      
+      const [vendorAutoDiscounts] = await pool.execute(
+        `SELECT * FROM vendor_discounts 
+         WHERE vendor_id = ? 
+         AND is_active = 1 
+         AND is_automatic = 1
+         AND (valid_from IS NULL OR valid_from <= NOW())
+         AND (valid_until IS NULL OR valid_until >= NOW())
+         ORDER BY priority DESC, discount_value DESC
+         LIMIT 1`,
+        [vendorId]
+      );
+      
+      if (vendorAutoDiscounts.length > 0) {
+        const discount = vendorAutoDiscounts[0];
+        
+        // Check usage limits for vendor discounts
+        let canApplyDiscount = true;
+        
+        // Check total usage limit
+        if (discount.usage_limit_total) {
+          const [totalUsage] = await pool.execute(
+            `SELECT COUNT(*) as usage_count 
+             FROM vendor_discount_usage 
+             WHERE discount_id = ? 
+             AND usage_type = 'discount'
+             AND order_completed_at IS NOT NULL`,
+            [discount.discount_id]
+          );
+          
+          if (totalUsage[0].usage_count >= discount.usage_limit_total) {
+            canApplyDiscount = false;
+          }
+        }
+        
+        // Check per-customer usage limit if user is authenticated
+        if (canApplyDiscount && user?.user_id && discount.usage_limit_per_customer) {
+          const [customerUsage] = await pool.execute(
+            `SELECT COUNT(*) as usage_count 
+             FROM vendor_discount_usage 
+             WHERE discount_id = ? 
+             AND user_id = ? 
+             AND usage_type = 'discount'
+             AND order_completed_at IS NOT NULL`,
+            [discount.discount_id, user.user_id]
+          );
+          
+          if (customerUsage[0].usage_count >= discount.usage_limit_per_customer) {
+            canApplyDiscount = false;
+          }
+        }
+        
+        if (canApplyDiscount) {
+          // Calculate discount for this vendor's items
+          const vendorItems = cart.items.filter(item => {
+            const itemVendorId = item.vendor_id || item.configuration?.vendorId || item.product_vendor_id;
+            return itemVendorId == vendorId;
+          });
+          
+          const vendorSubtotal = vendorItems.reduce((sum, item) => 
+            sum + (item.unit_price * item.quantity), 0
+          );
+          
+          // Check minimum order value
+          if (discount.minimum_order_value && vendorSubtotal < discount.minimum_order_value) {
+            continue; // Skip if doesn't meet minimum order value
+          }
+          
+          if (vendorSubtotal > 0) {
+            let discountAmount = 0;
+            if (discount.discount_type === 'percentage') {
+              discountAmount = vendorSubtotal * (discount.discount_value / 100);
+            } else if (discount.discount_type === 'fixed') {
+              discountAmount = Math.min(discount.discount_value, vendorSubtotal);
+            }
+            
+            // Apply maximum discount amount if set
+            if (discount.maximum_discount_amount && discountAmount > discount.maximum_discount_amount) {
+              discountAmount = discount.maximum_discount_amount;
+            }
+            
+            if (discountAmount > 0) {
+              totalDiscount += discountAmount;
+              vendorDiscounts.push({
+                type: 'vendor_discount',
+                vendor_id: vendorId,
+                vendor_name: cart.vendorBreakdown.find(v => v.vendor_id == vendorId)?.vendor_name || 'Vendor',
+                discount_id: discount.discount_id,
+                name: discount.display_name || discount.discount_name,
+                discount_type: discount.discount_type,
+                amount: discountAmount,
+                vendor_subtotal: vendorSubtotal,
+                vendor_subtotal_after: vendorSubtotal - discountAmount
+              });
+            }
+          }
+        }
+      }
+    }
     
     // Apply customer-specific pricing if authenticated
     if ((user?.userId || user?.user_id) && body.customer_id) {
