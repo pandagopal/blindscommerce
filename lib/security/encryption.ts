@@ -112,10 +112,38 @@ export function decryptSensitiveData(encryptedData: string): string {
 export function isEncrypted(data: string): boolean {
   if (!data || data === '') return false;
   
+  // Known plain text patterns that should NOT be treated as encrypted
+  const plainTextPatterns = [
+    /^pk_test_/,    // Stripe test publishable key
+    /^pk_live_/,    // Stripe live publishable key  
+    /^sk_test_/,    // Stripe test secret key
+    /^sk_live_/,    // Stripe live secret key
+    /^whsec_/,      // Stripe webhook secret
+    /^acct_/,       // PayPal/Braintree account IDs
+  ];
+  
+  // Check if it matches any known plain text pattern
+  if (plainTextPatterns.some(pattern => pattern.test(data))) {
+    return false;
+  }
+  
   try {
     // Check if it's valid base64 and has expected minimum length
     const decoded = Buffer.from(data, 'base64');
-    return decoded.length >= (IV_LENGTH + TAG_LENGTH + 16); // Minimum encrypted size
+    // Our encrypted format: IV (16) + TAG (16) + encrypted data (min 16)
+    if (decoded.length < (IV_LENGTH + TAG_LENGTH + 16)) {
+      return false;
+    }
+    
+    // Additional check: encrypted data should have high entropy
+    // (not a perfect check but helps filter out some false positives)
+    const bytes = Array.from(decoded);
+    const uniqueBytes = new Set(bytes).size;
+    const entropy = uniqueBytes / bytes.length;
+    
+    // Encrypted data typically has high entropy (> 0.7)
+    // Base64 encoded text often has lower entropy
+    return entropy > 0.7;
   } catch {
     return false;
   }

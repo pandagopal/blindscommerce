@@ -4,6 +4,7 @@
  */
 
 import { getPool } from '@/lib/db';
+import { decryptSensitiveData, encryptSensitiveData, isEncrypted, safeDecrypt } from '@/lib/security/encryption';
 
 interface PlatformSettings {
   general: {
@@ -203,12 +204,10 @@ export class SettingsService {
           // Try to parse JSON, but if it fails use raw value
           let value = row.setting_value;
           try {
-            // Only try to parse if it looks like JSON
-            if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('[') || value === 'true' || value === 'false')) {
-              value = JSON.parse(value);
-            }
+            // Try to parse JSON - this handles quoted strings, booleans, objects, arrays
+            value = JSON.parse(value);
           } catch (e) {
-            // Keep raw value
+            // Keep raw value if not valid JSON
           }
           
           // For boolean fields in our settings, convert string to boolean
@@ -217,6 +216,36 @@ export class SettingsService {
               value = true;
             } else if (value === '0' || value === 0 || value === 'false') {
               value = false;
+            }
+          }
+          
+          // Decrypt sensitive payment fields if they are encrypted
+          if (mappedCategory === 'payments' && typeof value === 'string' && value !== '') {
+            const sensitiveKeys = [
+              'stripe_secret_key',
+              'stripe_publishable_key',
+              'stripe_webhook_secret',
+              'paypal_client_id',
+              'paypal_client_secret',
+              'braintree_merchant_id',
+              'braintree_public_key',
+              'braintree_private_key',
+              'klarna_api_key',
+              'klarna_username',
+              'klarna_password',
+              'afterpay_merchant_id',
+              'afterpay_secret_key',
+              'affirm_public_api_key',
+              'affirm_private_api_key'
+            ];
+            
+            if (sensitiveKeys.includes(mappedKey) && isEncrypted(value)) {
+              try {
+                value = safeDecrypt(value);
+              } catch (error) {
+                console.warn(`Failed to decrypt ${mappedKey}, using original value`);
+                // Keep the original value if decryption fails
+              }
             }
           }
           
@@ -246,6 +275,41 @@ export class SettingsService {
     const pool = await getPool();
     
     for (const [key, value] of Object.entries(settings)) {
+      // Encrypt sensitive payment fields before storing
+      let valueToStore = value;
+      
+      if (category === 'payments' && typeof value === 'string' && value !== '') {
+        const sensitiveKeys = [
+          'stripe_secret_key',
+          'stripe_publishable_key',
+          'stripe_webhook_secret',
+          'paypal_client_id',
+          'paypal_client_secret',
+          'braintree_merchant_id',
+          'braintree_public_key',
+          'braintree_private_key',
+          'klarna_api_key',
+          'klarna_username',
+          'klarna_password',
+          'afterpay_merchant_id',
+          'afterpay_secret_key',
+          'affirm_public_api_key',
+          'affirm_private_api_key'
+        ];
+        
+        if (sensitiveKeys.includes(key)) {
+          // Only encrypt if not already encrypted
+          if (!isEncrypted(value)) {
+            try {
+              valueToStore = encryptSensitiveData(value);
+            } catch (error) {
+              console.error(`Failed to encrypt ${key}:`, error);
+              // Continue with unencrypted value if encryption fails
+            }
+          }
+        }
+      }
+      
       // Check if setting exists (setting_key is unique across all categories)
       const [existing] = await pool.execute(
         'SELECT setting_id, category FROM company_settings WHERE setting_key = ?',
@@ -256,13 +320,13 @@ export class SettingsService {
         // Update existing setting - update both value and category
         await pool.execute(
           'UPDATE company_settings SET setting_value = ?, category = ?, updated_at = NOW() WHERE setting_key = ?',
-          [JSON.stringify(value), category, key]
+          [JSON.stringify(valueToStore), category, key]
         );
       } else {
         // Insert new setting
         await pool.execute(
           'INSERT INTO company_settings (category, setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
-          [category, key, JSON.stringify(value)]
+          [category, key, JSON.stringify(valueToStore)]
         );
       }
     }

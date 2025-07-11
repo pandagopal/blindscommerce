@@ -9,25 +9,26 @@ import PhoneInput from "@/components/ui/PhoneInput";
 
 // Payment Method Icons
 const PaymentIcon = ({ type, provider }: { type: string; provider: string }) => {
-  const iconClass = "w-8 h-8";
+  const iconClass = "w-4 h-4";
+  const textClass = "text-[9px] font-bold";
   
   if (provider === 'stripe' && type === 'card') {
     return <CreditCard className={iconClass} />;
   }
   if (provider === 'paypal') {
-    return <div className={`${iconClass} bg-blue-600 text-white rounded flex items-center justify-center text-xs font-bold`}>PP</div>;
+    return <div className={`${iconClass} bg-blue-600 text-white rounded flex items-center justify-center ${textClass}`}>PP</div>;
   }
   if (provider === 'klarna') {
-    return <div className={`${iconClass} bg-pink-500 text-white rounded flex items-center justify-center text-xs font-bold`}>K</div>;
+    return <div className={`${iconClass} bg-pink-500 text-white rounded flex items-center justify-center ${textClass}`}>K</div>;
   }
   if (provider === 'afterpay') {
-    return <div className={`${iconClass} bg-green-500 text-white rounded flex items-center justify-center text-xs font-bold`}>AP</div>;
+    return <div className={`${iconClass} bg-green-500 text-white rounded flex items-center justify-center ${textClass}`}>AP</div>;
   }
   if (provider === 'affirm') {
-    return <div className={`${iconClass} bg-blue-400 text-white rounded flex items-center justify-center text-xs font-bold`}>AF</div>;
+    return <div className={`${iconClass} bg-blue-400 text-white rounded flex items-center justify-center ${textClass}`}>AF</div>;
   }
   if (provider === 'braintree') {
-    return <div className={`${iconClass} bg-gray-600 text-white rounded flex items-center justify-center text-xs font-bold`}>BT</div>;
+    return <div className={`${iconClass} bg-gray-600 text-white rounded flex items-center justify-center ${textClass}`}>BT</div>;
   }
   
   return <CreditCard className={iconClass} />;
@@ -151,13 +152,15 @@ export default function CheckoutPage() {
         
         if (paymentResponse.ok) {
           const paymentData = await paymentResponse.json();
-          setPaymentMethods(paymentData.payment_methods || []);
+          // Handle V2 API response format { success: true, data: {...} }
+          const methods = paymentData.data?.payment_methods || paymentData.payment_methods || [];
+          setPaymentMethods(methods);
           // Auto-select the first recommended method
-          const recommended = paymentData.payment_methods?.find((m: any) => m.recommended);
+          const recommended = methods.find((m: any) => m.recommended);
           if (recommended) {
             setSelectedPaymentMethod(recommended.id);
-          } else if (paymentData.payment_methods?.length > 0) {
-            setSelectedPaymentMethod(paymentData.payment_methods[0].id);
+          } else if (methods.length > 0) {
+            setSelectedPaymentMethod(methods[0].id);
           }
         } else {
           console.error('Payment methods API failed with status:', paymentResponse.status);
@@ -480,26 +483,26 @@ export default function CheckoutPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
           {/* Checkout Form */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-sm border p-3">
+              <h1 className="text-lg font-bold text-gray-900 mb-3">Checkout</h1>
               
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 {/* Contact Information */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <User className="w-5 h-5 mr-2" />
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1.5 flex items-center">
+                    <User className="w-3.5 h-3.5 mr-1" />
                     Contact Information
                   </h3>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-0.5">
                         First Name *
                         {!isGuest && formData.firstName && (
-                          <span className="text-xs text-green-600 ml-1">(saved)</span>
+                          <span className="text-[10px] text-green-600 ml-0.5">(saved)</span>
                         )}
                       </label>
                       <input
@@ -508,11 +511,11 @@ export default function CheckoutPage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-0.5">
                         Last Name *
                         {!isGuest && formData.lastName && (
                           <span className="text-xs text-green-600 ml-1">(saved)</span>
@@ -524,13 +527,13 @@ export default function CheckoutPage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-xs font-medium text-gray-700 mb-0.5">
                         Email Address *
                         {!isGuest && (
                           <span className="text-xs text-gray-500 ml-1">(account email)</span>
@@ -543,18 +546,18 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         readOnly={!isGuest}
-                        className={`w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${!isGuest ? 'bg-gray-50 text-gray-600' : ''}`}
+                        className={`w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${!isGuest ? 'bg-gray-50 text-gray-600' : ''}`}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Phone Number *</label>
                       <PhoneInput
                         value={formData.phone}
                         onChange={(value) => setFormData({ ...formData, phone: value })}
                         country="US"
                         showCountrySelector={false}
                         required
-                        className="w-full"
+                        className="w-full [&_input]:h-auto [&_input]:p-1.5 [&_input]:text-sm [&_input]:py-1.5"
                       />
                     </div>
                   </div>
@@ -562,61 +565,61 @@ export default function CheckoutPage() {
 
                 {/* Shipping Address */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <Truck className="w-5 h-5 mr-2" />
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1.5 flex items-center">
+                    <Truck className="w-3.5 h-3.5 mr-1" />
                     Shipping Address
                   </h3>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-0.5">Street Address *</label>
                         <input
                           type="text"
                           name="address"
                           value={formData.address}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="123 Main St"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Apt/Suite</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-0.5">Apt/Suite</label>
                         <input
                           type="text"
                           name="apt"
                           value={formData.apt}
                           onChange={handleInputChange}
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Apt #"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-4 gap-2">
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-0.5">City *</label>
                         <input
                           type="text"
                           name="city"
                           value={formData.city}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-0.5">State *</label>
                         <input
                           type="text"
                           name="state"
                           value={formData.state}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">ZIP *</label>
+                        <label className="block text-xs font-medium text-gray-700 mb-0.5">ZIP *</label>
                         <input
                           type="text"
                           name="zipCode"
@@ -624,7 +627,7 @@ export default function CheckoutPage() {
                           onChange={handleInputChange}
                           onBlur={handleZipCodeBlur}
                           required
-                          className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </div>
                     </div>
@@ -633,73 +636,73 @@ export default function CheckoutPage() {
 
                 {/* Billing Address */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <MapPin className="w-5 h-5 mr-2" />
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1.5 flex items-center">
+                    <MapPin className="w-3.5 h-3.5 mr-1" />
                     Billing Address
                   </h3>
-                  <div className="mb-4">
+                  <div className="mb-2">
                     <label className="flex items-center">
                       <input
                         type="checkbox"
                         name="sameAsShipping"
                         checked={formData.sameAsShipping}
                         onChange={handleInputChange}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                       />
-                      <span className="ml-2 text-sm text-gray-700">Same as shipping address</span>
+                      <span className="ml-1.5 text-xs text-gray-700">Same as shipping address</span>
                     </label>
                   </div>
                   
                   {!formData.sameAsShipping && (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-2">
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-0.5">Street Address *</label>
                           <input
                             type="text"
                             name="billingAddress"
                             value={formData.billingAddress}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Apt/Suite</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-0.5">Apt/Suite</label>
                           <input
                             type="text"
                             name="billingApt"
                             value={formData.billingApt}
                             onChange={handleInputChange}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-4">
+                      <div className="grid grid-cols-4 gap-2">
                         <div className="col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-0.5">City *</label>
                           <input
                             type="text"
                             name="billingCity"
                             value={formData.billingCity}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">State *</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-0.5">State *</label>
                           <input
                             type="text"
                             name="billingState"
                             value={formData.billingState}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">ZIP *</label>
+                          <label className="block text-xs font-medium text-gray-700 mb-0.5">ZIP *</label>
                           <input
                             type="text"
                             name="billingZipCode"
@@ -707,7 +710,7 @@ export default function CheckoutPage() {
                             onChange={handleInputChange}
                             onBlur={handleZipCodeBlur}
                             required={!formData.sameAsShipping}
-                            className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
                       </div>
@@ -717,44 +720,43 @@ export default function CheckoutPage() {
 
                 {/* Payment Methods */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-                    <CreditCard className="w-5 h-5 mr-2" />
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center">
+                    <CreditCard className="w-3.5 h-3.5 mr-1" />
                     Payment Method
                   </h3>
                   
                   {loadingPaymentMethods ? (
-                    <div className="flex items-center justify-center p-8">
-                      <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                      <span>Loading payment options...</span>
+                    <div className="flex items-center justify-center p-2">
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                      <span className="text-xs">Loading payment options...</span>
                     </div>
                   ) : paymentMethods.length === 0 ? (
-                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-800">No payment methods are currently available. Please contact support.</p>
+                    <div className="p-1.5 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                      No payment methods are currently available. Please contact support.
                     </div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-1">
                       {paymentMethods.map((method) => (
-                        <div key={method.id} className={`border border-gray-200 rounded-lg ${selectedPaymentMethod === method.id ? 'ring-2 ring-blue-500 border-blue-200' : ''}`}>
-                          <label className="flex items-center p-4 hover:bg-gray-50 cursor-pointer">
+                        <div key={method.id} className={`border border-gray-200 rounded ${selectedPaymentMethod === method.id ? 'ring-1 ring-blue-500 border-blue-400' : ''}`}>
+                          <label className="flex items-center p-1.5 hover:bg-gray-50 cursor-pointer">
                             <input
                               type="radio"
                               name="paymentMethod"
                               value={method.id}
                               checked={selectedPaymentMethod === method.id}
                               onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <div className="ml-3 flex items-center flex-1">
+                            <div className="ml-2 flex items-center flex-1">
                               <PaymentIcon type={method.type} provider={method.provider} />
-                              <div className="ml-3 flex-1">
+                              <div className="ml-2 flex-1">
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <p className="text-sm font-medium text-gray-900">
+                                    <p className="text-xs font-medium text-gray-900 flex items-center">
                                       {method.name}
-                                      {method.recommended && <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Recommended</span>}
-                                      {method.popular && <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Popular</span>}
+                                      {method.recommended && <span className="ml-1 text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded">Recommended</span>}
                                     </p>
-                                    <p className="text-xs text-gray-500">{method.description}</p>
+                                    <p className="text-[10px] text-gray-500 leading-tight">{method.description}</p>
                                   </div>
                                   {method.estimated_fee > 0 && (
                                     <p className="text-xs text-gray-500">
@@ -770,50 +772,50 @@ export default function CheckoutPage() {
                           {selectedPaymentMethod === method.id && (
                             <div className="border-t border-gray-200 p-4 bg-gray-50">
                               {method.provider === 'stripe' && method.type === 'card' && (
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                   <h4 className="font-medium text-gray-900">Card Details</h4>
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-2 gap-2">
                                     <div className="col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Card Number</label>
                                       <input
                                         type="text"
                                         name="cardNumber"
                                         value={paymentData.cardNumber}
                                         onChange={handlePaymentDataChange}
                                         placeholder="1234 5678 9012 3456"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Expiry Date</label>
                                       <input
                                         type="text"
                                         name="expiryDate"
                                         value={paymentData.expiryDate}
                                         onChange={handlePaymentDataChange}
                                         placeholder="MM/YY"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">CVC</label>
                                       <input
                                         type="text"
                                         name="cvc"
                                         value={paymentData.cvc}
                                         onChange={handlePaymentDataChange}
                                         placeholder="123"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div className="col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Cardholder Name</label>
                                       <input
                                         type="text"
                                         name="cardholderName"
                                         value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
                                         onChange={handlePaymentDataChange}
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                   </div>
@@ -821,48 +823,48 @@ export default function CheckoutPage() {
                               )}
                               
                               {method.provider === 'stripe' && method.type === 'bank_transfer' && (
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                   <h4 className="font-medium text-gray-900">Bank Account Details</h4>
-                                  <div className="grid grid-cols-2 gap-4">
+                                  <div className="grid grid-cols-2 gap-2">
                                     <div className="col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Holder Name</label>
                                       <input
                                         type="text"
                                         name="accountHolderName"
                                         value={paymentData.accountHolderName || `${formData.firstName} ${formData.lastName}`.trim()}
                                         onChange={handlePaymentDataChange}
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Routing Number</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Routing Number</label>
                                       <input
                                         type="text"
                                         name="routingNumber"
                                         value={paymentData.routingNumber}
                                         onChange={handlePaymentDataChange}
                                         placeholder="123456789"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Number</label>
                                       <input
                                         type="text"
                                         name="accountNumber"
                                         value={paymentData.accountNumber}
                                         onChange={handlePaymentDataChange}
                                         placeholder="123456789012"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       />
                                     </div>
                                     <div className="col-span-2">
-                                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Type</label>
                                       <select 
                                         name="accountType"
                                         value={paymentData.accountType}
                                         onChange={handlePaymentDataChange}
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                                       >
                                         <option value="checking">Checking</option>
                                         <option value="savings">Savings</option>
@@ -873,7 +875,7 @@ export default function CheckoutPage() {
                               )}
                               
                               {method.provider === 'paypal' && (
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                   <h4 className="font-medium text-gray-900">PayPal Payment</h4>
                                   <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
                                     <div className="text-blue-600 mb-2">
@@ -887,7 +889,7 @@ export default function CheckoutPage() {
                               )}
                               
                               {method.type === 'bnpl' && (
-                                <div className="space-y-4">
+                                <div className="space-y-2">
                                   <h4 className="font-medium text-gray-900">{method.name} Payment</h4>
                                   <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                                     <p className="text-sm text-purple-800 mb-2">
@@ -908,7 +910,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Terms and Submit */}
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div className="flex items-start">
                     <input
                       type="checkbox"
@@ -947,47 +949,66 @@ export default function CheckoutPage() {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:sticky lg:top-6 lg:h-fit">
-            <div className="bg-white rounded-lg shadow-sm border p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+          <div className="lg:sticky lg:top-4 lg:h-fit">
+            <div className="bg-white rounded-lg shadow-sm border p-3">
+              <h2 className="text-sm font-bold text-gray-900 mb-2">Order Summary</h2>
 
-              <div className="max-h-60 overflow-y-auto mb-4">
+              <div className="max-h-48 overflow-y-auto mb-2">
                 {items.map((item) => (
-                  <div key={item.cart_item_id} className="flex items-start py-3 border-b border-gray-200 last:border-b-0">
-                    <div className="w-12 h-12 flex-shrink-0 rounded overflow-hidden border border-gray-200 mr-3">
+                  <div key={item.cart_item_id} className="flex items-start py-1.5 border-b border-gray-200 last:border-b-0">
+                    <div className="w-8 h-8 flex-shrink-0 rounded overflow-hidden border border-gray-200 mr-2">
                       {item.image ? (
                         <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-                          <span className="text-gray-400 text-xs">No image</span>
+                          <span className="text-gray-400 text-[8px]">IMG</span>
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium">{item.name}</h3>
+                      <h3 className="text-xs font-medium leading-tight">{item.name}</h3>
                       {(item.width && item.height) && (
-                        <p className="text-xs text-gray-500">{item.width}" × {item.height}"</p>
+                        <p className="text-[10px] text-gray-500">{item.width}" × {item.height}"</p>
                       )}
-                      <div className="flex justify-between mt-1">
-                        <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                        <span className="text-sm font-medium">${Number(item.unit_price ?? 0).toFixed(2)}</span>
+                      <div className="flex justify-between mt-0.5">
+                        <span className="text-[10px] text-gray-500">Qty: {item.quantity}</span>
+                        <span className="text-xs font-medium">${Number(item.unit_price ?? 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-2 pt-4 border-t border-gray-200">
+              <div className="space-y-1 pt-2 border-t border-gray-200 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
                   <span>${Number(pricing?.subtotal ?? 0).toFixed(2)}</span>
                 </div>
-                {pricing.total_discount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span className="text-gray-600">Discounts</span>
-                    <span>-${Number(pricing?.total_discount ?? 0).toFixed(2)}</span>
-                  </div>
+                
+                {/* Show vendor discounts */}
+                {pricing?.vendor_discounts && pricing.vendor_discounts.length > 0 && (
+                  <>
+                    {pricing.vendor_discounts.map((discount, idx) => (
+                      <div key={idx} className="flex justify-between text-green-600">
+                        <span className="text-[10px]">{discount.name}</span>
+                        <span>-${Number(discount.amount ?? 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </>
                 )}
+                
+                {/* Show coupon discounts */}
+                {pricing?.vendor_coupons && pricing.vendor_coupons.length > 0 && (
+                  <>
+                    {pricing.vendor_coupons.map((coupon, idx) => (
+                      <div key={idx} className="flex justify-between text-green-600">
+                        <span className="text-[10px]">Coupon: {coupon.code}</span>
+                        <span>-${Number(coupon.amount ?? 0).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
                   {pricing.shipping === 0 ? (
@@ -1000,19 +1021,19 @@ export default function CheckoutPage() {
                   <span className="text-gray-600">Tax</span>
                   <span>${Number(pricing?.tax ?? 0).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 mt-2">
+                <div className="flex justify-between font-bold text-sm pt-1 border-t border-gray-200 mt-1">
                   <span>Total</span>
                   <span>${Number(pricing?.total ?? 0).toFixed(2)}</span>
                 </div>
               </div>
 
-              <div className="mt-6 space-y-3">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Truck className="h-4 w-4 mr-2" />
+              <div className="mt-3 space-y-1">
+                <div className="flex items-center text-[10px] text-gray-600">
+                  <Truck className="h-3 w-3 mr-1" />
                   Free shipping on orders over $100
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <ShieldCheck className="h-4 w-4 mr-2" />
+                <div className="flex items-center text-[10px] text-gray-600">
+                  <ShieldCheck className="h-3 w-3 mr-1" />
                   Secure checkout guaranteed
                 </div>
               </div>

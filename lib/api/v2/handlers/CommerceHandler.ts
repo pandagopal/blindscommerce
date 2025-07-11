@@ -1099,6 +1099,15 @@ export class CommerceHandler extends BaseHandler {
     const settings = await settingsService.getAllSettings();
     const paymentSettings = settings.payments;
     
+    console.log('Payment settings loaded:', {
+      stripe_enabled: paymentSettings.stripe_enabled,
+      has_stripe_secret: !!paymentSettings.stripe_secret_key,
+      has_stripe_publishable: !!paymentSettings.stripe_publishable_key,
+      paypal_enabled: paymentSettings.paypal_enabled,
+      has_paypal_client_id: !!paymentSettings.paypal_client_id,
+      has_paypal_secret: !!paymentSettings.paypal_client_secret
+    });
+    
     // Return available payment methods based on settings and amount
     const paymentMethods = [];
     
