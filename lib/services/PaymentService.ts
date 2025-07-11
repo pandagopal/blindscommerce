@@ -63,11 +63,37 @@ export class PaymentService extends BaseService {
       const settings = await this.settingsService.getAllSettings();
       const stripeSecretKey = settings.payments?.stripe_secret_key;
       
-      if (stripeSecretKey && settings.payments?.stripe_enabled) {
-        this.stripe = new Stripe(stripeSecretKey, {
+      // Debug logging
+      console.log('Stripe settings:', {
+        enabled: settings.payments?.stripe_enabled,
+        hasSecretKey: !!stripeSecretKey,
+        keyPrefix: stripeSecretKey?.substring(0, 7) // Show key prefix for debugging
+      });
+      
+      // Use test key if no key is configured but Stripe is in test mode
+      const isTestMode = settings.payments?.stripe_environment !== 'live';
+      let finalStripeKey = stripeSecretKey;
+      
+      if (isTestMode && !stripeSecretKey) {
+        // Use Stripe test key if none is configured
+        finalStripeKey = process.env.STRIPE_SECRET_KEY;
+        console.log('Using default Stripe test key');
+      }
+      
+      if (finalStripeKey) {
+        // Ensure we're using the secret key, not the publishable key
+        if (finalStripeKey.startsWith('pk_')) {
+          console.error('ERROR: Using publishable key instead of secret key!');
+          throw new Error('Invalid Stripe configuration: secret key required');
+        }
+        
+        this.stripe = new Stripe(finalStripeKey, {
           apiVersion: '2024-12-18.acacia',
         });
         this.stripeInitialized = true;
+        console.log('Stripe initialized successfully with', finalStripeKey.substring(0, 7) + '...');
+      } else {
+        console.log('Stripe not initialized - no secret key available');
       }
     } catch (error) {
       console.error('Failed to initialize Stripe:', error);
@@ -114,17 +140,48 @@ export class PaymentService extends BaseService {
     }
 
     try {
-      // For now, we'll use Stripe's test mode payment method creation
-      // In production, you'd use Stripe Elements or Payment Element on the frontend
+      // Check if we're in test mode
+      const settings = await this.settingsService?.getAllSettings();
+      const isTestMode = settings?.payments?.stripe_environment !== 'live' || 
+                         settings?.payments?.stripe_secret_key?.startsWith('sk_test_');
       
-      // Create a payment method (this is simplified - in production use Stripe Elements)
-      const paymentMethod = await this.createPaymentMethod(paymentIntent);
+      let paymentMethodId: string;
+      
+      // Check if payment method ID was provided from frontend (production flow)
+      if (paymentIntent.payment_method_id && paymentIntent.payment_method_id.startsWith('pm_')) {
+        // Production flow: Use the payment method ID created by Stripe Elements on frontend
+        paymentMethodId = paymentIntent.payment_method_id;
+      } else if (isTestMode) {
+        // Test mode: Create a test payment method
+        console.log('Test mode: Using Stripe test payment method');
+        const testPaymentMethod = await this.stripe.paymentMethods.create({
+          type: 'card',
+          card: {
+            token: 'tok_visa', // Stripe's test token for Visa
+          },
+          billing_details: {
+            name: `${paymentIntent.billing_address.firstName} ${paymentIntent.billing_address.lastName}`,
+            email: paymentIntent.billing_address.email,
+            address: {
+              line1: paymentIntent.billing_address.address,
+              city: paymentIntent.billing_address.city,
+              state: paymentIntent.billing_address.state,
+              postal_code: paymentIntent.billing_address.zipCode,
+              country: 'US',
+            },
+          },
+        });
+        paymentMethodId = testPaymentMethod.id;
+      } else {
+        // Production mode but no payment method ID provided
+        throw new Error('In production mode, payment method must be created on frontend using Stripe Elements. Please integrate Stripe Elements in your checkout form.');
+      }
 
       // Create a payment intent
       const intent = await this.stripe.paymentIntents.create({
         amount: Math.round(paymentIntent.amount * 100), // Convert to cents
         currency: paymentIntent.currency.toLowerCase(),
-        payment_method: paymentMethod.id,
+        payment_method: paymentMethodId,
         confirm: true,
         automatic_payment_methods: {
           enabled: false,

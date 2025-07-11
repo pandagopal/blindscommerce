@@ -7,31 +7,37 @@ import { useCart } from "@/context/CartContext";
 import { ChevronLeft, CreditCard, Truck, ShieldCheck, Lock, User, MapPin, Loader2 } from "lucide-react";
 import PhoneInput from "@/components/ui/PhoneInput";
 
-// Payment Method Icons
+// Payment Method Icons and Logos
 const PaymentIcon = ({ type, provider }: { type: string; provider: string }) => {
-  const iconClass = "w-4 h-4";
-  const textClass = "text-[9px] font-bold";
+  const iconClass = "h-6";
   
   if (provider === 'stripe' && type === 'card') {
-    return <CreditCard className={iconClass} />;
+    return (
+      <div className="flex items-center gap-1">
+        <img src="/images/payment/visa.svg" alt="Visa" className={iconClass} />
+        <img src="/images/payment/mastercard.svg" alt="Mastercard" className={iconClass} />
+        <img src="/images/payment/amex.svg" alt="Amex" className={iconClass} />
+        <img src="/images/payment/discover.svg" alt="Discover" className={iconClass} />
+      </div>
+    );
   }
   if (provider === 'paypal') {
-    return <div className={`${iconClass} bg-blue-600 text-white rounded flex items-center justify-center ${textClass}`}>PP</div>;
+    return <img src="/images/payment/paypal.svg" alt="PayPal" className={iconClass} />;
   }
   if (provider === 'klarna') {
-    return <div className={`${iconClass} bg-pink-500 text-white rounded flex items-center justify-center ${textClass}`}>K</div>;
+    return <img src="/images/payment/klarna.svg" alt="Klarna" className={iconClass} />;
   }
   if (provider === 'afterpay') {
-    return <div className={`${iconClass} bg-green-500 text-white rounded flex items-center justify-center ${textClass}`}>AP</div>;
+    return <img src="/images/payment/afterpay.svg" alt="Afterpay" className={iconClass} />;
   }
   if (provider === 'affirm') {
-    return <div className={`${iconClass} bg-blue-400 text-white rounded flex items-center justify-center ${textClass}`}>AF</div>;
+    return <img src="/images/payment/affirm.svg" alt="Affirm" className={iconClass} />;
   }
   if (provider === 'braintree') {
-    return <div className={`${iconClass} bg-gray-600 text-white rounded flex items-center justify-center ${textClass}`}>BT</div>;
+    return <CreditCard className="h-5 w-5 text-gray-600" />;
   }
   
-  return <CreditCard className={iconClass} />;
+  return <CreditCard className="h-5 w-5 text-gray-600" />;
 };
 
 export default function CheckoutPage() {
@@ -101,11 +107,18 @@ export default function CheckoutPage() {
     const initializeCheckout = async () => {
       try {
         // Check authentication and load user info
-        const authResponse = await fetch('/api/v2/auth/me');
+        const authResponse = await fetch('/api/v2/auth/me', {
+          credentials: 'include' // Ensure cookies are sent
+        });
+        console.log('Auth check response:', authResponse.status);
+        
         if (!authResponse.ok) {
+          console.log('Auth failed, setting as guest');
           setIsGuest(true);
         } else {
           const authData = await authResponse.json();
+          console.log('Auth data:', authData);
+          
           if (authData.user) {
             setFormData(prev => ({
               ...prev,
@@ -283,8 +296,35 @@ export default function CheckoutPage() {
     }
   };
 
+  // Validate payment details based on selected method
+  const isPaymentDetailsValid = () => {
+    if (!selectedPaymentMethod) return false;
+    
+    if (selectedPaymentMethod === 'stripe_card') {
+      // Check if card details are filled
+      return !!(
+        paymentData.cardNumber && 
+        paymentData.cardNumber.replace(/\s/g, '').length >= 13 &&
+        paymentData.expiryDate && 
+        paymentData.expiryDate.length >= 4 &&
+        paymentData.cvc && 
+        paymentData.cvc.length >= 3
+      );
+    }
+    
+    // For PayPal, Klarna, Afterpay - no additional details needed
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate payment details
+    if (!isPaymentDetailsValid()) {
+      alert('Please complete all required payment information');
+      return;
+    }
+    
     setLoading(true);
 
     try {
@@ -425,6 +465,7 @@ export default function CheckoutPage() {
       };
 
       const apiEndpoint = isGuest ? '/api/v2/commerce/orders/create-guest' : '/api/v2/commerce/orders/create';
+      console.log('Creating order with endpoint:', apiEndpoint, 'isGuest:', isGuest);
       
       const finalOrderData = isGuest ? {
         ...orderData,
@@ -445,11 +486,15 @@ export default function CheckoutPage() {
         throw new Error('Failed to create order');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      
+      // Extract order data from V2 API response
+      const orderInfo = result.data || result;
+      const orderNumber = orderInfo.order_number || orderInfo.orderNumber || 'Order confirmed';
       
       // Clear cart and redirect to success page
       await clearCart();
-      router.push(`/checkout/success?order=${data.orderNumber}`);
+      router.push(`/checkout/success?order=${orderNumber}`);
     } catch (error) {
       console.error('Error processing payment:', error);
       setPaymentStatus('failed');
@@ -774,192 +819,197 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Payment Methods */}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900 mb-1 flex items-center">
-                    <CreditCard className="w-3.5 h-3.5 mr-1" />
-                    Payment Method
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Select a payment method
                   </h3>
                   
                   {loadingPaymentMethods ? (
-                    <div className="flex items-center justify-center p-2">
-                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                      <span className="text-xs">Loading payment options...</span>
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      <span className="text-sm">Loading payment options...</span>
                     </div>
                   ) : paymentMethods.length === 0 ? (
-                    <div className="p-1.5 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                    <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
                       No payment methods are currently available. Please contact support.
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      {paymentMethods.map((method) => (
-                        <div key={method.id} className={`border border-gray-200 rounded ${selectedPaymentMethod === method.id ? 'ring-1 ring-blue-500 border-blue-400' : ''}`}>
-                          <label className="flex items-center p-1.5 hover:bg-gray-50 cursor-pointer">
+                    <div className="space-y-3">
+                      {/* Credit/Debit Card Option */}
+                      {paymentMethods.find(m => m.provider === 'stripe' && m.type === 'card') && (
+                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'stripe_card' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}>
+                          <label className="flex items-start cursor-pointer">
                             <input
                               type="radio"
                               name="paymentMethod"
-                              value={method.id}
-                              checked={selectedPaymentMethod === method.id}
+                              value="stripe_card"
+                              checked={selectedPaymentMethod === 'stripe_card'}
                               onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
-                            <div className="ml-2 flex items-center flex-1">
-                              <PaymentIcon type={method.type} provider={method.provider} />
-                              <div className="ml-2 flex-1">
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <p className="text-xs font-medium text-gray-900 flex items-center">
-                                      {method.name}
-                                      {method.recommended && <span className="ml-1 text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded">Recommended</span>}
-                                    </p>
-                                    <p className="text-[10px] text-gray-500 leading-tight">{method.description}</p>
-                                  </div>
-                                  {method.estimated_fee > 0 && (
-                                    <p className="text-xs text-gray-500">
-                                      Fee: ${method.estimated_fee.toFixed(2)}
-                                    </p>
-                                  )}
-                                </div>
+                            <div className="ml-3 flex-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium text-gray-900">Add a new card</span>
+                                <PaymentIcon type="card" provider="stripe" />
                               </div>
                             </div>
                           </label>
                           
-                          {/* Inline Payment Form */}
-                          {selectedPaymentMethod === method.id && (
-                            <div className="border-t border-gray-200 p-4 bg-gray-50">
-                              {method.provider === 'stripe' && method.type === 'card' && (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-gray-900">Card Details</h4>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="col-span-2">
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Card Number</label>
-                                      <input
-                                        type="text"
-                                        name="cardNumber"
-                                        value={paymentData.cardNumber}
-                                        onChange={handlePaymentDataChange}
-                                        placeholder="1234 5678 9012 3456"
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Expiry Date</label>
-                                      <input
-                                        type="text"
-                                        name="expiryDate"
-                                        value={paymentData.expiryDate}
-                                        onChange={handlePaymentDataChange}
-                                        placeholder="MM/YY"
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">CVC</label>
-                                      <input
-                                        type="text"
-                                        name="cvc"
-                                        value={paymentData.cvc}
-                                        onChange={handlePaymentDataChange}
-                                        placeholder="123"
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div className="col-span-2">
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Cardholder Name</label>
-                                      <input
-                                        type="text"
-                                        name="cardholderName"
-                                        value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
-                                        onChange={handlePaymentDataChange}
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
+                          {/* Card Input Form */}
+                          {selectedPaymentMethod === 'stripe_card' && (
+                            <div className="mt-4 space-y-3">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                                <div className="relative">
+                                  <input
+                                    type="text"
+                                    name="cardNumber"
+                                    value={paymentData.cardNumber}
+                                    onChange={handlePaymentDataChange}
+                                    placeholder="1234 5678 9012 3456"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength="19"
+                                  />
+                                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <CreditCard className="h-5 w-5 text-gray-400" />
                                   </div>
                                 </div>
-                              )}
-                              
-                              {method.provider === 'stripe' && method.type === 'bank_transfer' && (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-gray-900">Bank Account Details</h4>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="col-span-2">
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Holder Name</label>
-                                      <input
-                                        type="text"
-                                        name="accountHolderName"
-                                        value={paymentData.accountHolderName || `${formData.firstName} ${formData.lastName}`.trim()}
-                                        onChange={handlePaymentDataChange}
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Routing Number</label>
-                                      <input
-                                        type="text"
-                                        name="routingNumber"
-                                        value={paymentData.routingNumber}
-                                        onChange={handlePaymentDataChange}
-                                        placeholder="123456789"
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Number</label>
-                                      <input
-                                        type="text"
-                                        name="accountNumber"
-                                        value={paymentData.accountNumber}
-                                        onChange={handlePaymentDataChange}
-                                        placeholder="123456789012"
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      />
-                                    </div>
-                                    <div className="col-span-2">
-                                      <label className="block text-xs font-medium text-gray-700 mb-0.5">Account Type</label>
-                                      <select 
-                                        name="accountType"
-                                        value={paymentData.accountType}
-                                        onChange={handlePaymentDataChange}
-                                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                                      >
-                                        <option value="checking">Checking</option>
-                                        <option value="savings">Savings</option>
-                                      </select>
-                                    </div>
-                                  </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                                  <input
+                                    type="text"
+                                    name="expiryDate"
+                                    value={paymentData.expiryDate}
+                                    onChange={handlePaymentDataChange}
+                                    placeholder="MM/YY"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength="5"
+                                  />
                                 </div>
-                              )}
-                              
-                              {method.provider === 'paypal' && (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-gray-900">PayPal Payment</h4>
-                                  <div className="text-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
-                                    <div className="text-blue-600 mb-2">
-                                      <svg className="w-8 h-8 mx-auto" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.583c-1.106-1.266-3.114-1.809-5.690-1.809H9.558c-.524 0-.969.382-1.05.901l-2.416 15.312a.641.641 0 0 0 .633.741h4.25l1.123-7.107c.082-.518.526-.9 1.05-.9h2.19c4.298 0 7.664-1.747 8.647-6.797.03-.149.054-.294.077-.437.078-.495.097-.98.06-1.321z"/>
-                                      </svg>
-                                    </div>
-                                    <p className="text-sm text-gray-600">Click "Pay Now" to continue with PayPal</p>
-                                  </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
+                                  <input
+                                    type="text"
+                                    name="cvc"
+                                    value={paymentData.cvc}
+                                    onChange={handlePaymentDataChange}
+                                    placeholder="123"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    maxLength="4"
+                                  />
                                 </div>
-                              )}
-                              
-                              {method.type === 'bnpl' && (
-                                <div className="space-y-2">
-                                  <h4 className="font-medium text-gray-900">{method.name} Payment</h4>
-                                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                                    <p className="text-sm text-purple-800 mb-2">
-                                      <strong>Pay in installments:</strong> {method.installments} payments
-                                    </p>
-                                    <p className="text-xs text-purple-600">
-                                      You'll be redirected to {method.name} to complete your application and payment setup.
-                                    </p>
-                                  </div>
-                                </div>
-                              )}
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                                <input
+                                  type="text"
+                                  name="cardholderName"
+                                  value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
+                                  onChange={handlePaymentDataChange}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="pt-2 text-xs text-gray-500 flex items-center">
+                                <Lock className="h-3 w-3 mr-1" />
+                                Your payment information is encrypted and secure
+                              </div>
                             </div>
                           )}
                         </div>
-                      ))}
+                      )}
+                      
+                      {/* PayPal Option */}
+                      {paymentMethods.find(m => m.provider === 'paypal') && (
+                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'paypal' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}>
+                          <label className="flex items-start cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="paypal"
+                              checked={selectedPaymentMethod === 'paypal'}
+                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <div className="ml-3 flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">PayPal</span>
+                                  <p className="text-xs text-gray-500">Pay with your PayPal account</p>
+                                </div>
+                                <img src="/images/payment/paypal.svg" alt="PayPal" className="h-6" />
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+                      
+                      {/* Klarna Option */}
+                      {paymentMethods.find(m => m.provider === 'klarna') && (
+                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'klarna' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}>
+                          <label className="flex items-start cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="klarna"
+                              checked={selectedPaymentMethod === 'klarna'}
+                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <div className="ml-3 flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">Klarna</span>
+                                  <p className="text-xs text-gray-500">Split your purchase into 4 interest-free payments</p>
+                                </div>
+                                <img src="/images/payment/klarna.svg" alt="Klarna" className="h-6" />
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      )}
+                      
+                      {/* Afterpay Option */}
+                      {paymentMethods.find(m => m.provider === 'afterpay') && (
+                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedPaymentMethod === 'afterpay' 
+                            ? 'border-blue-500 bg-blue-50' 
+                            : 'border-gray-300 hover:border-gray-400'
+                        }`}>
+                          <label className="flex items-start cursor-pointer">
+                            <input
+                              type="radio"
+                              name="paymentMethod"
+                              value="afterpay"
+                              checked={selectedPaymentMethod === 'afterpay'}
+                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                            />
+                            <div className="ml-3 flex-1">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">Afterpay</span>
+                                  <p className="text-xs text-gray-500">4 interest-free payments. <a href="#" className="text-blue-600 underline">Info</a></p>
+                                </div>
+                                <img src="/images/payment/afterpay.svg" alt="Afterpay" className="h-6" />
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -983,7 +1033,7 @@ export default function CheckoutPage() {
 
                   <button
                     type="submit"
-                    disabled={loading || !selectedPaymentMethod || paymentMethods.length === 0}
+                    disabled={loading || !selectedPaymentMethod || paymentMethods.length === 0 || !isPaymentDetailsValid() || !formData.acceptTerms}
                     className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
                   >
                     {loading ? (

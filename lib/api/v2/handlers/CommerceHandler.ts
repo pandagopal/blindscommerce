@@ -989,6 +989,17 @@ export class CommerceHandler extends BaseHandler {
         return matches;
       });
       
+      // If cart is empty, don't throw error - just skip coupon application
+      if (cart.items.length === 0) {
+        return { 
+          subtotal, 
+          vendorDiscounts: [], 
+          vendorCoupons: [], 
+          discounts: [], 
+          totalDiscount: 0 
+        };
+      }
+      
       if (applicableItems.length === 0) {
         throw new ApiError(`This coupon is only valid for ${couponData.vendor_name} products`, 400);
       }
