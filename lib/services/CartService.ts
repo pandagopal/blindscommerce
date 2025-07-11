@@ -139,7 +139,7 @@ export class CartService extends BaseService {
     const vendorMap = new Map<number, any>();
 
     items.forEach(item => {
-      const itemSubtotal = parseDecimal(item.vendor_price || item.base_price) * item.quantity;
+      const itemSubtotal = parseDecimal(item.price_at_add || item.vendor_price || item.base_price) * item.quantity;
       subtotal += itemSubtotal;
       totalDiscount += parseDecimal(item.seasonal_discount_amount || 0);
 
@@ -184,7 +184,7 @@ export class CartService extends BaseService {
         name: config?.name || item.product_name,
         slug: config?.slug || item.product_slug,
         image: config?.image || item.product_image,
-        unit_price: config?.unit_price || item.price_at_add || item.vendor_price || item.base_price,
+        unit_price: parseDecimal(item.price_at_add || config?.unit_price || item.vendor_price || item.base_price),
         // Ensure configuration is an object
         configuration: config || {},
         // Ensure vendor_id is available from multiple sources
@@ -296,18 +296,12 @@ export class CartService extends BaseService {
         );
         cartItemId = existing[0].cart_item_id;
       } else {
-        // Get product price
-        const [priceResult] = await connection.execute<RowDataPacket[]>(
-          `SELECT 
-            COALESCE(vp.vendor_price, p.base_price) as price
-          FROM products p
-          LEFT JOIN vendor_products vp ON p.product_id = vp.product_id 
-            AND vp.vendor_id = ?
-          WHERE p.product_id = ?`,
-          [data.vendorId, data.productId]
-        );
-
-        const price = priceResult[0]?.price || 0;
+        // All products must come through configurator with a calculated price
+        if (!data.configuration?.unit_price) {
+          throw new Error('Product price not provided. All products must be configured before adding to cart.');
+        }
+        
+        const price = parseFloat(data.configuration.unit_price);
 
         // Insert new item - include vendor_id in configuration
         const configWithVendor = {
@@ -562,7 +556,7 @@ export class CartService extends BaseService {
 
     // Calculate discount
     const applicableSubtotal = applicableItems.reduce(
-      (sum, item) => sum + (item.vendor_price || item.base_price) * item.quantity,
+      (sum, item) => sum + (item.price_at_add || item.vendor_price || item.base_price) * item.quantity,
       0
     );
 
