@@ -15,8 +15,7 @@ export const REQUIRED_ENV_VARS = [
   'DB_PASSWORD',
   'DB_NAME',
   'JWT_SECRET',
-  'NEXTAUTH_SECRET',
-  'STRIPE_SECRET_KEY'
+  'NEXTAUTH_SECRET'
 ] as const;
 
 // Optional environment variables with secure defaults

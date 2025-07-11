@@ -75,9 +75,8 @@ export class PaymentService extends BaseService {
       let finalStripeKey = stripeSecretKey;
       
       if (isTestMode && !stripeSecretKey) {
-        // Use Stripe test key if none is configured
-        finalStripeKey = process.env.STRIPE_SECRET_KEY;
-        console.log('Using default Stripe test key');
+        // No fallback - Stripe key must be configured in database
+        console.log('Stripe test mode enabled but no key configured in database');
       }
       
       if (finalStripeKey) {

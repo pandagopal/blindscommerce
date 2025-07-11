@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY!);
+// Stripe will be initialized after fetching the public key from settings
+let stripePromise: Promise<Stripe | null> | null = null;
 
 interface PaymentMethod {
   id: number;
@@ -42,6 +43,40 @@ interface PaymentMethod {
 }
 
 const PaymentMethodsPage: React.FC = () => {
+  const [stripeKey, setStripeKey] = useState<string | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    // Fetch Stripe public key from settings
+    const fetchStripeKey = async () => {
+      try {
+        const response = await fetch('/api/v2/content/settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data?.payments?.stripe_publishable_key) {
+            const key = data.data.payments.stripe_publishable_key;
+            setStripeKey(key);
+            stripePromise = loadStripe(key);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch Stripe settings:', error);
+      } finally {
+        setSettingsLoading(false);
+      }
+    };
+
+    fetchStripeKey();
+  }, []);
+
+  if (settingsLoading) {
+    return <div className="p-8">Loading payment settings...</div>;
+  }
+
+  if (!stripeKey) {
+    return <div className="p-8 text-red-600">Payment system is not configured. Please contact support.</div>;
+  }
+
   return (
     <Elements stripe={stripePromise}>
       <PaymentMethodsContent />
