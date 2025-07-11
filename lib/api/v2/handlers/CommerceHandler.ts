@@ -10,7 +10,8 @@ import {
   cartService, 
   orderService,
   categoryService,
-  settingsService 
+  settingsService,
+  paymentService 
 } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { getPool } from '@/lib/db';
@@ -107,6 +108,7 @@ export class CommerceHandler extends BaseHandler {
       'orders/create-guest': () => this.createGuestOrder(req),
       'orders/:id/cancel': () => this.cancelOrder(action[1], user),
       'payment/process': () => this.processPayment(req, user),
+      'payment/capture-paypal': () => this.capturePayPalPayment(req),
       'bulk-uploads': () => this.storeBulkUpload(req, user),
     };
 
@@ -1256,17 +1258,60 @@ export class CommerceHandler extends BaseHandler {
   private async processPayment(req: NextRequest, user: any) {
     const body = await req.json();
     
-    // In a real app, this would integrate with payment providers
-    // For now, simulate successful payment
-    return {
-      success: true,
-      provider_response: {
-        id: `pay_${Date.now()}`,
-        status: 'succeeded',
+    // Validate required fields
+    if (!body.payment_method_id || !body.amount || !body.currency) {
+      throw new ApiError('Missing required payment fields', 400);
+    }
+
+    if (!body.billing_address || !body.billing_address.email) {
+      throw new ApiError('Billing address with email is required', 400);
+    }
+
+    try {
+      // Process payment through the appropriate provider
+      const result = await paymentService.processPayment({
+        payment_method_id: body.payment_method_id,
         amount: body.amount,
-        currency: body.currency
-      }
-    };
+        currency: body.currency,
+        payment_data: body.payment_data || {},
+        billing_address: body.billing_address,
+        shipping_address: body.shipping_address,
+        order_items: body.order_items,
+        metadata: {
+          user_id: user?.user_id?.toString() || 'guest',
+          session_id: body.session_id || '',
+        }
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      
+      // Return a user-friendly error
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Payment processing failed',
+      };
+    }
+  }
+
+  private async capturePayPalPayment(req: NextRequest) {
+    const body = await req.json();
+    
+    if (!body.order_id) {
+      throw new ApiError('PayPal order ID is required', 400);
+    }
+
+    try {
+      const result = await paymentService.capturePayPalPayment(body.order_id);
+      return result;
+    } catch (error) {
+      console.error('PayPal capture error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'PayPal capture failed',
+      };
+    }
   }
 
   private async createGuestOrder(req: NextRequest) {

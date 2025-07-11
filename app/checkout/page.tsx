@@ -303,7 +303,23 @@ export default function CheckoutPage() {
           state: formData.sameAsShipping ? formData.state : formData.billingState,
           zipCode: formData.sameAsShipping ? formData.zipCode : formData.billingZipCode,
           country: formData.sameAsShipping ? formData.country : formData.billingCountry
-        }
+        },
+        shipping_address: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          phone: formData.phone
+        },
+        order_items: items.map(item => ({
+          name: item.name || '',
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          product_id: item.product_id?.toString() || ''
+        }))
       };
 
       // Process payment
@@ -315,11 +331,50 @@ export default function CheckoutPage() {
         body: JSON.stringify(paymentRequest),
       });
 
-      if (!paymentResponse.ok) {
-        throw new Error('Payment failed. Please check your payment details and try again.');
-      }
-
       const paymentResult = await paymentResponse.json();
+      
+      // Handle providers that require redirect or additional action
+      if (paymentResult.requires_action) {
+        if (paymentResult.provider === 'klarna') {
+          // In production, integrate Klarna SDK and redirect to their checkout
+          console.log('Klarna session created:', paymentResult.session_id);
+          alert('Klarna integration requires frontend SDK implementation. Session ID: ' + paymentResult.session_id);
+          throw new Error('Klarna checkout requires additional implementation');
+        } else if (paymentResult.provider === 'affirm') {
+          // In production, integrate Affirm.js and open their checkout
+          console.log('Affirm checkout data:', paymentResult.checkout_data);
+          alert('Affirm integration requires frontend SDK implementation.');
+          throw new Error('Affirm checkout requires additional implementation');
+        } else if (paymentResult.provider === 'paypal') {
+          // Redirect to PayPal for approval
+          if (paymentResult.approval_url) {
+            // Store order data in session/localStorage for when user returns
+            localStorage.setItem('pending_order', JSON.stringify({
+              paypal_order_id: paymentResult.order_id,
+              order_data: orderData,
+            }));
+            // Redirect to PayPal
+            window.location.href = paymentResult.approval_url;
+            return; // Stop execution here
+          } else {
+            throw new Error('PayPal approval URL not provided');
+          }
+        } else if (paymentResult.provider === 'braintree') {
+          // In production, use Braintree Drop-in UI
+          console.log('Braintree configuration:', paymentResult);
+          alert('Braintree requires Drop-in UI implementation on frontend.');
+          throw new Error('Braintree checkout requires additional implementation');
+        } else if (paymentResult.client_secret) {
+          // Stripe 3D Secure
+          alert('This payment requires additional authentication. Please implement Stripe 3D Secure handling.');
+          throw new Error('Payment requires authentication');
+        }
+      }
+      
+      if (!paymentResponse.ok || !paymentResult.success) {
+        const errorMessage = paymentResult.error || paymentResult.message || 'Payment failed. Please check your payment details and try again.';
+        throw new Error(errorMessage);
+      }
       
       // If payment succeeds, create the order
       const orderData = {
@@ -391,10 +446,10 @@ export default function CheckoutPage() {
       }
 
       const data = await response.json();
-      setOrderNumber(data.orderNumber);
-      setPaymentStatus('success');
-      setOrderCompleted(true);
-      clearCart();
+      
+      // Clear cart and redirect to success page
+      await clearCart();
+      router.push(`/checkout/success?order=${data.orderNumber}`);
     } catch (error) {
       console.error('Error processing payment:', error);
       setPaymentStatus('failed');

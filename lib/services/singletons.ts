@@ -16,6 +16,7 @@ import { OrderService } from './OrderService';
 import { UserService } from './UserService';
 import { VendorService } from './VendorService';
 import { SettingsService } from './SettingsService';
+import { PaymentService } from './PaymentService';
 
 // Import email and SMS services
 import { emailService } from '@/lib/email/emailService';
@@ -31,6 +32,10 @@ export const userService = new UserService();
 export const vendorService = new VendorService();
 export const settingsService = new SettingsService();
 
+// Create PaymentService and inject settingsService
+export const paymentService = new PaymentService();
+paymentService.setSettingsService(settingsService);
+
 // Re-export email and SMS services
 export { emailService, smsService };
 
@@ -44,6 +49,7 @@ export const services = {
   user: userService,
   vendor: vendorService,
   settings: settingsService,
+  payment: paymentService,
   email: emailService,
   sms: smsService
 };
