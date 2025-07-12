@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Package, MapPin, CreditCard, Calendar, Truck, Download, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
+import { parsePriceFields, formatPrice } from '@/lib/utils/priceUtils';
 
 interface OrderItem {
   order_item_id: number;
@@ -64,7 +65,7 @@ export default function CustomerOrderDetailPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/account/orders/${orderId}`);
+      const response = await fetch(`/api/v2/commerce/orders/${orderId}`);
       
       if (response.status === 404) {
         setError('Order not found');
@@ -76,7 +77,25 @@ export default function CustomerOrderDetailPage() {
       }
       
       const data = await response.json();
-      setOrder(data.order);
+      
+      // V2 API returns { success: true, data: orderData }
+      if (data.success && data.data) {
+        // Parse all price fields in the order
+        const parsedOrder = parsePriceFields(data.data, [
+          'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount'
+        ]);
+        
+        // Parse price fields in order items
+        if (parsedOrder.items && Array.isArray(parsedOrder.items)) {
+          parsedOrder.items = parsedOrder.items.map(item => 
+            parsePriceFields(item, ['unit_price', 'total_price'])
+          );
+        }
+        
+        setOrder(parsedOrder);
+      } else {
+        throw new Error(data.error || 'Failed to fetch order');
+      }
     } catch (err) {
       console.error('Error fetching order:', err);
       setError('Failed to load order details. Please try again.');
@@ -232,7 +251,7 @@ export default function CustomerOrderDetailPage() {
                       <p className="text-sm text-gray-600">SKU: {item.sku}</p>
                       <div className="flex justify-between items-center mt-2">
                         <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
-                        <span className="font-medium">${item.total_price.toFixed(2)}</span>
+                        <span className="font-medium">{formatPrice(item.total_price)}</span>
                       </div>
                       {item.product_options && (
                         <div className="mt-2 text-xs text-gray-500">
@@ -294,26 +313,26 @@ export default function CustomerOrderDetailPage() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span>${order.subtotal.toFixed(2)}</span>
+                  <span>{formatPrice(order.subtotal)}</span>
                 </div>
                 {order.discount_amount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount</span>
-                    <span>-${order.discount_amount.toFixed(2)}</span>
+                    <span>-{formatPrice(order.discount_amount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span>${order.shipping_amount.toFixed(2)}</span>
+                  <span>{formatPrice(order.shipping_amount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span>${order.tax_amount.toFixed(2)}</span>
+                  <span>{formatPrice(order.tax_amount)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${order.total_amount.toFixed(2)}</span>
+                  <span>{formatPrice(order.total_amount)}</span>
                 </div>
               </CardContent>
             </Card>
