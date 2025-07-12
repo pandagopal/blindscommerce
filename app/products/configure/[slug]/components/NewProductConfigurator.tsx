@@ -386,11 +386,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
         {/* Back link */}
         <div className="mb-6">
           <Link
-            href={`/products/${slug}`}
+            href="/products"
             className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium group"
           >
             <ArrowLeft size={16} className="mr-1 group-hover:-translate-x-1 transition-transform" />
-            Back to Product Details
+            Back to Products
           </Link>
         </div>
 
