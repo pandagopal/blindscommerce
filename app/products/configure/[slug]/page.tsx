@@ -26,6 +26,14 @@ export default function ProductConfiguratorPage() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  // Scroll to top when page loads
+  useEffect(() => {
+    // Use smooth scrolling for better UX
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    // Also try to focus on the main content for accessibility
+    document.body.focus();
+  }, [slug]); // Re-run if slug changes
+
   // Fetch product data
   useEffect(() => {
     const fetchProduct = async () => {

@@ -119,14 +119,18 @@ export default function CheckoutPage() {
           const authData = await authResponse.json();
           console.log('Auth data:', authData);
           
-          if (authData.user) {
+          // Handle V2 API response format { success: true, data: { user: {...} } }
+          const userData = authData.data?.user || authData.user || authData.data || authData;
+          console.log('Extracted user data:', userData);
+          
+          if (userData && (userData.user_id || userData.userId)) {
             setFormData(prev => ({
               ...prev,
-              firstName: authData.user.firstName || '',
-              lastName: authData.user.lastName || '',
-              email: authData.user.email || '',
-              phone: authData.user.phone || '',
-              cardName: `${authData.user.firstName || ''} ${authData.user.lastName || ''}`.trim(),
+              firstName: userData.firstName || userData.first_name || '',
+              lastName: userData.lastName || userData.last_name || '',
+              email: userData.email || '',
+              phone: userData.phone || '',
+              cardName: `${userData.firstName || userData.first_name || ''} ${userData.lastName || userData.last_name || ''}`.trim(),
             }));
             
             // Load default address
@@ -154,8 +158,10 @@ export default function CheckoutPage() {
             }
             
             setIsGuest(false);
+            console.log('User authenticated, setting isGuest to false');
           } else {
             setIsGuest(true);
+            console.log('No user data found, setting isGuest to true');
           }
         }
 
@@ -420,6 +426,7 @@ export default function CheckoutPage() {
       const orderData = {
         items: items.map(item => ({
           id: item.product_id || 0,
+          vendor_id: item.vendor_id || item.configuration?.vendorId || item.configuration?.vendor_id || 1,
           quantity: item.quantity,
           price: item.unit_price,
           name: item.name,
@@ -427,6 +434,7 @@ export default function CheckoutPage() {
           height: item.height,
           colorName: item.colorName || '',
           colorId: item.color_id || 0,
+          configuration: item.configuration || {},
         })),
         shipping: {
           firstName: formData.firstName,
@@ -466,13 +474,77 @@ export default function CheckoutPage() {
 
       const apiEndpoint = isGuest ? '/api/v2/commerce/orders/create-guest' : '/api/v2/commerce/orders/create';
       console.log('Creating order with endpoint:', apiEndpoint, 'isGuest:', isGuest);
+      console.log('Current isGuest state:', isGuest);
+      console.log('Form email:', formData.email);
       
       const finalOrderData = isGuest ? {
         ...orderData,
         createAccount: formData.createAccount,
         guestPassword: formData.guestPassword,
         guestConfirmPassword: formData.guestConfirmPassword,
-      } : orderData;
+      } : {
+        // Format data for logged-in user's createOrder endpoint
+        items: items.map(item => ({
+          productId: Number(item.product_id) || 0,
+          vendorId: Number(item.vendor_id || item.configuration?.vendorId || item.configuration?.vendor_id) || 1,
+          quantity: Number(item.quantity) || 1,
+          price: Number(item.unit_price) || 0,
+          discountAmount: 0,
+          taxAmount: 0,
+          configuration: {
+            ...item.configuration,
+            width: item.width,
+            height: item.height,
+            colorName: item.colorName || '',
+            colorId: item.color_id || 0,
+            name: item.name,
+          }
+        })),
+        shippingAddress: {
+          street: formData.address + (formData.apt ? `, ${formData.apt}` : ''),
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone
+        },
+        billingAddress: formData.sameAsShipping ? {
+          street: formData.address + (formData.apt ? `, ${formData.apt}` : ''),
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone
+        } : {
+          street: formData.billingAddress + (formData.billingApt ? `, ${formData.billingApt}` : ''),
+          city: formData.billingCity,
+          state: formData.billingState,
+          zipCode: formData.billingZipCode,
+          country: formData.billingCountry,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone
+        },
+        paymentMethod: selectedPaymentMethod,
+        paymentDetails: {
+          transactionId: paymentResult.provider_response?.id || 'payment_success',
+          status: 'completed',
+          amount: pricing.total
+        },
+        notes: formData.specialInstructions || '',
+        subtotal: pricing.subtotal,
+        shippingCost: pricing.shipping,
+        tax: pricing.tax,
+        total: pricing.total,
+        discountAmount: pricing.total_discount
+      };
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
@@ -492,8 +564,7 @@ export default function CheckoutPage() {
       const orderInfo = result.data || result;
       const orderNumber = orderInfo.order_number || orderInfo.orderNumber || 'Order confirmed';
       
-      // Clear cart and redirect to success page
-      await clearCart();
+      // Redirect to success page (cart already cleared by order creation)
       router.push(`/checkout/success?order=${orderNumber}`);
     } catch (error) {
       console.error('Error processing payment:', error);

@@ -488,14 +488,14 @@ export class CartService extends BaseService {
       cartId = cart?.cart_id || null;
     }
 
-    if (!cartId) return false;
+    if (!cartId) return true; // No active cart = already cleared
 
     const result = await this.executeMutation(
       'DELETE FROM cart_items WHERE cart_id = ?',
       [cartId]
     );
 
-    return result.affectedRows > 0;
+    return true; // Always return true - cart is cleared whether items existed or not
   }
 
   /**

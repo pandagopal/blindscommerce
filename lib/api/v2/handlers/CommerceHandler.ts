@@ -674,7 +674,15 @@ export class CommerceHandler extends BaseHandler {
 
     const order = await this.orderService.createOrder({
       user_id: user.user_id,
-      items: data.items,
+      items: data.items.map(item => ({
+        product_id: item.productId,
+        vendor_id: item.vendorId,
+        quantity: item.quantity,
+        price: item.price,
+        discount_amount: item.discountAmount || 0,
+        tax_amount: item.taxAmount || 0,
+        configuration: item.configuration
+      })),
       shipping_address: data.shippingAddress,
       billing_address: data.billingAddress,
       payment_method: data.paymentMethod,
@@ -1312,18 +1320,217 @@ export class CommerceHandler extends BaseHandler {
 
   private async createGuestOrder(req: NextRequest) {
     const body = await req.json();
+    const pool = await getPool();
     
-    // Create order for guest user
-    const orderNumber = `ORD-${Date.now()}`;
-    
-    // In a real app, save order to database
-    // If createAccount is true, also create user account
-    
-    return {
-      success: true,
-      orderNumber,
-      message: 'Order created successfully'
-    };
+    try {
+      // Extract order data
+      const { 
+        items, 
+        shipping, 
+        billing, 
+        payment,
+        subtotal,
+        shipping_cost,
+        tax,
+        total,
+        discount_amount,
+        special_instructions,
+        createAccount,
+        guestPassword,
+        guestConfirmPassword
+      } = body;
+
+      // Generate order number
+      const orderNumber = `ORD-${Date.now()}`;
+      
+      // Start transaction
+      const connection = await pool.getConnection();
+      await connection.beginTransaction();
+      
+      try {
+        let userId = null;
+        
+        // If createAccount is true, create a new customer account first
+        if (createAccount && guestPassword && guestPassword === guestConfirmPassword) {
+          const bcrypt = require('bcrypt');
+          const hashedPassword = await bcrypt.hash(guestPassword, 10);
+          
+          // Check if email already exists
+          const [existingUser] = await connection.execute(
+            'SELECT user_id FROM users WHERE email = ?',
+            [shipping.email]
+          );
+          
+          if (existingUser.length === 0) {
+            // Create new user account
+            const [userResult] = await connection.execute(
+              `INSERT INTO users (role, email, password, created_at, updated_at)
+               VALUES ('customer', ?, ?, NOW(), NOW())`,
+              [shipping.email, hashedPassword]
+            );
+            
+            userId = userResult.insertId;
+            
+            // Create user profile
+            await connection.execute(
+              `INSERT INTO user_profiles (user_id, first_name, last_name, phone, created_at, updated_at)
+               VALUES (?, ?, ?, ?, NOW(), NOW())`,
+              [userId, shipping.firstName, shipping.lastName, shipping.phone]
+            );
+            
+            // Create shipping address
+            await connection.execute(
+              `INSERT INTO user_addresses (user_id, address_type, address_line1, address_line2, city, state_province, 
+               postal_code, country, is_default, created_at, updated_at)
+               VALUES (?, 'shipping', ?, ?, ?, ?, ?, ?, 1, NOW(), NOW())`,
+              [userId, shipping.address, shipping.apt || null, shipping.city, 
+               shipping.state, shipping.zipCode, shipping.country]
+            );
+          }
+        }
+        
+        // Create shipping address in user_shipping_addresses table
+        const [shippingAddressResult] = await connection.execute(
+          `INSERT INTO user_shipping_addresses (
+            user_id, address_name, first_name, last_name, address_line_1, address_line_2, 
+            city, state_province, postal_code, country, phone, email, is_default, 
+            is_billing_address, created_at, updated_at
+          ) VALUES (?, 'Order Address', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())`,
+          [
+            userId, 
+            shipping.firstName,
+            shipping.lastName,
+            shipping.address,
+            shipping.apt || '',
+            shipping.city,
+            shipping.state,
+            shipping.zipCode,
+            shipping.country || 'US',
+            shipping.phone,
+            shipping.email
+          ]
+        );
+        
+        // Create billing address if different
+        let billingAddressId = shippingAddressResult.insertId;
+        const billingData = billing.sameAsShipping ? shipping : billing;
+        if (!billing.sameAsShipping) {
+          const [billingAddressResult] = await connection.execute(
+            `INSERT INTO user_shipping_addresses (
+              user_id, address_name, first_name, last_name, address_line_1, address_line_2, 
+              city, state_province, postal_code, country, phone, email, is_default, 
+              is_billing_address, created_at, updated_at
+            ) VALUES (?, 'Billing Address', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, NOW(), NOW())`,
+            [
+              userId,
+              billingData.firstName || shipping.firstName,
+              billingData.lastName || shipping.lastName,
+              billingData.address,
+              billingData.apt || '',
+              billingData.city,
+              billingData.state,
+              billingData.zipCode,
+              billingData.country || 'US',
+              shipping.phone,
+              shipping.email
+            ]
+          );
+          billingAddressId = billingAddressResult.insertId;
+        }
+
+        // Create the order with address IDs
+        const [orderResult] = await connection.execute(
+          `INSERT INTO orders (
+            user_id, order_number, status, subtotal, shipping_amount, tax_amount, 
+            discount_amount, total_amount, currency, payment_method, payment_status,
+            shipping_address_id, billing_address_id, notes, created_at, updated_at
+          ) VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, 'USD', ?, 'paid', ?, ?, ?, NOW(), NOW())`,
+          [
+            userId, 
+            orderNumber, 
+            subtotal,
+            shipping_cost || 0,
+            tax || 0,
+            discount_amount || 0,
+            total,
+            payment.method,
+            shippingAddressResult.insertId,
+            billingAddressId,
+            special_instructions || null
+          ]
+        );
+        
+        const orderId = orderResult.insertId;
+        
+        // Create order items
+        for (const item of items) {
+          await connection.execute(
+            `INSERT INTO order_items (
+              order_id, product_id, vendor_id, quantity, unit_price, 
+              discount_amount, tax_amount, total_price, product_config,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+            [
+              orderId,
+              item.id,
+              item.vendor_id || 1, // Default vendor if not provided
+              item.quantity,
+              item.price,
+              item.discountAmount || 0,
+              item.taxAmount || 0,
+              item.price * item.quantity,
+              JSON.stringify({
+                width: item.width,
+                height: item.height,
+                colorName: item.colorName,
+                colorId: item.colorId,
+                ...item.configuration
+              })
+            ]
+          );
+        }
+        
+        // Note: Addresses are already created and linked via shipping_address_id and billing_address_id
+        
+        // Record payment
+        if (payment.transaction_id) {
+          await connection.execute(
+            `INSERT INTO payment_transactions (
+              order_id, payment_method, transaction_id, amount, currency,
+              status, gateway_response, created_at
+            ) VALUES (?, ?, ?, ?, 'USD', 'completed', ?, NOW())`,
+            [
+              orderId,
+              payment.method,
+              payment.transaction_id,
+              total,
+              JSON.stringify({ status: payment.status })
+            ]
+          );
+        }
+        
+        // Commit transaction
+        await connection.commit();
+        
+        return {
+          success: true,
+          order_id: orderId,
+          order_number: orderNumber,
+          message: createAccount && userId ? 'Order created and account registered successfully' : 'Order created successfully',
+          user_created: createAccount && userId ? true : false
+        };
+        
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+      
+    } catch (error) {
+      console.error('Error creating guest order:', error);
+      throw new ApiError(error.message || 'Failed to create order', 500);
+    }
   }
 
   /**

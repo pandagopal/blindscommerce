@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ZoomIn, ArrowLeft, Check, Info, Sparkles, Shield, Truck, Calendar, ShoppingCart } from 'lucide-react';
+import { ZoomIn, ArrowLeft, Check, Info, Sparkles, Shield, Truck, Calendar, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
@@ -1038,8 +1038,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
             {/* Action Buttons - Mobile Responsive */}
             <div className="space-y-2 md:space-y-0 md:flex md:gap-2">
-              {/* Add to Cart Button - Only show for customers or guests */}
-              {(!userRole || userRole === 'customer') ? (
+              {/* Add to Cart Button - Only show for logged in customers */}
+              {userRole === 'customer' ? (
                 <button
                   onClick={handleAddToCart}
                   disabled={!areMandatoryFieldsComplete()}
@@ -1059,7 +1059,25 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                     }
                   </span>
                 </button>
+              ) : !userRole ? (
+                // Guest user - needs to log in
+                <div className="w-full md:flex-1 bg-yellow-50 border border-yellow-200 rounded-lg py-3 px-4 md:px-5 text-center">
+                  <p className="text-yellow-800 font-medium mb-2">
+                    Please log in to add items to cart
+                  </p>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    Guest checkout is temporarily unavailable
+                  </p>
+                  <Link 
+                    href="/login" 
+                    className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    <User size={16} className="mr-2" />
+                    Log In to Continue
+                  </Link>
+                </div>
               ) : (
+                // Non-customer role (vendor, admin, etc)
                 <div className="w-full md:flex-1 bg-gray-100 border border-gray-300 rounded-lg py-3 px-4 md:px-5 text-center">
                   <p className="text-gray-600 font-medium">
                     Only customers can add items to cart
@@ -1070,8 +1088,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 </div>
               )}
 
-              {/* View Cart Button - Only show for customers or guests */}
-              {(!userRole || userRole === 'customer') && (
+              {/* View Cart Button - Only show for logged in customers */}
+              {userRole === 'customer' && (
                 <Link href="/cart" className="block w-full md:w-auto">
                   <button className="w-full md:w-auto font-semibold py-3 px-4 md:px-5 rounded-lg transition-all border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 hover:bg-blue-50 flex items-center justify-center text-sm md:text-base whitespace-nowrap">
                     <ShoppingCart size={16} className="mr-1 md:mr-2 flex-shrink-0" />

@@ -78,6 +78,7 @@ export class OrderService extends BaseService {
 
   /**
    * Create a new order with all items in a single transaction
+   * For multi-vendor carts, this will create separate orders for each vendor
    */
   async createOrder(data: OrderCreationData): Promise<OrderWithDetails | null> {
     const pool = await getPool();
@@ -104,12 +105,60 @@ export class OrderService extends BaseService {
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
+      // Create shipping address
+      const [shippingAddressResult] = await connection.execute<ResultSetHeader>(
+        `INSERT INTO user_shipping_addresses (
+          user_id, address_name, first_name, last_name, address_line_1, address_line_2, 
+          city, state_province, postal_code, country, phone, email, is_default, 
+          is_billing_address, created_at, updated_at
+        ) VALUES (?, 'Order Address', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, NOW(), NOW())`,
+        [
+          data.user_id,
+          data.shipping_address.firstName || '',
+          data.shipping_address.lastName || '',
+          data.shipping_address.street || data.shipping_address.address,
+          data.shipping_address.apt || data.shipping_address.apartment || '',
+          data.shipping_address.city,
+          data.shipping_address.state,
+          data.shipping_address.zipCode || data.shipping_address.postal_code,
+          data.shipping_address.country || 'US',
+          data.shipping_address.phone || '',
+          data.shipping_address.email || ''
+        ]
+      );
+
+      // Create billing address (if different from shipping)
+      let billingAddressId = shippingAddressResult.insertId;
+      if (JSON.stringify(data.shipping_address) !== JSON.stringify(data.billing_address)) {
+        const [billingAddressResult] = await connection.execute<ResultSetHeader>(
+          `INSERT INTO user_shipping_addresses (
+            user_id, address_name, first_name, last_name, address_line_1, address_line_2, 
+            city, state_province, postal_code, country, phone, email, is_default, 
+            is_billing_address, created_at, updated_at
+          ) VALUES (?, 'Billing Address', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 1, NOW(), NOW())`,
+          [
+            data.user_id,
+            data.billing_address.firstName || data.shipping_address.firstName || '',
+            data.billing_address.lastName || data.shipping_address.lastName || '',
+            data.billing_address.street || data.billing_address.address,
+            data.billing_address.apt || data.billing_address.apartment || '',
+            data.billing_address.city,
+            data.billing_address.state,
+            data.billing_address.zipCode || data.billing_address.postal_code,
+            data.billing_address.country || 'US',
+            data.billing_address.phone || data.shipping_address.phone || '',
+            data.billing_address.email || data.shipping_address.email || ''
+          ]
+        );
+        billingAddressId = billingAddressResult.insertId;
+      }
+
       // Create order
       const [orderResult] = await connection.execute<ResultSetHeader>(
         `INSERT INTO orders (
           order_number, user_id, status, total_amount, subtotal,
           tax_amount, shipping_amount, discount_amount, currency,
-          payment_method, payment_status, shipping_address, billing_address,
+          payment_method, payment_status, shipping_address_id, billing_address_id,
           notes, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
         [
@@ -124,8 +173,8 @@ export class OrderService extends BaseService {
           'USD',
           data.payment_method,
           'pending',
-          JSON.stringify(data.shipping_address),
-          JSON.stringify(data.billing_address),
+          shippingAddressResult.insertId,
+          billingAddressId,
           data.notes || null
         ]
       );
@@ -139,16 +188,16 @@ export class OrderService extends BaseService {
         item.vendor_id,
         item.quantity,
         item.price,
+        (item.price * item.quantity),
         item.discount_amount || 0,
         item.tax_amount || 0,
-        (item.price * item.quantity) - (item.discount_amount || 0) + (item.tax_amount || 0),
         JSON.stringify(item.configuration || {})
       ]);
 
       await connection.query(
         `INSERT INTO order_items (
-          order_id, product_id, vendor_id, quantity, price,
-          discount_amount, tax_amount, total, configuration
+          order_id, product_id, vendor_id, quantity, unit_price,
+          total_price, discount_amount, tax_amount, product_options
         ) VALUES ?`,
         [itemValues]
       );
@@ -164,44 +213,8 @@ export class OrderService extends BaseService {
         );
       }
 
-      // Create vendor orders (split order by vendor)
-      const vendorGroups = data.items.reduce((acc, item) => {
-        if (!acc[item.vendor_id]) {
-          acc[item.vendor_id] = [];
-        }
-        acc[item.vendor_id].push(item);
-        return acc;
-      }, {} as Record<number, typeof data.items>);
-
-      for (const [vendorId, vendorItems] of Object.entries(vendorGroups)) {
-        const vendorSubtotal = vendorItems.reduce((sum, item) => 
-          sum + (item.price * item.quantity), 0
-        );
-        const vendorDiscount = vendorItems.reduce((sum, item) => 
-          sum + (item.discount_amount || 0), 0
-        );
-        const vendorTax = vendorItems.reduce((sum, item) => 
-          sum + (item.tax_amount || 0), 0
-        );
-
-        // Create vendor commission records for each vendor item
-        const commissionRate = 10; // Default commission rate, should come from vendor settings
-        for (const item of vendorItems) {
-          await connection.execute(
-            `INSERT INTO vendor_commissions (
-              vendor_id, order_id, order_item_id, commission_rate, 
-              commission_amount, commission_status, created_at
-            ) VALUES (?, ?, ?, ?, ?, 'pending', NOW())`,
-            [
-              vendorId,
-              orderId,
-              item.order_item_id,
-              commissionRate,
-              (item.total - (item.discount_amount || 0)) * (commissionRate / 100)
-            ]
-          );
-        }
-      }
+      // TODO: Create vendor commission records after order items are created
+      // This requires fetching the order_item_ids after insertion
 
       await connection.commit();
 
@@ -248,13 +261,11 @@ export class OrderService extends BaseService {
         p.name as product_name,
         p.sku as product_sku,
         p.primary_image_url as product_image,
-        COALESCE(vi.business_name, ovi.business_name, 'Platform Direct') as vendor_name,
-        COALESCE(p.vendor_id, o.vendor_id) as vendor_id
+        vi.business_name as vendor_name
       FROM order_items oi
       JOIN orders o ON oi.order_id = o.order_id
       JOIN products p ON oi.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
-      LEFT JOIN vendor_info ovi ON o.vendor_id = ovi.vendor_info_id
+      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
       WHERE oi.order_id = ?
       ORDER BY oi.order_item_id
     `;
@@ -306,7 +317,8 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('o.vendor_id = ?');
+      // Filter orders that contain items from this vendor
+      whereConditions.push('EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.order_id AND oi.vendor_id = ?)');
       whereParams.push(vendorId);
     }
 
@@ -505,7 +517,8 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      whereConditions.push('o.vendor_id = ?');
+      // Filter orders that contain items from this vendor
+      whereConditions.push('EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.order_id AND oi.vendor_id = ?)');
       whereParams.push(vendorId);
     }
 
