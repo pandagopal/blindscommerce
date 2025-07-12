@@ -564,12 +564,16 @@ export class CommerceHandler extends BaseHandler {
   // Order methods
   private async getOrders(req: NextRequest, user: any) {
     this.requireAuth(user);
+    
+    console.log('getOrders - user object:', user);
+    console.log('getOrders - user.user_id:', user.user_id);
+    console.log('getOrders - user.userId:', user.userId);
 
     const searchParams = this.getSearchParams(req);
     const { page, limit, offset } = this.getPagination(searchParams);
 
     const options = {
-      userId: user.user_id,
+      userId: user.user_id || user.userId,
       status: searchParams.get('status') || undefined,
       dateFrom: searchParams.get('dateFrom') 
         ? new Date(searchParams.get('dateFrom')!) 
@@ -584,6 +588,9 @@ export class CommerceHandler extends BaseHandler {
     };
 
     const { orders, total } = await this.orderService.getOrders(options);
+    
+    console.log('getOrders - found orders:', orders.length);
+    console.log('getOrders - total:', total);
     
     return this.buildPaginatedResponse(orders, total, page, limit);
   }
