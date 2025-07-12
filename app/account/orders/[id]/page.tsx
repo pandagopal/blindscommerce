@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, MapPin, CreditCard, Calendar, Truck, Download, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, CreditCard, Calendar, Truck, Download, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import Image from 'next/image';
 import { parsePriceFields, formatPrice } from '@/lib/utils/priceUtils';
 
@@ -55,6 +55,7 @@ export default function CustomerOrderDetailPage() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchOrderDetails();
@@ -133,14 +134,32 @@ export default function CustomerOrderDetailPage() {
     }
   };
 
+  const formatOptionKey = (key: string) => {
+    return key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+  };
+
+  const getOptionCategory = (key: string) => {
+    const lowerKey = key.toLowerCase();
+    if (lowerKey.includes('room') || lowerKey.includes('mount') || lowerKey.includes('width') || lowerKey.includes('height')) {
+      return { bgColor: 'bg-blue-50', textColor: 'text-blue-700' };
+    } else if (lowerKey.includes('fabric') || lowerKey.includes('color') || lowerKey.includes('material')) {
+      return { bgColor: 'bg-purple-50', textColor: 'text-purple-700' };
+    } else if (lowerKey.includes('control') || lowerKey.includes('lift')) {
+      return { bgColor: 'bg-green-50', textColor: 'text-green-700' };
+    } else if (lowerKey.includes('valance') || lowerKey.includes('rail')) {
+      return { bgColor: 'bg-orange-50', textColor: 'text-orange-700' };
+    }
+    return { bgColor: 'bg-gray-50', textColor: 'text-gray-700' };
+  };
+
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mx-auto px-6 py-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid xl:grid-cols-4 gap-6">
               <div className="space-y-4">
                 <div className="h-32 bg-gray-200 rounded"></div>
                 <div className="h-32 bg-gray-200 rounded"></div>
@@ -156,7 +175,7 @@ export default function CustomerOrderDetailPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="mx-auto px-6 py-8">
           <Button 
             variant="ghost" 
             onClick={() => router.back()} 
@@ -182,7 +201,7 @@ export default function CustomerOrderDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -217,53 +236,107 @@ export default function CustomerOrderDetailPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            {/* Order Items */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  Order Items ({order.items.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        {/* Main Content - Responsive grid layout */}
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Order Items - Takes 3 columns on XL screens */}
+          <div className="xl:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Order Items ({order.items.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+                {/* Table Header */}
+                <div className="grid grid-cols-12 gap-2 p-4 border-b border-gray-200 bg-gray-50">
+                  <div className="col-span-8 text-sm font-medium text-gray-700">Product</div>
+                  <div className="col-span-1 text-center text-sm font-medium text-gray-700">Price</div>
+                  <div className="col-span-1 text-center text-sm font-medium text-gray-700">Qty</div>
+                  <div className="col-span-2 text-right text-sm font-medium text-gray-700">Total</div>
+                </div>
+                
+                {/* Items */}
                 {order.items.map((item) => (
-                  <div key={item.order_item_id} className="flex gap-4 p-4 border rounded-lg">
-                    <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden flex-shrink-0">
-                      {item.image_url ? (
-                        <Image
-                          src={item.image_url}
-                          alt={item.product_name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-300 flex items-center justify-center">
-                          <Package className="w-6 h-6 text-gray-500" />
+                  <div key={item.order_item_id} className="border-b border-gray-200 last:border-b-0">
+                    <div className="p-4">
+                      <div className="grid grid-cols-12 gap-2 items-center">
+                        {/* Product Info */}
+                        <div className="col-span-8">
+                          <div className="flex items-start space-x-4">
+                            <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                              {item.image_url ? (
+                                <Image
+                                  src={item.image_url}
+                                  alt={item.product_name}
+                                  width={96}
+                                  height={96}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                                  <Package className="w-10 h-10 text-gray-500" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-gray-900">{item.product_name}</h4>
+                              <p className="text-sm text-gray-600">SKU: {item.sku}</p>
+                              <button
+                                onClick={() => {
+                                  const newExpanded = new Set(expandedItems);
+                                  if (newExpanded.has(item.order_item_id)) {
+                                    newExpanded.delete(item.order_item_id);
+                                  } else {
+                                    newExpanded.add(item.order_item_id);
+                                  }
+                                  setExpandedItems(newExpanded);
+                                }}
+                                className="text-sm text-blue-600 hover:text-blue-800 mt-1 flex items-center"
+                              >
+                                {expandedItems.has(item.order_item_id) ? (
+                                  <><ChevronUp className="h-4 w-4 mr-1" /> Hide Details</>
+                                ) : (
+                                  <><ChevronDown className="h-4 w-4 mr-1" /> Show Details</>
+                                )}
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{item.product_name}</h4>
-                      <p className="text-sm text-gray-600">SKU: {item.sku}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm text-gray-600">Qty: {item.quantity}</span>
-                        <span className="font-medium">{formatPrice(item.total_price)}</span>
+                        
+                        {/* Price */}
+                        <div className="col-span-1 text-center">
+                          {formatPrice(item.unit_price)}
+                        </div>
+                        
+                        {/* Quantity */}
+                        <div className="col-span-1 text-center">
+                          {item.quantity}
+                        </div>
+                        
+                        {/* Total */}
+                        <div className="col-span-2 text-right font-medium">
+                          {formatPrice(item.total_price)}
+                        </div>
                       </div>
-                      {item.product_options && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          <div className="text-xs text-gray-600">
-                            {typeof item.product_options === 'string' 
-                              ? item.product_options 
-                              : Object.entries(item.product_options).map(([key, value]) => (
-                                  <span key={key} className="mr-2">
-                                    {key}: {String(value)}
-                                  </span>
-                                ))
-                            }
+                      
+                      {/* Expandable Configuration Details */}
+                      {expandedItems.has(item.order_item_id) && item.product_options && (
+                        <div className="mt-3 px-4 pb-3">
+                          <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <h4 className="font-medium text-gray-900 mb-2 text-sm">Configuration Details</h4>
+                            
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-1.5 text-xs">
+                              {typeof item.product_options === 'object' && Object.entries(item.product_options).map(([key, value]) => {
+                                const category = getOptionCategory(key);
+                                return (
+                                  <div key={key} className={`${category.bgColor} p-1.5 rounded flex justify-between items-center`}>
+                                    <span className={`text-[10px] ${category.textColor} mr-1`}>{formatOptionKey(key)}:</span>
+                                    <span className={`font-medium text-[10px] ${category.textColor}`}>{String(value).toLowerCase()}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       )}
@@ -272,7 +345,10 @@ export default function CustomerOrderDetailPage() {
                 ))}
               </CardContent>
             </Card>
+          </div>
 
+          {/* Right Column - Summary and Details */}
+          <div className="xl:col-span-1 space-y-6">
             {/* Contact Information */}
             <Card>
               <CardHeader>
@@ -298,10 +374,7 @@ export default function CustomerOrderDetailPage() {
                 )}
               </CardContent>
             </Card>
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
+            
             {/* Order Summary */}
             <Card>
               <CardHeader>

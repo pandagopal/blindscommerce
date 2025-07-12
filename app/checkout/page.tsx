@@ -63,6 +63,12 @@ export default function CheckoutPage() {
     accountType: 'checking',
     accountHolderName: '',
   });
+  const [paymentErrors, setPaymentErrors] = useState({
+    cardNumber: '',
+    expiryDate: '',
+    cvc: '',
+    cardholderName: '',
+  });
 
   // Compact form state
   const [formData, setFormData] = useState({
@@ -232,9 +238,70 @@ export default function CheckoutPage() {
 
   const handlePaymentDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    let formattedValue = value;
+    
+    // Format card number with spaces
+    if (name === 'cardNumber') {
+      formattedValue = value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+      // Validate card number
+      if (value.replace(/\s/g, '').length > 0 && !/^\d+$/.test(value.replace(/\s/g, ''))) {
+        setPaymentErrors(prev => ({ ...prev, cardNumber: 'Card number must contain only digits' }));
+      } else if (value.replace(/\s/g, '').length > 0 && value.replace(/\s/g, '').length < 13) {
+        setPaymentErrors(prev => ({ ...prev, cardNumber: 'Card number must be at least 13 digits' }));
+      } else {
+        setPaymentErrors(prev => ({ ...prev, cardNumber: '' }));
+      }
+    }
+    
+    // Format expiry date
+    if (name === 'expiryDate') {
+      formattedValue = value.replace(/[^\d]/g, '');
+      if (formattedValue.length >= 3) {
+        formattedValue = formattedValue.slice(0, 2) + '/' + formattedValue.slice(2, 4);
+      }
+      // Validate expiry date
+      if (formattedValue.length === 5) {
+        const month = parseInt(formattedValue.slice(0, 2));
+        const year = parseInt('20' + formattedValue.slice(3, 5));
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth() + 1;
+        
+        if (month < 1 || month > 12) {
+          setPaymentErrors(prev => ({ ...prev, expiryDate: 'Invalid month' }));
+        } else if (year < currentYear || (year === currentYear && month < currentMonth)) {
+          setPaymentErrors(prev => ({ ...prev, expiryDate: 'Card has expired' }));
+        } else {
+          setPaymentErrors(prev => ({ ...prev, expiryDate: '' }));
+        }
+      }
+    }
+    
+    // Validate CVC
+    if (name === 'cvc') {
+      if (!/^\d*$/.test(value)) {
+        setPaymentErrors(prev => ({ ...prev, cvc: 'CVC must contain only digits' }));
+        return;
+      } else if (value.length > 0 && value.length < 3) {
+        setPaymentErrors(prev => ({ ...prev, cvc: 'CVC must be at least 3 digits' }));
+      } else {
+        setPaymentErrors(prev => ({ ...prev, cvc: '' }));
+      }
+    }
+    
+    // Validate cardholder name
+    if (name === 'cardholderName') {
+      if (value.length > 0 && value.length < 2) {
+        setPaymentErrors(prev => ({ ...prev, cardholderName: 'Name must be at least 2 characters' }));
+      } else if (!/^[a-zA-Z\s]*$/.test(value)) {
+        setPaymentErrors(prev => ({ ...prev, cardholderName: 'Name must contain only letters' }));
+      } else {
+        setPaymentErrors(prev => ({ ...prev, cardholderName: '' }));
+      }
+    }
+    
     setPaymentData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: formattedValue,
     }));
   };
 
@@ -307,15 +374,25 @@ export default function CheckoutPage() {
     if (!selectedPaymentMethod) return false;
     
     if (selectedPaymentMethod === 'stripe_card') {
-      // Check if card details are filled
-      return !!(
+      // Check if card details are filled and valid
+      const hasErrors = !!(
+        paymentErrors.cardNumber ||
+        paymentErrors.expiryDate ||
+        paymentErrors.cvc ||
+        paymentErrors.cardholderName
+      );
+      
+      const isComplete = !!(
         paymentData.cardNumber && 
         paymentData.cardNumber.replace(/\s/g, '').length >= 13 &&
         paymentData.expiryDate && 
-        paymentData.expiryDate.length >= 4 &&
+        paymentData.expiryDate.length === 5 &&
         paymentData.cvc && 
-        paymentData.cvc.length >= 3
+        paymentData.cvc.length >= 3 &&
+        (paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim())
       );
+      
+      return !hasErrors && isComplete;
     }
     
     // For PayPal, Klarna, Afterpay - no additional details needed
@@ -327,7 +404,16 @@ export default function CheckoutPage() {
     
     // Validate payment details
     if (!isPaymentDetailsValid()) {
-      alert('Please complete all required payment information');
+      if (selectedPaymentMethod === 'stripe_card') {
+        // Check for specific errors
+        if (paymentErrors.cardNumber || paymentErrors.expiryDate || paymentErrors.cvc || paymentErrors.cardholderName) {
+          alert('Please correct the errors in your payment information');
+        } else {
+          alert('Please complete all required payment information');
+        }
+      } else {
+        alert('Please select a payment method');
+      }
       return;
     }
     
@@ -942,13 +1028,18 @@ export default function CheckoutPage() {
                                     value={paymentData.cardNumber}
                                     onChange={handlePaymentDataChange}
                                     placeholder="1234 5678 9012 3456"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                      paymentErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                     maxLength="19"
                                   />
                                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                                     <CreditCard className="h-5 w-5 text-gray-400" />
                                   </div>
                                 </div>
+                                {paymentErrors.cardNumber && (
+                                  <p className="mt-1 text-sm text-red-600">{paymentErrors.cardNumber}</p>
+                                )}
                               </div>
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
@@ -959,9 +1050,14 @@ export default function CheckoutPage() {
                                     value={paymentData.expiryDate}
                                     onChange={handlePaymentDataChange}
                                     placeholder="MM/YY"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                      paymentErrors.expiryDate ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                     maxLength="5"
                                   />
+                                  {paymentErrors.expiryDate && (
+                                    <p className="mt-1 text-sm text-red-600">{paymentErrors.expiryDate}</p>
+                                  )}
                                 </div>
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">CVC</label>
@@ -971,9 +1067,14 @@ export default function CheckoutPage() {
                                     value={paymentData.cvc}
                                     onChange={handlePaymentDataChange}
                                     placeholder="123"
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                      paymentErrors.cvc ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                     maxLength="4"
                                   />
+                                  {paymentErrors.cvc && (
+                                    <p className="mt-1 text-sm text-red-600">{paymentErrors.cvc}</p>
+                                  )}
                                 </div>
                               </div>
                               <div>
@@ -983,8 +1084,13 @@ export default function CheckoutPage() {
                                   name="cardholderName"
                                   value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
                                   onChange={handlePaymentDataChange}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                    paymentErrors.cardholderName ? 'border-red-500' : 'border-gray-300'
+                                  }`}
                                 />
+                                {paymentErrors.cardholderName && (
+                                  <p className="mt-1 text-sm text-red-600">{paymentErrors.cardholderName}</p>
+                                )}
                               </div>
                               <div className="pt-2 text-xs text-gray-500 flex items-center">
                                 <Lock className="h-3 w-3 mr-1" />

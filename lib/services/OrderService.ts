@@ -239,9 +239,36 @@ export class OrderService extends BaseService {
         o.*,
         u.email as customer_email,
         CONCAT(u.first_name, ' ', u.last_name) as customer_name,
-        u.phone as customer_phone
+        u.phone as customer_phone,
+        (SELECT COALESCE(SUM(oi2.total_price), 0) 
+         FROM order_items oi2 
+         WHERE oi2.order_id = o.order_id) as vendor_items_total,
+        -- Shipping address details
+        sa.first_name as shipping_first_name,
+        sa.last_name as shipping_last_name,
+        sa.address_line_1 as shipping_address_line_1,
+        sa.address_line_2 as shipping_address_line_2,
+        sa.city as shipping_city,
+        sa.state_province as shipping_state,
+        sa.postal_code as shipping_postal_code,
+        sa.country as shipping_country,
+        sa.phone as shipping_phone,
+        sa.email as shipping_email,
+        -- Billing address details (for fallback when shipping same as billing)
+        ba.first_name as billing_first_name,
+        ba.last_name as billing_last_name,
+        ba.address_line_1 as billing_address_line_1,
+        ba.address_line_2 as billing_address_line_2,
+        ba.city as billing_city,
+        ba.state_province as billing_state,
+        ba.postal_code as billing_postal_code,
+        ba.country as billing_country,
+        ba.phone as billing_phone,
+        ba.email as billing_email
       FROM orders o
       LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN user_shipping_addresses sa ON o.shipping_address_id = sa.address_id
+      LEFT JOIN user_shipping_addresses ba ON o.billing_address_id = ba.address_id
       WHERE o.order_id = ?
       LIMIT 1
     `;
@@ -251,7 +278,7 @@ export class OrderService extends BaseService {
     if (!rawOrder) return null;
     
     const order = parsePriceFields(rawOrder, [
-      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount'
+      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount', 'vendor_items_total'
     ]);
 
     // Get order items with product and vendor details
@@ -272,7 +299,8 @@ export class OrderService extends BaseService {
 
     const items = await this.executeQuery<any>(itemsQuery, [orderId]);
     
-    order.items = items;
+    // Parse price fields for each item
+    order.items = parseArrayPrices(items, ['unit_price', 'total_price']);
     
     return order;
   }
@@ -370,10 +398,31 @@ export class OrderService extends BaseService {
     const total = countResult.total || 0;
 
     // Get orders with customer info
-    const ordersQuery = `
+    // If vendorId is specified, include vendor-specific item counts and totals
+    const ordersQuery = vendorId ? `
       SELECT 
         o.*,
         u.email as customer_email,
+        u.first_name,
+        u.last_name,
+        CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+        u.phone as customer_phone,
+        COUNT(DISTINCT oi.order_item_id) as item_count,
+        COUNT(DISTINCT CASE WHEN oi.vendor_id = ? THEN oi.order_item_id END) as vendor_items_count,
+        COALESCE(SUM(CASE WHEN oi.vendor_id = ? THEN oi.total_price ELSE 0 END), 0) as vendor_items_total
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      ${whereClause}
+      GROUP BY o.order_id
+      ORDER BY o.${sortBy} ${sortOrder}
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
+    ` : `
+      SELECT 
+        o.*,
+        u.email as customer_email,
+        u.first_name,
+        u.last_name,
         CONCAT(u.first_name, ' ', u.last_name) as customer_name,
         u.phone as customer_phone,
         COUNT(DISTINCT oi.order_item_id) as item_count
@@ -386,9 +435,14 @@ export class OrderService extends BaseService {
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     `;
 
-    const rawOrders = await this.executeQuery<OrderWithDetails>(ordersQuery, whereParams);
+    // Add vendorId params at the beginning if vendor-specific query
+    const queryParams = vendorId 
+      ? [vendorId, vendorId, ...whereParams] 
+      : whereParams;
+    
+    const rawOrders = await this.executeQuery<OrderWithDetails>(ordersQuery, queryParams);
     const orders = parseArrayPrices(rawOrders, [
-      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount'
+      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount', 'vendor_items_total'
     ]);
 
     // Get items for all orders in one query

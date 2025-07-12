@@ -211,8 +211,8 @@ function VendorDashboardContent() {
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Orders */}
+      <div className="mt-8">
+        {/* Recent Orders - Full Width */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Recent Orders</h2>
           <div className="overflow-x-auto">
@@ -223,7 +223,7 @@ function VendorDashboardContent() {
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Items</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Your Items</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                 </tr>

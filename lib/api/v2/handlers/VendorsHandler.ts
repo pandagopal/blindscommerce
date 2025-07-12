@@ -1464,16 +1464,15 @@ export class VendorsHandler extends BaseHandler {
     }
 
     // Verify vendor has items in this order
-    // Check if order is assigned to this vendor OR if vendor has products in the order
+    // Check if vendor has items in the order
     const [hasItems] = await this.vendorService.raw(
       `SELECT 1 FROM orders o 
        WHERE o.order_id = ? 
-       AND (o.vendor_id = ? OR EXISTS (
+       AND EXISTS (
          SELECT 1 FROM order_items oi 
-         JOIN vendor_products vp ON oi.product_id = vp.product_id 
-         WHERE oi.order_id = o.order_id AND vp.vendor_id = ?
-       ))`,
-      [orderId, vendorId, vendorId]
+         WHERE oi.order_id = o.order_id AND oi.vendor_id = ?
+       )`,
+      [orderId, vendorId]
     );
 
     if (!hasItems) {

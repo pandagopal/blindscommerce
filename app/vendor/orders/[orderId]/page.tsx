@@ -28,9 +28,14 @@ export default function VendorOrderDetailsPage() {
       setError('');
       try {
         const res = await fetch(`/api/v2/vendors/orders/${orderId}`);
-        if (!res.ok) throw new Error('Failed to fetch order');
-        const data = await res.json();
-        setOrder(data.order);
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to fetch order');
+        }
+        const result = await res.json();
+        // Handle V2 API response format
+        const orderData = result.data || result.order || result;
+        setOrder(orderData);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch order');
       } finally {
@@ -54,8 +59,10 @@ export default function VendorOrderDetailsPage() {
         const data = await res.json();
         throw new Error(data.error || 'Failed to update status');
       }
-      const data = await res.json();
-      setOrder(data.order);
+      const result = await res.json();
+      // Handle V2 API response format
+      const orderData = result.data || result.order || result;
+      setOrder(orderData);
     } catch (err: any) {
       setStatusError(err.message || 'Failed to update status');
     } finally {
@@ -100,8 +107,8 @@ export default function VendorOrderDetailsPage() {
         {statusError && <div className="text-red-600 text-sm mt-1">{statusError}</div>}
         <div>Customer: {order.customer_name || order.customerName}</div>
         <div>Email: {order.customer_email || order.customerEmail}</div>
-        <div>My Items Total: <span className="font-semibold text-green-600">${order.vendor_items_total?.toFixed(2)}</span></div>
-        <div>Full Order Total: <span className="font-semibold">${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</span></div>
+        <div>My Items Total: <span className="font-semibold text-green-600">${(parseFloat(order.vendor_items_total) || 0).toFixed(2)}</span></div>
+        <div>Full Order Total: <span className="font-semibold">${(parseFloat(order.total_amount || order.total) || 0).toFixed(2)}</span></div>
       </div>
       <h2 className="text-lg font-semibold mb-2">Order Items</h2>
       <div className="overflow-x-auto mb-6">
@@ -112,7 +119,6 @@ export default function VendorOrderDetailsPage() {
               <th className="px-4 py-2 border-b text-left">Options</th>
               <th className="px-4 py-2 border-b text-right">Qty</th>
               <th className="px-4 py-2 border-b text-right">Unit Price</th>
-              <th className="px-4 py-2 border-b text-right">Subtotal</th>
             </tr>
           </thead>
           <tbody>
@@ -126,24 +132,71 @@ export default function VendorOrderDetailsPage() {
                   {item.material_name && <span>Material: {item.material_name} </span>}
                 </td>
                 <td className="px-4 py-2 border-b text-right">{item.quantity}</td>
-                <td className="px-4 py-2 border-b text-right">${item.unit_price?.toFixed(2)}</td>
-                <td className="px-4 py-2 border-b text-right">${item.subtotal?.toFixed(2)}</td>
+                <td className="px-4 py-2 border-b text-right">${(parseFloat(item.unit_price) || 0).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <h2 className="text-lg font-semibold mb-2">Shipping Address</h2>
-      <div className="mb-6 text-gray-700">
-        {order.shipping_address || 'N/A'}
+      <h2 className="text-lg font-semibold mb-2">Shipping Information</h2>
+      <div className="mb-6 bg-gray-50 p-4 rounded-lg">
+        {(() => {
+          // Use shipping address, but fallback to billing address if shipping fields are empty
+          const firstName = order.shipping_first_name || order.billing_first_name || order.customer_name?.split(' ')[0] || '';
+          const lastName = order.shipping_last_name || order.billing_last_name || order.customer_name?.split(' ').slice(1).join(' ') || '';
+          const addressLine1 = order.shipping_address_line_1 || order.billing_address_line_1;
+          const addressLine2 = order.shipping_address_line_2 || order.billing_address_line_2;
+          const city = order.shipping_city || order.billing_city;
+          const state = order.shipping_state || order.billing_state;
+          const postalCode = order.shipping_postal_code || order.billing_postal_code;
+          const country = order.shipping_country || order.billing_country;
+          const phone = order.shipping_phone || order.billing_phone || order.customer_phone;
+          const email = order.shipping_email || order.billing_email || order.customer_email;
+          
+          const isSameAsBilling = order.shipping_address_id === order.billing_address_id;
+
+          if (addressLine1 && city) {
+            return (
+              <div className="space-y-2">
+                {isSameAsBilling && (
+                  <div className="text-sm text-gray-600 italic mb-2">
+                    (Same as billing address)
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium">Name:</span> {firstName} {lastName}
+                </div>
+                <div>
+                  <span className="font-medium">Address:</span><br />
+                  {addressLine1}<br />
+                  {addressLine2 && <>{addressLine2}<br /></>}
+                  {city}, {state} {postalCode}<br />
+                  {country && <>{country}<br /></>}
+                </div>
+                {phone && (
+                  <div>
+                    <span className="font-medium">Phone:</span> {phone}
+                  </div>
+                )}
+                {email && (
+                  <div>
+                    <span className="font-medium">Email:</span> {email}
+                  </div>
+                )}
+              </div>
+            );
+          } else {
+            return <div className="text-gray-500">No shipping information available</div>;
+          }
+        })()}
       </div>
       <div className="flex justify-between items-center font-bold text-right">
         <span>My Items Total:</span>
-        <span className="text-green-600">${order.vendor_items_total?.toFixed(2)}</span>
+        <span className="text-green-600">${(parseFloat(order.vendor_items_total) || 0).toFixed(2)}</span>
       </div>
       <div className="flex justify-between items-center text-gray-600 text-sm">
         <span>Full Order Total:</span>
-        <span>${order.total_amount?.toFixed(2) || order.total?.toFixed(2)}</span>
+        <span>${(parseFloat(order.total_amount || order.total) || 0).toFixed(2)}</span>
       </div>
     </div>
   );

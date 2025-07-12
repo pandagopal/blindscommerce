@@ -49,11 +49,13 @@ export default function VendorOrdersPage() {
     
     const response = await fetch(`/api/v2/vendors/orders?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch orders');
-    const data = await response.json();
+    const result = await response.json();
     
+    // Handle V2 API response format
+    const data = result.data || result;
     return {
-      orders: data.orders || [],
-      total: data.total || 0
+      orders: data.data || data.orders || [],
+      total: data.pagination?.total || data.total || 0
     };
   };
 
