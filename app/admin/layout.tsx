@@ -142,7 +142,11 @@ export default function AdminLayout({
                       )}
                     </div>
                     <span className="text-sm text-gray-700">
-                      {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user?.firstName 
+                        ? user.firstName 
+                        : user?.email?.split('@')[0]}
                     </span>
                   </div>
                   <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">

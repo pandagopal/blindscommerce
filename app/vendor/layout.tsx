@@ -123,8 +123,12 @@ function VendorLayoutContent({
                         <User size={16} className="text-primary-red" />
                       )}
                     </div>
-                    <span className="text-sm text-gray-700">
-                      {user?.firstName ? `${user.firstName}` : user?.email?.split('@')[0]}
+                    <span className="text-sm text-gray-700 font-medium">
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user?.firstName 
+                        ? user.firstName 
+                        : user?.email?.split('@')[0] || 'User'}
                     </span>
                   </div>
                   <Link href="/" className="text-xs text-gray-500 hover:text-gray-700">

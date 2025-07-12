@@ -146,7 +146,11 @@ export default function SuperAdminLayout({
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-900">
-                  {user.firstName} {user.lastName}
+                  {user?.firstName && user?.lastName 
+                    ? `${user.firstName} ${user.lastName}` 
+                    : user?.firstName 
+                    ? user.firstName 
+                    : user?.email?.split('@')[0]}
                 </p>
                 <p className="text-xs text-gray-500">{user.email}</p>
               </div>
