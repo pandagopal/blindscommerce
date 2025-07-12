@@ -444,6 +444,41 @@
   },
   
   "critical_fixes_summary": {
+    "snake_case_vs_camel_case_issue_2025": {
+      "issue": "Property naming inconsistency causing user names not to display",
+      "date_fixed": "2025-07-12",
+      "problem_description": {
+        "symptom": "Dashboard sidebars showing role name instead of user's first and last name",
+        "root_cause": "AuthHandler.getCurrentUser() expecting snake_case properties while auth.ts getCurrentUser() returns camelCase",
+        "affected_areas": [
+          "All dashboard layouts (vendor, admin, sales, installer, etc.)",
+          "/api/v2/auth/me endpoint response"
+        ]
+      },
+      "technical_details": {
+        "auth_service_returns": {
+          "format": "camelCase",
+          "properties": ["userId", "firstName", "lastName", "isVerified"]
+        },
+        "auth_handler_expected": {
+          "format": "snake_case",
+          "properties": ["user_id", "first_name", "last_name", "is_verified"]
+        },
+        "data_flow": "auth.ts getCurrentUser() → route handler → AuthHandler.getCurrentUser() → API response"
+      },
+      "solution": {
+        "fix_location": "/lib/api/v2/handlers/AuthHandler.ts",
+        "change": "Support both camelCase and snake_case properties",
+        "implementation": "user.firstName || user.first_name",
+        "prevention": "Always handle both naming conventions in API handlers"
+      },
+      "best_practices": [
+        "API handlers should accept both camelCase and snake_case",
+        "Internal services use snake_case (database convention)",
+        "Frontend APIs return camelCase (JavaScript convention)",
+        "Always transform at API boundary, not in services"
+      ]
+    },
     "database_connection_policy_2025": {
       "strict_rule": "NEVER make direct database calls outside service layer",
       "allowed_locations": [
