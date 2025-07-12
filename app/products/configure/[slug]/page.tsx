@@ -188,6 +188,30 @@ export default function ProductConfiguratorPage() {
         config[key] = value;
       }
     });
+    
+    // Convert decimal width/height back to whole number + eighths
+    if (config.width) {
+      const widthNum = parseFloat(config.width);
+      const wholeWidth = Math.floor(widthNum);
+      const fractionWidth = widthNum - wholeWidth;
+      
+      // Convert decimal fraction to nearest eighth
+      const eighths = Math.round(fractionWidth * 8);
+      config.width = wholeWidth.toString();
+      config.widthFraction = (eighths / 8).toString();
+    }
+    
+    if (config.height) {
+      const heightNum = parseFloat(config.height);
+      const wholeHeight = Math.floor(heightNum);
+      const fractionHeight = heightNum - wholeHeight;
+      
+      // Convert decimal fraction to nearest eighth
+      const eighths = Math.round(fractionHeight * 8);
+      config.height = wholeHeight.toString();
+      config.heightFraction = (eighths / 8).toString();
+    }
+    
     return config;
   };
 

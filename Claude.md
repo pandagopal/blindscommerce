@@ -2,11 +2,11 @@
   "metadata": {
     "title": "Claude's BlindsCommerce Application Reference",
     "format": "machine_readable_json",
-    "last_updated": "2025-07-10",
-    "version": "3.3",
+    "last_updated": "2025-07-12",
+    "version": "3.4",
     "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
     "consolidated_from": "26 documentation files merged into single reference",
-    "latest_changes": "Added v2_api_response_wrapping_fix documenting double-wrapping issue resolution"
+    "latest_changes": "Added data_management_policy requiring all business data from database, no hardcoding"
   },
   
   "project_overview": {
@@ -737,6 +737,54 @@
     ]
   },
   
+  "data_management_policy": {
+    "strict_database_sourcing": {
+      "principle": "ALL application data MUST come from database",
+      "no_hardcoded_data": "NEVER hardcode business data in code",
+      "fallback_policy": "Fallback values only for critical system operation",
+      "examples_of_database_data": [
+        "room_types",
+        "mount_types",
+        "fabric_types",
+        "control_options",
+        "lift_systems",
+        "valance_options",
+        "bottom_rail_options",
+        "product_categories",
+        "pricing_tiers",
+        "discount_rules"
+      ]
+    },
+    "database_population_scripts": {
+      "location": "/scripts/ directory",
+      "naming_convention": "populate_[table_name].sql",
+      "existing_scripts": [
+        "populate_room_types.sql - Standard room types for products"
+      ],
+      "execution_requirement": "Run scripts during initial setup or data migration"
+    },
+    "api_data_requirements": {
+      "empty_data_handling": "Return empty arrays/objects, never hardcoded defaults",
+      "error_response": "Proper error message if database unavailable",
+      "caching_allowed": "Cache database data per caching policy",
+      "no_code_constants": "Business data constants forbidden in components"
+    },
+    "component_guidelines": {
+      "data_fetching": "Always fetch from V2 APIs",
+      "no_default_lists": "Remove hardcoded arrays like ROOM_TYPES",
+      "loading_states": "Show loading while fetching data",
+      "error_states": "Handle database errors gracefully"
+    },
+    "migration_checklist": [
+      "Identify all hardcoded business data",
+      "Create database tables if missing",
+      "Write population scripts",
+      "Update APIs to serve database data",
+      "Remove hardcoded constants from code",
+      "Test data flow from database to UI"
+    ]
+  },
+  
   "important_reminders": {
     "do_what_asked": "nothing more, nothing less",
     "never_create_files": "unless absolutely necessary",
@@ -747,6 +795,7 @@
     "check_claude_md": "this is the single source of truth",
     "verify_sql_first": "ALWAYS check database schema before writing SQL",
     "no_assumptions": "NEVER assume column names or data types",
-    "v2_api_handlers": "ALWAYS return raw data, NEVER wrap in { success: true, data: {...} }"
+    "v2_api_handlers": "ALWAYS return raw data, NEVER wrap in { success: true, data: {...} }",
+    "database_only_data": "ALL business data MUST come from database, NO hardcoded values"
   }
 }

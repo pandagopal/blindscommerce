@@ -14,6 +14,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// Fallback room types if database is empty
+const DEFAULT_ROOM_TYPES = [
+  'Living Room',
+  'Bedroom', 
+  'Kitchen',
+  'Bathroom',
+  'Dining Room',
+  'Home Office',
+  'Media Room',
+  'Nursery',
+  'Sunroom',
+  'Basement',
+  'Garage',
+  'Patio/Outdoor',
+];
+
 interface RoomRecommendation {
   id: string;
   roomType: string;
@@ -53,10 +69,33 @@ export default function RoomRecommendations({ recommendations, onChange, isReadO
         const response = await fetch('/api/v2/content/rooms');
         if (response.ok) {
           const data = await response.json();
-          setRoomTypes(data.rooms || []);
+          // Use API data if available, otherwise use defaults
+          if (data.rooms && data.rooms.length > 0) {
+            setRoomTypes(data.rooms);
+          } else {
+            // Convert default room types to expected format
+            const defaultRooms = DEFAULT_ROOM_TYPES.map((name, index) => ({
+              id: index + 1,
+              name: name
+            }));
+            setRoomTypes(defaultRooms);
+          }
+        } else {
+          // API failed, use defaults
+          const defaultRooms = DEFAULT_ROOM_TYPES.map((name, index) => ({
+            id: index + 1,
+            name: name
+          }));
+          setRoomTypes(defaultRooms);
         }
       } catch (error) {
         console.error('Error fetching room types:', error);
+        // Use defaults on error
+        const defaultRooms = DEFAULT_ROOM_TYPES.map((name, index) => ({
+          id: index + 1,
+          name: name
+        }));
+        setRoomTypes(defaultRooms);
       } finally {
         setLoading(false);
       }

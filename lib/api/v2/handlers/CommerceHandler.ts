@@ -412,7 +412,6 @@ export class CommerceHandler extends BaseHandler {
     
     try {
       const body = await req.json();
-      console.log('Raw request body:', JSON.stringify(body, null, 2));
       
       // Manually validate to see what's happening
       let data;
@@ -423,12 +422,6 @@ export class CommerceHandler extends BaseHandler {
         throw new ApiError(`Validation error: ${validationError.message}`, 400);
       }
       
-      console.log('AddToCart validated data:', {
-        userId: user?.userId || user?.user_id,
-        sessionId: !user ? sessionId : 'authenticated user',
-        data: JSON.stringify(data, null, 2)
-      });
-
       const result = await this.cartService.addToCart({
         userId: user?.userId || user?.user_id,
         sessionId: !user ? sessionId || undefined : undefined,

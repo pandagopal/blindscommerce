@@ -126,15 +126,14 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       return `Please enter valid ${type}`;
     }
 
-    // Get dimensions from product data - NO hardcoded fallbacks
+    // Get dimensions from product data - check multiple sources
     const dimensions = product?.dimensions || {};
     
-    // Product dimensions after refresh
-    
-    const minWidth = dimensions?.minWidth;
-    const maxWidth = dimensions?.maxWidth;
-    const minHeight = dimensions?.minHeight;
-    const maxHeight = dimensions?.maxHeight;
+    // Product dimensions from various sources
+    const minWidth = dimensions?.minWidth || product?.custom_width_min;
+    const maxWidth = dimensions?.maxWidth || product?.custom_width_max;
+    const minHeight = dimensions?.minHeight || product?.custom_height_min;
+    const maxHeight = dimensions?.maxHeight || product?.custom_height_max;
 
     // Extracted dimension values
 
@@ -554,9 +553,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             value={config.width}
                             onChange={(e) => handleDimensionChange('width', e.target.value)}
                             placeholder="0"
-                            min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth}
-                            max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth}
-                            step="0.125"
+                            min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth || product?.custom_width_min || 12}
+                            max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth || product?.custom_width_max || 96}
+                            step="1"
+                            pattern="[0-9]*"
+                            inputMode="numeric"
                             className={`w-20 p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
                               errors.width ? 'border-red-300' : 'border-gray-300'
                             }`}
@@ -605,9 +606,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             value={config.height}
                             onChange={(e) => handleDimensionChange('height', e.target.value)}
                             placeholder="0"
-                            min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight}
-                            max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight}
-                            step="0.125"
+                            min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight || product?.custom_height_min || 12}
+                            max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight || product?.custom_height_max || 120}
+                            step="1"
+                            pattern="[0-9]*"
+                            inputMode="numeric"
                             className={`w-20 p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all ${
                               errors.height ? 'border-red-300' : 'border-gray-300'
                             }`}

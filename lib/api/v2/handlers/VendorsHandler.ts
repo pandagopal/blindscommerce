@@ -599,12 +599,14 @@ export class VendorsHandler extends BaseHandler {
         }
       }
 
-      // Create basic product
+      // Create basic product with dimension limits
       const [result] = await conn.execute(
         `INSERT INTO products (
           name, slug, sku, short_description, full_description, 
-          base_price, vendor_id, is_active, is_featured, category_id, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          base_price, vendor_id, is_active, is_featured, category_id,
+          custom_width_min, custom_width_max, custom_height_min, custom_height_max,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
           data.name,
           data.slug,
@@ -615,7 +617,12 @@ export class VendorsHandler extends BaseHandler {
           vendorId,
           data.is_active ? 1 : 0,
           data.is_featured ? 1 : 0,
-          categoryId
+          categoryId,
+          // Use dimensions from options or defaults
+          data.options?.dimensions?.minWidth || 12,
+          data.options?.dimensions?.maxWidth || 96,
+          data.options?.dimensions?.minHeight || 12,
+          data.options?.dimensions?.maxHeight || 120
         ]
       );
 
@@ -990,7 +997,7 @@ export class VendorsHandler extends BaseHandler {
         }
       }
 
-      // Update basic product info
+      // Update basic product info including dimension limits
       await conn.execute(
         `UPDATE products SET 
           name = ?, 
@@ -1002,6 +1009,10 @@ export class VendorsHandler extends BaseHandler {
           is_active = ?,
           is_featured = ?,
           category_id = ?,
+          custom_width_min = ?,
+          custom_width_max = ?,
+          custom_height_min = ?,
+          custom_height_max = ?,
           updated_at = NOW()
         WHERE product_id = ?`,
         [
@@ -1014,6 +1025,11 @@ export class VendorsHandler extends BaseHandler {
           data.is_active ? 1 : 0,
           data.is_featured ? 1 : 0,
           categoryId,
+          // Use dimensions from options or defaults
+          data.options?.dimensions?.minWidth || 12,
+          data.options?.dimensions?.maxWidth || 96,
+          data.options?.dimensions?.minHeight || 12,
+          data.options?.dimensions?.maxHeight || 120,
           productId
         ]
       );
