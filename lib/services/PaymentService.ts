@@ -90,7 +90,7 @@ export class PaymentService extends BaseService {
           apiVersion: '2024-12-18.acacia',
         });
         this.stripeInitialized = true;
-        console.log('Stripe initialized successfully with', finalStripeKey.substring(0, 7) + '...');
+        //console.log('Stripe initialized successfully with', finalStripeKey.substring(0, 7) + '...');
       } else {
         console.log('Stripe not initialized - no secret key available');
       }
@@ -152,7 +152,7 @@ export class PaymentService extends BaseService {
         paymentMethodId = paymentIntent.payment_method_id;
       } else if (isTestMode) {
         // Test mode: Create a test payment method
-        console.log('Test mode: Using Stripe test payment method');
+        //console.log('Test mode: Using Stripe test payment method');
         const testPaymentMethod = await this.stripe.paymentMethods.create({
           type: 'card',
           card: {
@@ -182,9 +182,14 @@ export class PaymentService extends BaseService {
         currency: paymentIntent.currency.toLowerCase(),
         payment_method: paymentMethodId,
         confirm: true,
-        automatic_payment_methods: {
-          enabled: false,
-        },
+        // For US-only customers, specify relevant payment methods explicitly
+        payment_method_types: [
+          'card',              // Credit/debit cards (Visa, Mastercard, Amex, Discover)
+          'us_bank_account',   // ACH bank transfers
+          'affirm',            // Buy now, pay later (popular in US)
+          'afterpay_clearpay', // Afterpay (US version)
+          'link'               // Stripe's 1-click checkout for returning customers
+        ],
         metadata: {
           ...paymentIntent.metadata,
           customer_email: paymentIntent.billing_address.email,

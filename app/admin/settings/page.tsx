@@ -269,8 +269,8 @@ export default function AdminSettingsPage() {
         },
         credentials: 'include',
         body: JSON.stringify({
-          taxjar_api_key: safeSettings.integrations.taxjar_api_key,
-          taxjar_environment: safeSettings.integrations.taxjar_environment
+          taxjar_api_key: safeSettings.integrations?.taxjar_api_key || '',
+          taxjar_environment: safeSettings.integrations?.taxjar_environment || 'production'
         }),
       });
       
@@ -398,7 +398,7 @@ export default function AdminSettingsPage() {
                         Site Name
                       </label>
                       <Input
-                        value={settings?.general?.site_name || ''}
+                        value={safeSettings.general?.site_name || ''}
                         onChange={(e) => handleSettingChange('general', 'site_name', e.target.value)}
                         placeholder="Enter site name"
                         className="w-full"
@@ -411,7 +411,7 @@ export default function AdminSettingsPage() {
                       </label>
                       <Input
                         type="email"
-                        value={settings?.general?.contact_email || ''}
+                        value={safeSettings.general?.contact_email || ''}
                         onChange={(e) => handleSettingChange('general', 'contact_email', e.target.value)}
                         placeholder="Enter contact email"
                         className="w-full"
@@ -423,7 +423,7 @@ export default function AdminSettingsPage() {
                         Phone Number
                       </label>
                       <PhoneInput
-                        value={settings?.general?.phone || ''}
+                        value={safeSettings.general?.phone || ''}
                         onChange={(value) => handleSettingChange('general', 'phone', value)}
                         country="US"
                         showCountrySelector={false}
@@ -436,7 +436,7 @@ export default function AdminSettingsPage() {
                         Address
                       </label>
                       <Textarea
-                        value={settings?.general?.address || ''}
+                        value={safeSettings.general?.address || ''}
                         onChange={(e) => handleSettingChange('general', 'address', e.target.value)}
                         placeholder="Enter company address"
                         className="w-full"
@@ -451,7 +451,7 @@ export default function AdminSettingsPage() {
                         Site Description
                       </label>
                       <Textarea
-                        value={settings?.general?.site_description || ''}
+                        value={safeSettings.general?.site_description || ''}
                         onChange={(e) => handleSettingChange('general', 'site_description', e.target.value)}
                         placeholder="Enter site description"
                         className="w-full"
@@ -464,7 +464,7 @@ export default function AdminSettingsPage() {
                         Timezone
                       </label>
                       <Select 
-                        value={settings?.general?.timezone || ''} 
+                        value={safeSettings.general?.timezone || ''} 
                         onValueChange={(value) => handleSettingChange('general', 'timezone', value)}
                       >
                         <SelectTrigger className="w-full">
@@ -485,7 +485,7 @@ export default function AdminSettingsPage() {
                         Currency
                       </label>
                       <Select 
-                        value={settings?.general?.currency || ''} 
+                        value={safeSettings.general?.currency || ''} 
                         onValueChange={(value) => handleSettingChange('general', 'currency', value)}
                       >
                         <SelectTrigger className="w-full">
@@ -507,7 +507,7 @@ export default function AdminSettingsPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={settings?.general?.tax_rate || ''}
+                        value={safeSettings.general?.tax_rate || ''}
                         onChange={(e) => handleSettingChange('general', 'tax_rate', e.target.value)}
                         placeholder="Enter tax rate"
                         className="w-full"
@@ -522,7 +522,7 @@ export default function AdminSettingsPage() {
                         </p>
                       </div>
                       <Switch
-                        checked={settings?.general?.maintenance_mode || false}
+                        checked={safeSettings.general?.maintenance_mode || false}
                         onCheckedChange={(checked) => handleSettingChange('general', 'maintenance_mode', checked)}
                       />
                     </div>
@@ -601,12 +601,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.stripe_enabled}
+                      checked={safeSettings.payments?.stripe_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'stripe_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.stripe_enabled && (
+                  {safeSettings.payments?.stripe_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -615,7 +615,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.stripe_secret_key}
+                            value={safeSettings.payments?.stripe_secret_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'stripe_secret_key', e.target.value)}
                             placeholder="sk_test_... or sk_live_..."
                             className="font-mono text-sm"
@@ -627,7 +627,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.stripe_publishable_key}
+                            value={safeSettings.payments?.stripe_publishable_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'stripe_publishable_key', e.target.value)}
                             placeholder="pk_test_... or pk_live_..."
                             className="font-mono text-sm"
@@ -640,7 +640,7 @@ export default function AdminSettingsPage() {
                         </label>
                         <Input
                           type="password"
-                          value={safeSettings.payments.stripe_webhook_secret}
+                          value={safeSettings.payments?.stripe_webhook_secret || ''}
                           onChange={(e) => handleSettingChange('payments', 'stripe_webhook_secret', e.target.value)}
                           placeholder="whsec_... (Leave empty to disable webhooks)"
                           className="font-mono text-sm"
@@ -669,12 +669,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.paypal_enabled}
+                      checked={safeSettings.payments?.paypal_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'paypal_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.paypal_enabled && (
+                  {safeSettings.payments?.paypal_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -683,7 +683,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.paypal_client_id}
+                            value={safeSettings.payments?.paypal_client_id || ''}
                             onChange={(e) => handleSettingChange('payments', 'paypal_client_id', e.target.value)}
                             placeholder="Enter PayPal Client ID"
                             className="font-mono text-sm"
@@ -695,7 +695,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.paypal_client_secret}
+                            value={safeSettings.payments?.paypal_client_secret || ''}
                             onChange={(e) => handleSettingChange('payments', 'paypal_client_secret', e.target.value)}
                             placeholder="Enter PayPal Client Secret"
                             className="font-mono text-sm"
@@ -722,12 +722,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.klarna_enabled}
+                      checked={safeSettings.payments?.klarna_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'klarna_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.klarna_enabled && (
+                  {safeSettings.payments?.klarna_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -736,7 +736,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.klarna_api_key}
+                            value={safeSettings.payments?.klarna_api_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'klarna_api_key', e.target.value)}
                             placeholder="Enter Klarna API Key"
                             className="font-mono text-sm"
@@ -747,7 +747,7 @@ export default function AdminSettingsPage() {
                             Username *
                           </label>
                           <Input
-                            value={safeSettings.payments.klarna_username}
+                            value={safeSettings.payments?.klarna_username || ''}
                             onChange={(e) => handleSettingChange('payments', 'klarna_username', e.target.value)}
                             placeholder="Enter Klarna Username"
                             className="font-mono text-sm"
@@ -760,7 +760,7 @@ export default function AdminSettingsPage() {
                         </label>
                         <Input
                           type="password"
-                          value={safeSettings.payments.klarna_password}
+                          value={safeSettings.payments?.klarna_password || ''}
                           onChange={(e) => handleSettingChange('payments', 'klarna_password', e.target.value)}
                           placeholder="Enter Klarna Password"
                           className="font-mono text-sm"
@@ -786,12 +786,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.afterpay_enabled}
+                      checked={safeSettings.payments?.afterpay_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'afterpay_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.afterpay_enabled && (
+                  {safeSettings.payments?.afterpay_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -799,7 +799,7 @@ export default function AdminSettingsPage() {
                             Merchant ID *
                           </label>
                           <Input
-                            value={safeSettings.payments.afterpay_merchant_id}
+                            value={safeSettings.payments?.afterpay_merchant_id || ''}
                             onChange={(e) => handleSettingChange('payments', 'afterpay_merchant_id', e.target.value)}
                             placeholder="Enter Afterpay Merchant ID"
                             className="font-mono text-sm"
@@ -811,7 +811,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.afterpay_secret_key}
+                            value={safeSettings.payments?.afterpay_secret_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'afterpay_secret_key', e.target.value)}
                             placeholder="Enter Afterpay Secret Key"
                             className="font-mono text-sm"
@@ -838,12 +838,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.affirm_enabled}
+                      checked={safeSettings.payments?.affirm_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'affirm_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.affirm_enabled && (
+                  {safeSettings.payments?.affirm_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -851,7 +851,7 @@ export default function AdminSettingsPage() {
                             Public API Key *
                           </label>
                           <Input
-                            value={safeSettings.payments.affirm_public_api_key}
+                            value={safeSettings.payments?.affirm_public_api_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'affirm_public_api_key', e.target.value)}
                             placeholder="Enter Affirm Public API Key"
                             className="font-mono text-sm"
@@ -863,7 +863,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.affirm_private_api_key}
+                            value={safeSettings.payments?.affirm_private_api_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'affirm_private_api_key', e.target.value)}
                             placeholder="Enter Affirm Private API Key"
                             className="font-mono text-sm"
@@ -890,12 +890,12 @@ export default function AdminSettingsPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={safeSettings.payments.braintree_enabled}
+                      checked={safeSettings.payments?.braintree_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('payments', 'braintree_enabled', checked)}
                     />
                   </div>
                   
-                  {safeSettings.payments.braintree_enabled && (
+                  {safeSettings.payments?.braintree_enabled && (
                     <div className="mt-4 space-y-4 pl-13">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
@@ -904,7 +904,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.braintree_merchant_id}
+                            value={safeSettings.payments?.braintree_merchant_id || ''}
                             onChange={(e) => handleSettingChange('payments', 'braintree_merchant_id', e.target.value)}
                             placeholder="Enter Merchant ID"
                             className="font-mono text-sm"
@@ -916,7 +916,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.braintree_public_key}
+                            value={safeSettings.payments?.braintree_public_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'braintree_public_key', e.target.value)}
                             placeholder="Enter Public Key"
                             className="font-mono text-sm"
@@ -928,7 +928,7 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments.braintree_private_key}
+                            value={safeSettings.payments?.braintree_private_key || ''}
                             onChange={(e) => handleSettingChange('payments', 'braintree_private_key', e.target.value)}
                             placeholder="Enter Private Key"
                             className="font-mono text-sm"
@@ -953,7 +953,7 @@ export default function AdminSettingsPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={safeSettings.payments.payment_processing_fee}
+                        value={safeSettings.payments?.payment_processing_fee || ''}
                         onChange={(e) => handleSettingChange('payments', 'payment_processing_fee', e.target.value)}
                         placeholder="2.9"
                       />
@@ -966,7 +966,7 @@ export default function AdminSettingsPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={safeSettings.payments.vendor_commission_rate}
+                        value={safeSettings.payments?.vendor_commission_rate || ''}
                         onChange={(e) => handleSettingChange('payments', 'vendor_commission_rate', e.target.value)}
                         placeholder="15.0"
                       />
@@ -979,7 +979,7 @@ export default function AdminSettingsPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={safeSettings.payments.minimum_order_amount}
+                        value={safeSettings.payments?.minimum_order_amount || ''}
                         onChange={(e) => handleSettingChange('payments', 'minimum_order_amount', e.target.value)}
                         placeholder="25.00"
                       />
@@ -992,7 +992,7 @@ export default function AdminSettingsPage() {
                       <Input
                         type="number"
                         step="0.01"
-                        value={safeSettings.payments.free_shipping_threshold}
+                        value={safeSettings.payments?.free_shipping_threshold || ''}
                         onChange={(e) => handleSettingChange('payments', 'free_shipping_threshold', e.target.value)}
                         placeholder="100.00"
                       />
@@ -1043,7 +1043,7 @@ export default function AdminSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={safeSettings.security.two_factor_required}
+                      checked={safeSettings.security?.two_factor_required || false}
                       onCheckedChange={(checked) => handleSettingChange('security', 'two_factor_required', checked)}
                     />
                   </div>
@@ -1056,7 +1056,7 @@ export default function AdminSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={safeSettings.security.ip_whitelist_enabled}
+                      checked={safeSettings.security?.ip_whitelist_enabled || false}
                       onCheckedChange={(checked) => handleSettingChange('security', 'ip_whitelist_enabled', checked)}
                     />
                   </div>
@@ -1069,7 +1069,7 @@ export default function AdminSettingsPage() {
                     </label>
                     <Input
                       type="number"
-                      value={safeSettings.security.password_expiry_days}
+                      value={safeSettings.security?.password_expiry_days || ''}
                       onChange={(e) => handleSettingChange('security', 'password_expiry_days', e.target.value)}
                     />
                   </div>
@@ -1079,7 +1079,7 @@ export default function AdminSettingsPage() {
                     </label>
                     <Input
                       type="number"
-                      value={safeSettings.security.login_attempts_limit}
+                      value={safeSettings.security?.login_attempts_limit || ''}
                       onChange={(e) => handleSettingChange('security', 'login_attempts_limit', e.target.value)}
                     />
                   </div>
@@ -1089,7 +1089,7 @@ export default function AdminSettingsPage() {
                     </label>
                     <Input
                       type="number"
-                      value={safeSettings.security.session_timeout_minutes}
+                      value={safeSettings.security?.session_timeout_minutes || ''}
                       onChange={(e) => handleSettingChange('security', 'session_timeout_minutes', e.target.value)}
                     />
                   </div>
@@ -1099,7 +1099,7 @@ export default function AdminSettingsPage() {
                     </label>
                     <Input
                       type="number"
-                      value={safeSettings.security.audit_logs_retention_days}
+                      value={safeSettings.security?.audit_logs_retention_days || ''}
                       onChange={(e) => handleSettingChange('security', 'audit_logs_retention_days', e.target.value)}
                     />
                   </div>
@@ -1134,7 +1134,7 @@ export default function AdminSettingsPage() {
                           Google Analytics ID
                         </label>
                         <Input
-                          value={safeSettings.integrations.google_analytics_id}
+                          value={safeSettings.integrations?.google_analytics_id || ''}
                           onChange={(e) => handleSettingChange('integrations', 'google_analytics_id', e.target.value)}
                           placeholder="GA-XXXXXXXXX-X"
                         />
@@ -1144,7 +1144,7 @@ export default function AdminSettingsPage() {
                           Facebook Pixel ID
                         </label>
                         <Input
-                          value={safeSettings.integrations.facebook_pixel_id}
+                          value={safeSettings.integrations?.facebook_pixel_id || ''}
                           onChange={(e) => handleSettingChange('integrations', 'facebook_pixel_id', e.target.value)}
                           placeholder="XXXXXXXXXXXXXXX"
                         />
@@ -1161,7 +1161,7 @@ export default function AdminSettingsPage() {
                         </label>
                         <Input
                           type="password"
-                          value={safeSettings.integrations.mailchimp_api_key}
+                          value={safeSettings.integrations?.mailchimp_api_key || ''}
                           onChange={(e) => handleSettingChange('integrations', 'mailchimp_api_key', e.target.value)}
                           placeholder="Enter API key"
                         />
@@ -1171,7 +1171,7 @@ export default function AdminSettingsPage() {
                           Twilio Account SID
                         </label>
                         <Input
-                          value={safeSettings.integrations.twilio_account_sid}
+                          value={safeSettings.integrations?.twilio_account_sid || ''}
                           onChange={(e) => handleSettingChange('integrations', 'twilio_account_sid', e.target.value)}
                           placeholder="ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
                         />
@@ -1186,7 +1186,7 @@ export default function AdminSettingsPage() {
                         AWS S3 Bucket Name
                       </label>
                       <Input
-                        value={safeSettings.integrations.aws_s3_bucket}
+                        value={safeSettings.integrations?.aws_s3_bucket || ''}
                         onChange={(e) => handleSettingChange('integrations', 'aws_s3_bucket', e.target.value)}
                         placeholder="your-bucket-name"
                       />
@@ -1201,7 +1201,7 @@ export default function AdminSettingsPage() {
                           SMTP Server
                         </label>
                         <Input
-                          value={safeSettings.integrations.smtp_server}
+                          value={safeSettings.integrations?.smtp_server || ''}
                           onChange={(e) => handleSettingChange('integrations', 'smtp_server', e.target.value)}
                         />
                       </div>
@@ -1210,7 +1210,7 @@ export default function AdminSettingsPage() {
                           SMTP Port
                         </label>
                         <Input
-                          value={safeSettings.integrations.smtp_port}
+                          value={safeSettings.integrations?.smtp_port || ''}
                           onChange={(e) => handleSettingChange('integrations', 'smtp_port', e.target.value)}
                         />
                       </div>
@@ -1219,7 +1219,7 @@ export default function AdminSettingsPage() {
                           SMTP Username
                         </label>
                         <Input
-                          value={safeSettings.integrations.smtp_username}
+                          value={safeSettings.integrations?.smtp_username || ''}
                           onChange={(e) => handleSettingChange('integrations', 'smtp_username', e.target.value)}
                         />
                       </div>
@@ -1249,7 +1249,7 @@ export default function AdminSettingsPage() {
                           </p>
                         </div>
                         <Switch
-                          checked={safeSettings.integrations.use_taxjar_api}
+                          checked={safeSettings.integrations?.use_taxjar_api || false}
                           onCheckedChange={(checked) => handleSettingChange('integrations', 'use_taxjar_api', checked)}
                         />
                       </div>
@@ -1261,10 +1261,10 @@ export default function AdminSettingsPage() {
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.integrations.taxjar_api_key}
+                            value={safeSettings.integrations?.taxjar_api_key || ''}
                             onChange={(e) => handleSettingChange('integrations', 'taxjar_api_key', e.target.value)}
                             placeholder="Enter TaxJar API key"
-                            disabled={!safeSettings.integrations.use_taxjar_api}
+                            disabled={!safeSettings.integrations?.use_taxjar_api}
                           />
                           <p className="text-xs text-gray-500 mt-1">
                             Get your API key from <a href="https://www.taxjar.com/api/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">TaxJar Dashboard</a>
@@ -1275,9 +1275,9 @@ export default function AdminSettingsPage() {
                             Environment
                           </label>
                           <Select
-                            value={safeSettings.integrations.taxjar_environment}
+                            value={safeSettings.integrations?.taxjar_environment || 'production'}
                             onValueChange={(value) => handleSettingChange('integrations', 'taxjar_environment', value)}
-                            disabled={!safeSettings.integrations.use_taxjar_api}
+                            disabled={!safeSettings.integrations?.use_taxjar_api}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -1291,7 +1291,7 @@ export default function AdminSettingsPage() {
                       </div>
                       
                       {/* TaxJar Test Button */}
-                      {safeSettings.integrations.taxjar_api_key && (
+                      {safeSettings.integrations?.taxjar_api_key && (
                         <div className="mt-4">
                           <Button
                             onClick={testTaxJarConnection}

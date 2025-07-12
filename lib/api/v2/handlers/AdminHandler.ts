@@ -963,14 +963,29 @@ export class AdminHandler extends BaseHandler {
   private async updateSettings(req: NextRequest) {
     const body = await req.json();
     
+    console.log('AdminHandler.updateSettings - Request body:', JSON.stringify(body, null, 2));
+    
     try {
       // If body contains a specific category, update just that category
       if (body.category && body.settings) {
+        console.log(`Updating specific category: ${body.category}`);
+        console.log('Settings to update:', JSON.stringify(body.settings, null, 2));
         await settingsService.updateSettings(body.category, body.settings);
+      } else if (body.settings) {
+        // Handle the case where all settings are in body.settings
+        console.log('Updating all settings from body.settings');
+        for (const [category, categorySettings] of Object.entries(body.settings)) {
+          if (typeof categorySettings === 'object' && categorySettings !== null) {
+            console.log(`Updating category ${category}:`, JSON.stringify(categorySettings, null, 2));
+            await settingsService.updateSettings(category, categorySettings);
+          }
+        }
       } else {
         // Otherwise update all settings provided
+        console.log('Updating all settings from body directly');
         for (const [category, categorySettings] of Object.entries(body)) {
           if (typeof categorySettings === 'object' && categorySettings !== null) {
+            console.log(`Updating category ${category}:`, JSON.stringify(categorySettings, null, 2));
             await settingsService.updateSettings(category, categorySettings);
           }
         }
@@ -978,6 +993,7 @@ export class AdminHandler extends BaseHandler {
       
       // Reload settings after update to ensure consistency
       const updatedSettings = await settingsService.getAllSettings();
+      console.log('Updated settings loaded - payments:', JSON.stringify(updatedSettings.payments, null, 2));
       
       return { 
         success: true,

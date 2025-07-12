@@ -109,6 +109,15 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     }
   }, [fabricTypes, activeFabricType, initialConfig.fabricType, product?.fabricOptions]);
 
+  // Validate initial configuration when component loads or product data changes
+  React.useEffect(() => {
+    if (product && config.width && config.height) {
+      // Validate the initial configuration
+      const mandatoryErrors = validateMandatoryFields();
+      setErrors(mandatoryErrors);
+    }
+  }, [product]); // Only run when product data is loaded
+
   const handleRoomTypeChange = (roomType: string) => {
     setConfig(prev => ({ ...prev, roomType }));
     setErrors(prev => ({ ...prev, roomType: '' }));
@@ -1073,13 +1082,25 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               )}
             </div>
 
-            {/* Mandatory Fields Notice */}
+            {/* Mandatory Fields Notice with specific errors */}
             {!areMandatoryFieldsComplete() && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">
-                  <Info size={14} className="inline mr-1" />
-                  Please complete all required fields: Room Type, Mount Type, Width, and Height.
-                </p>
+                <div className="text-red-700 text-sm">
+                  <p className="font-medium flex items-center">
+                    <Info size={14} className="mr-1" />
+                    Please fix the following errors:
+                  </p>
+                  <ul className="mt-1 ml-5 space-y-1">
+                    {errors.roomType && <li className="list-disc">{errors.roomType}</li>}
+                    {errors.mountType && <li className="list-disc">{errors.mountType}</li>}
+                    {errors.width && <li className="list-disc">{errors.width}</li>}
+                    {errors.height && <li className="list-disc">{errors.height}</li>}
+                    {errors.fabricType && <li className="list-disc">{errors.fabricType}</li>}
+                    {errors.controlOption && <li className="list-disc">{errors.controlOption}</li>}
+                    {errors.valanceOption && <li className="list-disc">{errors.valanceOption}</li>}
+                    {errors.bottomRailOption && <li className="list-disc">{errors.bottomRailOption}</li>}
+                  </ul>
+                </div>
               </div>
             )}
 

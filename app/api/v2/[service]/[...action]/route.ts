@@ -135,6 +135,26 @@ async function handleRequest(
       return result;
     }
 
+    // Check if the result indicates a failure
+    if (result && typeof result === 'object' && 'success' in result && result.success === false) {
+      // This is a business logic failure, not a system error
+      // Return it with appropriate status code
+      const status = result.status || 400;
+      return NextResponse.json({
+        success: false,
+        error: result.error || 'Operation failed',
+        code: result.code,
+        details: result.details,
+        metadata: {
+          timestamp: new Date().toISOString(),
+          version: '2.0',
+          service,
+          action: actionPath,
+          executionTime: Date.now() - startTime,
+        },
+      }, { status });
+    }
+
     // Return success response
     return successResponse(result, service, actionPath, startTime);
 

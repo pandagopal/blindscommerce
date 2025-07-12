@@ -108,10 +108,10 @@ const DEFAULT_SETTINGS: PlatformSettings = {
     afterpay_enabled: false,
     affirm_enabled: false,
     braintree_enabled: false,
-    payment_processing_fee: '2.9',
-    minimum_order_amount: '25.00',
-    free_shipping_threshold: '100.00',
-    vendor_commission_rate: '15.0',
+    payment_processing_fee: '',
+    minimum_order_amount: '',
+    free_shipping_threshold: '',
+    vendor_commission_rate: '',
     stripe_secret_key: '',
     stripe_publishable_key: '',
     stripe_webhook_secret: '',
@@ -152,13 +152,39 @@ const DEFAULT_SETTINGS: PlatformSettings = {
 };
 
 export class SettingsService {
-  async getAllSettings(): Promise<PlatformSettings> {
+  private settingsCache: PlatformSettings | null = null;
+  private cacheTimestamp: number = 0;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+  clearCache(): void {
+    this.settingsCache = null;
+    this.cacheTimestamp = 0;
+    console.log('[SettingsService] Cache cleared');
+  }
+
+  async getAllSettings(skipCache = false): Promise<PlatformSettings> {
+    const now = Date.now();
+    
+    // Return cached settings if still valid and not skipping cache
+    if (!skipCache && this.settingsCache && this.cacheTimestamp > 0 && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+      return this.settingsCache;
+    }
+
     const pool = await getPool();
     
     try {
       const [rows] = await pool.execute(
         'SELECT category, setting_key, setting_value FROM company_settings'
       );
+      
+     
+      // Debug: Show payment-related settings
+      const paymentRows = (rows as any[]).filter(r => 
+        r.category === 'payments' || 
+        r.setting_key.includes('stripe') || 
+        r.setting_key.includes('paypal')
+      );
+
       
       // Start with default settings
       const settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
@@ -168,6 +194,7 @@ export class SettingsService {
         'company': 'general',
         'contact': 'general',
         'financial': 'payments',
+        'payments': 'payments',
         'homepage': 'general',
         'promotions': 'general',
         'shipping': 'payments',
@@ -179,6 +206,10 @@ export class SettingsService {
       // Override with database values
       for (const row of rows as any[]) {
         const mappedCategory = categoryMapping[row.category] || row.category;
+        
+        if (row.setting_key.includes('stripe') || row.setting_key.includes('paypal')) {
+          //console.log(`Processing ${row.setting_key}: DB category='${row.category}', mapped to='${mappedCategory}'`);
+        }
         
         if (settings[mappedCategory as keyof PlatformSettings]) {
           // Map specific keys based on database structure
@@ -196,27 +227,57 @@ export class SettingsService {
             'minimum_order': 'minimum_order_amount',
             'free_shipping_threshold': 'free_shipping_threshold',
             'currency': 'currency',
-            'timezone': 'timezone'
+            'timezone': 'timezone',
+            // Payment provider keys
+            'stripe_secret_key': 'stripe_secret_key',
+            'stripe_publishable_key': 'stripe_publishable_key',
+            'stripe_webhook_secret': 'stripe_webhook_secret',
+            'stripe_enabled': 'stripe_enabled',
+            'paypal_client_id': 'paypal_client_id',
+            'paypal_client_secret': 'paypal_client_secret',
+            'paypal_enabled': 'paypal_enabled',
+            'braintree_merchant_id': 'braintree_merchant_id',
+            'braintree_public_key': 'braintree_public_key',
+            'braintree_private_key': 'braintree_private_key',
+            'braintree_enabled': 'braintree_enabled',
+            'klarna_api_key': 'klarna_api_key',
+            'klarna_username': 'klarna_username',
+            'klarna_password': 'klarna_password',
+            'klarna_enabled': 'klarna_enabled',
+            'afterpay_merchant_id': 'afterpay_merchant_id',
+            'afterpay_secret_key': 'afterpay_secret_key',
+            'afterpay_enabled': 'afterpay_enabled',
+            'affirm_public_api_key': 'affirm_public_api_key',
+            'affirm_private_api_key': 'affirm_private_api_key',
+            'affirm_enabled': 'affirm_enabled'
           };
           
           const mappedKey = keyMapping[row.setting_key] || row.setting_key;
           
           // Try to parse JSON, but if it fails use raw value
           let value = row.setting_value;
-          try {
-            // Try to parse JSON - this handles quoted strings, booleans, objects, arrays
-            value = JSON.parse(value);
-          } catch (e) {
-            // Keep raw value if not valid JSON
+          
+          // Handle NULL values
+          if (value === null) {
+            value = '';
+            //console.log(`${row.setting_key} has NULL value, defaulting to empty string`);
+          } else {
+            try {
+              // Try to parse JSON - this handles quoted strings, booleans, objects, arrays
+              value = JSON.parse(value);
+            } catch (e) {
+              // Keep raw value if not valid JSON
+            }
           }
           
           // For boolean fields in our settings, convert string to boolean
           if (mappedKey.includes('enabled') || mappedKey.includes('required') || mappedKey === 'maintenance_mode') {
-            if (value === '1' || value === 1 || value === 'true') {
+            if (value === '1' || value === 1 || value === 'true' || value === true) {
               value = true;
-            } else if (value === '0' || value === 0 || value === 'false') {
+            } else if (value === '0' || value === 0 || value === 'false' || value === false) {
               value = false;
             }
+            //console.log(`${mappedKey} boolean conversion: ${row.setting_value} -> ${value}`);
           }
           
           // Decrypt sensitive payment fields if they are encrypted
@@ -239,17 +300,26 @@ export class SettingsService {
               'affirm_private_api_key'
             ];
             
-            if (sensitiveKeys.includes(mappedKey) && isEncrypted(value)) {
-              try {
-                value = safeDecrypt(value);
-              } catch (error) {
-                console.warn(`Failed to decrypt ${mappedKey}, using original value`);
-                // Keep the original value if decryption fails
+            if (sensitiveKeys.includes(mappedKey)) {
+              //console.log(`Checking if ${mappedKey} needs decryption. Value starts with: ${typeof value === 'string' ? value.substring(0, 10) : value}...`);
+              if (isEncrypted(value)) {
+                try {
+                  value = safeDecrypt(value);
+                  //console.log(`Successfully decrypted ${mappedKey}`);
+                } catch (error) {
+                  console.warn(`Failed to decrypt ${mappedKey}, using original value`);
+                  // Keep the original value if decryption fails
+                }
+              } else {
+                console.log(`${mappedKey} is not encrypted`);
               }
             }
           }
           
           // Store the value
+          // if (mappedKey.includes('stripe') || mappedKey.includes('paypal')) {
+          //   console.log(`Storing ${mappedKey} in ${mappedCategory}: ${typeof value === 'string' && value.length > 20 ? value.substring(0, 20) + '...' : value}`);
+          // }
           (settings[mappedCategory as keyof PlatformSettings] as any)[mappedKey] = value;
           
         }
@@ -262,6 +332,11 @@ export class SettingsService {
           settings[category] = DEFAULT_SETTINGS[category];
         }
       }
+
+      
+      // Cache the results
+      this.settingsCache = settings;
+      this.cacheTimestamp = now;
       
       return settings;
     } catch (error) {
@@ -274,7 +349,18 @@ export class SettingsService {
   async updateSettings(category: string, settings: any): Promise<void> {
     const pool = await getPool();
     
+    console.log(`[SettingsService] Updating ${category} settings:`, 
+      category === 'payments' ? 
+        Object.keys(settings).reduce((acc, key) => {
+          acc[key] = key.includes('secret') || key.includes('private') ? 'hidden' : settings[key];
+          return acc;
+        }, {} as any) : 
+        settings
+    );
+    
+    
     for (const [key, value] of Object.entries(settings)) {
+           
       // Encrypt sensitive payment fields before storing
       let valueToStore = value;
       
@@ -298,14 +384,18 @@ export class SettingsService {
         ];
         
         if (sensitiveKeys.includes(key)) {
+          console.log(`${key} is a sensitive key, checking if encryption needed`);
           // Only encrypt if not already encrypted
           if (!isEncrypted(value)) {
             try {
               valueToStore = encryptSensitiveData(value);
+              console.log(`Encrypted ${key}`);
             } catch (error) {
               console.error(`Failed to encrypt ${key}:`, error);
               // Continue with unencrypted value if encryption fails
             }
+          } else {
+            console.log(`${key} is already encrypted`);
           }
         }
       }
@@ -318,17 +408,32 @@ export class SettingsService {
       
       if ((existing as any[]).length > 0) {
         // Update existing setting - update both value and category
+        console.log(`Updating existing setting ${key} in category ${category}`);
         await pool.execute(
           'UPDATE company_settings SET setting_value = ?, category = ?, updated_at = NOW() WHERE setting_key = ?',
           [JSON.stringify(valueToStore), category, key]
         );
+        //console.log(`Successfully updated ${key}`);
       } else {
         // Insert new setting
+        //console.log(`Inserting new setting ${key} in category ${category}`);
         await pool.execute(
           'INSERT INTO company_settings (category, setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
           [category, key, JSON.stringify(valueToStore)]
         );
+        //console.log(`Successfully inserted ${key}`);
       }
+    }
+    
+    // Clear cache after updates
+    this.clearCache();
+    
+    // Also clear any old cache that might exist
+    try {
+      const { clearSettingsCache } = await import('@/lib/settings');
+      clearSettingsCache();
+    } catch (e) {
+      // Ignore if the old cache doesn't exist
     }
   }
 
