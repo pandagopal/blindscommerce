@@ -1092,7 +1092,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <Fabric
                   ref={fabricRef}
                   data={productData.fabric}
-                  onChange={() => {}} // No-op function - all changes stay local until save
+                  onChange={(data) => updateProductData('fabric', data)} // Update parent state to persist changes
                   isReadOnly={isViewMode}
                   productId={productId}
                 />

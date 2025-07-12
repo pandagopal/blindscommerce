@@ -58,16 +58,12 @@ export interface FabricRef {
 const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly = false, productId }, ref) => {
   const [localData, setLocalData] = useState<FabricData>(data);
   const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Only update local state on initial load, not on every data prop change
-  // This prevents parent re-renders from resetting our local changes
+  // Update local state when data prop changes
+  // This ensures data persists when switching tabs
   useEffect(() => {
-    if (!isInitialized) {
-      setLocalData(data);
-      setIsInitialized(true);
-    }
-  }, [data, isInitialized]);
+    setLocalData(data);
+  }, [data]);
 
   // Cleanup blob URLs when component unmounts
   useEffect(() => {
@@ -87,7 +83,8 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
 
   const handleDataChange = (newData: FabricData) => {
     setLocalData(newData);
-    // NEVER call onChange - all changes stay local until parent calls getCurrentData()
+    // Call onChange to update parent state so data persists when switching tabs
+    onChange(newData);
   };
 
   const addNewFabric = () => {
@@ -138,7 +135,6 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
       )
     };
 
-    // NEVER call onChange - all changes stay local until parent calls getCurrentData()
     handleDataChange(updatedData);
   };
 
@@ -193,6 +189,11 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
           )
         };
         
+        // Schedule onChange call for next tick to avoid setState during render
+        setTimeout(() => {
+          onChange(updatedData);
+        }, 0);
+        
         return updatedData;
       });
       
@@ -201,7 +202,7 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
       console.error('Error selecting image:', error);
       toast.error('Failed to select image');
     }
-  }, [isReadOnly, productId]);
+  }, [isReadOnly, productId, onChange]);
 
   const removeImage = (fabricId: string) => {
     if (isReadOnly) return;
@@ -211,7 +212,7 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
       URL.revokeObjectURL(fabric.image.url);
     }
 
-    updateFabric(fabricId, 'image', null); // All changes stay local
+    updateFabric(fabricId, 'image', null);
   };
 
   const triggerFileInput = (fabricId: string) => {
