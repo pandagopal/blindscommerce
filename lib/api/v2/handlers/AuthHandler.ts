@@ -67,12 +67,12 @@ export class AuthHandler extends BaseHandler {
 
     return {
       user: {
-        userId: user.user_id,
+        userId: user.userId || user.user_id,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
+        firstName: user.firstName || user.first_name,
+        lastName: user.lastName || user.last_name,
         role: user.role,
-        isVerified: user.is_verified,
+        isVerified: user.isVerified || user.is_verified,
       }
     };
   }

@@ -148,11 +148,14 @@ export async function getCurrentUser(): Promise<User | null> {
         user_id: userData.user_id,  // Add snake_case version
         email: userData.email,
         firstName: userData.first_name,
+        first_name: userData.first_name,  // Add snake_case version
         lastName: userData.last_name,
+        last_name: userData.last_name,    // Add snake_case version
         phone: userData.phone,
         isAdmin: userData.role === 'admin' || userData.role === 'super_admin',
         role: userData.role,
-        vendorId: vendorId
+        vendorId: vendorId,
+        is_verified: userData.is_verified
       };
     } catch (error) {
       console.error('Error fetching user data:', error);
