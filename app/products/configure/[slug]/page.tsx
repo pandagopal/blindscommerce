@@ -59,6 +59,13 @@ export default function ProductConfiguratorPage() {
             if (detailRes.ok) {
               const detailData = await detailRes.json();
               const productToSet = detailData.data || detailData;
+              
+              // Apply fallback values for dimension limits if they're NULL
+              if (!productToSet.custom_width_min) productToSet.custom_width_min = 12;
+              if (!productToSet.custom_width_max) productToSet.custom_width_max = 95;
+              if (!productToSet.custom_height_min) productToSet.custom_height_min = 10;
+              if (!productToSet.custom_height_max) productToSet.custom_height_max = 300;
+              
               console.log('Setting product with:', {
                 hasData: !!detailData.data,
                 hasFabricOptions: !!productToSet.fabricOptions,
@@ -67,17 +74,38 @@ export default function ProductConfiguratorPage() {
                 controlCount: productToSet.controlTypes?.length,
                 hasPricingMatrix: !!productToSet.pricingMatrix,
                 pricingMatrixCount: productToSet.pricingMatrix?.length,
-                basePrice: productToSet.base_price
+                basePrice: productToSet.base_price,
+                dimensions: {
+                  width_min: productToSet.custom_width_min,
+                  width_max: productToSet.custom_width_max,
+                  height_min: productToSet.custom_height_min,
+                  height_max: productToSet.custom_height_max
+                }
               });
               setProduct(productToSet);
             } else {
+              // Apply fallback values for search result too
+              if (!product.custom_width_min) product.custom_width_min = 12;
+              if (!product.custom_width_max) product.custom_width_max = 95;
+              if (!product.custom_height_min) product.custom_height_min = 10;
+              if (!product.custom_height_max) product.custom_height_max = 300;
               setProduct(product);
             }
           } catch (detailError) {
             console.warn('Could not fetch detailed product info, using search result:', detailError);
+            // Apply fallback values for search result too
+            if (!product.custom_width_min) product.custom_width_min = 12;
+            if (!product.custom_width_max) product.custom_width_max = 95;
+            if (!product.custom_height_min) product.custom_height_min = 10;
+            if (!product.custom_height_max) product.custom_height_max = 300;
             setProduct(product);
           }
         } else {
+          // Apply fallback values for search result too
+          if (!product.custom_width_min) product.custom_width_min = 12;
+          if (!product.custom_width_max) product.custom_width_max = 95;
+          if (!product.custom_height_min) product.custom_height_min = 10;
+          if (!product.custom_height_max) product.custom_height_max = 300;
           setProduct(product);
         }
       } catch (error: any) {

@@ -135,16 +135,6 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     const minHeight = dimensions?.minHeight || product?.custom_height_min;
     const maxHeight = dimensions?.maxHeight || product?.custom_height_max;
 
-    // Extracted dimension values
-
-    // If no dimension data from database, don't validate
-    if (!minWidth || !maxWidth || !minHeight || !maxHeight) {
-      // Missing dimension data, skipping validation
-      return ''; // No validation if database doesn't have dimension limits
-    }
-    
-    // Validation will proceed with database values
-
     // Add eighths fraction to get total dimension
     let totalValue = numValue;
     if (type === 'width') {
@@ -553,8 +543,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             value={config.width}
                             onChange={(e) => handleDimensionChange('width', e.target.value)}
                             placeholder="0"
-                            min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth || product?.custom_width_min || 12}
-                            max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth || product?.custom_width_max || 96}
+                            min={product?.dimensions?.minWidth || product?.options?.dimensions?.minWidth || product?.custom_width_min}
+                            max={product?.dimensions?.maxWidth || product?.options?.dimensions?.maxWidth || product?.custom_width_max}
                             step="1"
                             pattern="[0-9]*"
                             inputMode="numeric"
@@ -606,8 +596,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             value={config.height}
                             onChange={(e) => handleDimensionChange('height', e.target.value)}
                             placeholder="0"
-                            min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight || product?.custom_height_min || 12}
-                            max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight || product?.custom_height_max || 120}
+                            min={product?.dimensions?.minHeight || product?.options?.dimensions?.minHeight || product?.custom_height_min}
+                            max={product?.dimensions?.maxHeight || product?.options?.dimensions?.maxHeight || product?.custom_height_max}
                             step="1"
                             pattern="[0-9]*"
                             inputMode="numeric"
