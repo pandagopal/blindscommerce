@@ -108,7 +108,6 @@ export default function VendorOrderDetailsPage() {
         <div>Customer: {order.customer_name || order.customerName}</div>
         <div>Email: {order.customer_email || order.customerEmail}</div>
         <div>My Items Total: <span className="font-semibold text-green-600">${(parseFloat(order.vendor_items_total) || 0).toFixed(2)}</span></div>
-        <div>Full Order Total: <span className="font-semibold">${(parseFloat(order.total_amount || order.total) || 0).toFixed(2)}</span></div>
       </div>
       <h2 className="text-lg font-semibold mb-2">Order Items</h2>
       <div className="overflow-x-auto mb-6">
@@ -193,10 +192,6 @@ export default function VendorOrderDetailsPage() {
       <div className="flex justify-between items-center font-bold text-right">
         <span>My Items Total:</span>
         <span className="text-green-600">${(parseFloat(order.vendor_items_total) || 0).toFixed(2)}</span>
-      </div>
-      <div className="flex justify-between items-center text-gray-600 text-sm">
-        <span>Full Order Total:</span>
-        <span>${(parseFloat(order.total_amount || order.total) || 0).toFixed(2)}</span>
       </div>
     </div>
   );

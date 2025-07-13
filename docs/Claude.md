@@ -268,6 +268,10 @@
   },
   
   "database_patterns": {
+    "database connectivity":{
+      "Connection":"Always connect to database using mysql command , use .env file details to connect to Database.",
+      "SQL Queries in Code": "Always first check against database using DESCRIBE command"
+    },
     "connection_management": {
       "pool_size": "10 max connections",
       "queue_limit": "0 (unlimited queue)",

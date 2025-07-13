@@ -428,8 +428,9 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      // Filter orders that contain items from this vendor
+      // Filter orders that contain items from this vendor and are not disabled
       whereConditions.push('EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.order_id AND oi.vendor_id = ?)');
+      whereConditions.push('(o.is_disabled IS NULL OR o.is_disabled = FALSE)');
       whereParams.push(vendorId);
     }
 
@@ -669,8 +670,9 @@ export class OrderService extends BaseService {
     }
 
     if (vendorId) {
-      // Filter orders that contain items from this vendor
+      // Filter orders that contain items from this vendor and are not disabled
       whereConditions.push('EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.order_id AND oi.vendor_id = ?)');
+      whereConditions.push('(o.is_disabled IS NULL OR o.is_disabled = FALSE)');
       whereParams.push(vendorId);
     }
 

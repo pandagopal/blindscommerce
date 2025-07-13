@@ -29,6 +29,7 @@ export class AdminHandler extends BaseHandler {
       'users': () => this.getUsers(req),
       'vendors': () => this.getVendors(req),
       'orders': () => this.getOrders(req),
+      'orders/:id': () => this.getOrder(action[1]),
       'analytics': () => this.getAnalytics(req),
       'categories': () => this.getCategories(req),
       'categories/:id': () => this.getCategory(action[1]),
@@ -61,6 +62,7 @@ export class AdminHandler extends BaseHandler {
       'vendors': () => this.createVendor(req),
       'users': () => this.createUser(req),
       'settings/test-taxjar': () => this.testTaxJar(req),
+      'orders/:id/disable': () => this.disableOrder(action[1]),
     };
 
     return this.routeAction(action, routes);
@@ -78,6 +80,16 @@ export class AdminHandler extends BaseHandler {
       'products/:id': () => this.updateProduct(action[1], req),
       'vendors/:id': () => this.updateVendor(action[1], req),
       'users/:id': () => this.updateUser(action[1], req),
+    };
+
+    return this.routeAction(action, routes);
+  }
+
+  async handlePATCH(req: NextRequest, action: string[], user: any): Promise<any> {
+    this.requireRole(user, 'ADMIN');
+    
+    const routes = {
+      'orders/:id': () => this.updateOrderStatus(action[1], req),
     };
 
     return this.routeAction(action, routes);
@@ -1388,6 +1400,86 @@ export class AdminHandler extends BaseHandler {
       return { success: true };
     } catch (error) {
       throw new ApiError('Failed to delete user', 500);
+    }
+  }
+
+  private async getOrder(orderId: string) {
+    try {
+      const id = parseInt(orderId);
+      if (isNaN(id)) {
+        throw new ApiError('Invalid order ID', 400);
+      }
+
+      const order = await orderService.getOrderById(id);
+      if (!order) {
+        throw new ApiError('Order not found', 404);
+      }
+
+      return order;
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to fetch order', 500);
+    }
+  }
+
+  private async disableOrder(orderId: string) {
+    try {
+      const id = parseInt(orderId);
+      if (isNaN(id)) {
+        throw new ApiError('Invalid order ID', 400);
+      }
+
+      const pool = await getPool();
+      const [result] = await pool.execute(
+        'UPDATE orders SET is_disabled = TRUE WHERE order_id = ?',
+        [id]
+      );
+
+      if ((result as any).affectedRows === 0) {
+        throw new ApiError('Order not found', 404);
+      }
+
+      return { success: true, message: 'Order disabled successfully' };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to disable order', 500);
+    }
+  }
+
+  private async updateOrderStatus(orderId: string, req: NextRequest) {
+    try {
+      const id = parseInt(orderId);
+      if (isNaN(id)) {
+        throw new ApiError('Invalid order ID', 400);
+      }
+
+      const body = await req.json();
+      const { status } = body;
+
+      if (!status) {
+        throw new ApiError('Status is required', 400);
+      }
+
+      const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+      if (!validStatuses.includes(status)) {
+        throw new ApiError('Invalid status', 400);
+      }
+
+      const pool = await getPool();
+      const [result] = await pool.execute(
+        'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
+        [status, id]
+      );
+
+      if ((result as any).affectedRows === 0) {
+        throw new ApiError('Order not found', 404);
+      }
+
+      // Return the updated order
+      return await this.getOrder(orderId);
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      throw new ApiError('Failed to update order status', 500);
     }
   }
 }

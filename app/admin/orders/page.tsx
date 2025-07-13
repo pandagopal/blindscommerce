@@ -342,14 +342,27 @@ export default function AdminOrdersPage() {
                         Edit
                       </Link>
                       <button
-                        onClick={() => {
-                          if (confirm('Are you sure you want to delete this order?')) {
-                            // Handle delete
+                        onClick={async () => {
+                          if (confirm('Are you sure you want to disable this order? It will be hidden from vendor dashboard.')) {
+                            try {
+                              const res = await fetch(`/api/v2/admin/orders/${order.order_id}/disable`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                              });
+                              if (!res.ok) {
+                                const data = await res.json();
+                                throw new Error(data.error || 'Failed to disable order');
+                              }
+                              alert('Order has been disabled');
+                              fetchOrders();
+                            } catch (err: any) {
+                              alert(err.message || 'Failed to disable order');
+                            }
                           }
                         }}
                         className="text-red-600 hover:text-red-900"
                       >
-                        Delete
+                        Disable
                       </button>
                     </td>
                   </tr>
