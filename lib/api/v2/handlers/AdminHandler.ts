@@ -1174,12 +1174,20 @@ export class AdminHandler extends BaseHandler {
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || '';
     const categoryId = searchParams.get('categoryId');
+    const vendorId = searchParams.get('vendorId');
+    const status = searchParams.get('status');
+    const sortBy = searchParams.get('sortBy') || 'created_at';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
     
     try {
       const offset = (page - 1) * limit;
       const products = await productService.getProducts({
         search,
         categoryId: categoryId ? parseInt(categoryId) : undefined,
+        vendorId: vendorId ? parseInt(vendorId) : undefined,
+        isActive: status === 'active' ? true : status === 'inactive' ? false : undefined,
+        sortBy: sortBy as any,
+        sortOrder: sortOrder.toUpperCase() as any,
         limit,
         offset
       });
@@ -1410,7 +1418,7 @@ export class AdminHandler extends BaseHandler {
         throw new ApiError('Invalid order ID', 400);
       }
 
-      const order = await orderService.getOrderById(id);
+      const order = await orderService.getOrderWithDetails(id);
       if (!order) {
         throw new ApiError('Order not found', 404);
       }
@@ -1460,7 +1468,7 @@ export class AdminHandler extends BaseHandler {
         throw new ApiError('Status is required', 400);
       }
 
-      const validStatuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
       if (!validStatuses.includes(status)) {
         throw new ApiError('Invalid status', 400);
       }

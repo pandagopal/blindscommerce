@@ -206,9 +206,14 @@ export class ProductService extends BaseService {
       whereParams.push(categoryId);
     }
 
-    if (vendorId) {
-      whereConditions.push('vp.vendor_id = ?');
-      whereParams.push(vendorId);
+    if (vendorId !== undefined && vendorId !== null) {
+      if (vendorId === 0) {
+        // Special case: vendorId=0 means products not in vendor_products table
+        whereConditions.push('vp.vendor_product_id IS NULL');
+      } else {
+        whereConditions.push('vp.vendor_id = ?');
+        whereParams.push(vendorId);
+      }
     }
 
     if (search) {
@@ -234,8 +239,8 @@ export class ProductService extends BaseService {
 
     // Add vendor-only filter if requested
     if (vendorOnly) {
-      // Only show products that have a vendor (either in products.vendor_id or vendor_products)
-      whereConditions.push('(p.vendor_id IS NOT NULL OR vp.vendor_id IS NOT NULL)');
+      // Only show products that are associated with vendors in vendor_products table
+      whereConditions.push('vp.vendor_product_id IS NOT NULL');
     }
 
     const whereClause = whereConditions.length > 0 
@@ -311,10 +316,13 @@ export class ProductService extends BaseService {
         MIN(vd.discount_value) as discount_value,
         COALESCE(pi.image_url, p.primary_image_url) as primary_image_url,
         COALESCE(AVG(pr.rating), 0) as avg_rating,
-        COUNT(DISTINCT pr.review_id) as review_count
+        COUNT(DISTINCT pr.review_id) as review_count,
+        MIN(vp.vendor_id) as vendor_id,
+        MIN(vi.business_name) as vendor_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())

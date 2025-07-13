@@ -41,6 +41,8 @@ interface Product {
   base_price: number;
   created_at: string;
   updated_at: string;
+  vendor_id?: number;
+  vendor_name?: string;
 }
 
 interface UnifiedProductPageProps {
@@ -128,6 +130,8 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [vendorFilter, setVendorFilter] = useState('all');
+  const [vendors, setVendors] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentPage, setCurrentPage] = useState(1);
@@ -223,7 +227,14 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     if (isListMode) {
       fetchProducts();
     }
-  }, [currentPage, typeFilter, statusFilter, sortBy, sortOrder, searchQuery, isListMode]);
+  }, [currentPage, typeFilter, statusFilter, vendorFilter, sortBy, sortOrder, searchQuery, isListMode]);
+
+  // Fetch vendors for admin filter
+  useEffect(() => {
+    if (isListMode && userRole === 'admin') {
+      fetchVendors();
+    }
+  }, [isListMode, userRole]);
 
   // Separate useEffect for edit/view mode - only depends on productId and mode
   useEffect(() => {
@@ -231,6 +242,20 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       loadProductData();
     }
   }, [isEditMode, isViewMode, productId]);
+
+  const fetchVendors = async () => {
+    try {
+      const res = await fetch('/api/v2/admin/vendors?limit=100&status=active');
+      const data = await res.json();
+      if (res.ok && data.success !== false) {
+        // Handle both data.data and direct data response
+        const vendorList = data.data?.vendors || data.vendors || data.data || [];
+        setVendors(vendorList);
+      }
+    } catch (error) {
+      console.error('Error fetching vendors:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -246,9 +271,19 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       if (searchQuery) params.append('search', searchQuery);
       if (statusFilter !== 'all') params.append('status', statusFilter);
+      if (vendorFilter !== 'all' && userRole === 'admin') {
+        if (vendorFilter === 'none') {
+          params.append('vendorId', '0'); // 0 indicates products with no vendor
+        } else {
+          params.append('vendorId', vendorFilter);
+        }
+      }
       
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const fullUrl = `${apiPath}?${params.toString()}`;
+      
+      console.log('Fetching products with URL:', fullUrl);
+      console.log('Vendor filter:', vendorFilter);
       
       const res = await fetch(fullUrl);
       const data = await res.json();
@@ -296,7 +331,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
     
     try {
       setLoading(true);
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const fullUrl = `${apiPath}/${numericId}`;
       
       // Load basic product data
@@ -615,7 +650,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const toggleProductStatus = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -639,7 +674,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
   const deleteProduct = async (product: Product) => {
     try {
-      const apiPath = userRole === 'admin' ? '/api/v2/commerce/products' : '/api/v2/vendors/products';
+      const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const res = await fetch(`${apiPath}/${product.product_id}`, {
         method: 'DELETE',
       });
@@ -721,7 +756,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
 
         {/* Filters and Search */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="relative">
               <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
@@ -729,24 +764,43 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                className="w-full pl-10 pr-4 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
               />
             </div>
 
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+              className="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
 
+            {userRole === 'admin' && (
+              <select
+                value={vendorFilter}
+                onChange={(e) => {
+                  setVendorFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+              >
+                <option value="all">All Vendors</option>
+                <option value="none">Not Associated</option>
+                {vendors.map((vendor) => (
+                  <option key={vendor.vendor_info_id} value={vendor.vendor_info_id}>
+                    {vendor.business_name || `${vendor.first_name} ${vendor.last_name}`}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+              className="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
             >
               <option value="created_at">Date Created</option>
               <option value="name">Name</option>
@@ -756,7 +810,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             <select
               value={sortOrder}
               onChange={(e) => setSortOrder(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+              className="px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
             >
               <option value="desc">Descending</option>
               <option value="asc">Ascending</option>
@@ -789,6 +843,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                    {userRole === 'admin' && (
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vendor</th>
+                    )}
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Listed</th>
@@ -803,6 +860,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                         <div className="text-sm font-medium text-gray-900">{product.name}</div>
                         <div className="text-sm text-gray-500">{product.slug}</div>
                       </td>
+                      {userRole === 'admin' && (
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {product.vendor_name || '-'}
+                        </td>
+                      )}
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
                         {formatCurrency(product.base_price)}
                       </td>

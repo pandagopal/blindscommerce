@@ -217,7 +217,7 @@ export abstract class BaseHandler {
     min?: number,
     max?: number
   ): number | null {
-    if (!value) return null;
+    if (value === null || value === undefined || value === '') return null;
     
     const num = parseFloat(value);
     if (isNaN(num)) return null;

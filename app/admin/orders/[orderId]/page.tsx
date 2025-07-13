@@ -6,11 +6,12 @@ import Link from 'next/link';
 import { ArrowLeftIcon, PencilIcon, BanIcon, RefreshCwIcon } from 'lucide-react';
 
 const ORDER_STATUSES = [
-  'Pending',
-  'Processing',
-  'Shipped',
-  'Delivered',
-  'Cancelled',
+  { value: 'pending', label: 'Pending' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'shipped', label: 'Shipped' },
+  { value: 'delivered', label: 'Delivered' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'refunded', label: 'Refunded' },
 ];
 
 export default function AdminOrderDetailsPage() {
@@ -161,14 +162,15 @@ export default function AdminOrderDetailsPage() {
             <p className="text-sm text-gray-500">Status</p>
             <div className="flex items-center gap-2 mt-1">
               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                order.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                order.status === 'Shipped' ? 'bg-green-100 text-green-800' :
-                order.status === 'Delivered' ? 'bg-purple-100 text-purple-800' :
-                order.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
+                order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
+                order.status === 'shipped' ? 'bg-green-100 text-green-800' :
+                order.status === 'delivered' ? 'bg-purple-100 text-purple-800' :
+                order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                order.status === 'refunded' ? 'bg-gray-100 text-gray-800' :
                 'bg-gray-100 text-gray-800'
               }`}>
-                {order.status}
+                {ORDER_STATUSES.find(s => s.value === order.status)?.label || order.status}
               </span>
               {!isFinalStatus && (
                 <select
@@ -178,7 +180,7 @@ export default function AdminOrderDetailsPage() {
                   className="text-sm border border-gray-300 rounded px-2 py-1"
                 >
                   {ORDER_STATUSES.map((status) => (
-                    <option key={status} value={status}>{status}</option>
+                    <option key={status.value} value={status.value}>{status.label}</option>
                   ))}
                 </select>
               )}
@@ -285,7 +287,7 @@ export default function AdminOrderDetailsPage() {
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Billing Address</h2>
-          {order.billing_address ? (
+          {order.billing_address_line_1 ? (
             <div>
               <p>{order.billing_first_name} {order.billing_last_name}</p>
               <p className="text-gray-600">{order.billing_address_line_1}</p>
@@ -301,7 +303,7 @@ export default function AdminOrderDetailsPage() {
 
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-lg font-semibold mb-4">Shipping Address</h2>
-          {order.shipping_address ? (
+          {order.shipping_address_line_1 ? (
             <div>
               <p>{order.shipping_first_name} {order.shipping_last_name}</p>
               <p className="text-gray-600">{order.shipping_address_line_1}</p>
