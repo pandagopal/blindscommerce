@@ -306,6 +306,89 @@ export class OrderService extends BaseService {
   }
 
   /**
+   * Get order with vendor-specific details - only shows items from the specified vendor
+   */
+  async getVendorOrderWithDetails(orderId: number, vendorId: number): Promise<OrderWithDetails | null> {
+    // Get order and customer info with vendor-specific totals
+    const orderQuery = `
+      SELECT 
+        o.*,
+        u.email as customer_email,
+        CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+        u.phone as customer_phone,
+        (SELECT COALESCE(SUM(oi2.total_price), 0) 
+         FROM order_items oi2 
+         WHERE oi2.order_id = o.order_id 
+         AND oi2.vendor_id = ?) as vendor_items_total,
+        -- Shipping address details
+        sa.first_name as shipping_first_name,
+        sa.last_name as shipping_last_name,
+        sa.address_line_1 as shipping_address_line_1,
+        sa.address_line_2 as shipping_address_line_2,
+        sa.city as shipping_city,
+        sa.state_province as shipping_state,
+        sa.postal_code as shipping_postal_code,
+        sa.country as shipping_country,
+        sa.phone as shipping_phone,
+        sa.email as shipping_email,
+        -- Billing address details (for fallback when shipping same as billing)
+        ba.first_name as billing_first_name,
+        ba.last_name as billing_last_name,
+        ba.address_line_1 as billing_address_line_1,
+        ba.address_line_2 as billing_address_line_2,
+        ba.city as billing_city,
+        ba.state_province as billing_state,
+        ba.postal_code as billing_postal_code,
+        ba.country as billing_country,
+        ba.phone as billing_phone,
+        ba.email as billing_email
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.user_id
+      LEFT JOIN user_shipping_addresses sa ON o.shipping_address_id = sa.address_id
+      LEFT JOIN user_shipping_addresses ba ON o.billing_address_id = ba.address_id
+      WHERE o.order_id = ?
+      AND EXISTS (
+        SELECT 1 FROM order_items oi 
+        WHERE oi.order_id = o.order_id 
+        AND oi.vendor_id = ?
+      )
+      LIMIT 1
+    `;
+
+    const [rawOrder] = await this.executeQuery<OrderWithDetails>(orderQuery, [vendorId, orderId, vendorId]);
+    
+    if (!rawOrder) return null;
+    
+    const order = parsePriceFields(rawOrder, [
+      'total_amount', 'subtotal', 'tax_amount', 'shipping_amount', 'discount_amount', 'vendor_items_total'
+    ]);
+
+    // Get ONLY vendor-specific order items
+    const itemsQuery = `
+      SELECT 
+        oi.*,
+        p.name as product_name,
+        p.sku as product_sku,
+        p.primary_image_url as product_image,
+        vi.business_name as vendor_name
+      FROM order_items oi
+      JOIN orders o ON oi.order_id = o.order_id
+      JOIN products p ON oi.product_id = p.product_id
+      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+      WHERE oi.order_id = ?
+      AND oi.vendor_id = ?
+      ORDER BY oi.order_item_id
+    `;
+
+    const items = await this.executeQuery<any>(itemsQuery, [orderId, vendorId]);
+    
+    // Parse price fields for each item
+    order.items = parseArrayPrices(items, ['unit_price', 'total_price']);
+    
+    return order;
+  }
+
+  /**
    * Get orders with filtering and pagination
    */
   async getOrders(options: {
@@ -450,7 +533,21 @@ export class OrderService extends BaseService {
       const orderIds = orders.map(o => o.order_id);
       const placeholders = orderIds.map(() => '?').join(',');
       
-      const itemsQuery = `
+      // If vendorId is specified, only get items for that vendor
+      const itemsQuery = vendorId ? `
+        SELECT 
+          oi.*,
+          p.name as product_name,
+          p.sku as product_sku,
+          p.primary_image_url as product_image,
+          vi.business_name as vendor_name
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.product_id
+        LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+        WHERE oi.order_id IN (${placeholders})
+        AND oi.vendor_id = ?
+        ORDER BY oi.order_id, oi.order_item_id
+      ` : `
         SELECT 
           oi.*,
           p.name as product_name,
@@ -464,7 +561,8 @@ export class OrderService extends BaseService {
         ORDER BY oi.order_id, oi.order_item_id
       `;
 
-      const allItems = await this.executeQuery<any>(itemsQuery, orderIds);
+      const queryParams = vendorId ? [...orderIds, vendorId] : orderIds;
+      const allItems = await this.executeQuery<any>(itemsQuery, queryParams);
 
       // Group items by order
       const itemsByOrder = allItems.reduce((acc, item) => {

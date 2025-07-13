@@ -1442,6 +1442,7 @@ export class VendorsHandler extends BaseHandler {
     const { orders, total } = await this.orderService.getOrders({
       vendorId,
       status: searchParams.get('status') || undefined,
+      search: searchParams.get('search') || undefined,
       dateFrom: searchParams.get('dateFrom') 
         ? new Date(searchParams.get('dateFrom')!)
         : undefined,
@@ -1479,7 +1480,8 @@ export class VendorsHandler extends BaseHandler {
       throw new ApiError('Order not found', 404);
     }
 
-    return this.orderService.getOrderWithDetails(orderId);
+    // Use vendor-specific order details method that filters items
+    return this.orderService.getVendorOrderWithDetails(orderId, vendorId);
   }
 
   private async updateOrderStatus(id: string, req: NextRequest, user: any) {
