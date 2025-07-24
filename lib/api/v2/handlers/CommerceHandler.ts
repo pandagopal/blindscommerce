@@ -11,7 +11,8 @@ import {
   orderService,
   categoryService,
   settingsService,
-  paymentService 
+  paymentService,
+  pricingService 
 } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { getPool } from '@/lib/db';
@@ -352,17 +353,76 @@ export class CommerceHandler extends BaseHandler {
     }
 
     const searchParams = this.getSearchParams(req);
-    const quantity = this.sanitizeNumber(searchParams.get('quantity'), 1) || 1;
-    const couponCode = searchParams.get('coupon');
+    
+    // Get dimensions for custom blinds pricing
+    const width = this.sanitizeNumber(searchParams.get('width'), 12, 120);
+    const height = this.sanitizeNumber(searchParams.get('height'), 12, 120);
+    
+    if (!width || !height) {
+      throw new ApiError('Width and height are required for pricing calculation', 400);
+    }
 
-    const pricing = await this.productService.getProductPricing(
-      productId,
-      user?.userId || user?.user_id,
-      quantity,
-      couponCode || undefined
+    // Get optional configuration options
+    const colorId = this.sanitizeNumber(searchParams.get('colorId'));
+    const materialId = this.sanitizeNumber(searchParams.get('materialId'));
+    const mountType = this.sanitizeString(searchParams.get('mountType'));
+    const controlType = this.sanitizeString(searchParams.get('controlType'));
+    const headrailId = this.sanitizeNumber(searchParams.get('headrailId'));
+    const bottomRailId = this.sanitizeNumber(searchParams.get('bottomRailId'));
+
+    // Use new pricing service for formula-based pricing
+    const priceBreakdown = await pricingService.calculateProductPrice(productId, {
+      width,
+      height,
+      colorId,
+      materialId,
+      mountType,
+      controlType,
+      headrailId,
+      bottomRailId
+    });
+
+    // For backward compatibility, also check if old pricing matrix exists
+    const [product] = await productService.raw(
+      'SELECT pricing_method FROM products WHERE product_id = ?',
+      [productId]
     );
 
-    return pricing;
+    if (!product || product.pricing_method !== 'formula') {
+      // Fall back to old pricing matrix method
+      const matrixPrice = await this.getMatrixPrice(productId, width, height);
+      if (matrixPrice) {
+        return {
+          price: matrixPrice,
+          breakdown: null,
+          method: 'matrix'
+        };
+      }
+    }
+
+    return {
+      price: priceBreakdown.finalPrice,
+      breakdown: priceBreakdown,
+      method: 'formula'
+    };
+  }
+
+  private async getMatrixPrice(productId: number, width: number, height: number): Promise<number | null> {
+    try {
+      const [matrixEntry] = await productService.raw(
+        `SELECT base_price FROM product_pricing_matrix 
+         WHERE product_id = ? 
+         AND width_min <= ? AND width_max >= ?
+         AND height_min <= ? AND height_max >= ?
+         AND is_active = 1
+         LIMIT 1`,
+        [productId, width, width, height, height]
+      );
+      
+      return matrixEntry?.base_price || null;
+    } catch (error) {
+      return null;
+    }
   }
 
   private async getRelatedProducts(id: string) {

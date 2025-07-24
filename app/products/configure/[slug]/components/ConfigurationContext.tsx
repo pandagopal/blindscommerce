@@ -272,17 +272,39 @@ export function ConfigProvider({
     try {
       let basePrice = 0;
       
-      // 1. Get base price from pricing matrix based on width/height
+      // 1. Get price from new formula-based pricing API
       try {
-        const response = await fetch(`/api/v2/commerce/products/${product.product_id}/pricing?width=${config.width}&height=${config.height}`);
+        const params = new URLSearchParams({
+          width: config.width.toString(),
+          height: config.height.toString(),
+          ...(config.colorId && { colorId: config.colorId.toString() }),
+          ...(config.materialId && { materialId: config.materialId.toString() }),
+          ...(config.mountType && { mountType: mountTypes.find(mt => mt.id === config.mountType)?.name || '' }),
+          ...(config.controlType && { controlType: config.controlType }),
+          ...(config.headrailId && { headrailId: config.headrailId.toString() }),
+          ...(config.bottomRailId && { bottomRailId: config.bottomRailId.toString() })
+        });
+
+        const response = await fetch(`/api/v2/commerce/products/${product.product_id}/pricing?${params}`);
         if (response.ok) {
-          const pricingData = await response.json();
-          basePrice = pricingData.price || product.base_price || 0;
+          const result = await response.json();
+          if (result.success && result.data) {
+            // Use the formula-based pricing if available
+            if (result.data.method === 'formula' && result.data.breakdown) {
+              return { 
+                currentPrice: result.data.price, 
+                totalPrice: result.data.price * config.quantity 
+              };
+            } else {
+              // Fallback to matrix pricing
+              basePrice = result.data.price || product.base_price || 0;
+            }
+          }
         } else {
           basePrice = product.base_price || 0;
         }
       } catch (error) {
-        console.error('Error fetching pricing matrix:', error);
+        console.error('Error fetching pricing:', error);
         basePrice = product.base_price || 0;
       }
 

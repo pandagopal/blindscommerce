@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '../BaseHandler';
 import { getPool } from '@/lib/db';
 import { z } from 'zod';
-import { userService, vendorService, orderService, productService, settingsService } from '@/lib/services/singletons';
+import { userService, vendorService, orderService, productService, settingsService, shippingService } from '@/lib/services/singletons';
 import bcrypt from 'bcryptjs';
 
 // Validation schemas
@@ -62,6 +62,7 @@ export class AdminHandler extends BaseHandler {
       'vendors': () => this.createVendor(req),
       'users': () => this.createUser(req),
       'settings/test-taxjar': () => this.testTaxJar(req),
+      'settings/test-shipping': () => this.testShipping(req),
       'orders/:id/disable': () => this.disableOrder(action[1]),
     };
 
@@ -1055,6 +1056,44 @@ export class AdminHandler extends BaseHandler {
       if (error instanceof ApiError) throw error;
       console.error('Error testing TaxJar:', error);
       throw new ApiError('Failed to test TaxJar connection', 500);
+    }
+  }
+
+  private async testShipping(req: NextRequest) {
+    try {
+      const body = await req.json();
+      const { provider, api_key, account_number, environment } = body;
+
+      if (!provider || !api_key || !account_number) {
+        throw new ApiError('Provider, API key, and account number are required', 400);
+      }
+
+      // Save temporary settings for testing
+      await settingsService.updateSettings({
+        [`shipping_${provider}_enabled`]: 'true',
+        [`shipping_${provider}_api_key`]: api_key,
+        [`shipping_${provider}_account_number`]: account_number,
+        [`shipping_${provider}_environment`]: environment || 'production'
+      });
+
+      // Initialize shipping service with new settings
+      await shippingService.initialize();
+
+      // Test the connection
+      const result = await shippingService.testProviderConnection(provider);
+      
+      if (result.success) {
+        return {
+          success: true,
+          message: result.message
+        };
+      } else {
+        throw new ApiError(result.message, 400);
+      }
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error testing shipping provider:', error);
+      throw new ApiError('Failed to test shipping connection', 500);
     }
   }
 

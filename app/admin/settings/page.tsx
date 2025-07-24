@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { 
   Settings, Shield, Bell, Mail, DollarSign, Globe, 
-  Database, Key, AlertTriangle, Save, Upload, CreditCard 
+  Database, Key, AlertTriangle, Save, Upload, CreditCard, Truck 
 } from 'lucide-react';
 import PhoneInput from '@/components/ui/PhoneInput';
 
@@ -25,6 +25,8 @@ export default function AdminSettingsPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [testingTaxJar, setTestingTaxJar] = useState(false);
   const [taxJarTestResult, setTaxJarTestResult] = useState<{success: boolean; message: string} | null>(null);
+  const [testingShipping, setTestingShipping] = useState<{ups: boolean; dhl: boolean}>({ups: false, dhl: false});
+  const [shippingTestResults, setShippingTestResults] = useState<{ups: any; dhl: any}>({ups: null, dhl: null});
 
 
   const [settings, setSettings] = useState({
@@ -101,7 +103,16 @@ export default function AdminSettingsPage() {
       smtp_username: 'notifications@smartblindshub.com',
       taxjar_api_key: '',
       taxjar_environment: 'production',
-      use_taxjar_api: false
+      use_taxjar_api: false,
+      // Shipping Integrations
+      shipping_ups_enabled: false,
+      shipping_ups_api_key: '',
+      shipping_ups_account_number: '',
+      shipping_ups_environment: 'production',
+      shipping_dhl_enabled: false,
+      shipping_dhl_api_key: '',
+      shipping_dhl_account_number: '',
+      shipping_dhl_environment: 'production'
     }
   });
 
@@ -283,6 +294,40 @@ export default function AdminSettingsPage() {
       });
     } finally {
       setTestingTaxJar(false);
+    }
+  };
+
+  const testShippingConnection = async (provider: 'ups' | 'dhl') => {
+    setTestingShipping(prev => ({ ...prev, [provider]: true }));
+    setShippingTestResults(prev => ({ ...prev, [provider]: null }));
+    
+    try {
+      const response = await fetch('/api/v2/admin/settings/test-shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          provider,
+          api_key: safeSettings.integrations?.[`shipping_${provider}_api_key`] || '',
+          account_number: safeSettings.integrations?.[`shipping_${provider}_account_number`] || '',
+          environment: safeSettings.integrations?.[`shipping_${provider}_environment`] || 'production'
+        }),
+      });
+      
+      const result = await response.json();
+      setShippingTestResults(prev => ({ ...prev, [provider]: result }));
+    } catch (error) {
+      setShippingTestResults(prev => ({ 
+        ...prev, 
+        [provider]: {
+          success: false,
+          message: 'Failed to test connection'
+        }
+      }));
+    } finally {
+      setTestingShipping(prev => ({ ...prev, [provider]: false }));
     }
   };
 
@@ -1309,6 +1354,209 @@ export default function AdminSettingsPage() {
                                 : 'bg-red-50 border border-red-200 text-red-800'
                             }`}>
                               {taxJarTestResult.message}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium mb-4">Shipping Providers</h4>
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <div className="flex items-start">
+                        <Truck className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                        <div>
+                          <h4 className="font-medium text-blue-800">Shipping Integration</h4>
+                          <p className="text-sm text-blue-700 mt-1">
+                            Connect with UPS and DHL for real-time shipping rates and label generation.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* UPS Configuration */}
+                    <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white mb-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <Truck className="h-6 w-6 text-amber-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold">UPS</h3>
+                            <p className="text-sm text-gray-600">United Parcel Service shipping integration</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={safeSettings.integrations?.shipping_ups_enabled || false}
+                          onCheckedChange={(checked) => handleSettingChange('integrations', 'shipping_ups_enabled', checked)}
+                        />
+                      </div>
+                      
+                      {safeSettings.integrations?.shipping_ups_enabled && (
+                        <div className="mt-4 space-y-4 pl-13">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                API Key *
+                              </label>
+                              <Input
+                                type="password"
+                                value={safeSettings.integrations?.shipping_ups_api_key || ''}
+                                onChange={(e) => handleSettingChange('integrations', 'shipping_ups_api_key', e.target.value)}
+                                placeholder="Enter UPS API Key"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Account Number *
+                              </label>
+                              <Input
+                                type="password"
+                                value={safeSettings.integrations?.shipping_ups_account_number || ''}
+                                onChange={(e) => handleSettingChange('integrations', 'shipping_ups_account_number', e.target.value)}
+                                placeholder="Enter UPS Account Number"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Environment
+                            </label>
+                            <Select
+                              value={safeSettings.integrations?.shipping_ups_environment || 'production'}
+                              onValueChange={(value) => handleSettingChange('integrations', 'shipping_ups_environment', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="test">Test (CIE)</SelectItem>
+                                <SelectItem value="production">Production</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Get your credentials from the <a href="https://www.ups.com/upsdeveloperkit" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">UPS Developer Kit</a>
+                          </p>
+                          
+                          {/* UPS Test Button */}
+                          {safeSettings.integrations?.shipping_ups_api_key && safeSettings.integrations?.shipping_ups_account_number && (
+                            <div className="mt-4">
+                              <Button
+                                onClick={() => testShippingConnection('ups')}
+                                disabled={testingShipping.ups}
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                              >
+                                {testingShipping.ups ? 'Testing...' : 'Test UPS Connection'}
+                              </Button>
+                              
+                              {shippingTestResults.ups && (
+                                <div className={`mt-2 p-3 rounded-lg ${
+                                  shippingTestResults.ups.success 
+                                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                                    : 'bg-red-50 border border-red-200 text-red-800'
+                                }`}>
+                                  {shippingTestResults.ups.message}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* DHL Configuration */}
+                    <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
+                            <Truck className="h-6 w-6 text-yellow-700" />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-semibold">DHL</h3>
+                            <p className="text-sm text-gray-600">DHL Express shipping integration</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={safeSettings.integrations?.shipping_dhl_enabled || false}
+                          onCheckedChange={(checked) => handleSettingChange('integrations', 'shipping_dhl_enabled', checked)}
+                        />
+                      </div>
+                      
+                      {safeSettings.integrations?.shipping_dhl_enabled && (
+                        <div className="mt-4 space-y-4 pl-13">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                API Key *
+                              </label>
+                              <Input
+                                type="password"
+                                value={safeSettings.integrations?.shipping_dhl_api_key || ''}
+                                onChange={(e) => handleSettingChange('integrations', 'shipping_dhl_api_key', e.target.value)}
+                                placeholder="Enter DHL API Key"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Account Number *
+                              </label>
+                              <Input
+                                type="password"
+                                value={safeSettings.integrations?.shipping_dhl_account_number || ''}
+                                onChange={(e) => handleSettingChange('integrations', 'shipping_dhl_account_number', e.target.value)}
+                                placeholder="Enter DHL Account Number"
+                                className="font-mono text-sm"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Environment
+                            </label>
+                            <Select
+                              value={safeSettings.integrations?.shipping_dhl_environment || 'production'}
+                              onValueChange={(value) => handleSettingChange('integrations', 'shipping_dhl_environment', value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="test">Test</SelectItem>
+                                <SelectItem value="production">Production</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            Get your credentials from the <a href="https://developer.dhl.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">DHL Developer Portal</a>
+                          </p>
+                          
+                          {/* DHL Test Button */}
+                          {safeSettings.integrations?.shipping_dhl_api_key && safeSettings.integrations?.shipping_dhl_account_number && (
+                            <div className="mt-4">
+                              <Button
+                                onClick={() => testShippingConnection('dhl')}
+                                disabled={testingShipping.dhl}
+                                variant="outline"
+                                className="w-full sm:w-auto"
+                              >
+                                {testingShipping.dhl ? 'Testing...' : 'Test DHL Connection'}
+                              </Button>
+                              
+                              {shippingTestResults.dhl && (
+                                <div className={`mt-2 p-3 rounded-lg ${
+                                  shippingTestResults.dhl.success 
+                                    ? 'bg-green-50 border border-green-200 text-green-800' 
+                                    : 'bg-red-50 border border-red-200 text-red-800'
+                                }`}>
+                                  {shippingTestResults.dhl.message}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
