@@ -1,14 +1,127 @@
-import { Metadata } from "next";
-import Link from "next/link";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Measuring & Installation Services | Smart Blinds Hub",
-  description: "Professional measuring and installation services for your window treatments. Get the perfect fit with expert help.",
-};
+import { useState } from "react";
+import Link from "next/link";
+import { Loader2, CheckCircle } from "lucide-react";
 
 export default function MeasureInstallPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+    serviceType: "",
+    preferredDate: "",
+    alternateDate: "",
+    notes: ""
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Call the API endpoint
+      const response = await fetch('/api/v2/commerce/appointment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit appointment request');
+      }
+
+      const result = await response.json();
+      
+      // Store email before resetting
+      setSubmittedEmail(formData.email);
+      
+      // Show confirmation
+      setShowConfirmation(true);
+      
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        address: "",
+        city: "",
+        state: "",
+        zip: "",
+        serviceType: "",
+        preferredDate: "",
+        alternateDate: "",
+        notes: ""
+      });
+
+      // Hide confirmation after 5 seconds
+      setTimeout(() => {
+        setShowConfirmation(false);
+      }, 5000);
+    } catch (error) {
+      console.error("Error submitting appointment request:", error);
+      alert("There was an error submitting your request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    // Map hyphenated IDs to camelCase state keys
+    const fieldMap: { [key: string]: string } = {
+      'first-name': 'firstName',
+      'last-name': 'lastName',
+      'service-type': 'serviceType',
+      'preferred-date': 'preferredDate',
+      'alternate-date': 'alternateDate'
+    };
+    
+    const fieldName = fieldMap[id] || id;
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
+      {/* Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="flex items-center justify-center mb-4">
+              <div className="rounded-full bg-green-100 p-3">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-center mb-2">Appointment Request Received!</h3>
+            <p className="text-gray-600 text-center mb-6">
+              Thank you for your request. We'll contact you within 24 hours to confirm your appointment.
+            </p>
+            <p className="text-sm text-gray-500 text-center">
+              A confirmation email has been sent to {submittedEmail}.
+            </p>
+            <button
+              onClick={() => setShowConfirmation(false)}
+              className="mt-6 w-full bg-primary-red hover:bg-primary-red-dark text-white font-medium py-2 px-4 rounded-lg transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
       {/* Hero Section */}
       <div className="bg-gray-100 rounded-lg p-8 mb-10">
         <div className="max-w-3xl mx-auto text-center">
@@ -192,7 +305,7 @@ export default function MeasureInstallPage() {
         </h2>
 
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label
@@ -205,6 +318,8 @@ export default function MeasureInstallPage() {
                   type="text"
                   id="first-name"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.firstName}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -219,6 +334,8 @@ export default function MeasureInstallPage() {
                   type="text"
                   id="last-name"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.lastName}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -236,6 +353,8 @@ export default function MeasureInstallPage() {
                   type="email"
                   id="email"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -250,6 +369,8 @@ export default function MeasureInstallPage() {
                   type="tel"
                   id="phone"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.phone}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -266,6 +387,8 @@ export default function MeasureInstallPage() {
                 type="text"
                 id="address"
                 className="w-full p-2 border border-gray-300 rounded-md"
+                value={formData.address}
+                onChange={handleInputChange}
                 required
               />
             </div>
@@ -282,6 +405,8 @@ export default function MeasureInstallPage() {
                   type="text"
                   id="city"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.city}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -296,6 +421,8 @@ export default function MeasureInstallPage() {
                   type="text"
                   id="state"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.state}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -310,6 +437,8 @@ export default function MeasureInstallPage() {
                   type="text"
                   id="zip"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.zip}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -325,6 +454,8 @@ export default function MeasureInstallPage() {
               <select
                 id="service-type"
                 className="w-full p-2 border border-gray-300 rounded-md"
+                value={formData.serviceType}
+                onChange={handleInputChange}
                 required
               >
                 <option value="">Select a service</option>
@@ -346,6 +477,8 @@ export default function MeasureInstallPage() {
                   type="date"
                   id="preferred-date"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.preferredDate}
+                  onChange={handleInputChange}
                   required
                 />
               </div>
@@ -360,6 +493,8 @@ export default function MeasureInstallPage() {
                   type="date"
                   id="alternate-date"
                   className="w-full p-2 border border-gray-300 rounded-md"
+                  value={formData.alternateDate}
+                  onChange={handleInputChange}
                 />
               </div>
             </div>
@@ -375,14 +510,24 @@ export default function MeasureInstallPage() {
                 id="notes"
                 rows={4}
                 className="w-full p-2 border border-gray-300 rounded-md"
+                value={formData.notes}
+                onChange={handleInputChange}
               ></textarea>
             </div>
 
             <button
               type="submit"
-              className="bg-primary-red hover:bg-primary-red-dark text-white font-medium py-2 px-6 rounded-lg transition-colors"
+              disabled={isSubmitting}
+              className="bg-primary-red hover:bg-primary-red-dark text-white font-medium py-2 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Schedule Appointment
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin h-4 w-4 mr-2" />
+                  Submitting...
+                </>
+              ) : (
+                "Schedule Appointment"
+              )}
             </button>
           </form>
         </div>

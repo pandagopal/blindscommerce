@@ -33,10 +33,10 @@ export default function AdminSettingsPage() {
     general: {
       site_name: 'Smart Blinds Hub',
       site_description: 'Premium window treatments and smart home solutions',
-      contact_email: 'support@smartblindshub.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Business Ave, Austin, TX 78701',
-      timezone: 'America/Chicago',
+      contact_email: 'sales@smartblindshub.com',
+      phone: '+1 (316) 530-2635',
+      address: '15326 Old Redmond Rd, Redmond, WA 98052',
+      timezone: 'America/Los_Angeles',
       currency: 'USD',
       tax_rate: '8.25',
       maintenance_mode: false
@@ -98,9 +98,10 @@ export default function AdminSettingsPage() {
       mailchimp_api_key: '',
       twilio_account_sid: '',
       aws_s3_bucket: '',
-      smtp_server: 'smtp.smartblindshub.com',
-      smtp_port: '587',
-      smtp_username: 'notifications@smartblindshub.com',
+      smtp_server: 'mail.spacemail.com',
+      smtp_port: '465',
+      smtp_username: 'sales@smartblindshub.com',
+      smtp_password: '',
       taxjar_api_key: '',
       taxjar_environment: 'production',
       use_taxjar_api: false,
@@ -1266,6 +1267,17 @@ export default function AdminSettingsPage() {
                         <Input
                           value={safeSettings.integrations?.smtp_username || ''}
                           onChange={(e) => handleSettingChange('integrations', 'smtp_username', e.target.value)}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          SMTP Password
+                        </label>
+                        <Input
+                          type="password"
+                          value={safeSettings.integrations?.smtp_password || ''}
+                          onChange={(e) => handleSettingChange('integrations', 'smtp_password', e.target.value)}
+                          placeholder="Enter SMTP password"
                         />
                       </div>
                     </div>

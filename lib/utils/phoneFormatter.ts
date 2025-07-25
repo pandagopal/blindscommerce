@@ -22,7 +22,7 @@ export const COUNTRY_CONFIGS: Record<CountryCode, CountryPhoneConfig> = {
     flag: '🇺🇸',
     dialCode: '+1',
     format: '(XXX) XXX-XXXX',
-    placeholder: '(555) 123-4567',
+    placeholder: '(316) 530-2635',
     maxLength: 14,
     regex: /^(\+?1\s?)?(\(?\d{3}\)?\s?[\-.]?\s?\d{3}[\-.]?\s?\d{4})$/
   },

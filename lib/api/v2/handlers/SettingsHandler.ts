@@ -36,10 +36,10 @@ export class SettingsHandler extends BaseHandler {
         general: {
           site_name: 'Smart Blinds Hub',
           site_description: 'Premium window treatments and smart home solutions',
-          contact_email: 'support@smartblindshub.com',
-          phone: '+1 (555) 123-4567',
-          address: '123 Business Ave, Austin, TX 78701',
-          timezone: 'America/Chicago',
+          contact_email: 'sales@smartblindshub.com',
+          phone: '+1 (316) 530-2635',
+          address: '15326 Old Redmond Rd, Redmond, WA 98052',
+          timezone: 'America/Los_Angeles',
           currency: 'USD',
           tax_rate: '8.25',
           maintenance_mode: false

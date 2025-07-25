@@ -26,7 +26,7 @@ export default function SalesSupportPage() {
           const data = result.data;
           if (data && data.companyInfo) {
             setCompanyInfo({
-              emergencyHotline: data.companyInfo.emergencyHotline || '1-800-BLINDS',
+              emergencyHotline: data.companyInfo.emergencyHotline || '(316) 530-2635',
               salesEmail: data.companyInfo.salesEmail || 'sales@smartblindshub.com',
               supportEmail: data.companyInfo.supportEmail || 'support@smartblindshub.com'
             });

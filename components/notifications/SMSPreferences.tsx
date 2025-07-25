@@ -252,7 +252,7 @@ export default function SMSPreferences({
                 type="tel"
                 value={phone}
                 onChange={handlePhoneChange}
-                placeholder="(555) 123-4567"
+                placeholder="(316) 530-2635"
                 disabled={loading}
               />
             </div>

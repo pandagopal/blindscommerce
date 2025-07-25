@@ -238,6 +238,58 @@ class EmailService {
       meeting_link: meetingLink,
     });
   }
+
+  // Direct email sending method that uses database SMTP configuration
+  async sendEmail(options: {
+    to: string;
+    subject: string;
+    html: string;
+    from?: string;
+  }): Promise<boolean> {
+    const { getPool } = require('@/lib/db');
+    
+    try {
+      const pool = await getPool();
+      
+      // Get SMTP settings from database
+      const [settings] = await pool.execute(
+        `SELECT setting_key, setting_value FROM company_settings WHERE setting_key IN (
+          'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password',
+          'contact_email', 'site_name'
+        )`
+      );
+
+      const smtpConfig: any = {};
+      (settings as any[]).forEach((row: any) => {
+        smtpConfig[row.setting_key] = row.setting_value;
+      });
+
+      // Create transporter with database settings
+      const transporter = nodemailer.createTransport({
+        host: smtpConfig.smtp_server || 'localhost',
+        port: parseInt(smtpConfig.smtp_port || '587'),
+        secure: smtpConfig.smtp_port === '465', // true for 465, false for other ports
+        auth: smtpConfig.smtp_username && smtpConfig.smtp_password ? {
+          user: smtpConfig.smtp_username,
+          pass: smtpConfig.smtp_password,
+        } : undefined,
+      });
+
+      // Send email
+      const info = await transporter.sendMail({
+        from: options.from || `"${smtpConfig.site_name || 'Smart Blinds Hub'}" <${smtpConfig.contact_email || 'sales@smartblindshub.com'}>`,
+        to: options.to,
+        subject: options.subject,
+        html: options.html,
+      });
+
+      console.log('Email sent:', info.messageId);
+      return true;
+    } catch (error) {
+      console.error('Error sending email:', error);
+      return false;
+    }
+  }
 }
 
 // Export a singleton instance

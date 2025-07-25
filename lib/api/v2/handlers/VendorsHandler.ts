@@ -339,11 +339,12 @@ export class VendorsHandler extends BaseHandler {
         `,
         params: [productId]
       },
-      pricingMatrix: {
+      pricingFormula: {
         query: `
-          SELECT * FROM product_pricing_matrix 
+          SELECT * FROM product_pricing_formulas 
           WHERE product_id = ? 
-          ORDER BY width_min, height_min
+          AND is_active = 1
+          LIMIT 1
         `,
         params: [productId]
       },
@@ -1196,30 +1197,32 @@ export class VendorsHandler extends BaseHandler {
         }
       }
 
-      // Update pricing matrix
-      if (data.pricing_matrix && Array.isArray(data.pricing_matrix)) {
-        // Delete existing pricing matrix
-        await conn.execute('DELETE FROM product_pricing_matrix WHERE product_id = ?', [productId]);
-        
-        // Insert new pricing matrix
-        for (const price of data.pricing_matrix) {
-          await conn.execute(
-            `INSERT INTO product_pricing_matrix (
-              product_id, width_min, width_max, height_min, height_max,
-              base_price, price_per_sqft, is_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              productId,
-              price.width_min,
-              price.width_max,
-              price.height_min,
-              price.height_max,
-              price.base_price || 0,
-              price.price_per_sqft || 0,
-              price.is_active !== undefined ? price.is_active : 1
-            ]
-          );
-        }
+      // Update pricing formula
+      if (data.pricing_formula) {
+        // Update or insert pricing formula
+        await conn.execute(`
+          INSERT INTO product_pricing_formulas 
+          (product_id, pricing_type, fixed_base, width_rate, height_rate, area_rate, min_price, max_price)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE
+          pricing_type = VALUES(pricing_type),
+          fixed_base = VALUES(fixed_base),
+          width_rate = VALUES(width_rate),
+          height_rate = VALUES(height_rate),
+          area_rate = VALUES(area_rate),
+          min_price = VALUES(min_price),
+          max_price = VALUES(max_price),
+          updated_at = NOW()
+        `, [
+          productId,
+          data.pricing_formula.pricing_type || 'formula',
+          data.pricing_formula.fixed_base || 0,
+          data.pricing_formula.width_rate || 0,
+          data.pricing_formula.height_rate || 0,
+          data.pricing_formula.area_rate || 0,
+          data.pricing_formula.min_price || null,
+          data.pricing_formula.max_price || null
+        ]);
       }
 
       // Update fabric (using product_fabric_options table)

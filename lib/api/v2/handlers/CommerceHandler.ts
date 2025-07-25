@@ -253,13 +253,14 @@ export class CommerceHandler extends BaseHandler {
           `,
           params: [productId]
         },
-        pricingMatrix: {
+        pricingFormula: {
           query: `
-            SELECT id, width_min, width_max, height_min, height_max, 
-                   base_price, price_per_sqft
-            FROM product_pricing_matrix
+            SELECT formula_id, pricing_type, fixed_base, 
+                   width_rate, height_rate, area_rate,
+                   min_price, max_price
+            FROM product_pricing_formulas
             WHERE product_id = ? AND is_active = 1
-            ORDER BY width_min, height_min
+            LIMIT 1
           `,
           params: [productId]
         },
@@ -409,17 +410,25 @@ export class CommerceHandler extends BaseHandler {
 
   private async getMatrixPrice(productId: number, width: number, height: number): Promise<number | null> {
     try {
-      const [matrixEntry] = await productService.raw(
-        `SELECT base_price FROM product_pricing_matrix 
-         WHERE product_id = ? 
-         AND width_min <= ? AND width_max >= ?
-         AND height_min <= ? AND height_max >= ?
+      // Use new pricing formula instead of matrix
+      const [formula] = await productService.raw(
+        `SELECT fixed_base, width_rate, height_rate, area_rate 
+         FROM product_pricing_formulas 
+         WHERE product_id = ?
          AND is_active = 1
          LIMIT 1`,
-        [productId, width, width, height, height]
+        [productId]
       );
       
-      return matrixEntry?.base_price || null;
+      if (!formula) return null;
+      
+      // Calculate price using formula: base + (width_rate * width) + (height_rate * height) + (area_rate * width * height)
+      const price = formula.fixed_base + 
+                   (formula.width_rate * width) + 
+                   (formula.height_rate * height) + 
+                   (formula.area_rate * width * height);
+      
+      return price;
     } catch (error) {
       return null;
     }
