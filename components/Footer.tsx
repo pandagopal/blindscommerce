@@ -98,14 +98,6 @@ const Footer = () => {
               </li>
               <li>
                 <Link
-                  href="/shipping"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
-                  Shipping Policy
-                </Link>
-              </li>
-              <li>
-                <Link
                   href="/returns"
                   className="text-gray-300 hover:text-white transition-colors"
                 >

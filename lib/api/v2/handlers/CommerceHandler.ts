@@ -91,6 +91,7 @@ export class CommerceHandler extends BaseHandler {
       'orders/:id': () => this.getOrder(action[1], user),
       'order-stats': () => this.getOrderStats(user),
       'payment-methods': () => this.getPaymentMethods(req),
+      'payment/paypal/create-order': () => this.getPayPalClientToken(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -109,6 +110,8 @@ export class CommerceHandler extends BaseHandler {
       'orders/create-guest': () => this.createGuestOrder(req),
       'orders/:id/cancel': () => this.cancelOrder(action[1], user),
       'payment/process': () => this.processPayment(req, user),
+      'payment/paypal/create-order': () => this.createPayPalOrder(req, user),
+      'payment/paypal/capture-order': () => this.capturePayPalPayment(req),
       'payment/capture-paypal': () => this.capturePayPalPayment(req),
       'bulk-uploads': () => this.storeBulkUpload(req, user),
     };
@@ -1325,6 +1328,50 @@ export class CommerceHandler extends BaseHandler {
       });
     }
     
+    // Check if Google Pay is enabled (uses Stripe)
+    if (paymentSettings.stripe_enabled && 
+        paymentSettings.stripe_secret_key && 
+        paymentSettings.stripe_publishable_key &&
+        (paymentSettings.google_pay_enabled !== false)) { // Default enabled if Stripe is enabled
+      paymentMethods.push({
+        id: 'google_pay',
+        provider: 'stripe',
+        type: 'wallet',
+        name: 'Google Pay',
+        description: 'Pay quickly with your Google account',
+        min_amount: 0.5,
+        max_amount: 999999,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        recommended: false,
+        popular: true,
+        publishable_key: paymentSettings.stripe_publishable_key
+      });
+    }
+    
+    // Check if Apple Pay is enabled (uses Stripe)
+    if (paymentSettings.stripe_enabled && 
+        paymentSettings.stripe_secret_key && 
+        paymentSettings.stripe_publishable_key &&
+        (paymentSettings.apple_pay_enabled !== false)) { // Default enabled if Stripe is enabled
+      paymentMethods.push({
+        id: 'apple_pay',
+        provider: 'stripe',
+        type: 'wallet',
+        name: 'Apple Pay',
+        description: 'Pay securely with Touch ID or Face ID',
+        min_amount: 0.5,
+        max_amount: 999999,
+        currencies: ['USD'],
+        countries: ['US'],
+        estimated_fee: 0,
+        recommended: false,
+        popular: true,
+        publishable_key: paymentSettings.stripe_publishable_key
+      });
+    }
+    
     return {
       payment_methods: paymentMethods.filter(m => 
         m.min_amount <= amount && 
@@ -1661,5 +1708,54 @@ export class CommerceHandler extends BaseHandler {
       uploadId,
       message: 'Bulk upload record stored successfully'
     };
+  }
+
+  private async createPayPalOrder(req: NextRequest, user: any) {
+    try {
+      const body = await req.json();
+      
+      // Validate required fields for PayPal order
+      if (!body.amount || !body.currency) {
+        throw new ApiError('Amount and currency are required', 400);
+      }
+
+      // Process payment through PaymentService which will create PayPal order
+      const result = await paymentService.processPayment({
+        payment_method_id: 'paypal',
+        amount: body.amount,
+        currency: body.currency || 'USD',
+        payment_data: body.payment_data || {},
+        billing_address: body.billing_address || {},
+        shipping_address: body.shipping_address,
+        order_items: body.items || [],
+        metadata: {
+          user_id: user?.user_id?.toString() || 'guest',
+          session_id: body.session_id || '',
+          order_context: 'checkout'
+        }
+      });
+
+      return result;
+    } catch (error) {
+      console.error('PayPal order creation error:', error);
+      throw new ApiError(
+        error instanceof Error ? error.message : 'PayPal order creation failed',
+        500
+      );
+    }
+  }
+
+  private async getPayPalClientToken(req: NextRequest, user: any) {
+    try {
+      // Get PayPal client token for initialization
+      const result = await paymentService.getPayPalClientToken();
+      return result;
+    } catch (error) {
+      console.error('PayPal client token error:', error);
+      throw new ApiError(
+        error instanceof Error ? error.message : 'Failed to get PayPal client token',
+        500
+      );
+    }
   }
 }

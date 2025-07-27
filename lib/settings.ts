@@ -42,6 +42,9 @@ export interface PlatformSettings {
     stripe_webhook_secret: string;
     paypal_client_id: string;
     paypal_client_secret: string;
+    paypal_api_key: string;
+    paypal_username: string;
+    paypal_password: string;
     braintree_merchant_id: string;
     braintree_public_key: string;
     braintree_private_key: string;
@@ -115,6 +118,9 @@ const DEFAULT_SETTINGS: PlatformSettings = {
     stripe_webhook_secret: '',
     paypal_client_id: '',
     paypal_client_secret: '',
+    paypal_api_key: '',
+    paypal_username: '',
+    paypal_password: '',
     braintree_merchant_id: '',
     braintree_public_key: '',
     braintree_private_key: '',

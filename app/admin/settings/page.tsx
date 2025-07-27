@@ -58,6 +58,8 @@ export default function AdminSettingsPage() {
       afterpay_enabled: true,
       affirm_enabled: true,
       braintree_enabled: true,
+      google_pay_enabled: true,
+      apple_pay_enabled: true,
       payment_processing_fee: '2.9',
       minimum_order_amount: '25.00',
       free_shipping_threshold: '100.00',
@@ -69,6 +71,9 @@ export default function AdminSettingsPage() {
       // PayPal Configuration
       paypal_client_id: '',
       paypal_client_secret: '',
+      paypal_api_key: '',
+      paypal_username: '',
+      paypal_password: '',
       // Braintree Configuration
       braintree_merchant_id: '',
       braintree_public_key: '',
@@ -725,31 +730,72 @@ export default function AdminSettingsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Client ID *
+                            API Key *
                           </label>
                           <Input
                             type="password"
-                            value={safeSettings.payments?.paypal_client_id || ''}
-                            onChange={(e) => handleSettingChange('payments', 'paypal_client_id', e.target.value)}
-                            placeholder="Enter PayPal Client ID"
+                            value={safeSettings.payments?.paypal_api_key || ''}
+                            onChange={(e) => handleSettingChange('payments', 'paypal_api_key', e.target.value)}
+                            placeholder="Enter PayPal API Key"
                             className="font-mono text-sm"
                           />
                         </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Client Secret *
+                            Secret Key *
                           </label>
                           <Input
                             type="password"
                             value={safeSettings.payments?.paypal_client_secret || ''}
                             onChange={(e) => handleSettingChange('payments', 'paypal_client_secret', e.target.value)}
-                            placeholder="Enter PayPal Client Secret"
+                            placeholder="Enter PayPal Secret Key"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Username *
+                          </label>
+                          <Input
+                            type="password"
+                            value={safeSettings.payments?.paypal_username || ''}
+                            onChange={(e) => handleSettingChange('payments', 'paypal_username', e.target.value)}
+                            placeholder="Enter PayPal Username"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Password *
+                          </label>
+                          <Input
+                            type="password"
+                            value={safeSettings.payments?.paypal_password || ''}
+                            onChange={(e) => handleSettingChange('payments', 'paypal_password', e.target.value)}
+                            placeholder="Enter PayPal Password"
                             className="font-mono text-sm"
                           />
                         </div>
                       </div>
+                      <div className="mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Client ID (REST API)
+                            </label>
+                            <Input
+                              type="password"
+                              value={safeSettings.payments?.paypal_client_id || ''}
+                              onChange={(e) => handleSettingChange('payments', 'paypal_client_id', e.target.value)}
+                              placeholder="Enter PayPal Client ID (optional)"
+                              className="font-mono text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
                       <p className="text-xs text-gray-500">
-                        Get your credentials from the <a href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">PayPal Developer Dashboard</a>
+                        Get your credentials from the <a href="https://developer.paypal.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">PayPal Developer Dashboard</a>. 
+                        For classic PayPal integration, use API Key, Secret Key, Username, and Password. For REST API, use Client ID.
                       </p>
                     </div>
                   )}
@@ -986,6 +1032,52 @@ export default function AdminSettingsPage() {
                       </p>
                     </div>
                   )}
+                </div>
+
+                {/* Google Pay Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Google Pay</h3>
+                        <p className="text-sm text-gray-600">Pay quickly with your Google account (uses Stripe)</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={safeSettings.payments?.google_pay_enabled || false}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'google_pay_enabled', checked)}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                    <p><strong>Note:</strong> Google Pay uses your Stripe configuration. Make sure Stripe is enabled and configured above.</p>
+                  </div>
+                </div>
+
+                {/* Apple Pay Configuration */}
+                <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-gray-600" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold">Apple Pay</h3>
+                        <p className="text-sm text-gray-600">Pay securely with Touch ID or Face ID (uses Stripe)</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={safeSettings.payments?.apple_pay_enabled || false}
+                      onCheckedChange={(checked) => handleSettingChange('payments', 'apple_pay_enabled', checked)}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                    <p><strong>Note:</strong> Apple Pay uses your Stripe configuration. Make sure Stripe is enabled and configured above.</p>
+                  </div>
                 </div>
 
                 {/* General Payment Settings */}

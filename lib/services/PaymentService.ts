@@ -765,6 +765,37 @@ export class PaymentService extends BaseService {
     }
   }
 
+  // Helper method to get PayPal client token for frontend initialization
+  async getPayPalClientToken() {
+    if (!this.settingsService) {
+      throw new Error('Settings service not initialized');
+    }
+
+    const settings = await this.settingsService.getAllSettings();
+    const paypalSettings = settings.payments;
+
+    if (!paypalSettings?.paypal_enabled || !paypalSettings?.paypal_client_id || !paypalSettings?.paypal_client_secret) {
+      throw new Error('PayPal payment processing is not configured');
+    }
+
+    try {
+      return {
+        success: true,
+        data: {
+          client_token: '', // PayPal client token not needed for REST API
+          client_id: paypalSettings.paypal_client_id,
+          environment: paypalSettings.paypal_environment || 'sandbox',
+        },
+      };
+    } catch (error) {
+      console.error('PayPal client token error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to get PayPal client token',
+      };
+    }
+  }
+
   async refundPayment(paymentIntentId: string, amount?: number, reason?: string) {
     if (!this.stripe) {
       throw new Error('Payment processing is not configured');

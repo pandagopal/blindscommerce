@@ -43,6 +43,7 @@ export class AdminHandler extends BaseHandler {
       'rooms/:id': () => this.getRoom(action[1]),
       'products': () => this.getProducts(req),
       'products/:id': () => this.getProduct(action[1]),
+      'logs': () => this.getLogs(req),
     };
 
     return this.routeAction(action, routes);
@@ -1527,6 +1528,72 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       if (error instanceof ApiError) throw error;
       throw new ApiError('Failed to update order status', 500);
+    }
+  }
+
+  private async getLogs(req: NextRequest) {
+    const searchParams = new URL(req.url).searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const level = searchParams.get('level') || '';
+    const search = searchParams.get('search') || '';
+    const startDate = searchParams.get('startDate') || '';
+    const endDate = searchParams.get('endDate') || '';
+    const offset = (page - 1) * limit;
+    
+    try {
+      const pool = await getPool();
+      
+      // Build query
+      let query = 'SELECT * FROM system_logs WHERE 1=1';
+      let countQuery = 'SELECT COUNT(*) as total FROM system_logs WHERE 1=1';
+      const params: any[] = [];
+      
+      if (level) {
+        query += ' AND level = ?';
+        countQuery += ' AND level = ?';
+        params.push(level);
+      }
+      
+      if (search) {
+        const searchCondition = ' AND (message LIKE ? OR context LIKE ? OR user_id LIKE ?)';
+        query += searchCondition;
+        countQuery += searchCondition;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+      
+      if (startDate) {
+        query += ' AND created_at >= ?';
+        countQuery += ' AND created_at >= ?';
+        params.push(startDate);
+      }
+      
+      if (endDate) {
+        query += ' AND created_at <= ?';
+        countQuery += ' AND created_at <= ?';
+        params.push(endDate + ' 23:59:59');
+      }
+      
+      // Get total count
+      const [countResult] = await pool.execute(countQuery, params);
+      const total = (countResult as any[])[0].total;
+      
+      // Get paginated results
+      query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      const [logs] = await pool.execute(query, params);
+      
+      return {
+        logs: logs || [],
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+      throw new ApiError('Failed to fetch logs', 500);
     }
   }
 }

@@ -7,6 +7,7 @@
     "purpose": "comprehensive_technical_documentation_for_claude_ai_assistant",
     "consolidated_from": "26 documentation files merged into single reference",
     "latest_changes": "Added data_management_policy requiring all business data from database, no hardcoding"
+    "importan_rule":"When asked to implement feature ,first look what is implemented, if implemention exists then you have to enchance it, if it is not you have to implment completely. When i say completely means UI, middle layer, api , database everything . Nothing should be hardcoded in any layer.Nothing new should be ever created new unless it doesn't exist."
   },
   
   "project_overview": {
@@ -26,15 +27,6 @@
         "smart_home_integration",
         "ai_ar_product_visualization"
       ]
-    },
-    "performance_achievements": {
-      "api_reduction": "215 APIs → 50 APIs (77% reduction)",
-      "database_connections": "152/200 → 12/20 (85% reduction)",
-      "response_times": "350ms → 115ms average (67% improvement)",
-      "cache_hit_rate": "88% overall",
-      "test_coverage": ">90%",
-      "page_load": "<3s target achieved",
-      "api_response": "<1s target achieved"
     }
   },
   
@@ -258,12 +250,6 @@
       "automatic": "on data updates",
       "pattern_based": "wildcard key matching",
       "scheduled": "nightly cache warming"
-    },
-    "performance_impact": {
-      "database_queries": "70-90% reduction",
-      "page_load_times": "50-80% faster",
-      "api_response": "88% cache hit rate",
-      "cost_savings": "reduced server load"
     }
   },
   
@@ -423,30 +409,7 @@
       ]
     }
   },
-  
-  "api_consolidation_achievements": {
-    "metrics": {
-      "endpoint_reduction": "215 → 50 (77% reduction)",
-      "response_time": "350ms → 115ms (67% faster)",
-      "database_connections": "152 → 12 (92% reduction)",
-      "code_reduction": "~25% of API codebase removed",
-      "maintenance_burden": "significantly reduced"
-    },
-    "architectural_improvements": {
-      "action_based_routing": "single endpoint multiple operations",
-      "comprehensive_responses": "complete page data single call",
-      "standardized_errors": "25+ specific error codes",
-      "automatic_caching": "built into handlers",
-      "role_verification": "automatic permission checking"
-    },
-    "removed_features": {
-      "deprecated_apis": "165 files removed",
-      "unused_components": "~20 AR/VR components",
-      "empty_directories": "10+ cleaned up",
-      "duplicate_code": "consolidated into services"
-    }
-  },
-  
+    
   "critical_fixes_summary": {
     "snake_case_vs_camel_case_issue_2025": {
       "issue": "Property naming inconsistency causing user names not to display",
