@@ -61,14 +61,15 @@ const PaymentMethodSelector = ({
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/payments/methods?amount=${amount}&currency=${currency}&country=${country}`
+        `/api/v2/commerce/payment-methods?amount=${amount}&currency=${currency}&country=${country}`
       );
       
       if (!response.ok) {
         throw new Error('Failed to fetch payment methods');
       }
 
-      const data = await response.json();
+      const result = await response.json();
+      const data = result.data || result;
       setPaymentMethods(data.payment_methods || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load payment methods');

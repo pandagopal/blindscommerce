@@ -1,43 +1,54 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { ChevronLeft, CreditCard, Truck, ShieldCheck, Lock, User, MapPin, Loader2 } from "lucide-react";
 import PhoneInput from "@/components/ui/PhoneInput";
+import dynamic from "next/dynamic";
+
+// Dynamically import Stripe Payment Request to avoid SSR issues
+const StripePaymentRequest = dynamic(
+  () => import("@/components/payments/StripePaymentRequest"),
+  { 
+    ssr: false,
+    loading: () => <div className="p-4 text-center"><Loader2 className="animate-spin h-6 w-6 mx-auto" /></div>
+  }
+);
 
 // Payment Method Icons and Logos
-const PaymentIcon = ({ type, provider }: { type: string; provider: string }) => {
+const PaymentIcon = ({ id, type, provider }: { id: string; type: string; provider: string }) => {
   const iconClass = "h-6";
   
-  if (provider === 'stripe' && type === 'card') {
-    return (
-      <div className="flex items-center gap-1">
-        <img src="/images/payment/visa.svg" alt="Visa" className={iconClass} />
-        <img src="/images/payment/mastercard.svg" alt="Mastercard" className={iconClass} />
-        <img src="/images/payment/amex.svg" alt="Amex" className={iconClass} />
-        <img src="/images/payment/discover.svg" alt="Discover" className={iconClass} />
-      </div>
-    );
+  // Handle by payment method ID first for more specific matching
+  switch (id) {
+    case 'stripe_card':
+      return (
+        <div className="flex items-center gap-1">
+          <img src="/images/payment/visa.svg" alt="Visa" className={iconClass} />
+          <img src="/images/payment/mastercard.svg" alt="Mastercard" className={iconClass} />
+          <img src="/images/payment/amex.svg" alt="Amex" className={iconClass} />
+          <img src="/images/payment/discover.svg" alt="Discover" className={iconClass} />
+        </div>
+      );
+    case 'google_pay':
+      return <img src="/images/payment/google-pay.svg" alt="Google Pay" className={iconClass} />;
+    case 'apple_pay':
+      return <img src="/images/payment/apple-pay.svg" alt="Apple Pay" className={iconClass} />;
+    case 'paypal':
+      return <img src="/images/payment/paypal.svg" alt="PayPal" className={iconClass} />;
+    case 'klarna':
+      return <img src="/images/payment/klarna.svg" alt="Klarna" className={iconClass} />;
+    case 'afterpay':
+      return <img src="/images/payment/afterpay.svg" alt="Afterpay" className={iconClass} />;
+    case 'affirm':
+      return <img src="/images/payment/affirm.svg" alt="Affirm" className={iconClass} />;
+    case 'braintree':
+      return <CreditCard className="h-5 w-5 text-gray-600" />;
+    default:
+      return <CreditCard className="h-5 w-5 text-gray-600" />;
   }
-  if (provider === 'paypal') {
-    return <img src="/images/payment/paypal.svg" alt="PayPal" className={iconClass} />;
-  }
-  if (provider === 'klarna') {
-    return <img src="/images/payment/klarna.svg" alt="Klarna" className={iconClass} />;
-  }
-  if (provider === 'afterpay') {
-    return <img src="/images/payment/afterpay.svg" alt="Afterpay" className={iconClass} />;
-  }
-  if (provider === 'affirm') {
-    return <img src="/images/payment/affirm.svg" alt="Affirm" className={iconClass} />;
-  }
-  if (provider === 'braintree') {
-    return <CreditCard className="h-5 w-5 text-gray-600" />;
-  }
-  
-  return <CreditCard className="h-5 w-5 text-gray-600" />;
 };
 
 export default function CheckoutPage() {
@@ -46,11 +57,13 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const stripePaymentRef = useRef<any>(null);
   const [paymentStatus, setPaymentStatus] = useState<'success' | 'failed' | null>(null);
   const [isGuest, setIsGuest] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [loadingPaymentMethods, setLoadingPaymentMethods] = useState(true);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string>('');
   const [paymentData, setPaymentData] = useState({
     // Credit Card fields
     cardNumber: '',
@@ -180,6 +193,13 @@ export default function CheckoutPage() {
           // Handle V2 API response format { success: true, data: {...} }
           const methods = paymentData.data?.payment_methods || paymentData.payment_methods || [];
           setPaymentMethods(methods);
+          
+          // Extract Stripe publishable key from any Stripe payment method
+          const stripeMethod = methods.find((m: any) => m.provider === 'stripe' && m.publishable_key);
+          if (stripeMethod) {
+            setStripePublishableKey(stripeMethod.publishable_key);
+          }
+          
           // Auto-select the first recommended method
           const recommended = methods.find((m: any) => m.recommended);
           if (recommended) {
@@ -373,6 +393,8 @@ export default function CheckoutPage() {
   const isPaymentDetailsValid = () => {
     if (!selectedPaymentMethod) return false;
     
+    console.log('isPaymentDetailsValid called for:', selectedPaymentMethod);
+    
     if (selectedPaymentMethod === 'stripe_card') {
       // Check if card details are filled and valid
       const hasErrors = !!(
@@ -395,14 +417,237 @@ export default function CheckoutPage() {
       return !hasErrors && isComplete;
     }
     
-    // For PayPal, Klarna, Afterpay - no additional details needed
+    // For all other payment methods (PayPal, Klarna, Afterpay, Apple Pay, Google Pay, etc.) 
+    // no additional details needed as they use external authentication
     return true;
+  };
+
+  // Create order after successful payment
+  const createOrder = async (paymentResult: any) => {
+    const orderData = {
+      items: items.map(item => ({
+        id: item.product_id || 0,
+        vendor_id: item.vendor_id || item.configuration?.vendorId || item.configuration?.vendor_id || 1,
+        quantity: item.quantity,
+        price: item.unit_price,
+        name: item.name,
+        width: item.width,
+        height: item.height,
+        colorName: item.colorName || '',
+        colorId: item.color_id || 0,
+        configuration: item.configuration || {},
+      })),
+      shipping: {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        apt: formData.apt,
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country
+      },
+      billing: {
+        sameAsShipping: formData.sameAsShipping,
+        firstName: formData.sameAsShipping ? formData.firstName : formData.firstName,
+        lastName: formData.sameAsShipping ? formData.lastName : formData.lastName,
+        address: formData.sameAsShipping ? formData.address : formData.billingAddress,
+        apt: formData.sameAsShipping ? formData.apt : formData.billingApt,
+        city: formData.sameAsShipping ? formData.city : formData.billingCity,
+        state: formData.sameAsShipping ? formData.state : formData.billingState,
+        zipCode: formData.sameAsShipping ? formData.zipCode : formData.billingZipCode,
+        country: formData.sameAsShipping ? formData.country : formData.billingCountry
+      },
+      payment: {
+        method: selectedPaymentMethod,
+        transaction_id: paymentResult.provider_response?.id || 'payment_success',
+        status: 'completed'
+      },
+      subtotal: pricing.subtotal,
+      shipping_cost: pricing.shipping,
+      tax: pricing.tax,
+      total: pricing.total,
+      discount_amount: pricing.total_discount,
+      special_instructions: formData.specialInstructions
+    };
+
+    const apiEndpoint = isGuest ? '/api/v2/commerce/orders/create-guest' : '/api/v2/commerce/orders/create';
+    
+    const finalOrderData = isGuest ? {
+      ...orderData,
+      createAccount: formData.createAccount,
+      guestPassword: formData.guestPassword,
+      guestConfirmPassword: formData.guestConfirmPassword,
+    } : {
+      // Format data for logged-in user's createOrder endpoint
+      items: items.map(item => ({
+        productId: Number(item.product_id) || 0,
+        vendorId: Number(item.vendor_id || item.configuration?.vendorId || item.configuration?.vendor_id) || 1,
+        quantity: Number(item.quantity) || 1,
+        price: Number(item.unit_price) || 0,
+        discountAmount: 0,
+        taxAmount: 0,
+        configuration: {
+          ...item.configuration,
+          width: item.width,
+          height: item.height,
+          colorName: item.colorName || '',
+          colorId: item.color_id || 0,
+          name: item.name,
+        }
+      })),
+      shippingAddress: {
+        street: formData.address + (formData.apt ? `, ${formData.apt}` : ''),
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone
+      },
+      billingAddress: formData.sameAsShipping ? {
+        street: formData.address + (formData.apt ? `, ${formData.apt}` : ''),
+        city: formData.city,
+        state: formData.state,
+        zipCode: formData.zipCode,
+        country: formData.country,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone
+      } : {
+        street: formData.billingAddress + (formData.billingApt ? `, ${formData.billingApt}` : ''),
+        city: formData.billingCity,
+        state: formData.billingState,
+        zipCode: formData.billingZipCode,
+        country: formData.billingCountry,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone
+      },
+      paymentMethod: selectedPaymentMethod,
+      paymentDetails: {
+        transactionId: paymentResult.provider_response?.id || 'payment_success',
+        status: 'completed',
+        amount: pricing.total
+      },
+      notes: formData.specialInstructions || '',
+      subtotal: pricing.subtotal,
+      shippingCost: pricing.shipping,
+      tax: pricing.tax,
+      total: pricing.total,
+      discountAmount: pricing.total_discount
+    };
+
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(finalOrderData),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create order');
+    }
+
+    const result = await response.json();
+    
+    // Extract order data from V2 API response
+    const orderInfo = result.data || result;
+    const orderNumber = orderInfo.order_number || orderInfo.orderNumber || 'Order confirmed';
+    
+    // Redirect to success page (cart already cleared by order creation)
+    router.push(`/checkout/success?order=${orderNumber}`);
+  };
+
+  // Handle Stripe Payment Request (Google Pay / Apple Pay)
+  const handleStripePaymentMethod = async (paymentData: any) => {
+    setLoading(true);
+    
+    try {
+      const paymentRequest = {
+        payment_method_id: paymentData.paymentMethod.id,
+        amount: pricing.total,
+        currency: 'USD',
+        payment_data: {
+          // Payment method ID from Stripe
+          stripe_payment_method_id: paymentData.paymentMethod.id,
+        },
+        billing_address: {
+          email: paymentData.billingDetails.email || formData.email,
+          firstName: paymentData.billingDetails.name?.split(' ')[0] || formData.firstName,
+          lastName: paymentData.billingDetails.name?.split(' ').slice(1).join(' ') || formData.lastName,
+          address: paymentData.billingDetails.address.line1,
+          city: paymentData.billingDetails.address.city,
+          state: paymentData.billingDetails.address.state,
+          zipCode: paymentData.billingDetails.address.postal_code,
+          country: paymentData.billingDetails.address.country || 'US'
+        },
+        shipping_address: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          country: formData.country,
+          phone: formData.phone
+        },
+        order_items: items.map(item => ({
+          name: item.name || '',
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          product_id: item.product_id?.toString() || ''
+        }))
+      };
+
+      // Process payment
+      const paymentResponse = await fetch('/api/v2/commerce/payment/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentRequest),
+      });
+
+      const paymentResult = await paymentResponse.json();
+      
+      if (!paymentResponse.ok || !paymentResult.success) {
+        const errorMessage = paymentResult.error || paymentResult.message || 'Payment failed. Please try again.';
+        throw new Error(errorMessage);
+      }
+      
+      // Payment successful, create order
+      await createOrder(paymentResult);
+    } catch (error) {
+      console.error('Payment error:', error);
+      throw error; // Re-throw to be handled by the payment request component
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate payment details
+    // For Google Pay and Apple Pay, trigger the payment through the ref
+    if (selectedPaymentMethod === 'google_pay' || selectedPaymentMethod === 'apple_pay') {
+      if (stripePaymentRef.current?.triggerPayment) {
+        await stripePaymentRef.current.triggerPayment();
+      } else {
+        console.error('Stripe Payment Request component not ready');
+        alert('Payment method not available. Please try again.');
+      }
+      return;
+    }
+    
+    // Validate payment details for other payment methods
     if (!isPaymentDetailsValid()) {
       if (selectedPaymentMethod === 'stripe_card') {
         // Check for specific errors
@@ -502,6 +747,7 @@ export default function CheckoutPage() {
           throw new Error('Payment requires authentication');
         }
       }
+      
       
       if (!paymentResponse.ok || !paymentResult.success) {
         const errorMessage = paymentResult.error || paymentResult.message || 'Payment failed. Please check your payment details and try again.';
@@ -992,32 +1238,44 @@ export default function CheckoutPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {/* Credit/Debit Card Option */}
-                      {paymentMethods.find(m => m.provider === 'stripe' && m.type === 'card') && (
-                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedPaymentMethod === 'stripe_card' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}>
+                      {/* Dynamically render all payment methods from API */}
+                      {paymentMethods.map((method) => (
+                        <div 
+                          key={method.id}
+                          className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                            selectedPaymentMethod === method.id 
+                              ? 'border-blue-500 bg-blue-50' 
+                              : 'border-gray-300 hover:border-gray-400'
+                          }`}
+                        >
                           <label className="flex items-start cursor-pointer">
                             <input
                               type="radio"
                               name="paymentMethod"
-                              value="stripe_card"
-                              checked={selectedPaymentMethod === 'stripe_card'}
+                              value={method.id}
+                              checked={selectedPaymentMethod === method.id}
                               onChange={(e) => setSelectedPaymentMethod(e.target.value)}
                               className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
                             />
                             <div className="ml-3 flex-1">
                               <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-gray-900">Add a new card</span>
-                                <PaymentIcon type="card" provider="stripe" />
+                                <div>
+                                  <span className="text-sm font-medium text-gray-900">{method.name}</span>
+                                  <p className="text-xs text-gray-500">{method.description}</p>
+                                  {/* Show installment info for BNPL methods */}
+                                  {method.type === 'bnpl' && method.installments && (
+                                    <p className="text-xs text-blue-600 mt-1">
+                                      {method.installments} interest-free payments
+                                    </p>
+                                  )}
+                                </div>
+                                <PaymentIcon id={method.id} type={method.type} provider={method.provider} />
                               </div>
                             </div>
                           </label>
                           
-                          {/* Card Input Form */}
-                          {selectedPaymentMethod === 'stripe_card' && (
+                          {/* Card Input Form - only show for stripe_card */}
+                          {selectedPaymentMethod === 'stripe_card' && method.id === 'stripe_card' && (
                             <div className="mt-4 space-y-3">
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
@@ -1098,95 +1356,39 @@ export default function CheckoutPage() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      )}
-                      
-                      {/* PayPal Option */}
-                      {paymentMethods.find(m => m.provider === 'paypal') && (
-                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedPaymentMethod === 'paypal' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}>
-                          <label className="flex items-start cursor-pointer">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="paypal"
-                              checked={selectedPaymentMethod === 'paypal'}
-                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                          
+                          {/* Stripe Payment Request for Google Pay and Apple Pay */}
+                          {(selectedPaymentMethod === 'google_pay' || selectedPaymentMethod === 'apple_pay') && 
+                           method.id === selectedPaymentMethod && stripePublishableKey && (
+                            <StripePaymentRequest
+                              ref={stripePaymentRef}
+                              amount={pricing.total}
+                              currency="USD"
+                              country="US"
+                              publishableKey={stripePublishableKey}
+                              onPaymentMethod={handleStripePaymentMethod}
+                              onError={(error) => {
+                                console.error('Payment error:', error);
+                                setPaymentStatus('failed');
+                                setOrderCompleted(true);
+                              }}
+                              selectedMethod={selectedPaymentMethod}
+                              billingDetails={{
+                                email: formData.email,
+                                name: `${formData.firstName} ${formData.lastName}`.trim(),
+                                phone: formData.phone,
+                                address: {
+                                  line1: formData.address,
+                                  city: formData.city,
+                                  state: formData.state,
+                                  postal_code: formData.zipCode,
+                                  country: 'US'
+                                }
+                              }}
                             />
-                            <div className="ml-3 flex-1">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="text-sm font-medium text-gray-900">PayPal</span>
-                                  <p className="text-xs text-gray-500">Pay with your PayPal account</p>
-                                </div>
-                                <img src="/images/payment/paypal.svg" alt="PayPal" className="h-6" />
-                              </div>
-                            </div>
-                          </label>
+                          )}
                         </div>
-                      )}
-                      
-                      {/* Klarna Option */}
-                      {paymentMethods.find(m => m.provider === 'klarna') && (
-                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedPaymentMethod === 'klarna' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}>
-                          <label className="flex items-start cursor-pointer">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="klarna"
-                              checked={selectedPaymentMethod === 'klarna'}
-                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <div className="ml-3 flex-1">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="text-sm font-medium text-gray-900">Klarna</span>
-                                  <p className="text-xs text-gray-500">Split your purchase into 4 interest-free payments</p>
-                                </div>
-                                <img src="/images/payment/klarna.svg" alt="Klarna" className="h-6" />
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-                      )}
-                      
-                      {/* Afterpay Option */}
-                      {paymentMethods.find(m => m.provider === 'afterpay') && (
-                        <div className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedPaymentMethod === 'afterpay' 
-                            ? 'border-blue-500 bg-blue-50' 
-                            : 'border-gray-300 hover:border-gray-400'
-                        }`}>
-                          <label className="flex items-start cursor-pointer">
-                            <input
-                              type="radio"
-                              name="paymentMethod"
-                              value="afterpay"
-                              checked={selectedPaymentMethod === 'afterpay'}
-                              onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                            />
-                            <div className="ml-3 flex-1">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <span className="text-sm font-medium text-gray-900">Afterpay</span>
-                                  <p className="text-xs text-gray-500">4 interest-free payments. <a href="#" className="text-blue-600 underline">Info</a></p>
-                                </div>
-                                <img src="/images/payment/afterpay.svg" alt="Afterpay" className="h-6" />
-                              </div>
-                            </div>
-                          </label>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1207,6 +1409,13 @@ export default function CheckoutPage() {
                       I agree to the <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
                     </label>
                   </div>
+                  
+                  {/* Show helpful message if button is disabled */}
+                  {!loading && selectedPaymentMethod && !formData.acceptTerms && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Please accept the terms and conditions to continue
+                    </p>
+                  )}
 
                   <button
                     type="submit"

@@ -270,13 +270,17 @@ export class SettingsService {
           if (value === null) {
             value = '';
             //console.log(`${row.setting_key} has NULL value, defaulting to empty string`);
-          } else {
-            try {
-              // Try to parse JSON - this handles quoted strings, booleans, objects, arrays
-              value = JSON.parse(value);
-            } catch (e) {
-              // Keep raw value if not valid JSON
+          } else if (typeof value === 'string') {
+            // For string values, only try to parse if it looks like JSON
+            if (value.startsWith('{') || value.startsWith('[') || value === 'true' || value === 'false' || 
+                (value.startsWith('"') && value.endsWith('"')) || !isNaN(Number(value))) {
+              try {
+                value = JSON.parse(value);
+              } catch (e) {
+                // Keep raw value if not valid JSON
+              }
             }
+            // If it's a plain string (like API keys), keep it as is
           }
           
           // For boolean fields in our settings, convert string to boolean
@@ -421,12 +425,15 @@ export class SettingsService {
         [key]
       );
       
+      // For string values, store them directly without JSON.stringify to avoid double encoding
+      const finalValue = typeof valueToStore === 'string' ? valueToStore : JSON.stringify(valueToStore);
+      
       if ((existing as any[]).length > 0) {
         // Update existing setting - update both value and category
         console.log(`Updating existing setting ${key} in category ${category}`);
         await pool.execute(
           'UPDATE company_settings SET setting_value = ?, category = ?, updated_at = NOW() WHERE setting_key = ?',
-          [JSON.stringify(valueToStore), category, key]
+          [finalValue, category, key]
         );
         //console.log(`Successfully updated ${key}`);
       } else {
@@ -434,7 +441,7 @@ export class SettingsService {
         //console.log(`Inserting new setting ${key} in category ${category}`);
         await pool.execute(
           'INSERT INTO company_settings (category, setting_key, setting_value, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
-          [category, key, JSON.stringify(valueToStore)]
+          [category, key, finalValue]
         );
         //console.log(`Successfully inserted ${key}`);
       }

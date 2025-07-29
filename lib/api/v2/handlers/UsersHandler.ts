@@ -69,6 +69,8 @@ export class UsersHandler extends BaseHandler {
       'wishlist': () => this.getWishlist(req, user),
       'loyalty': () => this.getLoyaltyInfo(user),
       'commercial-eligibility': () => this.getCommercialEligibility(user),
+      'measurements': () => this.getMeasurements(req, user),
+      'configurations': () => this.getConfigurations(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -83,6 +85,7 @@ export class UsersHandler extends BaseHandler {
       'wishlist/add': () => this.addToWishlist(req, user),
       'verify-email': () => this.verifyEmail(req, user),
       'request-verification': () => this.requestVerification(user),
+      'measurements': () => this.createMeasurementRequest(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -431,23 +434,29 @@ export class UsersHandler extends BaseHandler {
 
     const wishlist = await this.userService.raw(
       `SELECT 
-        w.*,
+        wi.wishlist_item_id,
+        wi.added_at as created_at,
+        p.product_id,
         p.name,
         p.slug,
         p.primary_image_url,
         p.base_price,
         COALESCE(vp.vendor_price, p.base_price) as current_price
       FROM wishlist w
-      JOIN products p ON w.product_id = p.product_id
+      JOIN wishlist_items wi ON w.wishlist_id = wi.wishlist_id
+      JOIN products p ON wi.product_id = p.product_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       WHERE w.user_id = ?
-      ORDER BY w.created_at DESC
-      LIMIT ${limit} OFFSET ${offset}`,
+      ORDER BY wi.added_at DESC
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
       [user.user_id]
     );
 
     const [countResult] = await this.userService.raw(
-      'SELECT COUNT(*) as total FROM wishlist WHERE user_id = ?',
+      `SELECT COUNT(*) as total 
+       FROM wishlist w
+       JOIN wishlist_items wi ON w.wishlist_id = wi.wishlist_id
+       WHERE w.user_id = ?`,
       [user.user_id]
     );
 
@@ -466,19 +475,35 @@ export class UsersHandler extends BaseHandler {
       productId: z.number().positive(),
     }));
 
-    // Check if already in wishlist
+    // Get or create user's wishlist
+    let [wishlist] = await this.userService.raw(
+      'SELECT wishlist_id FROM wishlist WHERE user_id = ?',
+      [user.user_id]
+    );
+
+    if (!wishlist) {
+      // Create wishlist for user
+      const result = await this.userService.raw(
+        'INSERT INTO wishlist (user_id, created_at) VALUES (?, NOW())',
+        [user.user_id]
+      );
+      wishlist = { wishlist_id: (result as any).insertId };
+    }
+
+    // Check if product already in wishlist
     const [exists] = await this.userService.raw(
-      'SELECT 1 FROM wishlist WHERE user_id = ? AND product_id = ?',
-      [user.user_id, productId]
+      'SELECT 1 FROM wishlist_items WHERE wishlist_id = ? AND product_id = ?',
+      [wishlist.wishlist_id, productId]
     );
 
     if (exists) {
       throw new ApiError('Product already in wishlist', 400);
     }
 
+    // Add product to wishlist
     await this.userService.raw(
-      'INSERT INTO wishlist (user_id, product_id, created_at) VALUES (?, ?, NOW())',
-      [user.user_id, productId]
+      'INSERT INTO wishlist_items (wishlist_id, product_id, added_at) VALUES (?, ?, NOW())',
+      [wishlist.wishlist_id, productId]
     );
 
     return { message: 'Product added to wishlist' };
@@ -487,14 +512,17 @@ export class UsersHandler extends BaseHandler {
   private async removeFromWishlist(id: string, user: any) {
     this.requireAuth(user);
 
-    const wishlistId = parseInt(id);
-    if (isNaN(wishlistId)) {
-      throw new ApiError('Invalid wishlist ID', 400);
+    const wishlistItemId = parseInt(id);
+    if (isNaN(wishlistItemId)) {
+      throw new ApiError('Invalid wishlist item ID', 400);
     }
 
+    // Delete from wishlist_items, ensuring it belongs to the user
     const result = await this.userService.raw(
-      'DELETE FROM wishlist WHERE wishlist_id = ? AND user_id = ?',
-      [wishlistId, user.user_id]
+      `DELETE wi FROM wishlist_items wi
+       JOIN wishlist w ON wi.wishlist_id = w.wishlist_id
+       WHERE wi.wishlist_item_id = ? AND w.user_id = ?`,
+      [wishlistItemId, user.user_id]
     );
 
     if ((result as any).affectedRows === 0) {
@@ -678,6 +706,150 @@ export class UsersHandler extends BaseHandler {
       isActive: user.is_active,
       isVerified: user.is_verified,
       createdAt: user.created_at,
+    };
+  }
+
+  private async getMeasurements(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const searchParams = this.getSearchParams(req);
+    const { page, limit, offset } = this.getPagination(searchParams);
+    const sort = searchParams.get('sort') || 'created_at';
+    const order = (searchParams.get('order') || 'desc').toUpperCase();
+
+    // Validate sort and order
+    const allowedSorts = ['created_at', 'preferred_date', 'status'];
+    const sortField = allowedSorts.includes(sort) ? sort : 'created_at';
+    const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
+
+    // Get measurement requests - using safe integer values for LIMIT/OFFSET
+    const measurements = await this.userService.raw(
+      `SELECT 
+        mr.*,
+        CASE 
+          WHEN mr.status = 'scheduled' AND mr.preferred_date < CURDATE() THEN 'overdue'
+          ELSE mr.status
+        END as display_status
+      FROM measurement_requests mr
+      WHERE mr.user_id = ?
+      ORDER BY ${sortField} ${sortOrder}
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      [user.user_id]
+    );
+
+    // Get total count
+    const [countResult] = await this.userService.raw(
+      `SELECT COUNT(*) as total FROM measurement_requests WHERE user_id = ?`,
+      [user.user_id]
+    );
+
+    return {
+      measurements,
+      pagination: {
+        total: countResult.total,
+        page,
+        limit,
+        totalPages: Math.ceil(countResult.total / limit)
+      }
+    };
+  }
+
+  private async createMeasurementRequest(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const body = await req.json();
+    const {
+      order_id,
+      property_address,
+      preferred_date,
+      preferred_time,
+      contact_phone,
+      special_instructions,
+      room_details
+    } = body;
+
+    // Validate required fields
+    if (!property_address) {
+      throw new ApiError('Property address is required', 400);
+    }
+
+    // Insert measurement request
+    const result = await this.userService.raw(
+      `INSERT INTO measurement_requests 
+        (user_id, order_id, property_address, preferred_date, preferred_time, 
+         contact_phone, special_instructions, room_details, status, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      [
+        user.user_id,
+        order_id || null,
+        property_address,
+        preferred_date || null,
+        preferred_time || null,
+        contact_phone || user.phone,
+        special_instructions || null,
+        room_details ? JSON.stringify(room_details) : null
+      ]
+    );
+
+    const insertId = (result as any).insertId;
+
+    // Return the created measurement request
+    const [measurement] = await this.userService.raw(
+      `SELECT * FROM measurement_requests WHERE request_id = ?`,
+      [insertId]
+    );
+
+    return {
+      success: true,
+      measurement
+    };
+  }
+
+  private async getConfigurations(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const searchParams = this.getSearchParams(req);
+    const { page, limit, offset } = this.getPagination(searchParams);
+
+    // Get saved configurations
+    const configurations = await this.userService.raw(
+      `SELECT 
+        sc.*,
+        p.name as product_name,
+        p.slug as product_slug,
+        p.primary_image_url,
+        vi.business_name as vendor_name
+      FROM saved_configurations sc
+      LEFT JOIN products p ON sc.product_id = p.product_id
+      LEFT JOIN vendor_info vi ON sc.vendor_id = vi.vendor_info_id
+      WHERE sc.user_id = ?
+      ORDER BY sc.created_at DESC
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      [user.user_id]
+    );
+
+    // Get total count
+    const [countResult] = await this.userService.raw(
+      `SELECT COUNT(*) as total FROM saved_configurations WHERE user_id = ?`,
+      [user.user_id]
+    );
+
+    // Parse configuration data
+    const parsedConfigurations = configurations.map((config: any) => ({
+      ...config,
+      configuration_data: typeof config.configuration_data === 'string' 
+        ? JSON.parse(config.configuration_data) 
+        : config.configuration_data
+    }));
+
+    return {
+      configurations: parsedConfigurations,
+      pagination: {
+        total: countResult.total,
+        page,
+        limit,
+        totalPages: Math.ceil(countResult.total / limit)
+      }
     };
   }
 }

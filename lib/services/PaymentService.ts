@@ -11,6 +11,7 @@ interface PaymentIntent {
     expiryDate?: string;
     cvc?: string;
     cardholderName?: string;
+    stripe_payment_method_id?: string; // Payment method ID from Stripe Payment Request API
   };
   billing_address: {
     email: string;
@@ -120,7 +121,7 @@ export class PaymentService extends BaseService {
   }
 
   private getProviderFromMethodId(methodId: string): string {
-    if (methodId.startsWith('stripe_')) return 'stripe';
+    if (methodId.startsWith('stripe_') || methodId === 'google_pay' || methodId === 'apple_pay') return 'stripe';
     if (methodId === 'klarna') return 'klarna';
     if (methodId === 'affirm') return 'affirm';
     if (methodId === 'paypal') return 'paypal';
@@ -146,8 +147,12 @@ export class PaymentService extends BaseService {
       
       let paymentMethodId: string;
       
-      // Check if payment method ID was provided from frontend (production flow)
-      if (paymentIntent.payment_method_id && paymentIntent.payment_method_id.startsWith('pm_')) {
+      // Check if payment method ID was provided from frontend
+      // This could be from Stripe Elements, Google Pay, or Apple Pay
+      if (paymentIntent.payment_data?.stripe_payment_method_id) {
+        // Payment method ID from Google Pay / Apple Pay
+        paymentMethodId = paymentIntent.payment_data.stripe_payment_method_id;
+      } else if (paymentIntent.payment_method_id && paymentIntent.payment_method_id.startsWith('pm_')) {
         // Production flow: Use the payment method ID created by Stripe Elements on frontend
         paymentMethodId = paymentIntent.payment_method_id;
       } else if (isTestMode) {

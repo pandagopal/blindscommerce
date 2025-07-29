@@ -142,10 +142,12 @@ export const getPool = async (): Promise<mysql.Pool> => {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'blindscommerce',
       waitForConnections: true,
-      connectionLimit: 10,
+      connectionLimit: 25, // Increased from 10 to handle concurrent requests
       queueLimit: 0,
       connectTimeout: 20000, // 20 seconds connection timeout
-      multipleStatements: false
+      multipleStatements: false,
+      enableKeepAlive: true,
+      keepAliveInitialDelay: 0
     });
 
     const connection = await pool.getConnection();
@@ -657,12 +659,19 @@ export const getPoolInfo = async () => {
   
   try {
     const poolObj = (pool as any).pool;
-    return {
+    const info = {
       total: poolObj.config.connectionConfig.connectionLimit,
       free: poolObj._freeConnections.length,
       used: poolObj._allConnections.length - poolObj._freeConnections.length,
       queued: poolObj._connectionQueue.length
     };
+    
+    // Log warning if pool usage is high
+    if (info.used > info.total * 0.8) {
+      console.warn(`[Pool Warning] High connection usage: ${info.used}/${info.total} connections in use`);
+    }
+    
+    return info;
   } catch (error) {
     return null;
   }

@@ -72,24 +72,33 @@ export abstract class BaseService {
   }
 
   /**
-   * Execute multiple queries in parallel
+   * Execute multiple queries in parallel with optimized connection usage
    */
   protected async executeParallel<T extends Record<string, any>>(
     queries: Record<keyof T, { query: string; params: any[] }>
   ): Promise<T> {
-    const promises = Object.entries(queries).map(async ([key, { query, params }]) => {
-      try {
-        const result = await this.executeQuery(query, params);
-        return [key, result];
-      } catch (error) {
-        logError(error as Error, { key, query });
-        return [key, null];
-      }
-    });
+    const pool = await getPool();
+    const connection = await pool.getConnection();
+    
+    try {
+      const promises = Object.entries(queries).map(async ([key, { query, params }]) => {
+        try {
+          // Use the same connection for all parallel queries
+          const [rows] = await connection.execute(query, params);
+          return [key, rows];
+        } catch (error) {
+          logError(error as Error, { key, query });
+          return [key, null];
+        }
+      });
 
-    const results = await Promise.all(promises);
-    const resultObject = Object.fromEntries(results) as T;
-    return resultObject;
+      const results = await Promise.all(promises);
+      const resultObject = Object.fromEntries(results) as T;
+      return resultObject;
+    } finally {
+      // Always release the connection back to the pool
+      connection.release();
+    }
   }
 
   /**

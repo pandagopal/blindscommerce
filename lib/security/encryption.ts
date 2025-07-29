@@ -101,7 +101,10 @@ export function decryptSensitiveData(encryptedData: string): string {
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    // Only log in development to avoid console spam
+    if (process.env.NODE_ENV === 'development') {
+      console.debug('Decryption failed:', error instanceof Error ? error.message : 'Unknown error');
+    }
     throw new Error('Failed to decrypt sensitive data');
   }
 }
@@ -168,8 +171,11 @@ export function safeDecrypt(value: string): string {
   try {
     return decryptSensitiveData(value);
   } catch (error) {
-    console.warn(`Failed to decrypt value, returning empty string:`, error instanceof Error ? error.message : 'Unknown error');
-    return ''; // Return empty string for failed decryption instead of throwing
+    // Log less verbosely to avoid console spam
+    if (process.env.NODE_ENV === 'development') {
+      console.debug(`Decryption failed for value starting with: ${value.substring(0, 10)}...`);
+    }
+    return value; // Return original value instead of empty string to preserve functionality
   }
 }
 
