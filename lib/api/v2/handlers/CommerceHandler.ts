@@ -201,6 +201,10 @@ export class CommerceHandler extends BaseHandler {
         rooms: any[];
         features: any[];
         images: any[];
+        pricingMatrix: any[];
+        systemTypes: any[];
+        pricingFormulas: any[];
+        perSquarePricing: any[];
       }>({
         dimensions: {
           query: `SELECT * FROM product_dimensions WHERE product_id = ?`,
@@ -274,6 +278,43 @@ export class CommerceHandler extends BaseHandler {
             WHERE product_id = ? AND is_active = 1
           `,
           params: [productId]
+        },
+        pricingMatrix: {
+          query: `
+            SELECT pm.*, pst.system_name
+            FROM product_pricing_matrix pm
+            LEFT JOIN product_system_types pst ON pm.product_id = pst.product_id 
+              AND pm.system_type = pst.system_type
+            WHERE pm.product_id = ? AND pm.is_active = 1
+            ORDER BY pm.system_type, pm.fabric_code, pm.width_min, pm.height_min
+          `,
+          params: [productId]
+        },
+        systemTypes: {
+          query: `
+            SELECT system_type, system_name, sort_order, is_default
+            FROM product_system_types
+            WHERE product_id = ? AND is_active = 1
+            ORDER BY sort_order, system_name
+          `,
+          params: [productId]
+        },
+        pricingFormulas: {
+          query: `
+            SELECT *
+            FROM product_pricing_formulas
+            WHERE product_id = ? AND is_active = 1
+          `,
+          params: [productId]
+        },
+        perSquarePricing: {
+          query: `
+            SELECT *
+            FROM product_pricing_per_square
+            WHERE product_id = ? AND is_active = 1
+            LIMIT 1
+          `,
+          params: [productId]
         }
       });
 
@@ -332,6 +373,8 @@ export class CommerceHandler extends BaseHandler {
       }
 
       // Add configuration data to product
+      const perSquare = configData.perSquarePricing?.[0];
+      
       return {
         ...product,
         dimensions: configData.dimensions?.[0] || null,
@@ -341,7 +384,16 @@ export class CommerceHandler extends BaseHandler {
         features: configData.features || [],
         images: configData.images || [],
         pricingMatrix: configData.pricingMatrix || [],
-        fabricPricing: configData.fabricPricing || []
+        fabricPricing: configData.fabricPricing || [],
+        systemTypes: configData.systemTypes || [],
+        pricingFormulas: configData.pricingFormulas || [],
+        // Per-square pricing fields
+        pricing_model: perSquare ? 'per_square' : 'grid',
+        price_per_square: perSquare?.price_per_square,
+        square_unit: perSquare?.square_unit,
+        min_squares: perSquare?.min_squares,
+        add_on_motor: perSquare?.add_on_motor,
+        add_on_no_drill: perSquare?.add_on_no_drill
       };
     } catch (error) {
       console.error('Error loading product configuration:', error);

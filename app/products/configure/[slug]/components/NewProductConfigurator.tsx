@@ -38,6 +38,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
   const [config, setConfig] = useState({
     roomType: initialConfig.roomType || '',
     mountType: initialConfig.mountType || '',
+    systemType: initialConfig.systemType || '', // Add system type
     width: initialConfig.width || '',
     height: initialConfig.height || '',
     widthFraction: initialConfig.widthFraction || '0',
@@ -284,22 +285,69 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     const area = totalWidth * totalHeight;
     const areaInSqFt = area / 144; // Convert sq inches to sq ft
     
+    // Check if product uses per-square pricing
+    if (product?.pricing_model === 'per_square' && product?.price_per_square) {
+      // Per-square pricing calculation
+      const minSquares = product.min_squares || 1;
+      const effectiveArea = Math.max(areaInSqFt, minSquares);
+      let totalPrice = effectiveArea * parseFloat(product.price_per_square);
+      
+      // Add motor/electric add-on if selected
+      if (config.controlOption && config.controlOption.includes('motor')) {
+        totalPrice += parseFloat(product.add_on_motor) || 0;
+      }
+      
+      return totalPrice;
+    }
+    
+    // Grid-based or hybrid pricing
     // 1. Start with base price from Basic Info tab
     let totalPrice = parseFloat(product?.base_price) || 0;
     
-    // 2. Add pricing from Pricing Matrix based on width/height ranges
+    // 2. Add pricing from Pricing Matrix based on width/height ranges and system type
     if (product?.pricingMatrix && totalWidth > 0 && totalHeight > 0) {
-      const matrixPrice = product.pricingMatrix.find(matrix => 
-        totalWidth >= matrix.width_min && 
-        totalWidth <= matrix.width_max && 
-        totalHeight >= matrix.height_min && 
-        totalHeight <= matrix.height_max
-      );
+      // Find the correct pricing based on system type and fabric
+      const matrixPrice = product.pricingMatrix.find(matrix => {
+        const matchesDimensions = totalWidth >= matrix.width_min && 
+                                totalWidth <= matrix.width_max && 
+                                totalHeight >= matrix.height_min && 
+                                totalHeight <= matrix.height_max;
+        
+        // If system type is selected, match it; otherwise use default
+        const matchesSystem = !config.systemType || 
+                            matrix.system_type === config.systemType || 
+                            (!matrix.system_type && !config.systemType);
+        
+        // If fabric is selected, try to match fabric code
+        const selectedFabric = product?.fabricOptions?.find(f => 
+          f.fabric_option_id?.toString() === config.fabricType
+        );
+        const matchesFabric = !selectedFabric || 
+                            !matrix.fabric_code || 
+                            matrix.fabric_code === selectedFabric?.fabric_code;
+        
+        return matchesDimensions && matchesSystem && matchesFabric;
+      });
       
       if (matrixPrice) {
         totalPrice += parseFloat(matrixPrice.base_price) || 0;
         if (matrixPrice.price_per_sqft > 0) {
           totalPrice += areaInSqFt * parseFloat(matrixPrice.price_per_sqft);
+        }
+      } else if (product?.pricing_formulas) {
+        // Fallback to formula-based pricing for custom sizes
+        const formula = product.pricing_formulas.find(f => 
+          (!config.systemType || f.system_type === config.systemType) &&
+          (!selectedFabric || !f.fabric_code || f.fabric_code === selectedFabric?.fabric_code)
+        );
+        
+        if (formula) {
+          const formulaPrice = parseFloat(formula.fixed_base || 0) +
+                             (parseFloat(formula.width_rate || 0) * totalWidth) +
+                             (parseFloat(formula.height_rate || 0) * totalHeight) +
+                             (parseFloat(formula.area_rate || 0) * totalWidth * totalHeight);
+          
+          totalPrice = Math.max(formulaPrice, parseFloat(formula.min_charge || 0));
         }
       }
     }
@@ -507,6 +555,48 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 </p>
               )}
             </div>
+
+            {/* System Type - Only show if product has multiple systems */}
+            {product?.systemTypes && product.systemTypes.length > 0 && (
+              <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${
+                activeSection === 'system' ? 'border-blue-500 shadow-blue-100' : 'border-gray-100'
+              }`}
+                onFocus={() => setActiveSection('system')}
+                onBlur={() => setActiveSection(null)}
+              >
+                <h2 className="text-lg font-semibold mb-3 text-gray-900">
+                  Choose System Type
+                </h2>
+                
+                <div className="space-y-2">
+                  {product.systemTypes.map((system) => (
+                    <div
+                      key={system.system_type}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                        config.systemType === system.system_type
+                          ? 'border-blue-500 bg-blue-50 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => setConfig({ ...config, systemType: system.system_type })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{system.system_name}</h3>
+                          {system.price_difference && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {system.price_difference > 0 ? '+' : ''} ${system.price_difference.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                        {config.systemType === system.system_type && (
+                          <Check className="h-5 w-5 text-blue-500" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Enter Size */}
             <div className={`bg-white rounded-xl shadow-lg p-4 border transition-all ${

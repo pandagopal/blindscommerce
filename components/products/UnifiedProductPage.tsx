@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import BasicInfo from '@/components/products/shared/BasicInfo';
 import PricingMatrix from '@/components/products/shared/PricingMatrix';
+import PricingMatrixAdvanced from '@/components/products/shared/PricingMatrixAdvanced';
 import Options from '@/components/products/shared/Options';
 import Fabric, { FabricRef } from '@/components/products/shared/Fabric';
 import Images from '@/components/products/shared/Images';
@@ -1161,9 +1162,25 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
               </TabsContent>
 
               <TabsContent value="pricing">
-                <PricingMatrix
+                <PricingMatrixAdvanced
                   dimensions={productData.options.dimensions}
-                  initialData={productData.pricing}
+                  initialData={{
+                    systems: productData.pricing.systems || (productData.pricing.priceMatrix ? [{
+                      systemType: 'square_cassette',
+                      fabricCode: '',
+                      priceMatrix: productData.pricing.priceMatrix || {},
+                      matrixEntries: productData.pricing.matrixEntries || []
+                    }] : []),
+                    pricingModel: productData.pricing.pricingModel || 'grid',
+                    perSquarePrice: productData.pricing.perSquarePrice,
+                    squareUnit: productData.pricing.squareUnit,
+                    minSquares: productData.pricing.minSquares
+                  }}
+                  fabrics={productData.fabric?.fabrics?.map(f => ({
+                    fabric_option_id: f.id,
+                    fabric_name: f.name,
+                    fabric_code: f.id // Use ID as code since fabric doesn't have separate code
+                  })) || []}
                   onChange={(data) => updateProductData('pricing', data)}
                   isReadOnly={isViewMode}
                 />
