@@ -57,7 +57,7 @@ export function shouldRedirectFromPath(user: AuthUser, currentPath: string): boo
   }
   
   // Redirect if trying to access other role dashboards
-  const roleDashboards = ['/admin', '/vendor', '/sales', '/installer', '/trade', '/super-admin'];
+  const roleDashboards = ['/admin', '/vendor', '/sales', '/installer', '/shipping', '/super-admin'];
   return roleDashboards.some(dashboard => 
     currentPath.startsWith(dashboard) && !currentPath.startsWith(userDashboard)
   );
@@ -116,8 +116,8 @@ export function getWelcomeMessage(user: AuthUser): string {
       return `Welcome, ${user.firstName}! Ready to make some sales?`;
     case 'installer':
       return `Welcome, ${user.firstName}! You have new installation jobs waiting.`;
-    case 'trade_professional':
-      return `Welcome, ${user.firstName}! Access your trade pricing and projects.`;
+    case 'shipping_agent':
+      return `Welcome, ${user.firstName}! Manage your shipping assignments and deliveries.`;
     case 'customer':
     default:
       return `Welcome back, ${user.firstName}! Find the perfect window treatments.`;
@@ -170,12 +170,12 @@ export function getRoleNavigation(role: UserRole) {
         { name: 'Jobs', href: '/installer/jobs' },
         { name: 'Schedule', href: '/installer/appointments' }
       ];
-    case 'trade_professional':
+    case 'shipping_agent':
       return [
         ...baseNavigation,
-        { name: 'Trade Dashboard', href: '/trade' },
-        { name: 'Trade Catalog', href: '/trade/catalog' },
-        { name: 'Projects', href: '/trade/projects' }
+        { name: 'Shipping Dashboard', href: '/shipping' },
+        { name: 'Active Shipments', href: '/shipping/active' },
+        { name: 'Delivery Schedule', href: '/shipping/schedule' }
       ];
     case 'customer':
     default:

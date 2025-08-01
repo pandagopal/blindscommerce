@@ -3,26 +3,26 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  DollarSign,
-  ShoppingCart,
-  Users,
-  TrendingUp,
   Package,
-  FileText,
-  Award,
+  Truck,
+  MapPin,
+  Clock,
+  CheckCircle,
+  AlertCircle,
   Calendar,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 
 interface DashboardStats {
-  monthlyVolume: number;
-  activeProjects: number;
-  totalClients: number;
-  tradeDiscount: number;
-  pendingOrders: number;
-  completedOrders: number;
-  totalSavings: number;
-  creditLimit: number;
+  activeShipments: number;
+  completedDeliveries: number;
+  pendingPickups: number;
+  todayDeliveries: number;
+  weeklyDeliveries: number;
+  onTimeRate: number;
+  customerRating: number;
+  totalDistance: number;
 }
 
 interface User {
@@ -33,66 +33,66 @@ interface User {
   role: string;
 }
 
-export default function TradeDashboard() {
+export default function ShippingDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
-    monthlyVolume: 45280,
-    activeProjects: 12,
-    totalClients: 28,
-    tradeDiscount: 15,
-    pendingOrders: 8,
-    completedOrders: 156,
-    totalSavings: 8420,
-    creditLimit: 25000,
+    activeShipments: 12,
+    completedDeliveries: 156,
+    pendingPickups: 8,
+    todayDeliveries: 5,
+    weeklyDeliveries: 28,
+    onTimeRate: 94.5,
+    customerRating: 4.8,
+    totalDistance: 1250,
   });
 
-  const [recentActivity, setRecentActivity] = useState([]);
+  const [recentShipments, setRecentShipments] = useState([]);
 
   useEffect(() => {
-    const fetchActivity = async () => {
+    const fetchShipments = async () => {
       try {
-        const response = await fetch('/api/v2/trade/activity');
+        const response = await fetch('/api/v2/shipping/recent');
         if (response.ok) {
           const data = await response.json();
-          setRecentActivity(data.data || []);
+          setRecentShipments(data.data || []);
         }
       } catch (error) {
-        console.error('Failed to fetch activity:', error);
+        console.error('Failed to fetch shipments:', error);
       }
     };
     
-    fetchActivity();
+    fetchShipments();
   }, []);
 
   const quickActions = [
     {
-      name: 'Create Proposal',
-      href: '/trade/proposals/new',
-      icon: FileText,
-      description: 'Generate a new client proposal',
+      name: 'Active Shipments',
+      href: '/shipping/active',
+      icon: Package,
+      description: 'View and manage active deliveries',
       color: 'bg-blue-500',
     },
     {
-      name: 'Bulk Order',
-      href: '/trade/bulk-orders/new',
-      icon: ShoppingCart,
-      description: 'Place a bulk order for projects',
+      name: 'Pickup Schedule',
+      href: '/shipping/pickups',
+      icon: Truck,
+      description: 'Manage pickup appointments',
       color: 'bg-green-500',
     },
     {
-      name: 'Add Client',
-      href: '/trade/clients/new',
-      icon: Users,
-      description: 'Register a new client',
+      name: 'Delivery Routes',
+      href: '/shipping/routes',
+      icon: MapPin,
+      description: 'Optimize delivery routes',
       color: 'bg-purple-500',
     },
     {
-      name: 'View Catalog',
-      href: '/trade/catalog',
-      icon: Package,
-      description: 'Browse trade products',
+      name: 'Track Shipments',
+      href: '/shipping/tracking',
+      icon: Clock,
+      description: 'Real-time shipment tracking',
       color: 'bg-orange-500',
     },
   ];
@@ -103,17 +103,18 @@ export default function TradeDashboard() {
         const res = await fetch('/api/v2/auth/me');
         if (res.ok) {
           const result = await res.json();
-        const data = result.data || result;if (data.user.role !== 'trade_professional') {
+          const data = result.data || result;
+          if (data.user.role !== 'shipping_agent') {
             router.push('/');
             return;
           }
           setUser(data.user);
         } else {
-          router.push('/login?redirect=/trade');
+          router.push('/login?redirect=/shipping');
         }
       } catch (error) {
         console.error('Error fetching user:', error);
-        router.push('/login?redirect=/trade');
+        router.push('/login?redirect=/shipping');
       } finally {
         setLoading(false);
       }
@@ -144,14 +145,14 @@ export default function TradeDashboard() {
               Welcome back, {user?.first_name}!
             </h1>
             <p className="text-gray-600 mt-1">
-              Manage your trade account and projects from your dashboard
+              Manage your shipping assignments and deliveries
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <Award className="h-8 w-8 text-yellow-500" />
+            <Truck className="h-8 w-8 text-blue-500" />
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-900">Trade Professional</p>
-              <p className="text-sm text-gray-500">{stats.tradeDiscount}% Discount</p>
+              <p className="text-sm font-medium text-gray-900">Shipping Agent</p>
+              <p className="text-sm text-gray-500">On-Time Rate: {stats.onTimeRate}%</p>
             </div>
           </div>
         </div>
@@ -162,14 +163,12 @@ export default function TradeDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <DollarSign className="h-8 w-8 text-green-600" />
+              <Package className="h-8 w-8 text-blue-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Monthly Volume</dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  ${stats.monthlyVolume.toLocaleString()}
-                </dd>
+                <dt className="text-sm font-medium text-gray-500 truncate">Active Shipments</dt>
+                <dd className="text-lg font-medium text-gray-900">{stats.activeShipments}</dd>
               </dl>
             </div>
           </div>
@@ -178,12 +177,12 @@ export default function TradeDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <FileText className="h-8 w-8 text-blue-600" />
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Active Projects</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats.activeProjects}</dd>
+                <dt className="text-sm font-medium text-gray-500 truncate">Completed Deliveries</dt>
+                <dd className="text-lg font-medium text-gray-900">{stats.completedDeliveries}</dd>
               </dl>
             </div>
           </div>
@@ -192,12 +191,12 @@ export default function TradeDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <Users className="h-8 w-8 text-purple-600" />
+              <AlertCircle className="h-8 w-8 text-orange-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Clients</dt>
-                <dd className="text-lg font-medium text-gray-900">{stats.totalClients}</dd>
+                <dt className="text-sm font-medium text-gray-500 truncate">Pending Pickups</dt>
+                <dd className="text-lg font-medium text-gray-900">{stats.pendingPickups}</dd>
               </dl>
             </div>
           </div>
@@ -206,14 +205,12 @@ export default function TradeDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-red-600" />
+              <TrendingUp className="h-8 w-8 text-purple-600" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>
-                <dt className="text-sm font-medium text-gray-500 truncate">Total Savings</dt>
-                <dd className="text-lg font-medium text-gray-900">
-                  ${stats.totalSavings.toLocaleString()}
-                </dd>
+                <dt className="text-sm font-medium text-gray-500 truncate">Customer Rating</dt>
+                <dd className="text-lg font-medium text-gray-900">{stats.customerRating}/5.0</dd>
               </dl>
             </div>
           </div>
@@ -249,32 +246,32 @@ export default function TradeDashboard() {
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Activity */}
+        {/* Today's Schedule */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-medium text-gray-900">Recent Activity</h2>
+            <h2 className="text-lg font-medium text-gray-900">Today's Schedule</h2>
             <Link
-              href="/trade/activity"
+              href="/shipping/schedule"
               className="text-sm text-primary-red hover:underline"
             >
-              View all
+              View full schedule
             </Link>
           </div>
           <div className="flow-root">
-            {recentActivity.length === 0 ? (
+            {recentShipments.length === 0 ? (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-sm font-medium text-gray-700 mb-2">No recent activity</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">No deliveries scheduled</h3>
                 <p className="text-sm text-gray-500">
-                  Your recent orders, proposals, and client activities will appear here.
+                  Your delivery schedule will appear here.
                 </p>
               </div>
             ) : (
               <ul className="-mb-8">
-                {recentActivity.map((activity, index) => (
-                <li key={activity.id}>
+                {recentShipments.map((shipment, index) => (
+                <li key={shipment.id}>
                   <div className="relative pb-8">
-                    {index !== recentActivity.length - 1 && (
+                    {index !== recentShipments.length - 1 && (
                       <span
                         className="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200"
                         aria-hidden="true"
@@ -282,15 +279,14 @@ export default function TradeDashboard() {
                     )}
                     <div className="relative flex space-x-3">
                       <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                        {activity.type === 'order' && <ShoppingCart className="h-4 w-4 text-gray-600" />}
-                        {activity.type === 'proposal' && <FileText className="h-4 w-4 text-gray-600" />}
-                        {activity.type === 'client' && <Users className="h-4 w-4 text-gray-600" />}
-                        {activity.type === 'payment' && <DollarSign className="h-4 w-4 text-gray-600" />}
+                        {shipment.status === 'pickup' && <Package className="h-4 w-4 text-blue-600" />}
+                        {shipment.status === 'delivery' && <Truck className="h-4 w-4 text-green-600" />}
+                        {shipment.status === 'completed' && <CheckCircle className="h-4 w-4 text-gray-600" />}
                       </div>
                       <div className="min-w-0 flex-1">
                         <div>
-                          <p className="text-sm text-gray-900">{activity.description}</p>
-                          <p className="text-xs text-gray-500">{activity.date}</p>
+                          <p className="text-sm text-gray-900">{shipment.description}</p>
+                          <p className="text-xs text-gray-500">{shipment.time} - {shipment.address}</p>
                         </div>
                       </div>
                     </div>
@@ -302,42 +298,40 @@ export default function TradeDashboard() {
           </div>
         </div>
 
-        {/* Account Summary */}
+        {/* Performance Summary */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">Account Summary</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">Performance Summary</h2>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Trade Discount Level</span>
-              <span className="text-sm font-medium text-green-600">{stats.tradeDiscount}%</span>
+              <span className="text-sm text-gray-600">Today's Deliveries</span>
+              <span className="text-sm font-medium text-gray-900">{stats.todayDeliveries}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Credit Limit</span>
-              <span className="text-sm font-medium text-gray-900">
-                ${stats.creditLimit.toLocaleString()}
-              </span>
+              <span className="text-sm text-gray-600">Weekly Deliveries</span>
+              <span className="text-sm font-medium text-gray-900">{stats.weeklyDeliveries}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Pending Orders</span>
-              <span className="text-sm font-medium text-orange-600">{stats.pendingOrders}</span>
+              <span className="text-sm text-gray-600">On-Time Rate</span>
+              <span className="text-sm font-medium text-green-600">{stats.onTimeRate}%</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600">Completed Orders</span>
-              <span className="text-sm font-medium text-green-600">{stats.completedOrders}</span>
+              <span className="text-sm text-gray-600">Total Distance (This Week)</span>
+              <span className="text-sm font-medium text-gray-900">{stats.totalDistance} miles</span>
             </div>
             <div className="border-t pt-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-gray-900">Payment Terms</span>
-                <span className="text-sm text-gray-600">Net 30</span>
+                <span className="text-sm font-medium text-gray-900">Customer Rating</span>
+                <span className="text-sm font-medium text-yellow-600">★ {stats.customerRating}</span>
               </div>
             </div>
           </div>
           
           <div className="mt-6">
             <Link
-              href="/trade/payment"
+              href="/shipping/performance"
               className="w-full bg-primary-red text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-red-dark transition-colors text-center block"
             >
-              Manage Payment Terms
+              View Detailed Performance
             </Link>
           </div>
         </div>

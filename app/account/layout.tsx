@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Shield,
   Heart,
-  MapPin
+  MapPin,
+  Package
 } from 'lucide-react';
 
 interface UserData {
@@ -63,9 +64,10 @@ function AccountLayoutContent({
     return null;
   }
 
-  const menuItems = [
+  const menuItems: Array<{ href: string; label: string; icon: React.ReactNode; highlight?: boolean }> = [
     { href: '/account', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+    { href: '/account/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
     { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
     { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
     { href: '/account/wishlist', label: 'Wishlist', icon: <Heart size={18} /> },
@@ -127,12 +129,15 @@ function AccountLayoutContent({
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
                         ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : item.highlight
+                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
-                    <span>{item.label}</span>
-                    {pathname === item.href && (
+                    <span className={item.highlight ? 'font-semibold' : ''}>{item.label}</span>
+                    {item.highlight && <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded">NEW</span>}
+                    {pathname === item.href && !item.highlight && (
                       <ChevronRight size={16} className="ml-auto" />
                     )}
                   </Link>

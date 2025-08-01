@@ -6,48 +6,48 @@ import Link from 'next/link';
 import { useRoleAuth } from '@/lib/hooks/useRoleAuth';
 import {
   LayoutDashboard,
-  ShoppingCart,
-  Users,
-  Calculator,
-  FileText,
   Package,
-  CreditCard,
+  Truck,
+  MapPin,
+  Clock,
+  Calendar,
+  FileText,
+  BarChart,
   Settings,
   HelpCircle,
   Menu,
   X,
-  Award,
-  TrendingUp,
-  Briefcase,
+  Navigation,
+  AlertCircle,
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/trade', icon: LayoutDashboard },
-  { name: 'Trade Pricing', href: '/trade/pricing', icon: Calculator },
-  { name: 'Bulk Orders', href: '/trade/bulk-orders', icon: ShoppingCart },
-  { name: 'Project Manager', href: '/trade/projects', icon: Briefcase },
-  { name: 'Client Proposals', href: '/trade/proposals', icon: FileText },
-  { name: 'Product Catalog', href: '/trade/catalog', icon: Package },
-  { name: 'Client Management', href: '/trade/clients', icon: Users },
-  { name: 'Payment Terms', href: '/trade/payment', icon: CreditCard },
-  { name: 'Trade Benefits', href: '/trade/benefits', icon: Award },
-  { name: 'Performance', href: '/trade/analytics', icon: TrendingUp },
-  { name: 'Settings', href: '/trade/settings', icon: Settings },
-  { name: 'Help & Resources', href: '/trade/help', icon: HelpCircle },
+  { name: 'Dashboard', href: '/shipping', icon: LayoutDashboard },
+  { name: 'Active Shipments', href: '/shipping/active', icon: Package },
+  { name: 'Pickup Schedule', href: '/shipping/pickups', icon: Truck },
+  { name: 'Delivery Routes', href: '/shipping/routes', icon: Navigation },
+  { name: 'Tracking', href: '/shipping/tracking', icon: MapPin },
+  { name: 'Schedule', href: '/shipping/schedule', icon: Calendar },
+  { name: 'Pending Tasks', href: '/shipping/pending', icon: AlertCircle },
+  { name: 'Delivery History', href: '/shipping/history', icon: Clock },
+  { name: 'Reports', href: '/shipping/reports', icon: FileText },
+  { name: 'Performance', href: '/shipping/performance', icon: BarChart },
+  { name: 'Settings', href: '/shipping/settings', icon: Settings },
+  { name: 'Help & Support', href: '/shipping/help', icon: HelpCircle },
 ];
 
-export default function TradeLayout({
+export default function ShippingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthorized, isLoading } = useRoleAuth('trade');
+  const { isAuthorized, isLoading, user } = useRoleAuth('shipping_agent');
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthorized) {
-      router.push('/auth/login?redirect=/trade');
+      router.push('/auth/login?redirect=/shipping');
     }
   }, [isAuthorized, isLoading, router]);
 
@@ -83,7 +83,7 @@ export default function TradeLayout({
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div className="flex-shrink-0 flex items-center px-4">
-                <span className="text-xl font-bold text-primary-red">Trade Portal</span>
+                <span className="text-xl font-bold text-primary-red">Shipping Portal</span>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {navigation.map((item) => (
@@ -107,7 +107,7 @@ export default function TradeLayout({
         <div className="flex-1 flex flex-col min-h-0 border-r border-gray-200 bg-white">
           <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
             <div className="flex items-center flex-shrink-0 px-4">
-              <span className="text-xl font-bold text-primary-red">Trade Portal</span>
+              <span className="text-xl font-bold text-primary-red">Shipping Portal</span>
             </div>
             <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
               {navigation.map((item) => (
@@ -123,16 +123,16 @@ export default function TradeLayout({
             </nav>
           </div>
           
-          {/* Trade Account Info */}
+          {/* Shipping Agent Info */}
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
             <div className="flex-shrink-0 w-full group block">
               <div className="flex items-center">
                 <div className="ml-3">
                   <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                    {user.first_name} {user.last_name}
+                    {user?.first_name} {user?.last_name}
                   </p>
                   <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
-                    Trade Professional
+                    Shipping Agent
                   </p>
                 </div>
               </div>
@@ -163,10 +163,10 @@ export default function TradeLayout({
             <div className="ml-4 flex items-center md:ml-6">
               {/* Quick actions */}
               <Link
-                href="/trade/proposals/new"
+                href="/shipping/tracking/new"
                 className="bg-primary-red text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-red-dark transition-colors"
               >
-                New Proposal
+                Track Shipment
               </Link>
             </div>
           </div>

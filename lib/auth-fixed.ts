@@ -203,7 +203,7 @@ export function hasRole(user: User | null, requiredRole: string): boolean {
     'vendor': 70,
     'installer': 60,
     'sales_representative': 50,
-    'trade_professional': 40,
+    'shipping_agent': 40,
     'customer': 10
   };
 

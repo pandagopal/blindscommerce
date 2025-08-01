@@ -10,7 +10,7 @@ export type UserRole =
   | 'sales'
   | 'installer'
   | 'customer'
-  | 'trade_professional';
+  | 'shipping_agent';
 
 export interface RoleDefinition {
   name: UserRole;
@@ -33,8 +33,8 @@ export const ROLE_HIERARCHY: Record<UserRole, RoleDefinition> = {
     displayName: 'Super Administrator',
     description: 'Platform owner with full system access',
     level: 100,
-    canCreate: ['admin', 'vendor', 'installer', 'customer', 'trade_professional'],
-    canManage: ['admin', 'vendor', 'installer', 'customer', 'trade_professional', 'sales'],
+    canCreate: ['admin', 'vendor', 'installer', 'customer', 'shipping_agent'],
+    canManage: ['admin', 'vendor', 'installer', 'customer', 'shipping_agent', 'sales'],
     permissions: [
       'system.all',
       'user.create.all',
@@ -53,8 +53,8 @@ export const ROLE_HIERARCHY: Record<UserRole, RoleDefinition> = {
     displayName: 'Administrator',
     description: 'Platform administrator with broad access',
     level: 90,
-    canCreate: ['vendor', 'installer', 'trade_professional'],
-    canManage: ['vendor', 'installer', 'customer', 'trade_professional'],
+    canCreate: ['vendor', 'installer', 'shipping_agent'],
+    canManage: ['vendor', 'installer', 'customer', 'shipping_agent'],
     permissions: [
       'user.create.vendor',
       'user.create.installer',
@@ -131,20 +131,21 @@ export const ROLE_HIERARCHY: Record<UserRole, RoleDefinition> = {
     createdBy: ['super_admin', 'admin']
   },
 
-  trade_professional: {
-    name: 'trade_professional',
-    displayName: 'Trade Professional',
-    description: 'Interior designers, architects, contractors with trade pricing',
+  shipping_agent: {
+    name: 'shipping_agent',
+    displayName: 'Shipping Agent',
+    description: 'Professional shipping and logistics agent for order fulfillment',
     level: 40,
     canCreate: [],
     canManage: [],
     permissions: [
-      'products.view.trade_pricing',
-      'orders.create.trade',
-      'quotes.request.trade',
-      'samples.request.trade',
-      'projects.manage.own',
-      'clients.manage.own'
+      'orders.view.assigned',
+      'orders.update.shipping',
+      'shipments.create',
+      'shipments.track',
+      'shipments.update.status',
+      'delivery.manage',
+      'logistics.coordinate'
     ],
     createdBy: ['super_admin', 'admin']
   },
@@ -257,9 +258,9 @@ export function isAuthorizedForRoute(userRole: UserRole, route: string): boolean
     return ['installer'].includes(userRole);
   }
 
-  // Trade routes
-  if (route.startsWith('/trade')) {
-    return ['trade_professional'].includes(userRole);
+  // Shipping agent routes
+  if (route.startsWith('/shipping')) {
+    return ['shipping_agent'].includes(userRole);
   }
 
   // Account routes (all authenticated users)
@@ -285,8 +286,8 @@ export function getDashboardRoute(role: UserRole): string {
       return '/sales';
     case 'installer':
       return '/installer';
-    case 'trade_professional':
-      return '/trade';
+    case 'shipping_agent':
+      return '/shipping';
     case 'customer':
     default:
       return '/account';
@@ -301,7 +302,7 @@ export const REGISTRATION_RULES = {
   publicRegistration: ['customer'],
   
   // Roles that require admin approval
-  requiresApproval: ['vendor', 'trade_professional'],
+  requiresApproval: ['vendor', 'shipping_agent'],
   
   // Roles that are invitation-only
   invitationOnly: ['sales', 'installer'],
@@ -319,7 +320,7 @@ export const ECOMMERCE_ROLE_STRATEGY = {
     
     1. CUSTOMER ROLES:
        - Customer: Regular buyers
-       - Trade Professional: B2B customers with special pricing
+       - Shipping Agent: Professional shipping and logistics services
     
     2. VENDOR ECOSYSTEM:
        - Vendor: Third-party sellers (like Amazon marketplace)
@@ -334,13 +335,13 @@ export const ECOMMERCE_ROLE_STRATEGY = {
     
     This structure enables:
     - Marketplace functionality (vendors)
-    - B2B sales (trade professionals, sales teams)
+    - Professional shipping services (shipping agents, logistics)
     - Service marketplace (installers)
     - Scalable administration
   `,
   
   competitiveAdvantages: [
-    'Specialized trade professional accounts with custom pricing',
+    'Specialized shipping agent accounts for logistics management',
     'Vendor-managed sales teams for relationship building',
     'Integrated installation services marketplace',
     'Hierarchical approval and management system',

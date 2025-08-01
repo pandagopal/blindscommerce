@@ -19,7 +19,8 @@ import {
   Store,
   Percent,
   Upload,
-  Shield
+  Shield,
+  Package
 } from 'lucide-react';
 
 interface UserData {
@@ -74,7 +75,7 @@ function VendorLayoutContent({
     return null;
   }
 
-  const menuItems = [
+  const menuItems: Array<{ href: string; label: string; icon: React.ReactNode; highlight?: boolean }> = [
     { href: '/vendor', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/vendor/products', label: 'Products', icon: <ShoppingBag size={18} /> },
     { href: '/vendor/bulk-products', label: 'Bulk Products', icon: <Upload size={18} /> },
@@ -82,6 +83,7 @@ function VendorLayoutContent({
     { href: '/vendor/storefront', label: 'Storefront', icon: <Store size={18} /> },
     { href: '/vendor/sales-team', label: 'Sales Team', icon: <User size={18} /> },
     { href: '/vendor/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
+    { href: '/vendor/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
     { href: '/vendor/payments', label: 'Payments', icon: <CreditCard size={18} /> },
     { href: '/vendor/shipments', label: 'Shipments', icon: <Truck size={18} /> },
     { href: '/vendor/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },
@@ -144,12 +146,15 @@ function VendorLayoutContent({
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
                         ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : item.highlight
+                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
-                    <span>{item.label}</span>
-                    {pathname === item.href && (
+                    <span className={item.highlight ? 'font-semibold' : ''}>{item.label}</span>
+                    {item.highlight && <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded">NEW</span>}
+                    {pathname === item.href && !item.highlight && (
                       <ChevronRight size={16} className="ml-auto" />
                     )}
                   </Link>

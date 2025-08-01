@@ -16,6 +16,7 @@ import { AnalyticsHandler } from '@/lib/api/v2/handlers/AnalyticsHandler';
 import { AuthHandler } from '@/lib/api/v2/handlers/AuthHandler';
 import { ContentHandler } from '@/lib/api/v2/handlers/ContentHandler';
 import { SettingsHandler } from '@/lib/api/v2/handlers/SettingsHandler';
+import { OfflineOrderHandler } from '@/lib/api/v2/handlers/OfflineOrderHandler';
 
 // Service handler mapping
 const serviceHandlers: Record<string, any> = {
@@ -27,6 +28,7 @@ const serviceHandlers: Record<string, any> = {
   auth: new AuthHandler(),
   content: new ContentHandler(),
   settings: new SettingsHandler(),
+  'offline-orders': new OfflineOrderHandler(),
 };
 
 // Standard API response format

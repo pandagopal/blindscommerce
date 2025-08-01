@@ -98,8 +98,8 @@ export class VendorService extends BaseService {
         COALESCE(r_stats.average_rating, 0) as average_rating,
         COALESCE(r_stats.total_reviews, 0) as total_reviews,
         
-        -- Sales team
-        COALESCE(s_stats.sales_team_count, 0) as sales_team_count
+        -- Sales team (removed - sales_staff is now independent of vendors)
+        0 as sales_team_count
         
       FROM vendor_info vi
       
@@ -137,16 +137,6 @@ export class VendorService extends BaseService {
         JOIN vendor_products vp ON pr.product_id = vp.product_id
         GROUP BY vp.vendor_id
       ) r_stats ON vi.vendor_info_id = r_stats.vendor_id
-      
-      -- Sales team stats
-      LEFT JOIN (
-        SELECT 
-          ss.vendor_id,
-          COUNT(*) as sales_team_count
-        FROM sales_staff ss
-        WHERE ss.is_active = 1
-        GROUP BY ss.vendor_id
-      ) s_stats ON vi.vendor_info_id = s_stats.vendor_id
       
       WHERE vi.vendor_info_id = ?
       LIMIT 1

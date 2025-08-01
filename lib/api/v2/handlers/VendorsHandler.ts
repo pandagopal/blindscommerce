@@ -2089,11 +2089,10 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async getSalesTeam(req: NextRequest, user: any) {
-    const vendorId = await this.getVendorId(user);
     const pool = await getPool();
     
     try {
-      // Get sales team members for this vendor
+      // Get all sales team members
       const [salesTeam] = await pool.execute(`
         SELECT 
           ss.sales_staff_id as salesStaffId,
@@ -2110,9 +2109,8 @@ export class VendorsHandler extends BaseHandler {
           ss.created_at as startDate
         FROM sales_staff ss
         JOIN users u ON ss.user_id = u.user_id
-        WHERE ss.vendor_id = ?
         ORDER BY ss.created_at DESC
-      `, [vendorId]);
+      `);
       
       return {
         salesTeam: salesTeam || [],
@@ -2125,7 +2123,6 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async addSalesRep(req: NextRequest, user: any) {
-    const vendorId = await this.getVendorId(user);
     const body = await req.json();
     
     const {
@@ -2158,8 +2155,8 @@ export class VendorsHandler extends BaseHandler {
         userId = (existingUser as any[])[0].user_id;
         
         const [existingSalesRep] = await conn.execute(
-          'SELECT sales_staff_id FROM sales_staff WHERE user_id = ? AND vendor_id = ?',
-          [userId, vendorId]
+          'SELECT sales_staff_id FROM sales_staff WHERE user_id = ?',
+          [userId]
         );
         
         if ((existingSalesRep as any[]).length > 0) {
@@ -2186,10 +2183,10 @@ export class VendorsHandler extends BaseHandler {
       // Create sales staff record
       const [salesResult] = await conn.execute(
         `INSERT INTO sales_staff (
-          user_id, vendor_id, commission_rate, target_sales, territory,
+          user_id, commission_rate, target_sales, territory,
           is_active, total_sales, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, 0, NOW(), NOW())`,
-        [userId, vendorId, commissionRate, targetSales, territory, isActive ? 1 : 0]
+        ) VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())`,
+        [userId, commissionRate, targetSales, territory, isActive ? 1 : 0]
       );
       
       await conn.commit();
@@ -2228,7 +2225,6 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async updateSalesRep(id: string, req: NextRequest, user: any) {
-    const vendorId = await this.getVendorId(user);
     const body = await req.json();
     
     if (!id || isNaN(Number(id))) {
@@ -2239,10 +2235,10 @@ export class VendorsHandler extends BaseHandler {
     const conn = await pool.getConnection();
     
     try {
-      // Check if the sales rep belongs to this vendor
+      // Check if the sales rep exists
       const [salesRep] = await conn.execute(
-        'SELECT ss.sales_staff_id, ss.user_id FROM sales_staff ss WHERE ss.sales_staff_id = ? AND ss.vendor_id = ?',
-        [id, vendorId]
+        'SELECT ss.sales_staff_id, ss.user_id FROM sales_staff ss WHERE ss.sales_staff_id = ?',
+        [id]
       );
       
       if ((salesRep as any[]).length === 0) {
@@ -2349,7 +2345,6 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async removeSalesRep(id: string, user: any) {
-    const vendorId = await this.getVendorId(user);
     
     if (!id || isNaN(Number(id))) {
       throw new ApiError('Invalid sales staff ID', 400);
@@ -2359,10 +2354,10 @@ export class VendorsHandler extends BaseHandler {
     const conn = await pool.getConnection();
     
     try {
-      // Check if the sales rep belongs to this vendor
+      // Check if the sales rep exists
       const [salesRep] = await conn.execute(
-        'SELECT sales_staff_id FROM sales_staff WHERE sales_staff_id = ? AND vendor_id = ?',
-        [id, vendorId]
+        'SELECT sales_staff_id FROM sales_staff WHERE sales_staff_id = ?',
+        [id]
       );
       
       if ((salesRep as any[]).length === 0) {
@@ -2406,7 +2401,7 @@ export class VendorsHandler extends BaseHandler {
       
       // Get orders with shipping info and fulfillment data for this vendor
       let query = `
-        SELECT 
+        SELECT DISTINCT
           o.order_id,
           o.order_number,
           CONCAT(u.first_name, ' ', u.last_name) as customer_name,
@@ -2426,9 +2421,10 @@ export class VendorsHandler extends BaseHandler {
           ful.created_at as fulfilled_date
         FROM orders o
         JOIN users u ON o.user_id = u.user_id
+        JOIN order_items oi ON o.order_id = oi.order_id
         LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
         LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
-        WHERE o.vendor_id = ?
+        WHERE oi.vendor_id = ?
         AND o.status IN ('pending', 'processing', 'shipped', 'delivered')
       `;
       
@@ -2544,7 +2540,7 @@ export class VendorsHandler extends BaseHandler {
     
     try {
       const [orders] = await pool.execute(`
-        SELECT 
+        SELECT DISTINCT
           o.order_id,
           o.order_number,
           CONCAT(u.first_name, ' ', u.last_name) as customer_name,
@@ -2564,9 +2560,10 @@ export class VendorsHandler extends BaseHandler {
           ful.created_at as fulfilled_date
         FROM orders o
         JOIN users u ON o.user_id = u.user_id
+        JOIN order_items oi ON o.order_id = oi.order_id
         LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
         LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
-        WHERE o.order_id = ? AND o.vendor_id = ?
+        WHERE o.order_id = ? AND oi.vendor_id = ?
       `, [orderId, vendorId]);
       
       if ((orders as any[]).length === 0) {
@@ -2653,9 +2650,10 @@ export class VendorsHandler extends BaseHandler {
       
       // Verify order belongs to vendor
       const [orders] = await conn.execute(`
-        SELECT o.order_id, o.status
+        SELECT DISTINCT o.order_id, o.status
         FROM orders o
-        WHERE o.order_id = ? AND o.vendor_id = ?
+        JOIN order_items oi ON o.order_id = oi.order_id
+        WHERE o.order_id = ? AND oi.vendor_id = ?
       `, [orderId, vendorId]);
       
       if ((orders as any[]).length === 0) {
