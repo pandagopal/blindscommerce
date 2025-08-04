@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Calendar, Clock, Home, Phone, Mail, MapPin, CheckCircle } from 'lucide-react';
 
-export default function ConsultationPage() {
+function ConsultationContent() {
   const searchParams = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -477,5 +477,13 @@ export default function ConsultationPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function ConsultationPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center"><div className="text-gray-600">Loading...</div></div>}>
+      <ConsultationContent />
+    </Suspense>
   );
 }
