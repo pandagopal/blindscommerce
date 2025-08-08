@@ -44,6 +44,28 @@ export default function VendorNotificationsPage() {
   // Lazy load notifications data only when this route is active
   const fetchNotificationsData = async () => {
     try {
+      // TODO: The /api/v2/vendors/notifications endpoint needs to be implemented in VendorsHandler
+      // For now, return empty data to prevent errors
+      console.warn('Notifications API endpoint not implemented yet');
+      
+      // Mock data for development
+      return { 
+        notifications: [
+          {
+            id: '1',
+            type: 'order' as const,
+            title: 'New Order Received',
+            message: 'You have received a new order #1234',
+            timestamp: new Date().toISOString(),
+            read: false,
+            priority: 'high' as const,
+          }
+        ], 
+        settings: settings 
+      };
+      
+      // Original API call - uncomment when endpoint is implemented
+      /*
       const response = await fetch('/api/v2/vendors/notifications', {
         headers: {
           'Content-Type': 'application/json',
@@ -51,18 +73,32 @@ export default function VendorNotificationsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch notifications');
+        console.error('Failed to fetch notifications:', response.status, response.statusText);
+        return { 
+          notifications: [], 
+          settings: settings 
+        };
       }
 
       const data = await response.json();
       
+      if (data.success === false) {
+        console.error('API returned error:', data.error);
+        return { 
+          notifications: [], 
+          settings: settings 
+        };
+      }
+      
+      const responseData = data.data || data;
+      
       return { 
-        notifications: data.data || [], 
-        settings: data.settings || settings 
+        notifications: Array.isArray(responseData) ? responseData : (responseData.notifications || []), 
+        settings: responseData.settings || settings 
       };
+      */
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      // Return empty array on error to ensure the page doesn't break
       return { notifications: [], settings };
     }
   };

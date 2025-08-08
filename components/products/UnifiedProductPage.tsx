@@ -886,17 +886,17 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                         <div className="flex justify-end space-x-2">
                           <Link
                             href={`${basePath}/view/${product.product_id}`}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="text-gray-600 hover:text-gray-900 p-1.5 hover:bg-gray-100 rounded-md transition-colors inline-flex"
                             title="View Product"
                           >
-                            <EyeIcon className="h-5 w-5" />
+                            <EyeIcon className="h-6 w-6" />
                           </Link>
                           <Link
                             href={`${basePath}/${product.product_id}/edit`}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="text-blue-600 hover:text-blue-900 p-1.5 hover:bg-blue-50 rounded-md transition-colors inline-flex"
                             title="Edit Product"
                           >
-                            <EditIcon className="h-5 w-5" />
+                            <EditIcon className="h-6 w-6" />
                           </Link>
                           {userRole === 'vendor' && (
                             <button
@@ -926,23 +926,23 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                                   toast.error('Failed to clone product');
                                 }
                               }}
-                              className="text-purple-600 hover:text-purple-900"
+                              className="text-purple-600 hover:text-purple-900 p-1.5 hover:bg-purple-50 rounded-md transition-colors inline-flex"
                               title="Clone Product"
                             >
-                              <Copy className="h-5 w-5" />
+                              <Copy className="h-6 w-6" />
                             </button>
                           )}
                           <button
                             onClick={() => toggleProductStatus(product)}
-                            className={`${
-                              product.is_active ? 'text-red-600 hover:text-red-900' : 'text-green-600 hover:text-green-900'
+                            className={`p-1.5 rounded-md transition-colors inline-flex ${
+                              product.is_active ? 'text-red-600 hover:text-red-900 hover:bg-red-50' : 'text-green-600 hover:text-green-900 hover:bg-green-50'
                             }`}
                             title={product.is_active ? 'Deactivate' : 'Activate'}
                           >
                             {product.is_active ? (
-                              <ToggleRightIcon className="h-5 w-5" />
+                              <ToggleRightIcon className="h-6 w-6" />
                             ) : (
-                              <ToggleLeftIcon className="h-5 w-5" />
+                              <ToggleLeftIcon className="h-6 w-6" />
                             )}
                           </button>
                           <button
@@ -950,10 +950,10 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                               setProductToDelete(product);
                               setShowDeleteModal(true);
                             }}
-                            className="text-red-600 hover:text-red-900"
+                            className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded-md transition-colors inline-flex"
                             title="Delete Product"
                           >
-                            <TrashIcon className="h-5 w-5" />
+                            <TrashIcon className="h-6 w-6" />
                           </button>
                         </div>
                       </td>

@@ -1544,6 +1544,35 @@ export class AdminHandler extends BaseHandler {
     try {
       const pool = await getPool();
       
+      // First check if the table exists
+      try {
+        const [tables] = await pool.execute(
+          "SHOW TABLES LIKE 'system_logs'"
+        );
+        
+        if ((tables as any[]).length === 0) {
+          // Table doesn't exist, return empty response
+          return {
+            logs: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              pages: 0
+            },
+            stats: {
+              total_entries: 0,
+              errors_today: 0,
+              warnings_today: 0,
+              most_common_error: 'System logs table not found',
+              last_error_time: null
+            }
+          };
+        }
+      } catch (tableCheckError) {
+        console.error('Error checking for system_logs table:', tableCheckError);
+      }
+      
       // Build query
       let query = 'SELECT * FROM system_logs WHERE 1=1';
       let countQuery = 'SELECT COUNT(*) as total FROM system_logs WHERE 1=1';
@@ -1591,9 +1620,35 @@ export class AdminHandler extends BaseHandler {
           pages: Math.ceil(total / limit)
         }
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching logs:', error);
-      throw new ApiError('Failed to fetch logs', 500);
+      
+      // Check if the error is because the table doesn't exist
+      if (error.code === 'ER_NO_SUCH_TABLE') {
+        // Return empty response instead of throwing error
+        return {
+          logs: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            pages: 0
+          },
+          stats: {
+            total_entries: 0,
+            errors_today: 0,
+            warnings_today: 0,
+            most_common_error: 'System logs table not found',
+            last_error_time: null
+          }
+        };
+      }
+      
+      // For other errors, still throw but with more context
+      throw new ApiError(
+        error.message || 'Failed to fetch logs', 
+        500
+      );
     }
   }
 }

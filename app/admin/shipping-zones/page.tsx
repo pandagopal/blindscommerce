@@ -169,15 +169,16 @@ export default function ShippingZonesPage() {
                     <Badge variant={zone.is_active ? 'default' : 'secondary'}>
                       {zone.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-4 w-4" />
+                    <Button variant="outline" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                      <Edit className="h-6 w-6" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteZone(zone.zone_id)}
+                      className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-6 w-6" />
                     </Button>
                   </div>
                 </div>

@@ -339,13 +339,13 @@ export default function OfflineOrdersDashboard() {
                     <TableCell>
                       <div className="flex gap-2">
                         <Link href={`/admin/offline-orders/${order.order_id}`}>
-                          <Button variant="ghost" size="sm">
-                            <Eye className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                            <Eye className="h-6 w-6" />
                           </Button>
                         </Link>
                         <Link href={`/admin/offline-orders/${order.order_id}/edit`}>
-                          <Button variant="ghost" size="sm">
-                            <Edit className="h-4 w-4" />
+                          <Button variant="ghost" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                            <Edit className="h-6 w-6" />
                           </Button>
                         </Link>
                       </div>

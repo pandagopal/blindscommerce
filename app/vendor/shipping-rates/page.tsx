@@ -174,15 +174,17 @@ export default function ShippingRatesPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => setEditingRate(rate)}
+                    className="p-1.5 hover:bg-blue-50 rounded-md transition-colors"
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-6 w-6" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteRate(rate.rate_id)}
+                    className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-6 w-6" />
                   </Button>
                 </div>
               </div>

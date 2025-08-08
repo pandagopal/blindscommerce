@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   FileText, Download, Search, Filter, RefreshCw, AlertTriangle, 
-  Info, CheckCircle, XCircle, Eye, Trash2, Calendar
+  Info, CheckCircle, XCircle, Eye, Trash2, Calendar, AlertCircle
 } from 'lucide-react';
 
 interface LogEntry {
@@ -85,12 +85,39 @@ export default function AdminLogsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch logs');
+        console.error('Failed to fetch logs:', response.status, response.statusText);
+        // Don't throw error, just set empty data
+        setLogs([]);
+        setStats({
+          total_entries: 0,
+          errors_today: 0,
+          warnings_today: 0,
+          most_common_error: 'No logs available',
+          last_error_time: ''
+        });
+        return;
       }
 
       const data = await response.json();
-      setLogs(data.logs || []);
-      setStats(data.stats || {
+      
+      // Handle V2 API response structure
+      if (data.success === false) {
+        console.error('API returned error:', data.error);
+        setLogs([]);
+        setStats({
+          total_entries: 0,
+          errors_today: 0,
+          warnings_today: 0,
+          most_common_error: data.error || 'System logs table not found',
+          last_error_time: ''
+        });
+        return;
+      }
+      
+      // Extract data from response
+      const responseData = data.data || data;
+      setLogs(responseData.logs || []);
+      setStats(responseData.stats || {
         total_entries: 0,
         errors_today: 0,
         warnings_today: 0,
@@ -364,7 +391,18 @@ export default function AdminLogsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {filteredLogs.map((log) => (
+              {filteredLogs.length === 0 ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">No logs available</p>
+                  <p className="text-sm text-gray-500">
+                    {stats.most_common_error === 'System logs table not found' 
+                      ? 'The system_logs table needs to be created in the database.' 
+                      : 'Try adjusting your filters or check back later.'}
+                  </p>
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
                 <div key={log.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                   <div className="space-y-2 flex-1">
                     <div className="flex items-center gap-3">
@@ -438,21 +476,9 @@ export default function AdminLogsPage() {
                     </DialogContent>
                   </Dialog>
                 </div>
-              ))}
+              ))
+              )}
             </div>
-
-            {filteredLogs.length === 0 && (
-              <div className="text-center py-12">
-                <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">No Logs Found</h3>
-                <p className="text-gray-500">
-                  {searchTerm || filterLevel !== 'all' || filterCategory !== 'all'
-                    ? 'No logs match your current filters.'
-                    : 'No logs available for the selected time period.'
-                  }
-                </p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>

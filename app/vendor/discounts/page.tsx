@@ -239,7 +239,7 @@ export default function VendorDiscountsPage() {
             <p className="text-gray-600 mt-1">Manage your product discounts and coupon codes</p>
           </div>
           <Button className="inline-flex items-center px-4 py-2 bg-primary-red text-white rounded-lg hover:bg-red-700 transition-colors">
-            <Plus className="h-5 w-5 mr-2" />
+            <Plus className="h-6 w-6 mr-2" />
             Add New
           </Button>
         </div>
@@ -349,22 +349,24 @@ export default function VendorDiscountsPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <Button 
                           variant="ghost" 
-                          size="sm"
                           onClick={() => handleEdit(discount)}
                           title="Edit discount"
+                          className="p-2 hover:bg-blue-50 rounded-md transition-colors"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-6 w-6 text-blue-600" />
                         </Button>
                         <Button 
                           variant="ghost" 
-                          size="sm"
                           onClick={() => handleToggleStatus(discount)}
                           title={discount.is_active ? 'Deactivate discount' : 'Activate discount'}
+                          className={`p-2 rounded-md transition-colors ${
+                            discount.is_active ? 'hover:bg-red-50' : 'hover:bg-green-50'
+                          }`}
                         >
                           {discount.is_active ? (
-                            <ToggleRight className="h-4 w-4 text-green-600" />
+                            <ToggleRight className="h-6 w-6 text-green-600" />
                           ) : (
-                            <ToggleLeft className="h-4 w-4 text-gray-400" />
+                            <ToggleLeft className="h-6 w-6 text-gray-400" />
                           )}
                         </Button>
                       </td>
@@ -451,24 +453,24 @@ export default function VendorDiscountsPage() {
                         <div className="flex justify-end space-x-1">
                           <Button 
                             variant="ghost" 
-                            size="sm"
                             onClick={() => handleEdit(coupon)}
                             title="Edit coupon"
-                            className="p-1"
+                            className="p-2 hover:bg-blue-50 rounded-md transition-colors"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-6 w-6 text-blue-600" />
                           </Button>
                           <Button 
                             variant="ghost" 
-                            size="sm"
                             onClick={() => handleToggleStatus(coupon)}
                             title={coupon.is_active ? 'Deactivate coupon' : 'Activate coupon'}
-                            className="p-1"
+                            className={`p-2 rounded-md transition-colors ${
+                              coupon.is_active ? 'hover:bg-red-50' : 'hover:bg-green-50'
+                            }`}
                           >
                             {coupon.is_active ? (
-                              <ToggleRight className="h-4 w-4 text-green-600" />
+                              <ToggleRight className="h-6 w-6 text-green-600" />
                             ) : (
-                              <ToggleLeft className="h-4 w-4 text-gray-400" />
+                              <ToggleLeft className="h-6 w-6 text-gray-400" />
                             )}
                           </Button>
                         </div>
@@ -724,7 +726,7 @@ function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
           Cancel
         </Button>
         <Button type="submit" className="bg-primary-red hover:bg-red-700">
-          <Save className="h-4 w-4 mr-2" />
+          <Save className="h-6 w-6 mr-2" />
           Save Changes
         </Button>
       </div>

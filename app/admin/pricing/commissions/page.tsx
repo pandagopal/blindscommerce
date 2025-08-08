@@ -480,15 +480,16 @@ export default function CommissionManagementPage() {
                         >
                           {rule.is_active ? 'Deactivate' : 'Activate'}
                         </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                          <Edit className="h-6 w-6" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="sm"
                           onClick={() => handleDeleteRule(rule.rule_id)}
+                          className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-6 w-6" />
                         </Button>
                       </div>
                     </div>

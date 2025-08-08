@@ -321,8 +321,8 @@ export default function VendorOfflineOrdersPage() {
                     </TableCell>
                     <TableCell>
                       <Link href={`/vendor/offline-orders/${item.order_id}`}>
-                        <Button variant="ghost" size="sm">
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" className="p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                          <Eye className="h-6 w-6" />
                         </Button>
                       </Link>
                     </TableCell>

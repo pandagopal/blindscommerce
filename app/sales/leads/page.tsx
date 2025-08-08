@@ -492,8 +492,9 @@ export default function SalesLeadsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingLead(lead)}
+                            className="p-1.5 hover:bg-blue-50 rounded-md transition-colors"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-6 w-6" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent>

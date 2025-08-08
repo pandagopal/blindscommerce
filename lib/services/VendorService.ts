@@ -323,7 +323,7 @@ export class VendorService extends BaseService {
     const whereParams: any[] = [vendorId];
 
     if (isActive !== undefined) {
-      whereConditions.push('p.is_active = ?');
+      whereConditions.push('vp.is_active = ?');
       whereParams.push(isActive ? 1 : 0);
     }
 
@@ -370,6 +370,7 @@ export class VendorService extends BaseService {
         p.*,
         vp.vendor_price,
         vp.quantity_available,
+        vp.is_active,
         vp.is_featured as vendor_featured,
         c.name as category_name,
         COALESCE(sales.quantity_sold, 0) as sales_count,

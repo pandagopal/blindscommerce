@@ -223,8 +223,8 @@ export default function CustomerOfflineOrdersPage() {
                     <TableCell>{getStatusBadge(order.status)}</TableCell>
                     <TableCell>
                       <Link href={`/account/offline-orders/${order.order_id}`}>
-                        <button className="text-blue-600 hover:text-blue-800">
-                          <Eye className="h-4 w-4" />
+                        <button className="text-blue-600 hover:text-blue-800 p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                          <Eye className="h-6 w-6" />
                         </button>
                       </Link>
                     </TableCell>
