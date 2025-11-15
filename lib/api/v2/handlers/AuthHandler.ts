@@ -4,12 +4,13 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { userService } from '@/lib/services/singletons';
 import { comparePassword, hashPassword } from '@/lib/db';
 import { z } from 'zod';
 import { sign } from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { randomBytes } from 'crypto';
 
 // Validation schemas
 const LoginSchema = z.object({
@@ -243,7 +244,7 @@ export class AuthHandler extends BaseHandler {
     }
 
     // Generate reset token
-    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const token = randomBytes(32).toString('hex');
 
     // Save token
     await this.userService.raw(

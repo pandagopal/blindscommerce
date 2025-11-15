@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { getPool } from '@/lib/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { writeFile, mkdir } from 'fs/promises';

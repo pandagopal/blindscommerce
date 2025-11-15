@@ -4,12 +4,12 @@
  */
 
 import { NextRequest } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { vendorService, productService, orderService } from '@/lib/services/singletons';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getPool } from '@/lib/db';
-import { createHash } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 
 // Validation schemas
 const UpdateVendorSchema = z.object({
@@ -2164,7 +2164,7 @@ export class VendorsHandler extends BaseHandler {
         }
       } else {
         // Create new user with sales_representative role
-        const tempPassword = Math.random().toString(36).slice(-8);
+        const tempPassword = randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 12);
         const hashedPassword = await bcrypt.hash(tempPassword, 10);
         
         const [result] = await conn.execute(
@@ -2837,7 +2837,7 @@ export class VendorsHandler extends BaseHandler {
       
       // Generate unique filename
       const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
+      const randomString = randomBytes(8).toString('hex');
       const fileExtension = file.name.split('.').pop();
       const filename = `vendor-${user.userId}-${timestamp}-${randomString}.${fileExtension}`;
       

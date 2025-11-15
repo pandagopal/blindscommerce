@@ -84,10 +84,10 @@ export default function OfflineOrderForm() {
 
   const fetchVendors = async () => {
     try {
-      const response = await fetch('/api/v2/vendors/list');
+      const response = await fetch('/api/v2/admin/vendors');
       if (response.ok) {
         const data = await response.json();
-        setVendors(data.data || []);
+        setVendors(data.data.vendors || []);
       }
     } catch (error) {
       console.error('Failed to fetch vendors:', error);

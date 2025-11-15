@@ -76,7 +76,8 @@ export class CategoryService extends BaseService {
 
     // Add pagination
     if (limit) {
-      query += ` LIMIT ${limit} OFFSET ${offset}`;
+      query += ` LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
     }
 
     const rows = await this.executeQuery<Category>(query, params);

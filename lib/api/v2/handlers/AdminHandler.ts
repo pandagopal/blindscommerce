@@ -4,11 +4,12 @@
  */
 
 import { NextRequest } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { getPool } from '@/lib/db';
 import { z } from 'zod';
 import { userService, vendorService, orderService, productService, settingsService, shippingService } from '@/lib/services/singletons';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 
 // Validation schemas
 const CategorySchema = z.object({
@@ -150,9 +151,10 @@ export class AdminHandler extends BaseHandler {
       // Get total count
       const [countResult] = await pool.execute(countQuery, params);
       const total = (countResult as any[])[0].total;
-      
+
       // Get paginated results
-      query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
       const [users] = await pool.execute(query, params);
       
       return {
@@ -237,12 +239,15 @@ export class AdminHandler extends BaseHandler {
       
       query += ' GROUP BY u.user_id, vi.vendor_info_id';
       query += ' ORDER BY vi.created_at DESC';
-      query += ` LIMIT ${limit} OFFSET ${offset}`;
-      
-      // Get total count
+      query += ` LIMIT ? OFFSET ?`;
+
+      // Get total count before adding limit params
       const [countResult] = await pool.execute(countQuery, params);
       const total = (countResult as any[])[0].total;
-      
+
+      // Add limit and offset params
+      params.push(limit, offset);
+
       // Get paginated results
       const [vendors] = await pool.execute(query, params);
       
@@ -541,7 +546,7 @@ export class AdminHandler extends BaseHandler {
       
       // Generate unique filename
       const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 8);
+      const randomString = randomBytes(4).toString('hex');
       const extension = file.name.split('.').pop() || 'jpg';
       const filename = `category_${timestamp}_${randomString}.${extension}`;
       
@@ -701,10 +706,11 @@ export class AdminHandler extends BaseHandler {
         queryParams
       );
       const total = (countResult as any[])[0].total;
-      
+
       // Get paginated results
+      queryParams.push(limit, offset);
       const [rates] = await pool.execute(
-        `SELECT * FROM tax_rates${whereClause} ORDER BY state_code ASC, city ASC LIMIT ${limit} OFFSET ${offset}`,
+        `SELECT * FROM tax_rates${whereClause} ORDER BY state_code ASC, city ASC LIMIT ? OFFSET ?`,
         queryParams
       );
       
@@ -1606,9 +1612,10 @@ export class AdminHandler extends BaseHandler {
       // Get total count
       const [countResult] = await pool.execute(countQuery, params);
       const total = (countResult as any[])[0].total;
-      
+
       // Get paginated results
-      query += ` ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
       const [logs] = await pool.execute(query, params);
       
       return {

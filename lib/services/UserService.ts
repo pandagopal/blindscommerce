@@ -350,10 +350,11 @@ export class UserService extends BaseService {
       LEFT JOIN sales_staff sr ON u.user_id = sr.user_id
       ${whereClause}
       ORDER BY ${sortColumn} ${sortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
+      LIMIT ? OFFSET ?
     `;
 
-    const users = await this.executeQuery<UserWithDetails>(usersQuery, whereParams);
+    const usersQueryParams = [...whereParams, limit, offset];
+    const users = await this.executeQuery<UserWithDetails>(usersQuery, usersQueryParams);
 
     // Get additional statistics for users in batches
     if (users.length > 0) {

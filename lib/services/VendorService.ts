@@ -390,15 +390,15 @@ export class VendorService extends BaseService {
       ) sales ON p.product_id = sales.product_id
       WHERE ${whereClause}
       ORDER BY ${sortColumn} ${normalizedSortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
+      LIMIT ? OFFSET ?
     `;
 
     // console.log('[VendorService.getVendorProducts] Main query:', query);
 
-    // console.log('[VendorService.getVendorProducts] Main query params:', [vendorId, ...whereParams]);
+    // console.log('[VendorService.getVendorProducts] Main query params:', [vendorId, ...whereParams, limit, offset]);
     // console.log('[VendorService.getVendorProducts] Executing main query...');
-    
-    const products = await this.executeQuery<any>(query, [vendorId, ...whereParams]);
+
+    const products = await this.executeQuery<any>(query, [vendorId, ...whereParams, limit, offset]);
     
     // console.log('[VendorService.getVendorProducts] Products found:', products.length);
     // if (products.length > 0) {

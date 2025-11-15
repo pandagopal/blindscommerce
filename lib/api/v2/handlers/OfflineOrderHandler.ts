@@ -5,10 +5,11 @@
  */
 
 import { NextRequest } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { getPool } from '@/lib/db';
 import { z } from 'zod';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
+import { randomBytes } from 'crypto';
 
 // Validation schemas
 const CreateOfflineOrderSchema = z.object({
@@ -98,8 +99,9 @@ export class OfflineOrderHandler extends BaseHandler {
     try {
       await connection.beginTransaction();
 
-      // Generate order number
-      const orderNumber = `OFF-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      // Generate order number with cryptographically secure random string
+      const randomSuffix = randomBytes(3).toString('hex').toUpperCase();
+      const orderNumber = `OFF-${Date.now()}-${randomSuffix}`;
 
       // Group items by vendor
       const itemsByVendor = new Map<number, typeof data.items>();
@@ -160,8 +162,8 @@ export class OfflineOrderHandler extends BaseHandler {
             passwordToUse = data.customerPassword;
             passwordMessage = 'with the password you provided';
           } else {
-            // Generate temporary password
-            passwordToUse = Math.random().toString(36).slice(-8);
+            // Generate cryptographically secure temporary password
+            passwordToUse = randomBytes(6).toString('base64').replace(/[+/=]/g, '').slice(0, 12);
             passwordMessage = `with temporary password: ${passwordToUse}`;
           }
           
@@ -350,18 +352,17 @@ export class OfflineOrderHandler extends BaseHandler {
 
     if (vendorId && ['admin', 'super_admin'].includes(user.role)) {
       query += ` AND oi.vendor_id = ?`;
-      params.push(vendorId);
+      params.push(parseInt(vendorId));
     }
 
-    query += ` GROUP BY o.order_id ORDER BY o.created_at DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
+    query += ` GROUP BY o.order_id ORDER BY o.created_at DESC LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
 
     const [orders] = await pool.execute(query, params);
 
-    // Get total count
+    // Get total count (use same params since LIMIT/OFFSET are in query string now)
     const countQuery = query.replace(/SELECT[\s\S]*?FROM/, 'SELECT COUNT(DISTINCT o.order_id) as total FROM')
       .replace(/ORDER BY[\s\S]*$/, '');
-    const [countResult] = await pool.execute(countQuery, params.slice(0, -2));
+    const [countResult] = await pool.execute(countQuery, params);
     const total = (countResult as any[])[0]?.total || 0;
 
     return {
@@ -569,7 +570,7 @@ export class OfflineOrderHandler extends BaseHandler {
       throw new ApiError('Invalid order ID', 400);
     }
 
-    const body = await this.getRequestBody(req);
+    const body = await this.getBody(req);
     const { noteText, noteType = 'internal', itemId } = body;
 
     if (!noteText) {

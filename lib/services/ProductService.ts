@@ -470,11 +470,11 @@ export class ProductService extends BaseService {
           OR p.sku LIKE ?
         )
       ORDER BY relevance DESC, p.name ASC
-      LIMIT ${Math.floor(limit)}
+      LIMIT ?
     `;
 
     const searchPattern = `%${searchTerm}%`;
-    const params = [searchTerm, searchTerm, searchPattern, searchPattern];
+    const params = [searchTerm, searchTerm, searchPattern, searchPattern, limit];
 
     return this.executeQuery<ProductWithDetails>(query, params);
   }
@@ -504,13 +504,13 @@ export class ProductService extends BaseService {
         p1.product_id = ?
         AND p2.is_active = 1
       GROUP BY p2.product_id
-      ORDER BY 
+      ORDER BY
         shared_features DESC,
         p2.rating DESC,
         p2.created_at DESC
-      LIMIT ${Math.floor(limit)}
+      LIMIT ?
     `;
 
-    return this.executeQuery<ProductWithDetails>(query, [productId]);
+    return this.executeQuery<ProductWithDetails>(query, [productId, limit]);
   }
 }

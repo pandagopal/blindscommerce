@@ -4,10 +4,11 @@
  */
 
 import { NextRequest } from 'next/server';
-import { BaseHandler, ApiError } from '../BaseHandler';
+import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
 import { userService, orderService } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { hashPassword, comparePassword } from '@/lib/db';
+import { randomBytes } from 'crypto';
 
 // Validation schemas
 const UpdateProfileSchema = z.object({
@@ -433,7 +434,7 @@ export class UsersHandler extends BaseHandler {
     const { page, limit, offset } = this.getPagination(this.getSearchParams(req));
 
     const wishlist = await this.userService.raw(
-      `SELECT 
+      `SELECT
         wi.wishlist_item_id,
         wi.added_at as created_at,
         p.product_id,
@@ -448,8 +449,8 @@ export class UsersHandler extends BaseHandler {
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       WHERE w.user_id = ?
       ORDER BY wi.added_at DESC
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
-      [user.user_id]
+      LIMIT ? OFFSET ?`,
+      [user.user_id, limit, offset]
     );
 
     const [countResult] = await this.userService.raw(
@@ -638,7 +639,7 @@ export class UsersHandler extends BaseHandler {
     }
 
     // Generate verification token
-    const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+    const token = randomBytes(32).toString('hex');
 
     // Save token
     await this.userService.raw(
@@ -724,17 +725,17 @@ export class UsersHandler extends BaseHandler {
 
     // Get measurement requests - using safe integer values for LIMIT/OFFSET
     const measurements = await this.userService.raw(
-      `SELECT 
+      `SELECT
         mr.*,
-        CASE 
+        CASE
           WHEN mr.status = 'scheduled' AND mr.preferred_date < CURDATE() THEN 'overdue'
           ELSE mr.status
         END as display_status
       FROM measurement_requests mr
       WHERE mr.user_id = ?
       ORDER BY ${sortField} ${sortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
-      [user.user_id]
+      LIMIT ? OFFSET ?`,
+      [user.user_id, limit, offset]
     );
 
     // Get total count
@@ -813,7 +814,7 @@ export class UsersHandler extends BaseHandler {
 
     // Get saved configurations
     const configurations = await this.userService.raw(
-      `SELECT 
+      `SELECT
         sc.*,
         p.name as product_name,
         p.slug as product_slug,
@@ -824,8 +825,8 @@ export class UsersHandler extends BaseHandler {
       LEFT JOIN vendor_info vi ON sc.vendor_id = vi.vendor_info_id
       WHERE sc.user_id = ?
       ORDER BY sc.created_at DESC
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
-      [user.user_id]
+      LIMIT ? OFFSET ?`,
+      [user.user_id, limit, offset]
     );
 
     // Get total count

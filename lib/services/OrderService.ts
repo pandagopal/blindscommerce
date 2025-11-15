@@ -7,6 +7,7 @@ import { BaseService } from './BaseService';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { getPool } from '@/lib/db';
 import { parseArrayPrices, parseDecimal, parsePriceFields } from '@/lib/utils/priceUtils';
+import { randomBytes } from 'crypto';
 
 interface Order extends RowDataPacket {
   order_id: number;
@@ -103,7 +104,8 @@ export class OrderService extends BaseService {
       const totalAmount = subtotal - totalDiscount + totalTax + shippingAmount;
 
       // Generate order number
-      const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const randomSuffix = randomBytes(5).toString('hex').toUpperCase();
+      const orderNumber = `ORD-${Date.now()}-${randomSuffix}`;
 
       // Create shipping address
       const [shippingAddressResult] = await connection.execute<ResultSetHeader>(
@@ -500,9 +502,9 @@ export class OrderService extends BaseService {
       ${whereClause}
       GROUP BY o.order_id
       ORDER BY o.${sortBy} ${sortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
+      LIMIT ? OFFSET ?
     ` : `
-      SELECT 
+      SELECT
         o.*,
         u.email as customer_email,
         u.first_name,
@@ -516,13 +518,13 @@ export class OrderService extends BaseService {
       ${whereClause}
       GROUP BY o.order_id
       ORDER BY o.${sortBy} ${sortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
+      LIMIT ? OFFSET ?
     `;
 
     // Add vendorId params at the beginning if vendor-specific query
-    const queryParams = vendorId 
-      ? [vendorId, vendorId, ...whereParams] 
-      : whereParams;
+    const queryParams = vendorId
+      ? [vendorId, vendorId, ...whereParams, limit, offset]
+      : [...whereParams, limit, offset];
     
     const rawOrders = await this.executeQuery<OrderWithDetails>(ordersQuery, queryParams);
     const orders = parseArrayPrices(rawOrders, [

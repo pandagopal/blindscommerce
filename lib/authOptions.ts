@@ -4,6 +4,7 @@ import FacebookProvider from 'next-auth/providers/facebook';
 import AppleProvider from 'next-auth/providers/apple';
 import TwitterProvider from 'next-auth/providers/twitter';
 import bcrypt from 'bcryptjs';
+import { randomBytes } from 'crypto';
 import { userService } from '@/lib/services/singletons';
 
 interface SocialUser {
@@ -71,7 +72,7 @@ export const authOptions: NextAuthOptions = {
         const lastName = user.name?.split(' ').slice(1).join(' ') || '';
         
         // Generate a random password for social users (they won't use it)
-        const randomPassword = Math.random().toString(36).slice(-12);
+        const randomPassword = randomBytes(12).toString('base64').replace(/[+/=]/g, '').slice(0, 16);
         const hashedPassword = await bcrypt.hash(randomPassword, 12);
 
         // Create new user using userService
