@@ -158,7 +158,7 @@ export default function VendorPaymentsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading payment data...</p>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function VendorPaymentsPage() {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Payment Data</h2>
           <p className="text-gray-600 mb-4">Please check your connection and try again.</p>
-          <Button onClick={() => refetch()} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={() => refetch()} className="bg-purple-600 hover:bg-primary-dark">
             Retry
           </Button>
         </div>
@@ -185,7 +185,7 @@ export default function VendorPaymentsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Payments & Earnings
             </h1>
             <p className="text-gray-600">Track your commissions and payment history</p>
@@ -207,7 +207,7 @@ export default function VendorPaymentsPage() {
             <Button
               variant="outline"
               onClick={() => exportData('overview')}
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -217,7 +217,7 @@ export default function VendorPaymentsPage() {
 
         {/* Overview Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Earnings</CardTitle>
@@ -232,7 +232,7 @@ export default function VendorPaymentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Pending Payments</CardTitle>
@@ -247,7 +247,7 @@ export default function VendorPaymentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Paid This Month</CardTitle>
@@ -262,11 +262,11 @@ export default function VendorPaymentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Commission Rate</CardTitle>
-                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <TrendingUp className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -279,9 +279,9 @@ export default function VendorPaymentsPage() {
         </div>
 
         {/* Next Payout Info */}
-        <Card className="border-purple-100 shadow-lg mb-8">
+        <Card className="border-red-100 shadow-lg mb-8">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
               <Calendar className="h-5 w-5 mr-2 text-blue-600" />
               Next Payout Information
             </CardTitle>
@@ -300,9 +300,9 @@ export default function VendorPaymentsPage() {
                   {formatCurrency(paymentData?.overview?.pending_payments || 0)}
                 </div>
               </div>
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                <div className="text-sm text-purple-600 font-medium">Last Payout</div>
-                <div className="text-xl font-bold text-purple-700">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-red-200">
+                <div className="text-sm text-primary-red font-medium">Last Payout</div>
+                <div className="text-xl font-bold text-primary-dark">
                   {formatCurrency(paymentData?.overview?.last_payout_amount || 0)}
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function VendorPaymentsPage() {
 
         {/* Detailed Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="overview">
               <Wallet className="h-4 w-4 mr-2" />
               Recent Payments
@@ -328,9 +328,9 @@ export default function VendorPaymentsPage() {
           </TabsList>
 
           <TabsContent value="overview">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Recent Payments
                 </CardTitle>
               </CardHeader>
@@ -374,10 +374,10 @@ export default function VendorPaymentsPage() {
           </TabsContent>
 
           <TabsContent value="commissions">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Commission Breakdown
                   </CardTitle>
                   <Button
@@ -430,10 +430,10 @@ export default function VendorPaymentsPage() {
           </TabsContent>
 
           <TabsContent value="history">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Payment History
                   </CardTitle>
                   <Button

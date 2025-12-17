@@ -37,9 +37,17 @@ interface VendorStorefrontProps {
 export default function VendorStorefront({ storefront, children }: VendorStorefrontProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  // Default theme settings
+  // Get CSS variable value at runtime
+  const getPrimaryColor = () => {
+    if (typeof window !== 'undefined') {
+      return getComputedStyle(document.documentElement).getPropertyValue('--primary-red').trim() || '#0071dc';
+    }
+    return '#0071dc';
+  };
+
+  // Default theme settings - uses CSS variable as fallback
   const theme = {
-    primaryColor: '#CC2229',
+    primaryColor: getPrimaryColor(),
     secondaryColor: '#1F2937',
     accentColor: '#F59E0B',
     backgroundColor: '#FFFFFF',

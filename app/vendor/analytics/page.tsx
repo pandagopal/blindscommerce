@@ -109,7 +109,7 @@ export default function VendorAnalyticsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading vendor analytics...</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function VendorAnalyticsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Vendor Analytics
             </h1>
             <p className="text-gray-600">Track your performance and sales insights</p>
@@ -143,7 +143,7 @@ export default function VendorAnalyticsPage() {
             <Button
               variant="outline"
               onClick={() => exportData('overview')}
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -153,7 +153,7 @@ export default function VendorAnalyticsPage() {
 
         {/* Overview Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
@@ -170,7 +170,7 @@ export default function VendorAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
@@ -187,11 +187,11 @@ export default function VendorAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Product Views</CardTitle>
-                <Eye className="h-4 w-4 text-purple-600" />
+                <Eye className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -204,7 +204,7 @@ export default function VendorAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Conversion Rate</CardTitle>
@@ -224,9 +224,9 @@ export default function VendorAnalyticsPage() {
 
         {/* Secondary Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+              <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
                 <Star className="h-5 w-5 mr-2 text-yellow-500" />
                 Customer Satisfaction
               </CardTitle>
@@ -239,9 +239,9 @@ export default function VendorAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader>
-              <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+              <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
                 <DollarSign className="h-5 w-5 mr-2 text-green-600" />
                 Commission Earned
               </CardTitle>
@@ -257,7 +257,7 @@ export default function VendorAnalyticsPage() {
 
         {/* Detailed Analytics Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="overview">
               <BarChart3 className="h-4 w-4 mr-2" />
               Overview
@@ -278,9 +278,9 @@ export default function VendorAnalyticsPage() {
 
           <TabsContent value="overview">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Sales Trend
                   </CardTitle>
                 </CardHeader>
@@ -295,9 +295,9 @@ export default function VendorAnalyticsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Performance Metrics
                   </CardTitle>
                 </CardHeader>
@@ -323,14 +323,14 @@ export default function VendorAnalyticsPage() {
                       <ShoppingCart className="h-8 w-8 text-blue-600" />
                     </div>
                     
-                    <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                    <div className="flex justify-between items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-red-200">
                       <div>
-                        <div className="text-sm text-purple-600 font-medium">View Growth</div>
-                        <div className="text-2xl font-bold text-purple-700">
+                        <div className="text-sm text-primary-red font-medium">View Growth</div>
+                        <div className="text-2xl font-bold text-primary-dark">
                           +{(analyticsData?.overview?.views_change || 0).toFixed(1)}%
                         </div>
                       </div>
-                      <Eye className="h-8 w-8 text-purple-600" />
+                      <Eye className="h-8 w-8 text-primary-red" />
                     </div>
                   </div>
                 </CardContent>
@@ -339,9 +339,9 @@ export default function VendorAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sales">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Sales Performance
                 </CardTitle>
               </CardHeader>
@@ -360,9 +360,9 @@ export default function VendorAnalyticsPage() {
                         {formatCurrency((analyticsData?.overview?.total_revenue || 0) / 4)}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                      <div className="text-sm text-purple-600 font-medium">Monthly Total</div>
-                      <div className="text-2xl font-bold text-purple-700">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-red-200">
+                      <div className="text-sm text-primary-red font-medium">Monthly Total</div>
+                      <div className="text-2xl font-bold text-primary-dark">
                         {formatCurrency(analyticsData?.overview?.total_revenue || 0)}
                       </div>
                     </div>
@@ -381,9 +381,9 @@ export default function VendorAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="products">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Product Performance
                 </CardTitle>
               </CardHeader>
@@ -427,9 +427,9 @@ export default function VendorAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="customers">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Customer Insights
                 </CardTitle>
               </CardHeader>
@@ -437,7 +437,7 @@ export default function VendorAnalyticsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-2xl font-bold text-primary-red">
                         {analyticsData?.customer_insights?.total_customers || 0}
                       </div>
                       <div className="text-sm text-gray-600">Total Customers</div>

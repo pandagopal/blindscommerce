@@ -237,7 +237,7 @@ export default function ShippingAddressManager() {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
       </div>
     );
   }
@@ -245,12 +245,12 @@ export default function ShippingAddressManager() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
           Shipping Addresses
         </h2>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center"
+          className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add New Address
@@ -267,10 +267,10 @@ export default function ShippingAddressManager() {
       {!showForm && (
         <div className="grid gap-4 md:grid-cols-2">
           {addresses.map((address) => (
-            <div key={address.id} className="bg-white border border-purple-100 rounded-xl shadow-lg p-6 relative">
+            <div key={address.id} className="bg-white border border-red-100 rounded-xl shadow-lg p-6 relative">
               {address.isDefault && (
                 <div className="absolute top-4 right-4">
-                  <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
+                  <span className="bg-gradient-to-r from-red-500 to-primary-dark text-white text-xs font-semibold px-2 py-1 rounded-full flex items-center">
                     <Star className="w-3 h-3 mr-1" />
                     Default
                   </span>
@@ -312,7 +312,7 @@ export default function ShippingAddressManager() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleEdit(address)}
-                    className="text-purple-600 hover:text-purple-700 p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                    className="text-primary-red hover:text-primary-dark p-2 rounded-lg hover:bg-red-50 transition-colors"
                     title="Edit address"
                   >
                     <Edit3 className="w-4 h-4" />
@@ -351,7 +351,7 @@ export default function ShippingAddressManager() {
           <p className="mb-4">Add your first shipping address to get started with faster checkout.</p>
           <button
             onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl"
+            className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl"
           >
             Add Your First Address
           </button>
@@ -360,8 +360,8 @@ export default function ShippingAddressManager() {
 
       {/* Address Form */}
       {showForm && (
-        <div className="bg-white border border-purple-100 rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        <div className="bg-white border border-red-100 rounded-xl shadow-lg p-6">
+          <h3 className="text-xl font-semibold mb-6 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
             {editingAddress ? 'Edit Address' : 'Add New Address'}
           </h3>
 
@@ -378,7 +378,7 @@ export default function ShippingAddressManager() {
                   onChange={handleInputChange}
                   required
                   placeholder="Home, Work, Mom's House, etc."
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -391,7 +391,7 @@ export default function ShippingAddressManager() {
                   name="company"
                   value={formData.company}
                   onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -407,7 +407,7 @@ export default function ShippingAddressManager() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -421,7 +421,7 @@ export default function ShippingAddressManager() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -437,7 +437,7 @@ export default function ShippingAddressManager() {
                 onChange={handleInputChange}
                 required
                 placeholder="Street address, P.O. Box, etc."
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -451,7 +451,7 @@ export default function ShippingAddressManager() {
                 value={formData.addressLine2}
                 onChange={handleInputChange}
                 placeholder="Apartment, suite, unit, building, floor, etc."
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -466,7 +466,7 @@ export default function ShippingAddressManager() {
                   value={formData.city}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -480,7 +480,7 @@ export default function ShippingAddressManager() {
                   value={formData.stateProvince}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -494,7 +494,7 @@ export default function ShippingAddressManager() {
                   value={formData.postalCode}
                   onChange={handleInputChange}
                   required
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -508,7 +508,7 @@ export default function ShippingAddressManager() {
                 value={formData.country}
                 onChange={handleInputChange}
                 required
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="United States">United States</option>
                 <option value="Canada">Canada</option>
@@ -541,7 +541,7 @@ export default function ShippingAddressManager() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -554,7 +554,7 @@ export default function ShippingAddressManager() {
                 name="deliveryPreference"
                 value={formData.deliveryPreference}
                 onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               >
                 <option value="standard">Standard Delivery</option>
                 <option value="signature_required">Signature Required</option>
@@ -573,7 +573,7 @@ export default function ShippingAddressManager() {
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Special delivery notes, gate codes, etc."
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
               />
             </div>
 
@@ -585,7 +585,7 @@ export default function ShippingAddressManager() {
                   name="isDefault"
                   checked={formData.isDefault}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
                   Set as default shipping address
@@ -599,7 +599,7 @@ export default function ShippingAddressManager() {
                   name="isBillingAddress"
                   checked={formData.isBillingAddress}
                   onChange={handleInputChange}
-                  className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isBillingAddress" className="ml-2 block text-sm text-gray-700">
                   Can be used for billing
@@ -618,7 +618,7 @@ export default function ShippingAddressManager() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2 bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Saving...' : (editingAddress ? 'Update Address' : 'Add Address')}
               </button>

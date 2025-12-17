@@ -243,7 +243,7 @@ function SalesDashboardContent() {
       case 'new':
         return 'bg-blue-100 text-blue-800';
       case 'contacted':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-primary-dark';
       case 'qualified':
         return 'bg-amber-100 text-amber-800';
       case 'proposal':
@@ -253,7 +253,7 @@ function SalesDashboardContent() {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'processing':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-primary-dark';
       case 'shipped':
         return 'bg-blue-100 text-blue-800';
       default:

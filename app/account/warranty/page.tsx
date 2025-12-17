@@ -140,7 +140,7 @@ export default function WarrantyPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading warranty information...</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function WarrantyPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
             Warranty & Claims
           </h1>
           <p className="text-gray-600">Manage your product warranties and submit claims</p>
@@ -161,7 +161,7 @@ export default function WarrantyPage() {
           <div className="flex gap-4">
             <Button
               onClick={() => router.push('/account/warranty/register')}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Register Product
@@ -169,7 +169,7 @@ export default function WarrantyPage() {
             <Button
               onClick={() => router.push('/account/warranty/lookup')}
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Shield className="h-4 w-4 mr-2" />
               Warranty Lookup
@@ -178,7 +178,7 @@ export default function WarrantyPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="warranties">
               My Warranties ({warranties.length})
             </TabsTrigger>
@@ -190,7 +190,7 @@ export default function WarrantyPage() {
           <TabsContent value="warranties">
             <div className="grid gap-6">
               {warranties.length === 0 ? (
-                <Card className="border-purple-100 shadow-lg">
+                <Card className="border-red-100 shadow-lg">
                   <CardContent className="text-center py-12">
                     <Shield className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold mb-2">No Warranties Registered</h3>
@@ -199,7 +199,7 @@ export default function WarrantyPage() {
                     </p>
                     <Button
                       onClick={() => router.push('/account/warranty/register')}
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                      className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Register Your First Product
@@ -208,11 +208,11 @@ export default function WarrantyPage() {
                 </Card>
               ) : (
                 warranties.map((warranty) => (
-                  <Card key={warranty.warranty_id} className="border-purple-100 shadow-lg hover:shadow-xl transition-shadow">
+                  <Card key={warranty.warranty_id} className="border-red-100 shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                          <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                             {warranty.product_name}
                           </CardTitle>
                           <p className="text-gray-600">Serial: {warranty.serial_number}</p>
@@ -242,7 +242,7 @@ export default function WarrantyPage() {
                       <div className="flex gap-3">
                         <Link
                           href={`/products/${warranty.product_slug}`}
-                          className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                          className="text-primary-red hover:text-primary-dark text-sm font-medium"
                         >
                           View Product
                         </Link>
@@ -251,7 +251,7 @@ export default function WarrantyPage() {
                             onClick={() => router.push(`/account/warranty/claim?warranty_id=${warranty.warranty_id}`)}
                             variant="outline"
                             size="sm"
-                            className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                            className="border-red-200 text-primary-red hover:bg-red-50"
                           >
                             Submit Claim
                           </Button>
@@ -267,7 +267,7 @@ export default function WarrantyPage() {
           <TabsContent value="claims">
             <div className="grid gap-6">
               {claims.length === 0 ? (
-                <Card className="border-purple-100 shadow-lg">
+                <Card className="border-red-100 shadow-lg">
                   <CardContent className="text-center py-12">
                     <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-xl font-semibold mb-2">No Claims Submitted</h3>
@@ -278,7 +278,7 @@ export default function WarrantyPage() {
                 </Card>
               ) : (
                 claims.map((claim) => (
-                  <Card key={claim.claim_id} className="border-purple-100 shadow-lg hover:shadow-xl transition-shadow">
+                  <Card key={claim.claim_id} className="border-red-100 shadow-lg hover:shadow-xl transition-shadow">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div>

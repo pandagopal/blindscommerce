@@ -30,7 +30,7 @@ export default function CommercialPage() {
       features: ['Antimicrobial materials', 'Easy to sanitize', 'Privacy control', 'Light management']
     },
     {
-      icon: <Shield className="h-8 w-8 text-purple-600" />,
+      icon: <Shield className="h-8 w-8 text-primary-red" />,
       title: 'Educational Institutions',
       description: 'Durable solutions for schools and universities',
       features: ['Child safety features', 'Vandal resistant', 'Classroom darkening', 'Budget-friendly']
@@ -81,7 +81,7 @@ export default function CommercialPage() {
       description: 'Dedicated team to manage timelines and installation'
     },
     {
-      icon: <Shield className="h-8 w-8 text-purple-600" />,
+      icon: <Shield className="h-8 w-8 text-primary-red" />,
       title: 'Commercial Warranty',
       description: 'Extended warranty coverage for commercial applications'
     },

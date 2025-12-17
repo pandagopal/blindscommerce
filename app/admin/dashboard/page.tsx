@@ -268,7 +268,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardContent className="flex items-center p-6">
-            <Users className="h-8 w-8 text-purple-500 mr-4" />
+            <Users className="h-8 w-8 text-red-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Total Customers</p>
               <p className="text-2xl font-bold">{stats?.totalCustomers || 0}</p>

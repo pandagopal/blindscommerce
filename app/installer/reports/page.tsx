@@ -122,7 +122,7 @@ export default function InstallerReportsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading reports...</p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function InstallerReportsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Performance Reports
             </h1>
             <p className="text-gray-600">Track your performance metrics and analytics</p>
@@ -165,7 +165,7 @@ export default function InstallerReportsPage() {
 
         {/* Key Metrics Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Package className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <div className="text-2xl font-bold">{reportData?.performance.completed_jobs || 0}</div>
@@ -179,7 +179,7 @@ export default function InstallerReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Star className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
               <div className="text-2xl font-bold">{reportData?.performance.avg_rating || 0}/5</div>
@@ -190,7 +190,7 @@ export default function InstallerReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <DollarSign className="h-8 w-8 mx-auto text-green-600 mb-2" />
               <div className="text-2xl font-bold">{formatCurrency(reportData?.revenue.total_revenue || 0)}</div>
@@ -201,9 +201,9 @@ export default function InstallerReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <Clock className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+              <Clock className="h-8 w-8 mx-auto text-primary-red mb-2" />
               <div className="text-2xl font-bold">{reportData?.performance.on_time_percentage || 0}%</div>
               <div className="text-sm text-gray-600">On-Time Rate</div>
               <div className="text-xs text-gray-600 mt-1">
@@ -215,7 +215,7 @@ export default function InstallerReportsPage() {
 
         {/* Detailed Reports */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="performance">
               <TrendingUp className="h-4 w-4 mr-2" />
               Performance
@@ -236,9 +236,9 @@ export default function InstallerReportsPage() {
 
           <TabsContent value="performance">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Job Performance
                   </CardTitle>
                 </CardHeader>
@@ -268,9 +268,9 @@ export default function InstallerReportsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Performance Trends
                   </CardTitle>
                 </CardHeader>
@@ -289,9 +289,9 @@ export default function InstallerReportsPage() {
 
           <TabsContent value="revenue">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Revenue Breakdown
                   </CardTitle>
                 </CardHeader>
@@ -319,9 +319,9 @@ export default function InstallerReportsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Revenue Trends
                   </CardTitle>
                 </CardHeader>
@@ -340,9 +340,9 @@ export default function InstallerReportsPage() {
 
           <TabsContent value="productivity">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Productivity Metrics
                   </CardTitle>
                 </CardHeader>
@@ -368,9 +368,9 @@ export default function InstallerReportsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Productivity Analysis
                   </CardTitle>
                 </CardHeader>
@@ -389,9 +389,9 @@ export default function InstallerReportsPage() {
 
           <TabsContent value="satisfaction">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Customer Satisfaction
                   </CardTitle>
                 </CardHeader>
@@ -428,9 +428,9 @@ export default function InstallerReportsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Customer Feedback
                   </CardTitle>
                 </CardHeader>

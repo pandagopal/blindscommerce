@@ -95,7 +95,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
       </div>
     );
   }
@@ -130,7 +130,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
 
@@ -143,7 +143,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
 
@@ -156,7 +156,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
 
@@ -169,7 +169,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
 
@@ -182,7 +182,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
           </div>
 
@@ -195,7 +195,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
               required
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             >
               <option value="customer">Customer</option>
               <option value="admin">Admin</option>
@@ -213,7 +213,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
             id="isActive"
             checked={formData.isActive}
             onChange={handleChange}
-            className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+            className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
           />
           <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
             Active Account
@@ -224,13 +224,13 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
           <Link
             href="/admin/users"
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             Cancel
           </Link>

@@ -124,7 +124,7 @@ export default function AdminOrderDetailsPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="mb-6">
-        <Link href="/admin/orders" className="inline-flex items-center text-purple-600 hover:text-purple-800 mb-4">
+        <Link href="/admin/orders" className="inline-flex items-center text-primary-red hover:text-primary-dark mb-4">
           <ArrowLeftIcon className="h-4 w-4 mr-1" />
           Back to Orders
         </Link>
@@ -165,7 +165,7 @@ export default function AdminOrderDetailsPage() {
                 order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                 order.status === 'processing' ? 'bg-blue-100 text-blue-800' :
                 order.status === 'shipped' ? 'bg-green-100 text-green-800' :
-                order.status === 'delivered' ? 'bg-purple-100 text-purple-800' :
+                order.status === 'delivered' ? 'bg-purple-100 text-primary-dark' :
                 order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                 order.status === 'refunded' ? 'bg-gray-100 text-gray-800' :
                 'bg-gray-100 text-gray-800'

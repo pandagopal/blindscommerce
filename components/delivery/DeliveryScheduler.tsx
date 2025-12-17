@@ -235,7 +235,7 @@ export default function DeliveryScheduler({
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
       </div>
     );
   }
@@ -244,8 +244,8 @@ export default function DeliveryScheduler({
     <div className="max-w-4xl mx-auto p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
-          <Package className="w-6 h-6 mr-3 text-purple-600" />
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
+          <Package className="w-6 h-6 mr-3 text-primary-red" />
           {existingSchedule ? 'Delivery Scheduled' : 'Schedule Delivery'}
         </h2>
         {existingSchedule && (
@@ -298,7 +298,7 @@ export default function DeliveryScheduler({
                   }}
                   className={`p-4 border rounded-lg text-left transition-all ${
                     selectedDate === dateInfo.date
-                      ? 'border-purple-500 bg-purple-50'
+                      ? 'border-red-500 bg-purple-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -333,7 +333,7 @@ export default function DeliveryScheduler({
                       disabled={!slot.isAvailable}
                       className={`p-4 border rounded-lg text-left transition-all ${
                         selectedSlot === slot.slotId
-                          ? 'border-purple-500 bg-purple-50'
+                          ? 'border-red-500 bg-purple-50'
                           : slot.isAvailable
                           ? 'border-gray-200 hover:border-gray-300'
                           : 'border-gray-100 bg-gray-50 cursor-not-allowed'
@@ -346,7 +346,7 @@ export default function DeliveryScheduler({
                             {formatTime(slot.timeWindow.start)} - {formatTime(slot.timeWindow.end)}
                           </div>
                           {slot.additionalFee > 0 && (
-                            <div className="text-sm text-purple-600 font-medium">
+                            <div className="text-sm text-primary-red font-medium">
                               +${slot.additionalFee.toFixed(2)}
                             </div>
                           )}
@@ -388,7 +388,7 @@ export default function DeliveryScheduler({
                     type="time"
                     value={specificTime}
                     onChange={(e) => setSpecificTime(e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Request a specific time within the selected slot (subject to availability)
@@ -403,7 +403,7 @@ export default function DeliveryScheduler({
                 <select
                   value={deliveryLocation}
                   onChange={(e) => setDeliveryLocation(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 >
                   <option value="front_door">Front Door</option>
                   <option value="back_door">Back Door</option>
@@ -424,7 +424,7 @@ export default function DeliveryScheduler({
                     value={alternativeRecipient}
                     onChange={(e) => setAlternativeRecipient(e.target.value)}
                     placeholder="Someone else who can receive the delivery"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
 
@@ -437,7 +437,7 @@ export default function DeliveryScheduler({
                     value={alternativePhone}
                     onChange={(e) => setAlternativePhone(e.target.value)}
                     placeholder="Alternative contact number"
-                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   />
                 </div>
               </div>
@@ -451,7 +451,7 @@ export default function DeliveryScheduler({
                   onChange={(e) => setAccessInstructions(e.target.value)}
                   rows={3}
                   placeholder="Gate codes, building access, parking instructions, etc."
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -464,7 +464,7 @@ export default function DeliveryScheduler({
                   onChange={(e) => setCustomerNotes(e.target.value)}
                   rows={3}
                   placeholder="Any special instructions or requests for the delivery"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -477,7 +477,7 @@ export default function DeliveryScheduler({
                       type="checkbox"
                       checked={notifyDayBefore}
                       onChange={(e) => setNotifyDayBefore(e.target.checked)}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">
                       Notify me the day before delivery
@@ -488,7 +488,7 @@ export default function DeliveryScheduler({
                       type="checkbox"
                       checked={notifyDeliveryDay}
                       onChange={(e) => setNotifyDeliveryDay(e.target.checked)}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">
                       Notify me on delivery day
@@ -499,7 +499,7 @@ export default function DeliveryScheduler({
                       type="checkbox"
                       checked={notifyOneHourBefore}
                       onChange={(e) => setNotifyOneHourBefore(e.target.checked)}
-                      className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
                     />
                     <span className="ml-2 text-sm text-gray-700">
                       Notify me 1 hour before delivery
@@ -513,7 +513,7 @@ export default function DeliveryScheduler({
                 <button
                   onClick={handleScheduleDelivery}
                   disabled={saving || !selectedDate || !selectedSlot}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? (
                     <div className="flex items-center justify-center">

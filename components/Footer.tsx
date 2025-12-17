@@ -4,7 +4,7 @@ import SocialMediaLinks from "./social/SocialMediaLinks";
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="bg-footer-bg text-white">
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
@@ -163,7 +163,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
+        <div className="mt-8 pt-8 text-center text-gray-300 text-sm border-t border-white border-opacity-10">
           <p>&copy; {new Date().getFullYear()} Smart Blinds Hub. All rights reserved.</p>
         </div>
       </div>

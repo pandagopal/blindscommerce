@@ -341,7 +341,7 @@ function VendorDashboardContent() {
             </div>
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
-                <ShoppingBag size={16} className="text-purple-600" />
+                <ShoppingBag size={16} className="text-primary-red" />
               </div>
               <div>
                 <h3 className="text-sm font-medium">Update product inventory</h3>

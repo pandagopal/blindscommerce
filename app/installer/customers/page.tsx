@@ -122,7 +122,7 @@ export default function InstallerCustomersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading customers...</p>
         </div>
       </div>
@@ -134,7 +134,7 @@ export default function InstallerCustomersPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Customer Directory
             </h1>
             <p className="text-gray-600">Manage customer information and service history</p>
@@ -154,7 +154,7 @@ export default function InstallerCustomersPage() {
         {/* Customer Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCustomers.map((customer) => (
-            <Card key={customer.id} className="border-purple-100 shadow-lg">
+            <Card key={customer.id} className="border-red-100 shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -281,7 +281,7 @@ export default function InstallerCustomersPage() {
         </div>
 
         {filteredCustomers.length === 0 && (
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="text-center py-12">
               <User className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">No Customers Found</h3>

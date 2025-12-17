@@ -205,7 +205,7 @@ export default function ShippingDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <div className="flex-shrink-0">
-              <TrendingUp className="h-8 w-8 text-purple-600" />
+              <TrendingUp className="h-8 w-8 text-primary-red" />
             </div>
             <div className="ml-5 w-0 flex-1">
               <dl>

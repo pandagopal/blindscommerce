@@ -276,7 +276,7 @@ const SmartHomeDashboard: React.FC = () => {
                     {overview.deviceStats?.rooms_covered || 0}
                   </p>
                 </div>
-                <Home className="h-8 w-8 text-purple-500" />
+                <Home className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>

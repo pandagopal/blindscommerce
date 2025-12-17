@@ -77,11 +77,11 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">All Categories</h1>
+        <h1 className="text-4xl font-bold mb-8 text-center bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">All Categories</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {categories.map((cat) => (
-          <div key={cat.name} className="bg-white rounded-xl shadow-lg border border-purple-100 p-6 hover:shadow-xl transition-shadow">
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">{cat.name}</h2>
+          <div key={cat.name} className="bg-white rounded-xl shadow-lg border border-red-100 p-6 hover:shadow-xl transition-shadow">
+            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">{cat.name}</h2>
             <ul className="space-y-2">
               {cat.subcategories.map((sub) => (
                 <li key={sub}>

@@ -53,7 +53,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Find answers to common questions and learn best practices
           </p>
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="#" className="text-primary-red hover:text-primary-dark font-medium">
             Browse Articles →
           </a>
         </div>
@@ -64,7 +64,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Access training videos and sales documentation
           </p>
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="#" className="text-primary-red hover:text-primary-dark font-medium">
             View Resources →
           </a>
         </div>
@@ -75,7 +75,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Need help? Reach out to our support team
           </p>
-          <a href="mailto:sales-support@smartblindshub.com" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="mailto:sales-support@smartblindshub.com" className="text-primary-red hover:text-primary-dark font-medium">
             Email Support →
           </a>
         </div>
@@ -86,7 +86,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Detailed product specs and selling points
           </p>
-          <a href="/products" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="/products" className="text-primary-red hover:text-primary-dark font-medium">
             View Products →
           </a>
         </div>
@@ -97,7 +97,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Calculators, configurators, and other tools
           </p>
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="#" className="text-primary-red hover:text-primary-dark font-medium">
             Access Tools →
           </a>
         </div>
@@ -108,7 +108,7 @@ export default function SalesSupportPage() {
           <p className="text-gray-600 mb-4">
             Quick answers to common sales questions
           </p>
-          <a href="#" className="text-purple-600 hover:text-purple-700 font-medium">
+          <a href="#" className="text-primary-red hover:text-primary-dark font-medium">
             View FAQ →
           </a>
         </div>
@@ -121,17 +121,17 @@ export default function SalesSupportPage() {
           <div>
             <h3 className="font-medium mb-2">Sales Resources</h3>
             <ul className="space-y-1 text-gray-600">
-              <li>• <a href="#" className="hover:text-purple-600">Commission Structure</a></li>
-              <li>• <a href="#" className="hover:text-purple-600">Sales Policies</a></li>
-              <li>• <a href="#" className="hover:text-purple-600">Territory Maps</a></li>
-              <li>• <a href="#" className="hover:text-purple-600">Lead Management Guide</a></li>
+              <li>• <a href="#" className="hover:text-primary-red">Commission Structure</a></li>
+              <li>• <a href="#" className="hover:text-primary-red">Sales Policies</a></li>
+              <li>• <a href="#" className="hover:text-primary-red">Territory Maps</a></li>
+              <li>• <a href="#" className="hover:text-primary-red">Lead Management Guide</a></li>
             </ul>
           </div>
           <div>
             <h3 className="font-medium mb-2">Support Contacts</h3>
             <ul className="space-y-1 text-gray-600">
-              <li>• Sales Support: <a href={`mailto:${companyInfo.salesEmail}`} className="hover:text-purple-600">{companyInfo.salesEmail}</a></li>
-              <li>• Technical Support: <a href={`mailto:${companyInfo.supportEmail}`} className="hover:text-purple-600">{companyInfo.supportEmail}</a></li>
+              <li>• Sales Support: <a href={`mailto:${companyInfo.salesEmail}`} className="hover:text-primary-red">{companyInfo.salesEmail}</a></li>
+              <li>• Technical Support: <a href={`mailto:${companyInfo.supportEmail}`} className="hover:text-primary-red">{companyInfo.supportEmail}</a></li>
               <li>• Emergency Hotline: <span className="font-mono">{companyInfo.emergencyHotline}</span></li>
             </ul>
           </div>

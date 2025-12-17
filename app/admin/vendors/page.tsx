@@ -184,7 +184,7 @@ export default function AdminVendorsPage() {
           </Link>
           <Link
             href="/admin/vendors/new"
-            className="flex items-center p-2 text-white bg-purple-600 border border-purple-600 rounded-md hover:bg-purple-700"
+            className="flex items-center p-2 text-white bg-purple-600 border border-primary-red rounded-md hover:bg-primary-dark"
           >
             <PlusIcon size={16} className="mr-1" />
             <span className="text-sm">Add Vendor</span>
@@ -216,7 +216,7 @@ export default function AdminVendorsPage() {
               placeholder="Search vendors..."
               value={searchQuery}
               onChange={handleSearchInput}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
@@ -224,7 +224,7 @@ export default function AdminVendorsPage() {
         <select
           value={statusFilter}
           onChange={handleStatusFilter}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
         >
           <option value="all">All Status</option>
           <option value="active">Active</option>
@@ -342,7 +342,7 @@ export default function AdminVendorsPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
                         href={`/admin/vendors/${vendor.id}`}
-                        className="text-purple-600 hover:text-purple-900 mr-3"
+                        className="text-primary-red hover:text-red-900 mr-3"
                       >
                         View
                       </Link>

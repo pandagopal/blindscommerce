@@ -205,7 +205,7 @@ const BNPLPayment = ({
           name: 'Klarna',
           logo: '/images/klarna-logo.png',
           description: 'Shop now, pay later with Klarna',
-          color: 'bg-pink-100 text-pink-800'
+          color: 'bg-pink-100 text-primary-dark'
         };
       case 'afterpay':
         return {

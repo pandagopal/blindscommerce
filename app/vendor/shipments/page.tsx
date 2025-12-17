@@ -149,7 +149,7 @@ export default function VendorShipmentsPage() {
   const getCarrierBadge = (carrier: string) => {
     const colors = {
       ups: 'bg-yellow-100 text-yellow-800',
-      fedex: 'bg-purple-100 text-purple-800',
+      fedex: 'bg-purple-100 text-primary-dark',
       usps: 'bg-blue-100 text-blue-800',
       dhl: 'bg-red-100 text-red-800',
       local: 'bg-gray-100 text-gray-800'
@@ -180,7 +180,7 @@ export default function VendorShipmentsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading shipments...</p>
         </div>
       </div>
@@ -192,7 +192,7 @@ export default function VendorShipmentsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Shipments & Fulfillment
             </h1>
             <p className="text-gray-600">Manage your order shipments and tracking</p>
@@ -201,12 +201,12 @@ export default function VendorShipmentsPage() {
           <div className="flex gap-4">
             <Button
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+            <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
               <Plus className="h-4 w-4 mr-2" />
               Create Shipment
             </Button>
@@ -215,7 +215,7 @@ export default function VendorShipmentsPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Package className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <div className="text-2xl font-bold">{shipments.length}</div>
@@ -223,7 +223,7 @@ export default function VendorShipmentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Truck className="h-8 w-8 mx-auto text-orange-600 mb-2" />
               <div className="text-2xl font-bold">
@@ -233,7 +233,7 @@ export default function VendorShipmentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="text-2xl font-bold text-green-600">
                 {shipments.filter(s => s.status === 'delivered').length}
@@ -242,7 +242,7 @@ export default function VendorShipmentsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="text-2xl font-bold text-red-600">
                 {shipments.filter(s => s.status === 'pending' || s.status === 'delayed').length}
@@ -253,7 +253,7 @@ export default function VendorShipmentsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="relative">
@@ -300,9 +300,9 @@ export default function VendorShipmentsPage() {
         </Card>
 
         {/* Shipments List */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Shipment Tracking ({filteredShipments.length})
             </CardTitle>
           </CardHeader>

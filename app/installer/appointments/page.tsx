@@ -120,7 +120,7 @@ export default function InstallerAppointmentsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading appointments...</p>
         </div>
       </div>
@@ -142,14 +142,14 @@ export default function InstallerAppointmentsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto p-6">
         <div className="mb-6">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
             Appointments
           </h1>
           <p className="text-gray-600">Manage your installation and service appointments</p>
         </div>
 
         <Tabs defaultValue="today" className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="today">Today ({filterAppointmentsByStatus('today').length})</TabsTrigger>
             <TabsTrigger value="upcoming">Upcoming ({filterAppointmentsByStatus('upcoming').length})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({filterAppointmentsByStatus('completed').length})</TabsTrigger>
@@ -157,9 +157,9 @@ export default function InstallerAppointmentsPage() {
           </TabsList>
 
           <TabsContent value="today">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Today's Appointments
                 </CardTitle>
               </CardHeader>
@@ -174,9 +174,9 @@ export default function InstallerAppointmentsPage() {
           </TabsContent>
 
           <TabsContent value="upcoming">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Upcoming Appointments
                 </CardTitle>
               </CardHeader>
@@ -191,9 +191,9 @@ export default function InstallerAppointmentsPage() {
           </TabsContent>
 
           <TabsContent value="completed">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Completed Appointments
                 </CardTitle>
               </CardHeader>
@@ -208,9 +208,9 @@ export default function InstallerAppointmentsPage() {
           </TabsContent>
 
           <TabsContent value="cancelled">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Cancelled Appointments
                 </CardTitle>
               </CardHeader>

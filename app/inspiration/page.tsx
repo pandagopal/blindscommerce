@@ -127,7 +127,7 @@ export default function InspirationPage() {
             <h1 className="text-5xl font-bold mb-6">
               Design Inspiration Gallery
             </h1>
-            <p className="text-xl mb-8 text-purple-100 max-w-3xl mx-auto">
+            <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
               Discover beautiful window treatment ideas for every room in your home. 
               Get inspired by real customer transformations and see how the right 
               window treatments can elevate your space.
@@ -135,13 +135,13 @@ export default function InspirationPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link 
                 href="/consultation"
-                className="bg-white text-purple-900 px-8 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+                className="bg-white text-red-900 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
               >
                 Get Design Help
               </Link>
               <Link 
                 href="/products"
-                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-900 transition-colors"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-red-900 transition-colors"
               >
                 Shop Products
               </Link>
@@ -206,7 +206,7 @@ export default function InspirationPage() {
             {styles.map((style) => (
               <span
                 key={style}
-                className="bg-white text-gray-700 px-4 py-2 rounded-full text-sm hover:bg-purple-100 hover:text-purple-700 cursor-pointer transition-colors"
+                className="bg-white text-gray-700 px-4 py-2 rounded-full text-sm hover:bg-red-100 hover:text-primary-dark cursor-pointer transition-colors"
               >
                 {style}
               </span>
@@ -233,7 +233,7 @@ export default function InspirationPage() {
                 <div className={`${
                   viewMode === 'list' ? 'h-64 md:h-full' : 'h-64'
                 } bg-gradient-to-br from-purple-200 to-indigo-300 flex items-center justify-center`}>
-                  <span className="text-purple-800 font-medium text-center px-4">
+                  <span className="text-primary-dark font-medium text-center px-4">
                     {item.title}
                   </span>
                 </div>
@@ -249,7 +249,7 @@ export default function InspirationPage() {
               
               <div className={`${viewMode === 'list' ? 'md:w-1/2' : ''} p-6`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                  <span className="bg-purple-100 text-primary-dark text-xs px-2 py-1 rounded-full">
                     {item.room.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
                   <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
@@ -264,7 +264,7 @@ export default function InspirationPage() {
                   {item.products.map((product, index) => (
                     <span
                       key={index}
-                      className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full"
+                      className="bg-indigo-100 text-primary-dark text-xs px-2 py-1 rounded-full"
                     >
                       {product}
                     </span>
@@ -286,7 +286,7 @@ export default function InspirationPage() {
                 
                 <Link
                   href="/consultation"
-                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-purple-700 transition-colors text-center block"
+                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors text-center block"
                 >
                   Get This Look
                 </Link>
@@ -309,7 +309,7 @@ export default function InspirationPage() {
                   <span className="text-blue-800 font-medium">Living Room Ideas</span>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-red">
                 Living Room Window Treatments
               </h3>
               <p className="text-gray-600 text-sm mt-1">47 design ideas</p>
@@ -321,7 +321,7 @@ export default function InspirationPage() {
                   <span className="text-green-800 font-medium">Bedroom Ideas</span>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-red">
                 Bedroom Privacy & Style
               </h3>
               <p className="text-gray-600 text-sm mt-1">32 design ideas</p>
@@ -333,7 +333,7 @@ export default function InspirationPage() {
                   <span className="text-orange-800 font-medium">Kitchen Ideas</span>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-gray-900 group-hover:text-purple-600">
+              <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-red">
                 Kitchen Window Solutions
               </h3>
               <p className="text-gray-600 text-sm mt-1">28 design ideas</p>
@@ -348,19 +348,19 @@ export default function InspirationPage() {
           <h2 className="text-3xl font-bold mb-4">
             Ready to Create Your Dream Space?
           </h2>
-          <p className="text-xl mb-8 text-purple-100">
+          <p className="text-xl mb-8 text-red-100">
             Our design experts will help you achieve the perfect look for every room in your home.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-purple-50 transition-colors"
+              className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
             >
               Schedule Design Consultation
             </Link>
             <Link
               href="/samples"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors"
             >
               Order Free Samples
             </Link>

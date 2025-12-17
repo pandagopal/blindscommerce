@@ -1223,7 +1223,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 <p className="text-xs text-gray-600">Free Shipping</p>
               </div>
               <div className="bg-white rounded-lg p-3 text-center">
-                <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-1" />
+                <Calendar className="w-6 h-6 text-primary-red mx-auto mb-1" />
                 <p className="text-xs text-gray-600">Quick Delivery</p>
               </div>
             </div>

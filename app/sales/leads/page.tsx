@@ -230,7 +230,7 @@ export default function SalesLeadsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading leads...</p>
         </div>
       </div>
@@ -242,7 +242,7 @@ export default function SalesLeadsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Sales Leads
             </h1>
             <p className="text-gray-600">Manage your sales pipeline and track leads</p>
@@ -250,7 +250,7 @@ export default function SalesLeadsPage() {
           
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+              <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add New Lead
               </Button>
@@ -325,7 +325,7 @@ export default function SalesLeadsPage() {
               </div>
               <Button
                 onClick={handleCreateLead}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
               >
                 Create Lead
               </Button>
@@ -335,7 +335,7 @@ export default function SalesLeadsPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Leads</CardTitle>
@@ -347,7 +347,7 @@ export default function SalesLeadsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">New Leads</CardTitle>
@@ -359,11 +359,11 @@ export default function SalesLeadsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Qualified</CardTitle>
-                <CheckCircle className="h-4 w-4 text-purple-600" />
+                <CheckCircle className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -371,7 +371,7 @@ export default function SalesLeadsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Conversion Rate</CardTitle>
@@ -383,7 +383,7 @@ export default function SalesLeadsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Avg Deal Value</CardTitle>
@@ -395,11 +395,11 @@ export default function SalesLeadsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Pipeline Value</CardTitle>
-                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <TrendingUp className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -409,7 +409,7 @@ export default function SalesLeadsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex gap-4">
               <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -446,9 +446,9 @@ export default function SalesLeadsPage() {
         </Card>
 
         {/* Leads Table */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Leads Pipeline
             </CardTitle>
           </CardHeader>
@@ -530,7 +530,7 @@ export default function SalesLeadsPage() {
                             />
                             <Button
                               onClick={() => editingLead && handleUpdateLead(editingLead.id, editingLead)}
-                              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                              className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                             >
                               Update Lead
                             </Button>

@@ -137,9 +137,9 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-purple-100 p-8">
+      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-100 p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Sign In</h1>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Sign In</h1>
           <p className="text-gray-600 mt-2">
             Sign in to your account to access your orders, favorites, and more.
           </p>
@@ -181,7 +181,7 @@ function LoginForm() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
+                className="text-sm bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
               >
                 Forgot password?
               </Link>
@@ -236,7 +236,7 @@ function LoginForm() {
             <span>Don't have an account?</span>
             <Link
               href="/register"
-              className="ml-1 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
+              className="ml-1 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
             >
               Sign up
             </Link>
@@ -257,7 +257,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-6">
         <div className="flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary-red" />
         </div>
       </div>
     }>

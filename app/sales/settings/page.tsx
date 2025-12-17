@@ -98,7 +98,7 @@ export default function SalesSettingsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
       </div>
     );
   }
@@ -231,9 +231,9 @@ export default function SalesSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Commission Rate</p>
-                    <p className="text-2xl font-bold text-purple-600">{profile.commissionRate}%</p>
+                    <p className="text-2xl font-bold text-primary-red">{profile.commissionRate}%</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-purple-600" />
+                  <DollarSign className="w-8 h-8 text-primary-red" />
                 </div>
               </CardContent>
             </Card>

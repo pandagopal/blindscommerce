@@ -128,7 +128,7 @@ export default function WarrantyRegisterPage() {
             <div className="flex gap-3 justify-center">
               <Button
                 onClick={() => router.push('/account/warranty')}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
               >
                 View Warranties
               </Button>
@@ -159,7 +159,7 @@ export default function WarrantyRegisterPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Register Product Warranty
             </h1>
             <p className="text-gray-600">
@@ -169,9 +169,9 @@ export default function WarrantyRegisterPage() {
 
           {/* Recent Orders for Quick Registration */}
           {recentOrders.length > 0 && (
-            <Card className="mb-8 border-purple-100 shadow-lg">
+            <Card className="mb-8 border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Quick Register from Recent Orders
                 </CardTitle>
               </CardHeader>
@@ -199,7 +199,7 @@ export default function WarrantyRegisterPage() {
                                 onClick={() => selectFromOrder(order, item)}
                                 size="sm"
                                 variant="outline"
-                                className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                                className="border-red-200 text-primary-red hover:bg-red-50"
                               >
                                 Register
                               </Button>
@@ -215,9 +215,9 @@ export default function WarrantyRegisterPage() {
           )}
 
           {/* Manual Registration Form */}
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-xl bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+              <CardTitle className="text-xl bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
                 <Shield className="h-5 w-5 mr-2" />
                 Product Registration Form
               </CardTitle>
@@ -318,7 +318,7 @@ export default function WarrantyRegisterPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                   >
                     {loading ? 'Registering...' : 'Register Warranty'}
                   </Button>
@@ -326,7 +326,7 @@ export default function WarrantyRegisterPage() {
                     type="button"
                     variant="outline"
                     onClick={() => router.push('/account/warranty')}
-                    className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                    className="border-red-200 text-primary-red hover:bg-red-50"
                   >
                     Cancel
                   </Button>

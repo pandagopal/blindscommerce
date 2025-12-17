@@ -32,7 +32,7 @@ export default function HelpPage() {
       ]
     },
     {
-      icon: <FileText className="h-8 w-8 text-purple-600" />,
+      icon: <FileText className="h-8 w-8 text-primary-red" />,
       title: 'Account & Billing',
       description: 'Account management, billing, and payment questions',
       links: [
@@ -106,7 +106,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -161,10 +161,10 @@ export default function HelpPage() {
               </a>
             </div>
             <div className="text-center">
-              <MessageSquare className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <MessageSquare className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
               <p className="text-gray-600 mb-4">Chat with us online</p>
-              <button className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors">
+              <button className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors">
                 Start Chat
               </button>
             </div>
@@ -266,7 +266,7 @@ export default function HelpPage() {
             </Link>
             
             <Link href="/help/care" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <HelpCircle className="h-12 w-12 text-purple-600 mb-4" />
+              <HelpCircle className="h-12 w-12 text-primary-red mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Care & Maintenance</h3>
               <p className="text-gray-600">Keep your window treatments looking their best</p>
             </Link>
@@ -296,7 +296,7 @@ export default function HelpPage() {
       </div>
 
       {/* Still Need Help CTA */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Still Need Help?

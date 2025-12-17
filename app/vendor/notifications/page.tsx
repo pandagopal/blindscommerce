@@ -172,7 +172,7 @@ export default function VendorNotificationsPage() {
       case 'system':
         return 'text-gray-600 bg-gray-100';
       default:
-        return 'text-purple-600 bg-purple-100';
+        return 'text-primary-red bg-purple-100';
     }
   };
 

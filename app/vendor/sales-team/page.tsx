@@ -195,7 +195,7 @@ export default function VendorSalesTeamPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red"></div>
       </div>
     );
   }
@@ -360,7 +360,7 @@ export default function VendorSalesTeamPage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-purple-600" />
+                      <Users className="w-6 h-6 text-primary-red" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">
@@ -393,7 +393,7 @@ export default function VendorSalesTeamPage() {
                           Sales: ${person.totalSales.toLocaleString()}
                         </span>
                         <span className="flex items-center">
-                          <DollarSign className="w-4 h-4 mr-1 text-purple-600" />
+                          <DollarSign className="w-4 h-4 mr-1 text-primary-red" />
                           {person.commissionRate}%
                         </span>
                       </div>

@@ -176,7 +176,7 @@ export default function InstallerSettingsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading settings...</p>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function InstallerSettingsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Installer Settings
             </h1>
             <p className="text-gray-600">Manage your profile, preferences, and notifications</p>
@@ -197,7 +197,7 @@ export default function InstallerSettingsPage() {
           <Button
             onClick={() => handleSave()}
             disabled={saving}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+            className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save All'}
@@ -205,7 +205,7 @@ export default function InstallerSettingsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="profile">
               <User className="h-4 w-4 mr-2" />
               Profile
@@ -225,9 +225,9 @@ export default function InstallerSettingsPage() {
           </TabsList>
 
           <TabsContent value="profile">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Profile Information
                 </CardTitle>
               </CardHeader>
@@ -313,7 +313,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('profile')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Profile
@@ -323,9 +323,9 @@ export default function InstallerSettingsPage() {
           </TabsContent>
 
           <TabsContent value="notifications">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Notification Preferences
                 </CardTitle>
               </CardHeader>
@@ -376,7 +376,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('notifications')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Notifications
@@ -386,9 +386,9 @@ export default function InstallerSettingsPage() {
           </TabsContent>
 
           <TabsContent value="schedule">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Schedule Settings
                 </CardTitle>
               </CardHeader>
@@ -464,7 +464,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('schedule')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Schedule
@@ -474,9 +474,9 @@ export default function InstallerSettingsPage() {
           </TabsContent>
 
           <TabsContent value="preferences">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Work Preferences
                 </CardTitle>
               </CardHeader>
@@ -548,7 +548,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('preferences')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Preferences

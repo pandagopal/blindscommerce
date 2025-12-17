@@ -127,7 +127,7 @@ export default function InstallerRoutesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading routes...</p>
         </div>
       </div>
@@ -139,7 +139,7 @@ export default function InstallerRoutesPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Installation Routes
             </h1>
             <p className="text-gray-600">Optimize your daily routes and track progress</p>
@@ -154,9 +154,9 @@ export default function InstallerRoutesPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Routes List */}
           <div className="lg:col-span-1">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Daily Routes
                 </CardTitle>
               </CardHeader>
@@ -174,8 +174,8 @@ export default function InstallerRoutesPage() {
                         key={route.id}
                         className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                           selectedRoute?.id === route.id
-                            ? 'border-purple-300 bg-purple-50'
-                            : 'border-gray-200 hover:border-purple-200 hover:bg-purple-25'
+                            ? 'border-red-300 bg-purple-50'
+                            : 'border-gray-200 hover:border-red-200 hover:bg-primary-red-25'
                         }`}
                         onClick={() => setSelectedRoute(route)}
                       >
@@ -213,11 +213,11 @@ export default function InstallerRoutesPage() {
           {/* Route Details */}
           <div className="lg:col-span-2">
             {selectedRoute ? (
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
                   <div className="flex justify-between items-center">
                     <div>
-                      <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                      <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                         Route Details - {formatDate(selectedRoute.date)}
                       </CardTitle>
                       <div className="flex gap-4 mt-2 text-sm text-gray-600">
@@ -234,7 +234,7 @@ export default function InstallerRoutesPage() {
                     {selectedRoute.stops.map((stop, index) => (
                       <div key={stop.id} className="flex items-start gap-4 p-4 border rounded-lg">
                         <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 font-medium">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-primary-red font-medium">
                             {index + 1}
                           </div>
                         </div>
@@ -281,7 +281,7 @@ export default function InstallerRoutesPage() {
                 </CardContent>
               </Card>
             ) : (
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardContent className="text-center py-12">
                   <Map className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-medium text-gray-600 mb-2">Select a Route</h3>

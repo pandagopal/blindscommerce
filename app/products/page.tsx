@@ -200,7 +200,7 @@ export default async function ProductsPage({
       <div className="container mx-auto px-4 py-8">
         {/* Dynamic Header Based on Filters */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
             {pageContext.isRoomFiltered 
               ? `${pageContext.roomName} Window Treatments`
               : pageContext.isCategoryFiltered 

@@ -160,7 +160,7 @@ export default function InstallerCompletedJobsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading completed jobs...</p>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function InstallerCompletedJobsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Completed Jobs
             </h1>
             <p className="text-gray-600">Review your completed installations and service history</p>
@@ -180,7 +180,7 @@ export default function InstallerCompletedJobsPage() {
           
           <Button 
             variant="outline"
-            className="border-purple-200 text-purple-600 hover:bg-purple-50"
+            className="border-red-200 text-primary-red hover:bg-red-50"
           >
             <Download className="h-4 w-4 mr-2" />
             Export Report
@@ -188,7 +188,7 @@ export default function InstallerCompletedJobsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="relative">
@@ -230,7 +230,7 @@ export default function InstallerCompletedJobsPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
               <div className="text-2xl font-bold">{filteredJobs.length}</div>
@@ -238,7 +238,7 @@ export default function InstallerCompletedJobsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Star className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
               <div className="text-2xl font-bold">
@@ -251,7 +251,7 @@ export default function InstallerCompletedJobsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Clock className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <div className="text-2xl font-bold">
@@ -264,7 +264,7 @@ export default function InstallerCompletedJobsPage() {
             </CardContent>
           </Card>
           
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="text-2xl font-bold text-green-600">
                 {formatCurrency(filteredJobs.reduce((sum, job) => sum + job.invoice_amount, 0))}
@@ -277,7 +277,7 @@ export default function InstallerCompletedJobsPage() {
         {/* Jobs List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredJobs.map((job) => (
-            <Card key={job.id} className="border-purple-100 shadow-lg">
+            <Card key={job.id} className="border-red-100 shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
@@ -419,7 +419,7 @@ export default function InstallerCompletedJobsPage() {
         </div>
 
         {filteredJobs.length === 0 && (
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="text-center py-12">
               <CheckCircle className="h-16 w-16 mx-auto text-gray-300 mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">No Completed Jobs</h3>

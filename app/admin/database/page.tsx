@@ -213,7 +213,7 @@ export default function AdminDatabasePage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading database information...</p>
         </div>
       </div>
@@ -225,7 +225,7 @@ export default function AdminDatabasePage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Database Management
             </h1>
             <p className="text-gray-600">Monitor and manage database tables, backups, and queries</p>
@@ -242,7 +242,7 @@ export default function AdminDatabasePage() {
             <Button
               onClick={fetchDatabaseInfo}
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -251,7 +251,7 @@ export default function AdminDatabasePage() {
         </div>
 
         <Tabs defaultValue="tables" className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="tables">
               <Table className="h-4 w-4 mr-2" />
               Tables
@@ -267,9 +267,9 @@ export default function AdminDatabasePage() {
           </TabsList>
 
           <TabsContent value="tables">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Database Tables
                 </CardTitle>
               </CardHeader>
@@ -353,10 +353,10 @@ export default function AdminDatabasePage() {
           </TabsContent>
 
           <TabsContent value="backups">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Database Backups
                   </CardTitle>
                   <Button
@@ -420,9 +420,9 @@ export default function AdminDatabasePage() {
           </TabsContent>
 
           <TabsContent value="query">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center gap-2">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center gap-2">
                   <Database className="h-5 w-5" />
                   SQL Query Console
                 </CardTitle>
@@ -457,7 +457,7 @@ export default function AdminDatabasePage() {
                   <Button
                     onClick={executeQuery}
                     disabled={!sqlQuery.trim() || executingQuery}
-                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                    className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
                   >
                     <Play className="h-4 w-4 mr-2" />
                     {executingQuery ? 'Executing...' : 'Execute Query'}

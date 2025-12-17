@@ -77,7 +77,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
       </div>
     );
   }
@@ -89,7 +89,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <p className="text-red-600">{error}</p>
           <button
             onClick={() => router.push('/admin/users')}
-            className="mt-4 text-purple-600 hover:text-purple-900"
+            className="mt-4 text-primary-red hover:text-red-900"
           >
             Back to Users
           </button>
@@ -105,7 +105,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <p className="text-gray-600">User not found</p>
           <button
             onClick={() => router.push('/admin/users')}
-            className="mt-4 text-purple-600 hover:text-purple-900"
+            className="mt-4 text-primary-red hover:text-red-900"
           >
             Back to Users
           </button>
@@ -271,7 +271,7 @@ export default function UserDetailsPage({ params }: { params: { id: string } }) 
           <div className="mt-8 flex justify-end space-x-4">
             <Link
               href={`/admin/users/${user.user_id}/edit`}
-              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-primary-dark"
             >
               Edit User
             </Link>

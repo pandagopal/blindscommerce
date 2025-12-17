@@ -14,7 +14,45 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                'primary-red': '#CC2229',
+                // Brand Color Palette - CSS variable references (highest priority)
+                'primary-red': 'var(--primary-red)',
+                'primary-dark': 'var(--primary-dark)',
+                'hover-primary': 'var(--hover-primary)',
+                'accent-yellow': 'var(--accent-yellow)',
+                'footer-bg': 'var(--bg-footer)',
+                'header-bg': 'var(--bg-header)',
+
+                // Brand Red - Primary brand color palette
+                'brand-red': {
+                    50: '#fef2f3',
+                    100: '#fde6e8',
+                    200: '#fbd0d5',
+                    300: '#f7aab2',
+                    400: '#f17a8a',
+                    500: '#da0530',  // Primary brand red
+                    600: '#c20429',
+                    700: '#a00424',
+                    800: '#850622',
+                    900: '#6f0820',
+                    950: '#4a050d',  // Dark brand red
+                },
+
+                // Override red to use brand red
+                red: {
+                    50: '#fef2f3',
+                    100: '#fde6e8',
+                    200: '#fbd0d5',
+                    300: '#f7aab2',
+                    400: '#f17a8a',
+                    500: '#da0530',
+                    600: '#c20429',
+                    700: '#a00424',
+                    800: '#850622',
+                    900: '#6f0820',
+                    950: '#4a050d',
+                },
+
+                // Shadcn UI colors
                 background: 'hsl(var(--background))',
                 foreground: 'hsl(var(--foreground))',
                 card: {
@@ -55,6 +93,20 @@ const config: Config = {
                     '4': 'hsl(var(--chart-4))',
                     '5': 'hsl(var(--chart-5))'
                 }
+            },
+            fontFamily: {
+                sans: [
+                    '-apple-system',
+                    'BlinkMacSystemFont',
+                    'Segoe UI',
+                    'Roboto',
+                    'Helvetica Neue',
+                    'Arial',
+                    'sans-serif',
+                    'Apple Color Emoji',
+                    'Segoe UI Emoji',
+                    'Segoe UI Symbol'
+                ],
             },
             borderRadius: {
                 lg: 'var(--radius)',

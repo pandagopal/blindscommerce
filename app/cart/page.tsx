@@ -93,11 +93,11 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-xl shadow-lg border border-purple-100 p-8 max-w-md mx-auto">
+        <div className="bg-white rounded-xl shadow-lg border border-red-100 p-8 max-w-md mx-auto">
           <div className="mb-6">
             <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto" />
           </div>
-          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Your Cart is Empty</h1>
+          <h1 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Your Cart is Empty</h1>
           <p className="text-gray-600 mb-8">
             Looks like you haven't added any products to your cart yet.
           </p>
@@ -116,14 +116,14 @@ export default function CartPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Shopping Cart</h1>
-          <HelpButton className="bg-purple-600 hover:bg-purple-700 text-white" />
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Shopping Cart</h1>
+          <HelpButton className="bg-purple-600 hover:bg-primary-dark text-white" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Cart Items - Left Side */}
           <div className="lg:col-span-8">
-            <div className="bg-white shadow-lg rounded-xl border border-purple-100 overflow-hidden">
+            <div className="bg-white shadow-lg rounded-xl border border-red-100 overflow-hidden">
               <div className="p-4 bg-gray-50 border-b border-gray-200">
                 <div className="grid grid-cols-12 gap-4">
                   <div className="col-span-6 font-medium">Product</div>
@@ -280,9 +280,9 @@ export default function CartPage() {
 
                             {/* Fabric & Materials */}
                             <div className="bg-purple-50 p-2 rounded">
-                              <h5 className="font-medium text-purple-800 mb-1">Materials</h5>
+                              <h5 className="font-medium text-primary-dark mb-1">Materials</h5>
                               {(item.configuration?.fabricName || item.fabricName || item.configuration?.fabricType || item.fabricType) && (
-                                <div className="flex justify-between text-purple-700">
+                                <div className="flex justify-between text-primary-dark">
                                   <span>fabric:</span>
                                   <span className="font-medium">
                                     {(item.configuration?.fabricName || item.fabricName || 
@@ -292,25 +292,25 @@ export default function CartPage() {
                                 </div>
                               )}
                               {item.fabricOption && (
-                                <div className="flex justify-between text-purple-700">
+                                <div className="flex justify-between text-primary-dark">
                                   <span>fabric option:</span>
                                   <span className="font-medium">{item.fabricOption.toLowerCase()}</span>
                                 </div>
                               )}
                               {(item.configuration?.colorOption || item.colorOption) && (
-                                <div className="flex justify-between text-purple-700">
+                                <div className="flex justify-between text-primary-dark">
                                   <span>color:</span>
                                   <span className="font-medium">{(item.configuration?.colorOption || item.colorOption || '').toLowerCase()}</span>
                                 </div>
                               )}
                               {item.colorName && (
-                                <div className="flex justify-between text-purple-700">
+                                <div className="flex justify-between text-primary-dark">
                                   <span>color name:</span>
                                   <span className="font-medium">{item.colorName.toLowerCase()}</span>
                                 </div>
                               )}
                               {item.materialName && (
-                                <div className="flex justify-between text-purple-700">
+                                <div className="flex justify-between text-primary-dark">
                                   <span>material:</span>
                                   <span className="font-medium">{item.materialName.toLowerCase()}</span>
                                 </div>
@@ -386,7 +386,7 @@ export default function CartPage() {
               <div className="p-4 flex justify-end items-center">
                 <Link
                   href="/products"
-                  className="text-sm bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
+                  className="text-sm bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
                 >
                   Continue Shopping
                 </Link>
@@ -396,8 +396,8 @@ export default function CartPage() {
 
           {/* Order Summary - Right Side */}
           <div className="lg:col-span-4">
-            <div className="bg-white shadow-lg rounded-xl border border-purple-100 p-6">
-              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Order Summary</h2>
+            <div className="bg-white shadow-lg rounded-xl border border-red-100 p-6">
+              <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Order Summary</h2>
 
               <div className="space-y-4">
                 <div className="flex justify-between border-b pb-4">

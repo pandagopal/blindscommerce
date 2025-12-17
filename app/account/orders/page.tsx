@@ -164,7 +164,7 @@ export default function OrdersPage() {
                         : order.status === 'Cancelled'
                         ? 'bg-red-100 text-red-800'
                         : order.status === 'Processing'
-                        ? 'bg-purple-100 text-purple-800'
+                        ? 'bg-purple-100 text-primary-dark'
                         : 'bg-amber-100 text-amber-800'
                     }`}>
                       {order.status}

@@ -1,39 +1,47 @@
+/**
+ * Color system using CSS variables
+ * Single source of truth is in app/globals.css
+ * This file provides type-safe references for use in JavaScript/TypeScript
+ */
 export const colors = {
-  // Primary Colors
+  // Primary Colors - Reference CSS variables
   primary: {
-    red: '#CC2229',     // Main brand color
-    dark: '#1A365D',    // Dark blue for hover states
+    red: 'var(--primary-red)',
+    dark: 'var(--primary-dark)',
   },
 
   // Text Colors
   text: {
-    primary: '#333333', // Primary text color
-    secondary: '#717171', // Secondary text color
+    primary: 'var(--text-primary)',
+    secondary: 'var(--text-secondary)',
   },
 
   // Background Colors
   background: {
-    main: '#F5F5F5',    // Light gray background
-    white: '#FFFFFF',   // White background
+    main: 'var(--bg-main)',
+    white: 'var(--bg-white)',
+    default: 'var(--bg-default)',
+    footer: 'var(--bg-footer)',
+    header: 'var(--bg-header)',
   },
 
   // Border Colors
   border: {
-    light: '#E5E7EB',   // Light border color
-    main: '#D1D5DB',    // Main border color
+    light: 'var(--border-light)',
+    main: 'var(--border-main)',
   },
 
   // Status Colors
   status: {
-    success: '#059669',  // Success green
-    error: '#DC2626',    // Error red
-    warning: '#D97706',  // Warning orange
-    info: '#2563EB',     // Info blue
+    success: 'var(--status-success)',
+    error: 'var(--status-error)',
+    warning: 'var(--status-warning)',
+    info: 'var(--status-info)',
   },
 
   // Hover States
   hover: {
-    primary: '#B91C1C',  // Darker red for primary button hover
-    gray: '#F3F4F6',     // Light gray for hover states
+    primary: 'var(--hover-primary)',
+    gray: 'var(--hover-gray)',
   }
 }; 

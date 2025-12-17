@@ -299,7 +299,7 @@ export default function SuperAdminDashboard() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <ShoppingCart className="h-8 w-8 text-purple-600" />
+            <ShoppingCart className="h-8 w-8 text-primary-red" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Orders</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalOrders.toLocaleString()}</p>

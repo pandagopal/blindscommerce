@@ -60,7 +60,7 @@ export default function ContactPage() {
       actionText: 'Send Email'
     },
     {
-      icon: <MessageSquare className="h-8 w-8 text-purple-600" />,
+      icon: <MessageSquare className="h-8 w-8 text-primary-red" />,
       title: 'Live Chat',
       description: 'Chat with us online',
       contact: 'Available on website',
@@ -116,7 +116,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -185,7 +185,7 @@ export default function ContactPage() {
       <div className="bg-white py-16">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+            <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white p-6">
               <h2 className="text-2xl font-bold mb-2">Send Us a Message</h2>
               <p className="text-blue-100">Fill out the form below and we'll get back to you soon.</p>
             </div>
@@ -358,7 +358,7 @@ export default function ContactPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Get Started?

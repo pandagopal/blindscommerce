@@ -179,7 +179,7 @@ export default function HeroSection() {
         
         .hero-swiper .swiper-pagination-bullet-active {
           opacity: 1;
-          background: #CC2229;
+          background: var(--primary-red);
           transform: scale(1.2);
         }
         

@@ -94,7 +94,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
     return (
       <Link
         href="/account/loyalty"
-        className={`block bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg p-4 hover:from-purple-700 hover:to-blue-700 transition-all ${className}`}
+        className={`block bg-gradient-to-r from-primary-red to-primary-dark text-white rounded-lg p-4 hover:from-purple-700 hover:to-blue-700 transition-all ${className}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -194,7 +194,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
               <div 
-                className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-primary-red to-primary-dark h-2 rounded-full transition-all duration-300"
                 style={{ width: `${getProgressToNextTier()}%` }}
               ></div>
             </div>

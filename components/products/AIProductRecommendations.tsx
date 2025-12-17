@@ -93,7 +93,7 @@ export default function AIProductRecommendations({
   const getIcon = () => {
     switch (type) {
       case 'personalized':
-        return <Sparkles className="h-5 w-5 text-purple-500" />;
+        return <Sparkles className="h-5 w-5 text-red-500" />;
       case 'trending':
         return <TrendingUp className="h-5 w-5 text-green-500" />;
       case 'similar':
@@ -213,7 +213,7 @@ export default function AIProductRecommendations({
           {getIcon()}
           <h2 className="text-2xl font-bold">{title || getDefaultTitle()}</h2>
           {type === 'ai-visual' && (
-            <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Badge variant="secondary" className="bg-gradient-to-r from-red-500 to-primary-dark text-white">
               AI Powered
             </Badge>
           )}

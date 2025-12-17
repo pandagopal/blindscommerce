@@ -341,7 +341,7 @@ export default function AdminSettingsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading settings...</p>
         </div>
       </div>
@@ -362,7 +362,7 @@ export default function AdminSettingsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               System Settings
             </h1>
             <p className="text-gray-600">Configure system-wide settings and preferences</p>
@@ -411,7 +411,7 @@ export default function AdminSettingsPage() {
         )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="general">
               <Settings className="h-4 w-4 mr-2" />
               General
@@ -435,9 +435,9 @@ export default function AdminSettingsPage() {
           </TabsList>
 
           <TabsContent value="general">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   General Settings
                 </CardTitle>
               </CardHeader>
@@ -593,9 +593,9 @@ export default function AdminSettingsPage() {
           </TabsContent>
 
           <TabsContent value="notifications">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Notification Settings
                 </CardTitle>
               </CardHeader>
@@ -632,9 +632,9 @@ export default function AdminSettingsPage() {
           </TabsContent>
 
           <TabsContent value="payments">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Payment Settings
                 </CardTitle>
               </CardHeader>
@@ -806,7 +806,7 @@ export default function AdminSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-pink-600" />
+                        <CreditCard className="h-6 w-6 text-primary-red" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Klarna</h3>
@@ -922,7 +922,7 @@ export default function AdminSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-indigo-600" />
+                        <CreditCard className="h-6 w-6 text-primary-red" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Affirm</h3>
@@ -974,7 +974,7 @@ export default function AdminSettingsPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-purple-600" />
+                        <CreditCard className="h-6 w-6 text-primary-red" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Braintree</h3>
@@ -1152,9 +1152,9 @@ export default function AdminSettingsPage() {
           </TabsContent>
 
           <TabsContent value="security">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
                   <Shield className="h-5 w-5 mr-2" />
                   Security Settings
                 </CardTitle>
@@ -1256,9 +1256,9 @@ export default function AdminSettingsPage() {
           </TabsContent>
 
           <TabsContent value="integrations">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Third-Party Integrations
                 </CardTitle>
               </CardHeader>

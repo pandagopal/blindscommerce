@@ -117,7 +117,7 @@ function ConsultationContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
@@ -162,7 +162,7 @@ function ConsultationContent() {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8">
+              <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white p-8">
                 <h2 className="text-3xl font-bold mb-4">Schedule Your Service</h2>
                 <p className="text-blue-100 text-lg">Fill out the form below and we'll contact you to confirm your appointment.</p>
               </div>
@@ -440,7 +440,7 @@ function ConsultationContent() {
             </div>
             <div className="text-center">
               <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
-                <Mail className="h-12 w-12 text-purple-600" />
+                <Mail className="h-12 w-12 text-primary-red" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Custom Quote</h3>
               <p className="text-gray-600 text-lg">
@@ -452,7 +452,7 @@ function ConsultationContent() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20">
+      <section className="bg-gradient-to-r from-primary-red to-primary-dark text-white py-20">
         <div className="container mx-auto text-center px-4">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Transform Your Windows?

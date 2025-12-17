@@ -94,7 +94,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.companyName}
               onChange={handleChange}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -108,7 +108,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.contactEmail}
               onChange={handleChange}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -121,7 +121,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               name="contactPhone"
               value={formData.contactPhone}
               onChange={handleChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -134,7 +134,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.businessDescription}
               onChange={handleChange}
               rows={4}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
         </div>
@@ -153,7 +153,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -167,7 +167,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -181,7 +181,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
               value={formData.email}
               onChange={handleChange}
               required
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
             />
           </div>
 
@@ -196,7 +196,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
                 value={formData.password}
                 onChange={handleChange}
                 required={!vendorId}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500"
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500"
               />
             </div>
           )}
@@ -207,7 +207,7 @@ export default function VendorForm({ vendorId, initialData }: VendorFormProps) {
         <button
           type="button"
           onClick={() => router.back()}
-          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
         >
           Cancel
         </button>

@@ -242,7 +242,7 @@ export default function AdminLogsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading system logs...</p>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function AdminLogsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               System Logs
             </h1>
             <p className="text-gray-600">Monitor system activities and troubleshoot issues</p>
@@ -264,7 +264,7 @@ export default function AdminLogsPage() {
             <Button
               onClick={exportLogs}
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -272,7 +272,7 @@ export default function AdminLogsPage() {
             <Button
               onClick={fetchLogs}
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -290,7 +290,7 @@ export default function AdminLogsPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <FileText className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.total_entries.toLocaleString() || 0}</div>
@@ -298,7 +298,7 @@ export default function AdminLogsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <XCircle className="h-8 w-8 mx-auto text-red-600 mb-2" />
               <div className="text-2xl font-bold text-red-600">{stats?.errors_today || 0}</div>
@@ -306,7 +306,7 @@ export default function AdminLogsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <AlertTriangle className="h-8 w-8 mx-auto text-yellow-600 mb-2" />
               <div className="text-2xl font-bold text-yellow-600">{stats?.warnings_today || 0}</div>
@@ -314,9 +314,9 @@ export default function AdminLogsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <Calendar className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+              <Calendar className="h-8 w-8 mx-auto text-primary-red mb-2" />
               <div className="text-lg font-bold">
                 {stats?.last_error_time ? formatTimestamp(stats.last_error_time).split(',')[1] : 'None'}
               </div>
@@ -326,7 +326,7 @@ export default function AdminLogsPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="relative">
@@ -383,9 +383,9 @@ export default function AdminLogsPage() {
         </Card>
 
         {/* Logs List */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Log Entries ({filteredLogs.length})
             </CardTitle>
           </CardHeader>

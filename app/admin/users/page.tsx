@@ -144,7 +144,7 @@ export default function AdminUsersPage() {
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'admin':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-100 text-primary-dark';
       case 'vendor':
         return 'bg-blue-100 text-blue-800';
       case 'sales':
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
               placeholder="Search users..."
               value={searchQuery}
               onChange={handleSearch}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
             />
             <SearchIcon className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
@@ -270,7 +270,7 @@ export default function AdminUsersPage() {
         <select
           value={roleFilter}
           onChange={handleStatusFilter}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500"
+          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500"
         >
           <option value="all">All Roles</option>
           <option value="admin">Admins</option>
@@ -386,7 +386,7 @@ export default function AdminUsersPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
                         href={`/admin/users/${user.user_id}`}
-                        className="text-purple-600 hover:text-purple-900 mr-3"
+                        className="text-primary-red hover:text-red-900 mr-3"
                       >
                         View
                       </Link>

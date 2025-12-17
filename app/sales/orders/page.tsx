@@ -231,7 +231,7 @@ export default function SalesOrdersPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading orders...</p>
         </div>
       </div>
@@ -243,7 +243,7 @@ export default function SalesOrdersPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Sales Orders
             </h1>
             <p className="text-gray-600">Manage and track all sales orders</p>
@@ -252,7 +252,7 @@ export default function SalesOrdersPage() {
           <Button
             onClick={() => exportOrders('all')}
             variant="outline"
-            className="border-purple-200 text-purple-600 hover:bg-purple-50"
+            className="border-red-200 text-primary-red hover:bg-red-50"
           >
             <Download className="h-4 w-4 mr-2" />
             Export Orders
@@ -261,7 +261,7 @@ export default function SalesOrdersPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
@@ -273,7 +273,7 @@ export default function SalesOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Pending Orders</CardTitle>
@@ -285,7 +285,7 @@ export default function SalesOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Monthly Revenue</CardTitle>
@@ -297,11 +297,11 @@ export default function SalesOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Commission Earned</CardTitle>
-                <DollarSign className="h-4 w-4 text-purple-600" />
+                <DollarSign className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -309,7 +309,7 @@ export default function SalesOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Avg Order Value</CardTitle>
@@ -321,7 +321,7 @@ export default function SalesOrdersPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Conversion Rate</CardTitle>
@@ -335,7 +335,7 @@ export default function SalesOrdersPage() {
         </div>
 
         {/* Filters and Search */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="relative">
@@ -380,9 +380,9 @@ export default function SalesOrdersPage() {
         </Card>
 
         {/* Orders List */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Orders Management
             </CardTitle>
           </CardHeader>

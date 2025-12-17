@@ -204,20 +204,20 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
                     key={type.value}
                     className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                       sessionType === type.value
-                        ? 'border-purple-500 bg-purple-50'
+                        ? 'border-red-500 bg-purple-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setSessionType(type.value)}
                   >
                     <div className="flex items-start space-x-3">
-                      <Icon className="h-5 w-5 text-purple-600 mt-0.5" />
+                      <Icon className="h-5 w-5 text-primary-red mt-0.5" />
                       <div className="flex-1">
                         <div className="font-medium text-sm">{type.label}</div>
                         <div className="text-xs text-gray-600">{type.description}</div>
                       </div>
                       <div className={`w-4 h-4 rounded-full border-2 ${
                         sessionType === type.value
-                          ? 'border-purple-500 bg-purple-500'
+                          ? 'border-red-500 bg-purple-500'
                           : 'border-gray-300'
                       }`}>
                         {sessionType === type.value && (
@@ -253,7 +253,7 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
 
           <Button
             type="submit"
-            className="w-full bg-purple-600 hover:bg-purple-700"
+            className="w-full bg-purple-600 hover:bg-primary-dark"
             disabled={isLoading}
           >
             {isLoading ? (

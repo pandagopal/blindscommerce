@@ -301,7 +301,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
         
         .hero-swiper .swiper-pagination-bullet-active {
           opacity: 1;
-          background: #CC2229;
+          background: var(--primary-red);
           transform: scale(1.2);
         }
         
@@ -344,7 +344,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
       `}</style>
 
       {/* Promotion Banner Strip */}
-      <section className="bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4">
+      <section className="bg-gradient-to-r from-red-500 to-primary-dark text-white py-4">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-center gap-8">
               {promoBanners.map((banner, index) => (

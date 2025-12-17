@@ -131,7 +131,7 @@ const PaymentMethodSelector = ({
     
     if (method.type === 'bnpl' && method.interest_rate === 0) {
       badges.push(
-        <Badge key="interest-free" variant="outline" className="border-purple-200 text-purple-700">
+        <Badge key="interest-free" variant="outline" className="border-red-200 text-primary-dark">
           0% Interest
         </Badge>
       );

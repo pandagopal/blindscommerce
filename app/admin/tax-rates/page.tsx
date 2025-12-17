@@ -197,7 +197,7 @@ export default function TaxRatesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading tax rates...</p>
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function TaxRatesPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Tax Rates Management
             </h1>
             <p className="text-gray-600">Upload and manage ZIP code-based tax rates</p>
@@ -236,9 +236,9 @@ export default function TaxRatesPage() {
         </div>
 
         {/* Upload Section */}
-        <Card className="border-purple-100 shadow-lg mb-8">
+        <Card className="border-red-100 shadow-lg mb-8">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent flex items-center">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent flex items-center">
               <Upload className="h-5 w-5 mr-2" />
               Upload CSV File
             </CardTitle>
@@ -247,7 +247,7 @@ export default function TaxRatesPage() {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <div className="space-y-4">
                 <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <FileText className="h-6 w-6 text-purple-600" />
+                  <FileText className="h-6 w-6 text-primary-red" />
                 </div>
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">Upload Tax Rates CSV</h3>
@@ -403,10 +403,10 @@ export default function TaxRatesPage() {
         </Card>
 
         {/* Search and Tax Rates Table */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+              <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                 Current Tax Rates ({totalRecords} total)
               </CardTitle>
               <div className="flex items-center gap-3">

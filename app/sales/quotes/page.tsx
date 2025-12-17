@@ -253,7 +253,7 @@ export default function SalesQuotesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading quotes...</p>
         </div>
       </div>
@@ -265,7 +265,7 @@ export default function SalesQuotesPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Quote Management
             </h1>
             <p className="text-gray-600">Create, manage, and track your sales quotes</p>
@@ -274,12 +274,12 @@ export default function SalesQuotesPage() {
           <div className="flex gap-4">
             <Button
               variant="outline"
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+            <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
               <Plus className="h-4 w-4 mr-2" />
               New Quote
             </Button>
@@ -288,7 +288,7 @@ export default function SalesQuotesPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <FileText className="h-8 w-8 mx-auto text-blue-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.total_quotes || 0}</div>
@@ -296,7 +296,7 @@ export default function SalesQuotesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <Timer className="h-8 w-8 mx-auto text-orange-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.pending_quotes || 0}</div>
@@ -304,7 +304,7 @@ export default function SalesQuotesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.accepted_quotes || 0}</div>
@@ -312,15 +312,15 @@ export default function SalesQuotesPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <DollarSign className="h-8 w-8 mx-auto text-purple-600 mb-2" />
+              <DollarSign className="h-8 w-8 mx-auto text-primary-red mb-2" />
               <div className="text-2xl font-bold">{formatCurrency(stats?.total_value || 0)}</div>
               <div className="text-sm text-gray-600">Total Value</div>
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
               <div className="text-2xl font-bold text-green-600">{stats?.conversion_rate || 0}%</div>
               <div className="text-sm text-gray-600">Conversion Rate</div>
@@ -329,7 +329,7 @@ export default function SalesQuotesPage() {
         </div>
 
         {/* Filters */}
-        <Card className="border-purple-100 shadow-lg mb-6">
+        <Card className="border-red-100 shadow-lg mb-6">
           <CardContent className="pt-6">
             <div className="flex flex-wrap gap-4">
               <div className="relative">
@@ -373,9 +373,9 @@ export default function SalesQuotesPage() {
         </Card>
 
         {/* Quotes List */}
-        <Card className="border-purple-100 shadow-lg">
+        <Card className="border-red-100 shadow-lg">
           <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Quotes ({filteredQuotes.length})
             </CardTitle>
           </CardHeader>

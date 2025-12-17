@@ -926,7 +926,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                                   toast.error('Failed to clone product');
                                 }
                               }}
-                              className="text-purple-600 hover:text-purple-900 p-1.5 hover:bg-purple-50 rounded-md transition-colors inline-flex"
+                              className="text-primary-red hover:text-red-900 p-1.5 hover:bg-red-50 rounded-md transition-colors inline-flex"
                               title="Clone Product"
                             >
                               <Copy className="h-6 w-6" />

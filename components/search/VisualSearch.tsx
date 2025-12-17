@@ -296,9 +296,9 @@ export default function VisualSearch({ trigger, onResultSelect }: VisualSearchPr
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-500" />
+            <Sparkles className="h-5 w-5 text-red-500" />
             AI Visual Search
-            <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Badge variant="secondary" className="bg-gradient-to-r from-red-500 to-primary-dark text-white">
               Beta
             </Badge>
           </DialogTitle>

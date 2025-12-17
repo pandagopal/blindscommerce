@@ -37,7 +37,7 @@ export default function AIFeaturesPage() {
       title: 'AI Visual Search',
       description: 'Upload a photo of your room and find matching blinds instantly',
       icon: Camera,
-      gradient: 'from-purple-500 to-pink-500',
+      gradient: 'from-primary-red to-primary-dark',
       benefits: ['22-40% fewer returns', 'Instant style matching', 'Smart color analysis'],
       demoTab: 'visual-search'
     },
@@ -46,7 +46,7 @@ export default function AIFeaturesPage() {
       title: 'Smart Recommendations',
       description: 'Personalized product suggestions powered by machine learning',
       icon: Brain,
-      gradient: 'from-blue-500 to-cyan-500',
+      gradient: 'from-primary-red to-primary-dark',
       benefits: ['35% increase in satisfaction', 'Personalized for you', 'Trending insights'],
       demoTab: 'recommendations'
     },
@@ -55,7 +55,7 @@ export default function AIFeaturesPage() {
       title: 'AI Room Visualizer',
       description: 'See how blinds look in your actual room with AR technology',
       icon: Eye,
-      gradient: 'from-green-500 to-emerald-500',
+      gradient: 'from-primary-red to-primary-dark',
       benefits: ['Try before you buy', 'Multiple lighting conditions', 'Accurate measurements'],
       demoTab: 'visualizer'
     },
@@ -64,7 +64,7 @@ export default function AIFeaturesPage() {
       title: 'Smart Measurement',
       description: 'AI-powered window detection and measurement tools',
       icon: Ruler,
-      gradient: 'from-orange-500 to-red-500',
+      gradient: 'from-primary-red to-primary-dark',
       benefits: ['Auto window detection', 'Precise measurements', 'Professional accuracy'],
       demoTab: 'search'
     }
@@ -78,16 +78,16 @@ export default function AIFeaturesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600">
+      <section className="relative overflow-hidden bg-gradient-to-r from-primary-red via-primary-dark to-black">
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="relative container mx-auto px-4 py-20 text-center">
           <div className="max-w-4xl mx-auto">
-                     
+
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              The Future of 
-              <span className="bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+              The Future of
+              <span className="bg-gradient-to-r from-accent-yellow to-white bg-clip-text text-transparent">
                 {' '}Window Shopping
               </span>
             </h1>
@@ -98,16 +98,16 @@ export default function AIFeaturesPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <VisualSearch 
+              <VisualSearch
                 trigger={
-                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100">
+                  <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100">
                     <Camera className="h-5 w-5 mr-2" />
                     Try Visual Search
                   </Button>
                 }
               />
               <Link href="/products">
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-purple-600">
+                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary-red">
                   Browse Products
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </Button>
@@ -123,7 +123,7 @@ export default function AIFeaturesPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white mb-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary-red to-primary-dark text-white mb-4">
                   <stat.icon className="h-6 w-6" />
                 </div>
                 <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
@@ -232,7 +232,7 @@ export default function AIFeaturesPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Search className="h-5 w-5 text-blue-500" />
+                    <Search className="h-5 w-5 text-primary-red" />
                     Enhanced AI Search
                   </CardTitle>
                   <p className="text-gray-600">
@@ -244,18 +244,18 @@ export default function AIFeaturesPage() {
                     <EnhancedSearch placeholder="Try searching for 'modern blinds' or 'blackout shades'..." />
                   </div>
                   <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                    <div className="p-4 bg-blue-50 rounded-lg">
-                      <Lightbulb className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <Lightbulb className="h-8 w-8 text-primary-red mx-auto mb-2" />
                       <h4 className="font-semibold">Smart Suggestions</h4>
                       <p className="text-sm text-gray-600">AI learns from your search patterns</p>
                     </div>
-                    <div className="p-4 bg-green-50 rounded-lg">
-                      <TrendingUp className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <TrendingUp className="h-8 w-8 text-primary-red mx-auto mb-2" />
                       <h4 className="font-semibold">Trending Results</h4>
                       <p className="text-sm text-gray-600">Popular products surface first</p>
                     </div>
-                    <div className="p-4 bg-purple-50 rounded-lg">
-                      <Target className="h-8 w-8 text-purple-500 mx-auto mb-2" />
+                    <div className="p-4 bg-red-50 rounded-lg">
+                      <Target className="h-8 w-8 text-primary-red mx-auto mb-2" />
                       <h4 className="font-semibold">Precise Matching</h4>
                       <p className="text-sm text-gray-600">Find exactly what you need</p>
                     </div>
@@ -268,7 +268,7 @@ export default function AIFeaturesPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Camera className="h-5 w-5 text-purple-500" />
+                    <Camera className="h-5 w-5 text-primary-red" />
                     AI Visual Search Demo
                   </CardTitle>
                   <p className="text-gray-600">
@@ -277,7 +277,7 @@ export default function AIFeaturesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <VisualSearch 
+                    <VisualSearch
                       trigger={
                         <Button size="lg" className="mb-6">
                           <Camera className="h-5 w-5 mr-2" />
@@ -290,15 +290,15 @@ export default function AIFeaturesPage() {
                         <h4 className="font-semibold text-lg">How it works:</h4>
                         <div className="space-y-3">
                           <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-purple-500 text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
+                            <div className="w-6 h-6 rounded-full bg-primary-red text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
                             <p className="text-sm">Upload or take a photo of your room</p>
                           </div>
                           <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-purple-500 text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
+                            <div className="w-6 h-6 rounded-full bg-primary-red text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
                             <p className="text-sm">AI analyzes colors, style, and lighting</p>
                           </div>
                           <div className="flex items-start gap-3">
-                            <div className="w-6 h-6 rounded-full bg-purple-500 text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
+                            <div className="w-6 h-6 rounded-full bg-primary-red text-white text-sm flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
                             <p className="text-sm">Get personalized product matches</p>
                           </div>
                         </div>
@@ -330,7 +330,7 @@ export default function AIFeaturesPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-blue-500" />
+                    <Brain className="h-5 w-5 text-primary-red" />
                     AI Product Recommendations
                   </CardTitle>
                   <p className="text-gray-600">
@@ -338,8 +338,8 @@ export default function AIFeaturesPage() {
                   </p>
                 </CardHeader>
                 <CardContent>
-                  <AIProductRecommendations 
-                    type="trending" 
+                  <AIProductRecommendations
+                    type="trending"
                     maxItems={4}
                     title="Trending This Week"
                   />

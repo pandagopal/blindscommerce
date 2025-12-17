@@ -116,7 +116,7 @@ export default function VendorStorefrontPage() {
 
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-              <Store className="w-6 h-6 text-purple-600" />
+              <Store className="w-6 h-6 text-primary-red" />
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">Your Products</h3>
             <p className="text-gray-600 text-sm">
@@ -160,7 +160,7 @@ export default function VendorStorefrontPage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-              <Store className="w-6 h-6 text-purple-600" />
+              <Store className="w-6 h-6 text-primary-red" />
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">{storefront.storefrontName}</h3>
@@ -189,7 +189,7 @@ export default function VendorStorefrontPage() {
               href={storefront.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center text-purple-600 hover:text-purple-700 font-medium"
+              className="inline-flex items-center text-primary-red hover:text-primary-dark font-medium"
             >
               {window.location.origin}{storefront.url}
               <ExternalLink className="w-4 h-4 ml-1" />
@@ -204,7 +204,7 @@ export default function VendorStorefrontPage() {
           href={storefront.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors group"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-red-300 transition-colors group"
         >
           <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200 transition-colors">
             <Eye className="w-5 h-5 text-blue-600" />
@@ -215,10 +215,10 @@ export default function VendorStorefrontPage() {
 
         <button
           onClick={() => {/* TODO: Open edit modal */}}
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors group text-left"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-red-300 transition-colors group text-left"
         >
-          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-200 transition-colors">
-            <Edit className="w-5 h-5 text-purple-600" />
+          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-red-200 transition-colors">
+            <Edit className="w-5 h-5 text-primary-red" />
           </div>
           <h3 className="font-medium text-gray-900 mb-1">Edit Details</h3>
           <p className="text-sm text-gray-600">Update name, description, and branding</p>
@@ -226,7 +226,7 @@ export default function VendorStorefrontPage() {
 
         <Link
           href="/vendor/products"
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors group"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-red-300 transition-colors group"
         >
           <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-green-200 transition-colors">
             <ShoppingBag className="w-5 h-5 text-green-600" />
@@ -237,7 +237,7 @@ export default function VendorStorefrontPage() {
 
         <button
           onClick={() => {/* TODO: Open settings modal */}}
-          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-purple-300 transition-colors group text-left"
+          className="bg-white border border-gray-200 rounded-lg p-4 hover:border-red-300 transition-colors group text-left"
         >
           <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-gray-200 transition-colors">
             <Settings className="w-5 h-5 text-gray-600" />

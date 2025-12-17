@@ -317,7 +317,7 @@ export default function AssistanceDashboard() {
 
           <div className="grid grid-cols-2 gap-4 pt-4 border-t">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">
+              <div className="text-2xl font-bold text-primary-red">
                 {status.currentActiveSessions}
               </div>
               <div className="text-sm text-gray-600">Active Sessions</div>
@@ -352,7 +352,7 @@ export default function AssistanceDashboard() {
             <Button 
               onClick={acceptAssistanceRequest}
               disabled={isLoading || !pinInput.trim() || !status.isAvailableForAssistance}
-              className="bg-purple-600 hover:bg-purple-700"
+              className="bg-purple-600 hover:bg-primary-dark"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -390,7 +390,7 @@ export default function AssistanceDashboard() {
                   <div key={session.sessionId} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-3">
-                        <Icon className="h-5 w-5 text-purple-600" />
+                        <Icon className="h-5 w-5 text-primary-red" />
                         <div>
                           <div className="font-medium">
                             {session.customer.firstName} {session.customer.lastName}

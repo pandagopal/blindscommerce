@@ -208,14 +208,14 @@ const Navbar = () => {
         </div>
       </div>
       
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-header-bg shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button */}
           <div className="flex md:hidden">
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-600 focus:outline-none"
+              className="text-black hover:text-primary-red focus:outline-none"
               aria-label="Toggle menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -240,7 +240,7 @@ const Navbar = () => {
           <nav className="hidden md:flex space-x-8">
             <Link
               href="/ai-features"
-              className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+              className="text-black hover:text-primary-red font-medium flex items-center gap-1"
             >
               AI Features
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
@@ -251,7 +251,7 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/products"
-                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
               >
                 Blinds
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
@@ -271,7 +271,7 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/shades"
-                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
               >
                 Shades
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
@@ -290,7 +290,7 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/shutters"
-                className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
               >
                 Shutters
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
@@ -307,13 +307,13 @@ const Navbar = () => {
 
             <Link
               href="/products?category=22"
-              className="text-gray-600 hover:text-primary-red font-medium"
+              className="text-black hover:text-primary-red font-medium"
             >
               Motorized
             </Link>
 
             <div className="relative group">
-              <span className="text-gray-600 hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">
+              <span className="text-black hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">
                 Services
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </span>
@@ -332,7 +332,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <button
               type="button"
-              className="text-gray-500 hover:text-primary-red focus:outline-none"
+              className="text-black hover:text-primary-red focus:outline-none"
               aria-label="Search"
             >
               <Search size={20} />
@@ -345,7 +345,7 @@ const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center text-gray-700 hover:text-primary-red focus:outline-none"
+                    className="flex items-center text-black hover:text-primary-red focus:outline-none"
                   >
                     <span className="hidden sm:inline-block mr-1 font-medium">{getDisplayName()}</span>
                     <ChevronDown size={16} />
@@ -415,7 +415,7 @@ const Navbar = () => {
               ) : (
                 <button
                   onClick={handleSignIn}
-                  className="flex items-center text-gray-500 hover:text-primary-red focus:outline-none"
+                  className="flex items-center text-black hover:text-primary-red focus:outline-none"
                   aria-label="Account"
                 >
                   <User size={20} />
@@ -428,7 +428,7 @@ const Navbar = () => {
             {(!user || user.role === 'customer') && (
               <Link
                 href="/cart"
-                className="text-gray-500 hover:text-primary-red focus:outline-none relative"
+                className="text-black hover:text-primary-red focus:outline-none relative"
                 aria-label="Cart"
               >
                 <ShoppingCart size={20} />
@@ -539,19 +539,19 @@ const Navbar = () => {
     <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center space-x-8 py-3 text-sm">
-          <Link href="/products" className="text-gray-600 hover:text-primary-red font-medium">
+          <Link href="/products" className="text-black hover:text-primary-red font-medium">
             Shop by Room
           </Link>
           <Link href="/products?sale=true" className="text-red-600 hover:text-red-700 font-bold">
             Sale - Up to 50% Off
           </Link>
-          <Link href="/samples" className="text-gray-600 hover:text-primary-red font-medium">
+          <Link href="/samples" className="text-black hover:text-primary-red font-medium">
             Free Samples
           </Link>
-          <Link href="/inspiration" className="text-gray-600 hover:text-primary-red font-medium">
+          <Link href="/inspiration" className="text-black hover:text-primary-red font-medium">
             Design Ideas
           </Link>
-          <Link href="/commercial" className="text-gray-600 hover:text-primary-red font-medium">
+          <Link href="/commercial" className="text-black hover:text-primary-red font-medium">
             Commercial
           </Link>
         </div>

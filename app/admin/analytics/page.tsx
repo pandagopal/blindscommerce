@@ -120,7 +120,7 @@ export default function AdminAnalyticsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading analytics...</p>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function AdminAnalyticsPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
               Analytics Dashboard
             </h1>
             <p className="text-gray-600">Comprehensive business intelligence and insights</p>
@@ -154,7 +154,7 @@ export default function AdminAnalyticsPage() {
             <Button
               variant="outline"
               onClick={() => exportData('overview')}
-              className="border-purple-200 text-purple-600 hover:bg-purple-50"
+              className="border-red-200 text-primary-red hover:bg-red-50"
             >
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -164,7 +164,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Overview Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Revenue</CardTitle>
@@ -181,7 +181,7 @@ export default function AdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
@@ -198,11 +198,11 @@ export default function AdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Customers</CardTitle>
-                <Users className="h-4 w-4 text-purple-600" />
+                <Users className="h-4 w-4 text-primary-red" />
               </div>
             </CardHeader>
             <CardContent>
@@ -215,7 +215,7 @@ export default function AdminAnalyticsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-purple-100 shadow-lg">
+          <Card className="border-red-100 shadow-lg">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Avg Order Value</CardTitle>
@@ -235,7 +235,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Detailed Analytics Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white border border-purple-100">
+          <TabsList className="bg-white border border-red-100">
             <TabsTrigger value="overview">
               <BarChart3 className="h-4 w-4 mr-2" />
               Overview
@@ -260,9 +260,9 @@ export default function AdminAnalyticsPage() {
 
           <TabsContent value="overview">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Revenue Trend
                   </CardTitle>
                 </CardHeader>
@@ -277,9 +277,9 @@ export default function AdminAnalyticsPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-purple-100 shadow-lg">
+              <Card className="border-red-100 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                  <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                     Order Distribution
                   </CardTitle>
                 </CardHeader>
@@ -297,9 +297,9 @@ export default function AdminAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="sales">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Sales Performance
                 </CardTitle>
               </CardHeader>
@@ -318,9 +318,9 @@ export default function AdminAnalyticsPage() {
                         {formatCurrency((analyticsData?.overview?.total_revenue || 0) / 4)}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-200">
-                      <div className="text-sm text-purple-600 font-medium">Monthly Total</div>
-                      <div className="text-2xl font-bold text-purple-700">
+                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-red-200">
+                      <div className="text-sm text-primary-red font-medium">Monthly Total</div>
+                      <div className="text-2xl font-bold text-primary-dark">
                         {formatCurrency(analyticsData?.overview?.total_revenue || 0)}
                       </div>
                     </div>
@@ -339,9 +339,9 @@ export default function AdminAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="customers">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Customer Analytics
                 </CardTitle>
               </CardHeader>
@@ -349,7 +349,7 @@ export default function AdminAnalyticsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
+                      <div className="text-2xl font-bold text-primary-red">
                         {(analyticsData?.overview?.total_customers || 0).toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-600">Total Customers</div>
@@ -383,9 +383,9 @@ export default function AdminAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="products">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Product Performance
                 </CardTitle>
               </CardHeader>
@@ -429,9 +429,9 @@ export default function AdminAnalyticsPage() {
           </TabsContent>
 
           <TabsContent value="vendors">
-            <Card className="border-purple-100 shadow-lg">
+            <Card className="border-red-100 shadow-lg">
               <CardHeader>
-                <CardTitle className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
                   Vendor Performance
                 </CardTitle>
               </CardHeader>
@@ -439,7 +439,7 @@ export default function AdminAnalyticsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">24</div>
+                      <div className="text-2xl font-bold text-primary-red">24</div>
                       <div className="text-sm text-gray-600">Active Vendors</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">

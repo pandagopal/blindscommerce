@@ -188,7 +188,7 @@ export default function NewUserPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 ${
                   validationErrors.email ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Enter email address"
@@ -208,7 +208,7 @@ export default function NewUserPage() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
                 placeholder="Enter password"
               />
             </div>
@@ -222,7 +222,7 @@ export default function NewUserPage() {
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
                 placeholder="Enter first name"
               />
             </div>
@@ -236,7 +236,7 @@ export default function NewUserPage() {
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
                 placeholder="Enter last name"
               />
             </div>
@@ -250,7 +250,7 @@ export default function NewUserPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900 ${
+                className={`w-full px-3 py-2 bg-white border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 ${
                   validationErrors.phone ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Enter phone number (+1/+44/+91/+86)"
@@ -272,7 +272,7 @@ export default function NewUserPage() {
                 required
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-gray-900"
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
               >
                 {availableRoles.map((roleInfo) => (
                   <option key={roleInfo.name} value={roleInfo.name}>
@@ -298,7 +298,7 @@ export default function NewUserPage() {
               id="isActive"
               checked={formData.isActive}
               onChange={handleChange}
-              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+              className="h-4 w-4 text-primary-red focus:ring-red-500 border-gray-300 rounded"
             />
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
               Active Account
@@ -315,7 +315,7 @@ export default function NewUserPage() {
             </button>
             <Link
               href="/admin/users"
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
             >
               Cancel
             </Link>

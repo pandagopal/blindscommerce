@@ -390,9 +390,9 @@ const MLRoomVisualizer = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-purple-500" />
+            <Sparkles className="h-5 w-5 text-red-500" />
             AI-Powered Room Visualizer
-            <Badge variant="secondary" className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <Badge variant="secondary" className="bg-gradient-to-r from-red-500 to-primary-dark text-white">
               Enhanced
             </Badge>
           </CardTitle>
@@ -529,7 +529,7 @@ const MLRoomVisualizer = ({
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      <Sparkles className="h-4 w-4 text-red-500" />
                       <span className="font-medium">AI Enhancements</span>
                     </div>
                     <Switch
@@ -586,7 +586,7 @@ const MLRoomVisualizer = ({
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-purple-500" />
+                      <Sparkles className="h-4 w-4 text-red-500" />
                       AI Room Analysis
                     </CardTitle>
                   </CardHeader>

@@ -73,7 +73,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
@@ -104,7 +104,7 @@ export default function AboutPage() {
       </div>
 
       {/* Stats Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((stat, index) => (
@@ -281,7 +281,7 @@ export default function AboutPage() {
               <p className="text-gray-600 text-sm">Super Service Award</p>
             </div>
             <div className="text-center">
-              <Users className="h-12 w-12 text-purple-500 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="font-bold text-gray-900">Customer Choice</h3>
               <p className="text-gray-600 text-sm">98% Satisfaction Rate</p>
             </div>
@@ -290,7 +290,7 @@ export default function AboutPage() {
       </div>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-20">
+      <section className="bg-gradient-to-r from-primary-red to-primary-dark text-white py-20">
         <div className="container mx-auto text-center px-4">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Join the Smart Blinds Family?

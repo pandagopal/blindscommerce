@@ -103,7 +103,7 @@ export default function WarrantyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -149,7 +149,7 @@ export default function WarrantyPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {warrantyPlans.map((plan, index) => (
             <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 text-center">
+              <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white p-6 text-center">
                 <div className="flex justify-center mb-4">
                   {plan.icon}
                 </div>
@@ -307,7 +307,7 @@ export default function WarrantyPage() {
               </p>
             </div>
             <div className="text-center">
-              <CheckCircle className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <CheckCircle className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Satisfaction Guarantee</h3>
               <p className="text-gray-600">
                 If we can't fix it under warranty, we'll replace it or provide store credit.

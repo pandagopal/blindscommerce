@@ -911,7 +911,7 @@ export default function CheckoutPage() {
   if (orderCompleted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
-        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-purple-100 p-8 text-center">
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-red-100 p-8 text-center">
           {paymentStatus === 'success' ? (
             <>
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">

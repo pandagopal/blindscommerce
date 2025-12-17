@@ -49,7 +49,7 @@ const PaymentTester = () => {
       provider: 'klarna',
       methods: ['pay_later', 'pay_in_4'],
       displayName: 'Klarna',
-      color: 'bg-pink-100 text-pink-800'
+      color: 'bg-pink-100 text-primary-dark'
     },
     {
       provider: 'afterpay',
@@ -61,7 +61,7 @@ const PaymentTester = () => {
       provider: 'affirm',
       methods: ['affirm'],
       displayName: 'Affirm',
-      color: 'bg-purple-100 text-purple-800'
+      color: 'bg-purple-100 text-primary-dark'
     }
   ];
 
