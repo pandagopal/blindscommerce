@@ -121,45 +121,25 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
     'Free Cordless Upgrade'
   ]);
 
-  // Update hero slides with data from props if available
-  React.useEffect(() => {
-    if (heroBanners && heroBanners.length > 0) {
-      const updatedSlides = heroBanners.map((banner) => ({
-        id: banner.banner_id,
-        image: banner.image_url || '/images/hero/hero-1.jpg',
-        title: banner.title,
-        subtitle: banner.subtitle,
-        description: banner.description,
-        primaryCta: {
-          text: banner.button_text || 'Shop Now',
-          href: banner.button_link || '/products'
-        },
-        secondaryCta: banner.secondary_cta_text ? {
-          text: banner.secondary_cta_text,
-          href: banner.secondary_cta_link || '/products'
-        } : undefined
-      }));
-      setHeroSlides(updatedSlides);
-    }
-  }, [heroBanners]);
-
   // Transform database hero banners to match slide format
-  const dynamicSlides = heroBanners.map(banner => ({
-    id: banner.banner_id,
-    image: banner.background_image || '/images/hero/hero-1.jpg',
-    title: banner.title,
-    subtitle: banner.subtitle || '',
-    description: banner.description || '',
-    primaryCta: { 
-      text: banner.primary_cta_text || 'Shop Now', 
-      href: banner.primary_cta_link || '/products' 
-    },
-    secondaryCta: { 
-      text: banner.secondary_cta_text || 'Learn More', 
-      href: banner.secondary_cta_link || '/about' 
-    },
-    rightSideImage: banner.right_side_image
-  }));
+  const dynamicSlides = heroBanners
+    .filter(banner => banner.is_active) // Only show active banners
+    .map(banner => ({
+      id: banner.banner_id,
+      image: banner.background_image || '/images/hero/hero-1.jpg',
+      title: banner.title,
+      subtitle: banner.subtitle || '',
+      description: banner.description || '',
+      primaryCta: {
+        text: banner.primary_cta_text || 'Shop Now',
+        href: banner.primary_cta_link || '/products'
+      },
+      secondaryCta: {
+        text: banner.secondary_cta_text || 'Learn More',
+        href: banner.secondary_cta_link || '/about'
+      },
+      rightSideImage: banner.right_side_image
+    }));
 
   const slides = dynamicSlides.length > 0 ? dynamicSlides : heroSlides;
 
