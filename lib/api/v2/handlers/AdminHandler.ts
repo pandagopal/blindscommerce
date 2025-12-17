@@ -56,6 +56,7 @@ export class AdminHandler extends BaseHandler {
     const routes = {
       'categories': () => this.createCategory(req),
       'upload/categories': () => this.uploadCategoryImage(req),
+      'upload/hero-banners': () => this.uploadHeroBannerImage(req),
       'hero-banners': () => this.createHeroBanner(req),
       'tax-rates': () => this.createTaxRate(req),
       'tax-rates/upload': () => this.uploadTaxRates(req),
@@ -528,32 +529,45 @@ export class AdminHandler extends BaseHandler {
     try {
       const formData = await req.formData();
       const file = formData.get('file') as File;
-      
+
       if (!file) {
         throw new ApiError('No file provided', 400);
       }
-      
+
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
         throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
       }
-      
+
       // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         throw new ApiError('File size too large. Maximum size is 5MB', 400);
       }
-      
+
       // Generate unique filename
       const timestamp = Date.now();
       const randomString = randomBytes(4).toString('hex');
       const extension = file.name.split('.').pop() || 'jpg';
       const filename = `category_${timestamp}_${randomString}.${extension}`;
-      
-      // For now, return a mock URL
-      // In production, this would upload to S3 or similar service
+
+      // Save file to public/uploads/categories directory
+      const fs = require('fs').promises;
+      const path = require('path');
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
+      const filePath = path.join(uploadDir, filename);
+
+      // Ensure directory exists
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      // Convert file to buffer and save
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await fs.writeFile(filePath, buffer);
+
+      // Return public URL
       const url = `/uploads/categories/${filename}`;
-      
+
       return {
         success: true,
         url: url,
@@ -562,6 +576,61 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       if (error instanceof ApiError) throw error;
       console.error('Error uploading category image:', error);
+      throw new ApiError('Failed to upload image', 500);
+    }
+  }
+
+  private async uploadHeroBannerImage(req: NextRequest) {
+    try {
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+
+      if (!file) {
+        throw new ApiError('No file provided', 400);
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
+      }
+
+      // Validate file size (10MB max for hero banners - larger than categories)
+      if (file.size > 10 * 1024 * 1024) {
+        throw new ApiError('File size too large. Maximum size is 10MB', 400);
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const randomString = randomBytes(4).toString('hex');
+      const extension = file.name.split('.').pop() || 'jpg';
+      const filename = `hero_banner_${timestamp}_${randomString}.${extension}`;
+
+      // Save file to public/uploads/hero-banners directory
+      const fs = require('fs').promises;
+      const path = require('path');
+      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'hero-banners');
+      const filePath = path.join(uploadDir, filename);
+
+      // Ensure directory exists
+      await fs.mkdir(uploadDir, { recursive: true });
+
+      // Convert file to buffer and save
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      await fs.writeFile(filePath, buffer);
+
+      // Return public URL
+      const url = `/uploads/hero-banners/${filename}`;
+
+      return {
+        success: true,
+        url: url,
+        filename: filename
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error uploading hero banner image:', error);
       throw new ApiError('Failed to upload image', 500);
     }
   }
