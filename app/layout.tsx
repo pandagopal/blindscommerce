@@ -3,6 +3,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Metadata } from "next";
+import { Inter } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
@@ -12,6 +13,12 @@ import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import { defaultMetadata } from './config';
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
 
 export const metadata: Metadata = {
   title: defaultMetadata.title,
@@ -32,7 +39,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className={`${inter.variable} font-sans antialiased`}>
         <ErrorBoundary>
           <NextAuthProvider>
             <AuthProvider>

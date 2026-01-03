@@ -231,6 +231,7 @@ const Navbar = () => {
                 alt="Smart Blinds Hub"
                 width={150}
                 height={50}
+                style={{ height: "auto" }}
                 priority
               />
             </Link>

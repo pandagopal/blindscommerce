@@ -86,7 +86,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // Headers for WASM support only
+  // Headers for WASM support and CSP
   async headers() {
     return [
       {
@@ -95,6 +95,15 @@ const nextConfig = {
           {
             key: 'Content-Type',
             value: 'application/wasm',
+          },
+        ],
+      },
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "font-src 'self' https://fonts.gstatic.com data: blob:;",
           },
         ],
       },
