@@ -19,6 +19,7 @@ import { SettingsService } from './SettingsService';
 import { PaymentService } from './PaymentService';
 import { PricingService } from './PricingService';
 import { ShippingService } from './ShippingService';
+import { ProductManager } from '@/lib/managers/ProductManager';
 
 // Import email and SMS services
 import { emailService } from '@/lib/email/emailService';
@@ -35,6 +36,7 @@ export const vendorService = new VendorService();
 export const settingsService = new SettingsService();
 export const pricingService = new PricingService();
 export const shippingService = new ShippingService();
+export const productManager = new ProductManager();
 
 // Create PaymentService and inject settingsService
 export const paymentService = new PaymentService();
@@ -56,6 +58,7 @@ export const services = {
   payment: paymentService,
   pricing: pricingService,
   shipping: shippingService,
+  productManager: productManager,
   email: emailService,
   sms: smsService
 };

@@ -1,6 +1,6 @@
 /**
  * Offline Order Handler for V2 API
- * Handles offline orders created by Sales Staff and Admin
+ * Handles Local orders created by Sales Staff and Admin
  * Implements vendor splitting logic for multi-vendor orders
  */
 
@@ -87,9 +87,9 @@ export class OfflineOrderHandler extends BaseHandler {
    * Create offline order with vendor splitting
    */
   private async createOfflineOrder(req: NextRequest, user: any) {
-    // Only sales staff and admin can create offline orders
+    // Only sales staff and admin can create Local orders
     if (!['sales', 'admin', 'super_admin'].includes(user.role)) {
-      throw new ApiError('Unauthorized to create offline orders', 403);
+      throw new ApiError('Unauthorized to create Local orders', 403);
     }
 
     const data = await this.getValidatedBody(req, CreateOfflineOrderSchema);
@@ -296,7 +296,7 @@ export class OfflineOrderHandler extends BaseHandler {
   }
 
   /**
-   * Get offline orders based on user role
+   * Get Local orders based on user role
    */
   private async getOfflineOrders(req: NextRequest, user: any) {
     const pool = await getPool();

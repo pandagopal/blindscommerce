@@ -110,7 +110,7 @@ export default function VendorOfflineOrdersPage() {
       }
     } catch (error) {
       console.error('Failed to fetch vendor items:', error);
-      alert('Failed to load offline orders');
+      alert('Failed to load Local orders');
     } finally {
       setLoading(false);
     }
@@ -158,8 +158,8 @@ export default function VendorOfflineOrdersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Offline Orders</h1>
-        <p className="text-gray-600 mt-1">Manage your offline order items</p>
+        <h1 className="text-3xl font-bold text-gray-900">Local Orders</h1>
+        <p className="text-gray-600 mt-1">Manage your Local order items</p>
       </div>
 
       {/* Statistics Cards */}

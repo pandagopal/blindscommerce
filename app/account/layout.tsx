@@ -67,7 +67,7 @@ function AccountLayoutContent({
   const menuItems: Array<{ href: string; label: string; icon: React.ReactNode; highlight?: boolean }> = [
     { href: '/account', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/account/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
+    { href: '/account/offline-orders', label: 'Local Orders', icon: <Package size={18} />, highlight: true },
     { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
     { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
     { href: '/account/wishlist', label: 'Wishlist', icon: <Heart size={18} /> },

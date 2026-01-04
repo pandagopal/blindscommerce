@@ -8,6 +8,7 @@ import {
   DollarSign, ShoppingBag, ShoppingCart, TrendingUp,
   Clock, ExternalLink, ChevronRight, Users, Calendar, Shield
 } from 'lucide-react';
+import ProductApprovalsWidget from '@/components/dashboard/ProductApprovalsWidget';
 
 interface User {
   userId: number;
@@ -365,6 +366,15 @@ function VendorDashboardContent() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Product Approvals Widget */}
+      <div className="mt-8">
+        <ProductApprovalsWidget
+          userRole="VENDOR"
+          limit={5}
+          showFullView={false}
+        />
       </div>
     </div>
   );

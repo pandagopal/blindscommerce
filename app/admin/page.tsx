@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ProductApprovalsWidget from '@/components/dashboard/ProductApprovalsWidget';
 
 interface User {
   userId: string;
@@ -130,7 +131,16 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-        </div>
+      </div>
+
+      {/* Product Approvals Widget */}
+      <div className="mt-8">
+        <ProductApprovalsWidget
+          userRole="ADMIN"
+          limit={15}
+          showFullView={true}
+        />
+      </div>
       </div>
     </div>
   );

@@ -110,7 +110,7 @@ export default function AdminLayout({
     { href: '/admin/rooms', label: 'Rooms', icon: <Building size={18} /> },
     { href: '/admin/products', label: 'Products', icon: <ShoppingBag size={18} /> },
     { href: '/admin/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/admin/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
+    { href: '/admin/offline-orders', label: 'Local Orders', icon: <Package size={18} />, highlight: true },
     { href: '/admin/users', label: 'Users', icon: <Users size={18} /> },
     { href: '/admin/vendors', label: 'Vendors', icon: <Package size={18} /> },
     { href: '/admin/tax-rates', label: 'Tax Rates', icon: <Calculator size={18} /> },

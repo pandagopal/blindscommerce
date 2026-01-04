@@ -83,7 +83,7 @@ function VendorLayoutContent({
     { href: '/vendor/storefront', label: 'Storefront', icon: <Store size={18} /> },
     { href: '/vendor/sales-team', label: 'Sales Team', icon: <User size={18} /> },
     { href: '/vendor/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/vendor/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
+    { href: '/vendor/offline-orders', label: 'Local Orders', icon: <Package size={18} />, highlight: true },
     { href: '/vendor/payments', label: 'Payments', icon: <CreditCard size={18} /> },
     { href: '/vendor/shipments', label: 'Shipments', icon: <Truck size={18} /> },
     { href: '/vendor/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },

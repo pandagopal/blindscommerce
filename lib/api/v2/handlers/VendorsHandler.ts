@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
-import { vendorService, productService, orderService } from '@/lib/services/singletons';
+import { vendorService, productService, orderService, productManager } from '@/lib/services/singletons';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getPool } from '@/lib/db';
@@ -89,6 +89,8 @@ export class VendorsHandler extends BaseHandler {
       'products/bulk/stats': () => this.getBulkStats(user),
       'products/bulk/template': () => this.getBulkTemplate(),
       'products/bulk/export': () => this.exportProducts(req, user),
+      'product-approvals': () => this.getProductApprovals(req, user),
+      'product-approvals/:id': () => this.getProductApproval(action[1], user),
       'orders': () => this.getOrders(req, user),
       'orders/:id': () => this.getOrder(action[1], user),
       'discounts': () => this.getDiscounts(user),
@@ -118,6 +120,8 @@ export class VendorsHandler extends BaseHandler {
     const routes = {
       'products': () => this.createProduct(req, user),
       'products/bulk': () => this.bulkImportProducts(req, user),
+      'product-approvals/:id/approve': () => this.approveProductRequest(action[1], user),
+      'product-approvals/:id/reject': () => this.rejectProductRequest(action[1], req, user),
       'discounts': () => this.createDiscount(req, user),
       'coupons': () => this.createCoupon(req, user),
       'sales-team': () => this.addSalesRep(req, user),
@@ -309,859 +313,77 @@ export class VendorsHandler extends BaseHandler {
     const vendorId = await this.getVendorId(user);
     const data = await req.json();
 
-    // Begin transaction
-    const pool = await getPool();
-    const conn = await pool.getConnection();
-    
     try {
-      await conn.beginTransaction();
-
-      // Get category_id from category name
-      let categoryId = null;
-      if (data.primary_category) {
-        const [category] = await conn.execute(
-          'SELECT category_id FROM categories WHERE name = ?',
-          [data.primary_category]
-        );
-        if (category && category[0]) {
-          categoryId = category[0].category_id;
-        }
-      }
-
-      // Create basic product with dimension limits
-      const [result] = await conn.execute(
-        `INSERT INTO products (
-          name, slug, sku, short_description, full_description, 
-          base_price, vendor_id, is_active, is_featured, category_id,
-          custom_width_min, custom_width_max, custom_height_min, custom_height_max,
-          created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          data.name,
-          data.slug,
-          data.sku,
-          data.short_description,
-          data.full_description || data.description || data.short_description,
-          data.base_price,
-          vendorId,
-          data.is_active ? 1 : 0,
-          data.is_featured ? 1 : 0,
-          categoryId,
-          // Use dimensions from options or defaults
-          data.options?.dimensions?.minWidth || 12,
-          data.options?.dimensions?.maxWidth || 96,
-          data.options?.dimensions?.minHeight || 12,
-          data.options?.dimensions?.maxHeight || 120
-        ]
+      const result = await productManager.createProduct(
+        data,
+        'VENDOR',
+        user.userId || user.user_id || 'vendor',
+        vendorId.toString()
       );
 
-      const productId = result.insertId;
-
-      // Add vendor relationship
-      await conn.execute(
-        `INSERT INTO vendor_products (vendor_id, product_id, vendor_price, quantity_available)
-         VALUES (?, ?, ?, ?)`,
-        [vendorId, productId, data.base_price, 999]
-      );
-
-      // Add categories
-      if (data.categories && Array.isArray(data.categories)) {
-        for (const categoryName of data.categories) {
-          const [category] = await conn.execute(
-            'SELECT category_id FROM categories WHERE name = ?',
-            [categoryName]
-          );
-          if (category && category[0]) {
-            await conn.execute(
-              'INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)',
-              [productId, category[0].category_id]
-            );
-          }
-        }
-      }
-
-      // Add options (using product_dimensions table)
-      if (data.options && data.options.dimensions) {
-        // Insert width dimension
-        await conn.execute(
-          `INSERT INTO product_dimensions (
-            product_id, dimension_type_id, min_value, max_value, increment_value, unit
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            productId,
-            1, // Width type
-            data.options.dimensions.minWidth || 12,
-            data.options.dimensions.maxWidth || 96,
-            data.options.dimensions.widthIncrement || 0.125,
-            'inches'
-          ]
-        );
-        
-        // Insert height dimension
-        await conn.execute(
-          `INSERT INTO product_dimensions (
-            product_id, dimension_type_id, min_value, max_value, increment_value, unit
-          ) VALUES (?, ?, ?, ?, ?, ?)`,
-          [
-            productId,
-            2, // Height type
-            data.options.dimensions.minHeight || 12,
-            data.options.dimensions.maxHeight || 120,
-            data.options.dimensions.heightIncrement || 0.125,
-            'inches'
-          ]
-        );
-      }
-
-      // Add pricing matrix
-      if (data.pricing_matrix && Array.isArray(data.pricing_matrix)) {
-        for (const price of data.pricing_matrix) {
-          await conn.execute(
-            `INSERT INTO product_pricing_matrix (
-              product_id, width_min, width_max, height_min, height_max,
-              base_price, price_per_sqft, is_active
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              productId,
-              price.width_min,
-              price.width_max,
-              price.height_min,
-              price.height_max,
-              price.base_price || 0,
-              price.price_per_sqft || 0,
-              price.is_active !== undefined ? price.is_active : 1
-            ]
-          );
-        }
-      }
-
-      // Add fabric (using product_fabric_options table)
-      if (data.fabric && data.fabric.fabrics) {
-        for (const fabric of data.fabric.fabrics) {
-          if (fabric.name) {
-            // Insert fabric option
-            const [fabricResult] = await conn.execute(
-              `INSERT INTO product_fabric_options (
-                product_id, vendor_id, fabric_name, fabric_type, is_enabled,
-                texture_url, texture_scale, material_finish, opacity, render_priority
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                productId,
-                vendorId,
-                fabric.name,
-                fabric.fabricType || 'colored',
-                fabric.enabled ? 1 : 0,
-                fabric.textureUrl || null,
-                fabric.textureScale || 1.0,
-                fabric.materialFinish || 'matte',
-                fabric.opacity || 1.0,
-                fabric.renderPriority || 0
-              ]
-            );
-            
-            const fabricOptionId = fabricResult.insertId;
-            
-            // Insert fabric image if exists
-            if (fabric.image && fabric.image.url) {
-              await conn.execute(
-                `INSERT INTO product_fabric_images (
-                  fabric_option_id, product_id, image_url, image_name, image_alt, image_size, image_type, is_primary
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  fabricOptionId,
-                  productId,
-                  fabric.image.url,
-                  fabric.image.name || fabric.name,
-                  fabric.name,
-                  fabric.image.size || 0,
-                  fabric.image.type || 'image/jpeg',
-                  1
-                ]
-              );
-            }
-            
-            // Optionally insert fabric pricing
-            if (fabric.price && fabric.price > 0) {
-              await conn.execute(
-                `INSERT INTO product_fabric_pricing (
-                  fabric_option_id, product_id, min_width, max_width, min_height, max_height, price_per_sqft
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  fabricOptionId,
-                  productId,
-                  0,      // min_width
-                  999,    // max_width
-                  0,      // min_height
-                  999,    // max_height
-                  fabric.price / 100  // Convert to price per sqft
-                ]
-              );
-            }
-          }
-        }
-      }
-
-      // Add features
-      if (data.features && Array.isArray(data.features)) {
-        for (let i = 0; i < data.features.length; i++) {
-          const feature = data.features[i];
-          // First, try to find or create the feature
-          let [existingFeature] = await conn.execute(
-            'SELECT feature_id FROM features WHERE name = ?',
-            [feature.name || feature.title]
-          );
-          
-          let featureId;
-          if (!existingFeature || !existingFeature[0]) {
-            // Create new feature
-            const [featureResult] = await conn.execute(
-              'INSERT INTO features (name, description, display_order) VALUES (?, ?, ?)',
-              [feature.name || feature.title, feature.description || '', i]
-            );
-            featureId = featureResult.insertId;
-          } else {
-            featureId = existingFeature[0].feature_id;
-          }
-          
-          // Link feature to product
-          await conn.execute(
-            'INSERT INTO product_features (product_id, feature_id) VALUES (?, ?)',
-            [productId, featureId]
-          );
-        }
-      }
-
-      // Add room recommendations (using product_rooms table)
-      if (data.roomRecommendations && Array.isArray(data.roomRecommendations)) {
-        for (const room of data.roomRecommendations) {
-          if (room.roomType || room.room_type || room.name) {
-            await conn.execute(
-              `INSERT INTO product_rooms 
-               (product_id, room_type, suitability_score, special_considerations) 
-               VALUES (?, ?, ?, ?)`,
-              [
-                productId,
-                room.roomType || room.room_type || room.name,
-                room.priority || room.suitability_score || 5,
-                room.recommendation || room.special_considerations || null
-              ]
-            );
-          }
-        }
-      }
-
-      // Add images
-      if (data.images && Array.isArray(data.images)) {
-        for (let i = 0; i < data.images.length; i++) {
-          const image = data.images[i];
-          await conn.execute(
-            `INSERT INTO product_images 
-             (product_id, image_url, alt_text, is_primary, display_order) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [
-              productId,
-              image.url,
-              image.alt || '',
-              image.isPrimary ? 1 : 0,
-              i
-            ]
-          );
-        }
-      }
-
-      // Add product specifications (mount types, control types, etc.)
-      if (data.options) {
-        // Save mount types
-        if (data.options.mountTypes && Array.isArray(data.options.mountTypes)) {
-          for (let i = 0; i < data.options.mountTypes.length; i++) {
-            const value = typeof data.options.mountTypes[i] === 'object' 
-              ? JSON.stringify(data.options.mountTypes[i])
-              : data.options.mountTypes[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'mount_type', value, 'mount_type', i]
-            );
-          }
-        }
-        
-        // Save control types
-        if (data.options.controlTypes) {
-          // Lift systems
-          if (Array.isArray(data.options.controlTypes.liftSystems)) {
-            for (let i = 0; i < data.options.controlTypes.liftSystems.length; i++) {
-              const value = typeof data.options.controlTypes.liftSystems[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.liftSystems[i])
-                : data.options.controlTypes.liftSystems[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'lift_system', value, 'lift_system', i]
-              );
-            }
-          }
-          
-          // Wand system
-          if (Array.isArray(data.options.controlTypes.wandSystem)) {
-            for (let i = 0; i < data.options.controlTypes.wandSystem.length; i++) {
-              const value = typeof data.options.controlTypes.wandSystem[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.wandSystem[i])
-                : data.options.controlTypes.wandSystem[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'wand_system', value, 'wand_system', i]
-              );
-            }
-          }
-          
-          // String system
-          if (Array.isArray(data.options.controlTypes.stringSystem)) {
-            for (let i = 0; i < data.options.controlTypes.stringSystem.length; i++) {
-              const value = typeof data.options.controlTypes.stringSystem[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.stringSystem[i])
-                : data.options.controlTypes.stringSystem[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'string_system', value, 'string_system', i]
-              );
-            }
-          }
-          
-          // Remote control
-          if (Array.isArray(data.options.controlTypes.remoteControl)) {
-            for (let i = 0; i < data.options.controlTypes.remoteControl.length; i++) {
-              const value = typeof data.options.controlTypes.remoteControl[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.remoteControl[i])
-                : data.options.controlTypes.remoteControl[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'remote_control', value, 'remote_control', i]
-              );
-            }
-          }
-        }
-        
-        // Save valance options
-        if (data.options.valanceOptions && Array.isArray(data.options.valanceOptions)) {
-          for (let i = 0; i < data.options.valanceOptions.length; i++) {
-            const value = typeof data.options.valanceOptions[i] === 'object' 
-              ? JSON.stringify(data.options.valanceOptions[i])
-              : data.options.valanceOptions[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'valance_option', value, 'valance_option', i]
-            );
-          }
-        }
-        
-        // Save bottom rail options
-        if (data.options.bottomRailOptions && Array.isArray(data.options.bottomRailOptions)) {
-          for (let i = 0; i < data.options.bottomRailOptions.length; i++) {
-            const value = typeof data.options.bottomRailOptions[i] === 'object' 
-              ? JSON.stringify(data.options.bottomRailOptions[i])
-              : data.options.bottomRailOptions[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'bottom_rail_option', value, 'bottom_rail_option', i]
-            );
-          }
-        }
-      }
-
-      await conn.commit();
-      
-      return { 
-        product_id: productId,
-        message: 'Product created successfully'
+      return {
+        success: true,
+        product_id: result.product_id,
+        message: result.message
       };
     } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      conn.release();
+      console.error('Failed to create product:', error);
+      throw new ApiError('Failed to create product: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
     }
   }
 
   private async updateProduct(id: string, req: NextRequest, user: any) {
     const vendorId = await this.getVendorId(user);
     const productId = parseInt(id);
-    
-    if (isNaN(productId)) {
-      throw new ApiError('Invalid product ID', 400);
-    }
-
-    // Verify ownership
-    const [ownership] = await this.vendorService.raw(
-      'SELECT 1 FROM vendor_products WHERE vendor_id = ? AND product_id = ?',
-      [vendorId, productId]
-    );
-
-    if (!ownership) {
-      throw new ApiError('Product not found', 404);
-    }
-
     const data = await req.json();
 
-    // Begin transaction
-    const pool = await getPool();
-    const conn = await pool.getConnection();
-    
-    try {
-      await conn.beginTransaction();
-
-      // Get category_id from category name
-      let categoryId = null;
-      if (data.primary_category) {
-        const [category] = await conn.execute(
-          'SELECT category_id FROM categories WHERE name = ?',
-          [data.primary_category]
-        );
-        if (category && category[0]) {
-          categoryId = category[0].category_id;
-        }
-      }
-
-      // Update basic product info including dimension limits
-      await conn.execute(
-        `UPDATE products SET 
-          name = ?, 
-          slug = ?,
-          sku = ?,
-          short_description = ?,
-          full_description = ?,
-          base_price = ?,
-          is_active = ?,
-          is_featured = ?,
-          category_id = ?,
-          custom_width_min = ?,
-          custom_width_max = ?,
-          custom_height_min = ?,
-          custom_height_max = ?,
-          updated_at = NOW()
-        WHERE product_id = ?`,
-        [
-          data.name,
-          data.slug,
-          data.sku,
-          data.short_description,
-          data.full_description || data.description || data.short_description,
-          data.base_price,
-          data.is_active ? 1 : 0,
-          data.is_featured ? 1 : 0,
-          categoryId,
-          // Use dimensions from options or defaults
-          data.options?.dimensions?.minWidth || 12,
-          data.options?.dimensions?.maxWidth || 96,
-          data.options?.dimensions?.minHeight || 12,
-          data.options?.dimensions?.maxHeight || 120,
-          productId
-        ]
-      );
-
-      // Update categories
-      if (data.categories && Array.isArray(data.categories)) {
-        // Delete existing categories
-        await conn.execute('DELETE FROM product_categories WHERE product_id = ?', [productId]);
-        
-        // Insert new categories
-        for (const categoryName of data.categories) {
-          const [category] = await conn.execute(
-            'SELECT category_id FROM categories WHERE name = ?',
-            [categoryName]
-          );
-          if (category && category[0]) {
-            await conn.execute(
-              'INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)',
-              [productId, category[0].category_id]
-            );
-          }
-        }
-      }
-
-      // Update options (using product_dimensions table)
-      if (data.options) {
-        // Delete existing dimensions and specifications
-        await conn.execute('DELETE FROM product_dimensions WHERE product_id = ?', [productId]);
-        await conn.execute('DELETE FROM product_specifications WHERE product_id = ? AND spec_category IN (?, ?, ?, ?, ?, ?, ?)', 
-          [productId, 'mount_type', 'lift_system', 'wand_system', 'string_system', 'remote_control', 'valance_option', 'bottom_rail_option']);
-        
-        // Save dimensions
-        if (data.options.dimensions) {
-          // Insert width dimension
-          await conn.execute(
-            `INSERT INTO product_dimensions (
-              product_id, dimension_type_id, min_value, max_value, increment_value, unit
-            ) VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              productId,
-              1, // Width type
-              data.options.dimensions.minWidth || 12,
-              data.options.dimensions.maxWidth || 96,
-              data.options.dimensions.widthIncrement || 0.125,
-              'inches'
-            ]
-          );
-          
-          // Insert height dimension
-          await conn.execute(
-            `INSERT INTO product_dimensions (
-              product_id, dimension_type_id, min_value, max_value, increment_value, unit
-            ) VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              productId,
-              2, // Height type
-              data.options.dimensions.minHeight || 12,
-              data.options.dimensions.maxHeight || 120,
-              data.options.dimensions.heightIncrement || 0.125,
-              'inches'
-            ]
-          );
-        }
-        
-        // Save mount types
-        if (data.options.mountTypes && Array.isArray(data.options.mountTypes)) {
-          for (let i = 0; i < data.options.mountTypes.length; i++) {
-            const value = typeof data.options.mountTypes[i] === 'object' 
-              ? JSON.stringify(data.options.mountTypes[i])
-              : data.options.mountTypes[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'mount_type', value, 'mount_type', i]
-            );
-          }
-        }
-        
-        // Save control types
-        if (data.options.controlTypes) {
-          // Lift systems
-          if (Array.isArray(data.options.controlTypes.liftSystems)) {
-            for (let i = 0; i < data.options.controlTypes.liftSystems.length; i++) {
-              const value = typeof data.options.controlTypes.liftSystems[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.liftSystems[i])
-                : data.options.controlTypes.liftSystems[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'lift_system', value, 'lift_system', i]
-              );
-            }
-          }
-          
-          // Wand system
-          if (Array.isArray(data.options.controlTypes.wandSystem)) {
-            for (let i = 0; i < data.options.controlTypes.wandSystem.length; i++) {
-              const value = typeof data.options.controlTypes.wandSystem[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.wandSystem[i])
-                : data.options.controlTypes.wandSystem[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'wand_system', value, 'wand_system', i]
-              );
-            }
-          }
-          
-          // String system
-          if (Array.isArray(data.options.controlTypes.stringSystem)) {
-            for (let i = 0; i < data.options.controlTypes.stringSystem.length; i++) {
-              const value = typeof data.options.controlTypes.stringSystem[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.stringSystem[i])
-                : data.options.controlTypes.stringSystem[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'string_system', value, 'string_system', i]
-              );
-            }
-          }
-          
-          // Remote control
-          if (Array.isArray(data.options.controlTypes.remoteControl)) {
-            for (let i = 0; i < data.options.controlTypes.remoteControl.length; i++) {
-              const value = typeof data.options.controlTypes.remoteControl[i] === 'object' 
-                ? JSON.stringify(data.options.controlTypes.remoteControl[i])
-                : data.options.controlTypes.remoteControl[i];
-              await conn.execute(
-                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-                 VALUES (?, ?, ?, ?, ?)`,
-                [productId, 'remote_control', value, 'remote_control', i]
-              );
-            }
-          }
-        }
-        
-        // Save valance options
-        if (data.options.valanceOptions && Array.isArray(data.options.valanceOptions)) {
-          for (let i = 0; i < data.options.valanceOptions.length; i++) {
-            const value = typeof data.options.valanceOptions[i] === 'object' 
-              ? JSON.stringify(data.options.valanceOptions[i])
-              : data.options.valanceOptions[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'valance_option', value, 'valance_option', i]
-            );
-          }
-        }
-        
-        // Save bottom rail options
-        if (data.options.bottomRailOptions && Array.isArray(data.options.bottomRailOptions)) {
-          for (let i = 0; i < data.options.bottomRailOptions.length; i++) {
-            const value = typeof data.options.bottomRailOptions[i] === 'object' 
-              ? JSON.stringify(data.options.bottomRailOptions[i])
-              : data.options.bottomRailOptions[i];
-            await conn.execute(
-              `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order) 
-               VALUES (?, ?, ?, ?, ?)`,
-              [productId, 'bottom_rail_option', value, 'bottom_rail_option', i]
-            );
-          }
-        }
-      }
-
-      // Update pricing formula
-      if (data.pricing_formula) {
-        // Update or insert pricing formula
-        await conn.execute(`
-          INSERT INTO product_pricing_formulas 
-          (product_id, pricing_type, fixed_base, width_rate, height_rate, area_rate, min_price, max_price)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-          pricing_type = VALUES(pricing_type),
-          fixed_base = VALUES(fixed_base),
-          width_rate = VALUES(width_rate),
-          height_rate = VALUES(height_rate),
-          area_rate = VALUES(area_rate),
-          min_price = VALUES(min_price),
-          max_price = VALUES(max_price),
-          updated_at = NOW()
-        `, [
-          productId,
-          data.pricing_formula.pricing_type || 'formula',
-          data.pricing_formula.fixed_base || 0,
-          data.pricing_formula.width_rate || 0,
-          data.pricing_formula.height_rate || 0,
-          data.pricing_formula.area_rate || 0,
-          data.pricing_formula.min_price || null,
-          data.pricing_formula.max_price || null
-        ]);
-      }
-
-      // Update fabric (using product_fabric_options table)
-      if (data.fabric && data.fabric.fabrics) {
-        // Delete existing fabric options and images
-        await conn.execute('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
-        await conn.execute('DELETE FROM product_fabric_images WHERE product_id = ?', [productId]);
-        
-        // Insert new fabric options
-        for (const fabric of data.fabric.fabrics) {
-          if (fabric.name) {
-            // Insert fabric option
-            const [fabricResult] = await conn.execute(
-              `INSERT INTO product_fabric_options (
-                product_id, vendor_id, fabric_name, fabric_type, is_enabled,
-                texture_url, texture_scale, material_finish, opacity, render_priority
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-              [
-                productId,
-                vendorId,
-                fabric.name,
-                fabric.fabricType || 'colored',
-                fabric.enabled ? 1 : 0,
-                fabric.textureUrl || null,
-                fabric.textureScale || 1.0,
-                fabric.materialFinish || 'matte',
-                fabric.opacity || 1.0,
-                fabric.renderPriority || 0
-              ]
-            );
-            
-            const fabricOptionId = fabricResult.insertId;
-            
-            // Insert fabric image if exists
-            if (fabric.image && fabric.image.url) {
-              await conn.execute(
-                `INSERT INTO product_fabric_images (
-                  fabric_option_id, product_id, image_url, image_name, image_alt, image_size, image_type, is_primary
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  fabricOptionId,
-                  productId,
-                  fabric.image.url,
-                  fabric.image.name || fabric.name,
-                  fabric.name,
-                  fabric.image.size || 0,
-                  fabric.image.type || 'image/jpeg',
-                  1
-                ]
-              );
-            }
-            
-            // Optionally insert fabric pricing (using a simple flat price for now)
-            if (fabric.price && fabric.price > 0) {
-              await conn.execute(
-                `INSERT INTO product_fabric_pricing (
-                  fabric_option_id, product_id, min_width, max_width, min_height, max_height, price_per_sqft
-                ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                [
-                  fabricOptionId,
-                  productId,
-                  0,      // min_width
-                  999,    // max_width (large number for "all sizes")
-                  0,      // min_height
-                  999,    // max_height
-                  fabric.price / 100  // Convert to price per sqft (rough approximation)
-                ]
-              );
-            }
-          }
-        }
-      }
-
-      // Update features
-      if (data.features && Array.isArray(data.features)) {
-        // Delete existing features
-        await conn.execute('DELETE FROM product_features WHERE product_id = ?', [productId]);
-        
-        // Insert new features
-        for (let i = 0; i < data.features.length; i++) {
-          const feature = data.features[i];
-          // First, try to find or create the feature
-          let [existingFeature] = await conn.execute(
-            'SELECT feature_id FROM features WHERE name = ?',
-            [feature.name || feature.title]
-          );
-          
-          let featureId;
-          if (!existingFeature || !existingFeature[0]) {
-            // Create new feature
-            const [result] = await conn.execute(
-              'INSERT INTO features (name, description, display_order) VALUES (?, ?, ?)',
-              [feature.name || feature.title, feature.description || '', i]
-            );
-            featureId = result.insertId;
-          } else {
-            featureId = existingFeature[0].feature_id;
-          }
-          
-          // Link feature to product
-          await conn.execute(
-            'INSERT INTO product_features (product_id, feature_id) VALUES (?, ?)',
-            [productId, featureId]
-          );
-        }
-      }
-
-      // Update room recommendations (using product_rooms table)
-      if (data.roomRecommendations && Array.isArray(data.roomRecommendations)) {
-        // Delete existing recommendations
-        await conn.execute('DELETE FROM product_rooms WHERE product_id = ?', [productId]);
-        
-        // Insert new recommendations
-        for (const room of data.roomRecommendations) {
-          if (room.roomType || room.room_type || room.name) {
-            await conn.execute(
-              `INSERT INTO product_rooms 
-               (product_id, room_type, suitability_score, special_considerations) 
-               VALUES (?, ?, ?, ?)`,
-              [
-                productId,
-                room.roomType || room.room_type || room.name,
-                room.priority || room.suitability_score || 5,
-                room.recommendation || room.special_considerations || null
-              ]
-            );
-          }
-        }
-      }
-
-      // Update images (handled separately if needed)
-      if (data.images && Array.isArray(data.images)) {
-        // Delete existing images
-        await conn.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
-        
-        // Insert new images
-        for (let i = 0; i < data.images.length; i++) {
-          const image = data.images[i];
-          await conn.execute(
-            `INSERT INTO product_images 
-             (product_id, image_url, alt_text, is_primary, display_order) 
-             VALUES (?, ?, ?, ?, ?)`,
-            [
-              productId,
-              image.url,
-              image.alt || '',
-              image.isPrimary ? 1 : 0,
-              i
-            ]
-          );
-        }
-      }
-
-      await conn.commit();
-      
-      return { 
-        message: 'Product updated successfully',
-        product_id: productId
-      };
-    } catch (error) {
-      await conn.rollback();
-      throw error;
-    } finally {
-      conn.release();
-    }
-  }
-
-  private async patchProduct(id: string, req: NextRequest, user: any) {
-    const vendorId = await this.getVendorId(user);
-    const productId = parseInt(id);
-    
     if (isNaN(productId)) {
       throw new ApiError('Invalid product ID', 400);
     }
 
-    const body = await req.json();
-    
-    // For now, we only support toggling is_active status via PATCH
-    if (body.hasOwnProperty('is_active')) {
-      const pool = await getPool();
-      
-      // Update vendor_products table
-      await pool.execute(
-        'UPDATE vendor_products SET is_active = ? WHERE vendor_id = ? AND product_id = ?',
-        [body.is_active ? 1 : 0, vendorId, productId]
+    try {
+      const result = await productManager.updateProduct(
+        productId,
+        data,
+        'VENDOR',
+        user.userId || user.user_id || 'vendor',
+        vendorId.toString()
       );
-      
-      return { 
+
+      return {
         success: true,
-        message: `Product ${body.is_active ? 'activated' : 'deactivated'} successfully` 
+        message: result.message
       };
+    } catch (error) {
+      console.error('Failed to update product:', error);
+      throw new ApiError('Failed to update product: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
     }
-    
-    throw new ApiError('Invalid patch operation', 400);
   }
 
   private async deleteProduct(id: string, user: any) {
     const vendorId = await this.getVendorId(user);
     const productId = parseInt(id);
-    
+
     if (isNaN(productId)) {
       throw new ApiError('Invalid product ID', 400);
     }
 
-    // Soft delete
-    await this.productService.update(productId, {
-      is_active: false,
-      updated_at: new Date(),
-    });
+    try {
+      const result = await productManager.deleteProduct(
+        productId,
+        'VENDOR',
+        user.userId || user.user_id || 'vendor',
+        vendorId.toString()
+      );
 
-    return { message: 'Product deleted successfully' };
+      return {
+        success: true,
+        message: result.message
+      };
+    } catch (error) {
+      console.error('Failed to delete product:', error);
+      throw new ApiError('Failed to delete product: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
+    }
   }
 
   // Order management
@@ -2911,5 +2133,116 @@ export class VendorsHandler extends BaseHandler {
     const vendorName = `vendor_${vendorId}`; // Simplified for now
     const path = require('path');
     return `/uploads/${vendorName}/${category}/${fileId}${path.extname(originalName)}`;
+  }
+
+  // Product Approvals
+  private async getProductApprovals(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const searchParams = this.getSearchParams(req);
+    const status = searchParams.get('status') || 'PENDING';
+
+    try {
+      const pool = await getPool();
+      const query = `
+        SELECT
+          par.*,
+          u.email as requester_email,
+          u.first_name as requester_first_name,
+          u.last_name as requester_last_name,
+          v.business_name as vendor_name,
+          p.name as product_name,
+          p.sku as product_sku
+        FROM product_approval_requests par
+        LEFT JOIN users u ON par.requested_by = u.user_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN products p ON par.product_id = p.product_id
+        WHERE par.status = ? AND par.vendor_id = ?
+        ORDER BY par.created_at DESC
+      `;
+
+      const [requests] = await pool.execute(query, [status, vendorId]) as any[];
+
+      return {
+        success: true,
+        data: requests
+      };
+    } catch (error) {
+      console.error('Error fetching product approvals:', error);
+      throw new ApiError('Failed to fetch product approvals', 500);
+    }
+  }
+
+  private async getProductApproval(id: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+
+    try {
+      const pool = await getPool();
+      const [requests] = await pool.execute(
+        `SELECT
+          par.*,
+          u.email as requester_email,
+          u.first_name as requester_first_name,
+          u.last_name as requester_last_name,
+          v.business_name as vendor_name,
+          p.name as product_name,
+          p.sku as product_sku
+        FROM product_approval_requests par
+        LEFT JOIN users u ON par.requested_by = u.user_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN products p ON par.product_id = p.product_id
+        WHERE par.id = ? AND par.vendor_id = ?`,
+        [parseInt(id), vendorId]
+      ) as any[];
+
+      if (!requests || requests.length === 0) {
+        throw new ApiError('Approval request not found', 404);
+      }
+
+      return {
+        success: true,
+        data: requests[0]
+      };
+    } catch (error) {
+      console.error('Error fetching product approval:', error);
+      throw new ApiError('Failed to fetch product approval', 500);
+    }
+  }
+
+  private async approveProductRequest(id: string, user: any) {
+    try {
+      const result = await productManager.approveRequest(
+        parseInt(id),
+        user.userId || user.user_id || 'vendor'
+      );
+
+      return {
+        success: true,
+        message: result.message
+      };
+    } catch (error) {
+      console.error('Error approving product request:', error);
+      throw new ApiError('Failed to approve product request: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
+    }
+  }
+
+  private async rejectProductRequest(id: string, req: NextRequest, user: any) {
+    try {
+      const body = await req.json();
+      const reason = body.reason;
+
+      const result = await productManager.rejectRequest(
+        parseInt(id),
+        user.userId || user.user_id || 'vendor',
+        reason
+      );
+
+      return {
+        success: true,
+        message: result.message
+      };
+    } catch (error) {
+      console.error('Error rejecting product request:', error);
+      throw new ApiError('Failed to reject product request: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
+    }
   }
 }

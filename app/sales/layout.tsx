@@ -65,7 +65,7 @@ function SalesLayoutContent({
     { href: '/sales', label: 'Dashboard', icon: <Home size={18} /> },
     { href: '/sales/leads', label: 'Leads', icon: <Users size={18} /> },
     { href: '/sales/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/sales/offline-orders', label: 'Offline Orders', icon: <Package size={18} />, highlight: true },
+    { href: '/sales/offline-orders', label: 'Local Orders', icon: <Package size={18} />, highlight: true },
     { href: '/sales/quotes', label: 'Quotes', icon: <Package size={18} /> },
     { href: '/sales/analytics', label: 'Analytics', icon: <BarChart3 size={18} /> },
     { href: '/sales/assistance', label: 'Customer Assistance', icon: <UserCheck size={18} /> },

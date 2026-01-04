@@ -103,7 +103,7 @@ export default function CustomerOfflineOrdersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">My Offline Orders</h1>
+        <h1 className="text-3xl font-bold text-gray-900">My Local Orders</h1>
         <p className="text-gray-600 mt-1">Track your orders placed by our sales team</p>
       </div>
 
@@ -207,7 +207,7 @@ export default function CustomerOfflineOrdersPage() {
               ) : filteredOrders.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8">
-                    No offline orders found
+                    No Local orders found
                   </TableCell>
                 </TableRow>
               ) : (

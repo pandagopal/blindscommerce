@@ -124,8 +124,8 @@ export default function SalesOfflineOrdersPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Offline Orders</h1>
-          <p className="text-gray-600 mt-1">Track and manage your offline orders</p>
+          <h1 className="text-3xl font-bold text-gray-900">My Local Orders</h1>
+          <p className="text-gray-600 mt-1">Track and manage your Local orders</p>
         </div>
         <Link href="/sales/offline-orders/new">
           <Button>

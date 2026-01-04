@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Download, RefreshCcw } from 'lucide-react';
 import { useSocket } from '@/lib/hooks/useSocket';
 import { toast } from 'sonner';
+import ProductApprovalsWidget from '@/components/dashboard/ProductApprovalsWidget';
 
 interface DashboardStats {
   totalRevenue: number;
@@ -406,6 +407,15 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Product Approvals Widget */}
+      <div className="mt-8">
+        <ProductApprovalsWidget
+          userRole="ADMIN"
+          limit={5}
+          showFullView={false}
+        />
       </div>
     </div>
   );
