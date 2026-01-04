@@ -1,43 +1,178 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Database, 
+import {
+  Database,
   Ban,
   AlertCircle,
-  Info
+  Info,
+  Power,
+  PowerOff,
+  CheckCircle2,
+  Trash2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CacheManagementPage() {
-  // Since caching is disabled, show an informational page
-  
+  const [cacheEnabled, setCacheEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    fetchCacheStatus();
+  }, []);
+
+  const fetchCacheStatus = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/v2/admin/cache/status');
+      const data = await response.json();
+      if (data.success) {
+        setCacheEnabled(data.data?.enabled || false);
+      }
+    } catch (error) {
+      console.error('Error fetching cache status:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleCache = async () => {
+    try {
+      setToggling(true);
+      const newState = !cacheEnabled;
+      const response = await fetch('/api/v2/admin/cache/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: newState }),
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setCacheEnabled(newState);
+        toast.success(`Cache ${newState ? 'enabled' : 'disabled'} successfully`);
+      } else {
+        toast.error(data.message || 'Failed to toggle cache');
+      }
+    } catch (error) {
+      console.error('Error toggling cache:', error);
+      toast.error('Failed to toggle cache');
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  const clearCache = async () => {
+    try {
+      setClearing(true);
+      const response = await fetch('/api/v2/admin/cache/clear', {
+        method: 'POST',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Cache cleared successfully');
+      } else {
+        toast.error(data.message || 'Failed to clear cache');
+      }
+    } catch (error) {
+      console.error('Error clearing cache:', error);
+      toast.error('Failed to clear cache');
+    } finally {
+      setClearing(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Database className="h-8 w-8 text-gray-400" />
-          Cache Management
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Application cache management and monitoring
-        </p>
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Database className="h-8 w-8 text-gray-400" />
+            Cache Management
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Application cache management and monitoring
+          </p>
+        </div>
+        <div className="flex items-center gap-4">
+          {!loading && (
+            <>
+              <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg">
+                <span className="text-sm font-medium">Status:</span>
+                <span className={`text-sm font-bold ${cacheEnabled ? 'text-green-600' : 'text-red-600'}`}>
+                  {cacheEnabled ? 'ENABLED' : 'DISABLED'}
+                </span>
+              </div>
+              {cacheEnabled && (
+                <Button
+                  onClick={clearCache}
+                  disabled={clearing}
+                  variant="outline"
+                  className="min-w-[140px]"
+                >
+                  {clearing ? (
+                    'Clearing...'
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear Cache
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button
+                onClick={toggleCache}
+                disabled={toggling}
+                variant={cacheEnabled ? 'destructive' : 'default'}
+                className="min-w-[140px]"
+              >
+                {toggling ? (
+                  'Processing...'
+                ) : cacheEnabled ? (
+                  <>
+                    <PowerOff className="h-4 w-4 mr-2" />
+                    Disable Cache
+                  </>
+                ) : (
+                  <>
+                    <Power className="h-4 w-4 mr-2" />
+                    Enable Cache
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Disabled State Card */}
-      <Card className="mb-8 border-yellow-200 bg-yellow-50">
+      {/* Status Card */}
+      <Card className={`mb-8 ${cacheEnabled ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50'}`}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-yellow-800">
-            <Ban className="h-5 w-5" />
-            Caching is Currently Disabled
+          <CardTitle className={`flex items-center gap-2 ${cacheEnabled ? 'text-green-800' : 'text-yellow-800'}`}>
+            {cacheEnabled ? (
+              <>
+                <CheckCircle2 className="h-5 w-5" />
+                Caching is Currently Enabled
+              </>
+            ) : (
+              <>
+                <Ban className="h-5 w-5" />
+                Caching is Currently Disabled
+              </>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4 text-yellow-800">
+          <div className={`space-y-4 ${cacheEnabled ? 'text-green-800' : 'text-yellow-800'}`}>
             <p>
-              The application caching system is currently disabled. This page will show cache management 
-              controls when caching is enabled.
+              {cacheEnabled
+                ? 'The application caching system is currently enabled. Data will be cached for improved performance.'
+                : 'The application caching system is currently disabled. This page will show cache management controls when caching is enabled.'
+              }
             </p>
             
             <div className="bg-white rounded-lg p-4 border border-yellow-300">

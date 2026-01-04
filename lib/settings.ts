@@ -1,7 +1,8 @@
-// Settings cache
-let settingsCache: { [key: string]: any } = {};
-let cacheTimestamp = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+import { getCache, setCache, deleteCache } from './cache/cacheManager';
+
+// Settings cache key
+const SETTINGS_CACHE_KEY = 'platform_settings';
+const CACHE_DURATION = 300; // 5 minutes in seconds
 
 export interface PlatformSettings {
   general: {
@@ -157,14 +158,15 @@ const DEFAULT_SETTINGS: PlatformSettings = {
 
 // Get all platform settings with caching
 export async function getPlatformSettings(): Promise<PlatformSettings> {
-  const now = Date.now();
-  
-  // Return cached settings if still valid
-  if (cacheTimestamp > 0 && (now - cacheTimestamp) < CACHE_DURATION && Object.keys(settingsCache).length > 0) {
-    return settingsCache as PlatformSettings;
+  // Check cache first
+  const cached = await getCache<PlatformSettings>(SETTINGS_CACHE_KEY);
+  if (cached) {
+    return cached;
   }
 
   // Simply return defaults - settings should be fetched via API only
+  // Cache the defaults
+  await setCache(SETTINGS_CACHE_KEY, DEFAULT_SETTINGS, CACHE_DURATION);
   return DEFAULT_SETTINGS;
 }
 
@@ -176,8 +178,7 @@ export async function getSetting(category: keyof PlatformSettings, key: string):
 
 // Clear settings cache (call after updates)
 export function clearSettingsCache(): void {
-  settingsCache = {};
-  cacheTimestamp = 0;
+  deleteCache(SETTINGS_CACHE_KEY);
 }
 
 // Convenience functions for common settings
