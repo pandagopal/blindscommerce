@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Upload, X, Search, AlertTriangle } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 
 interface Category {
   category_id: number;
@@ -17,6 +16,9 @@ interface Category {
   updated_at: string;
 }
 
+type SortField = 'name' | 'featured' | 'display_order' | 'created_at';
+type SortOrder = 'asc' | 'desc';
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,7 +26,8 @@ export default function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [error, setError] = useState('');
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -34,7 +37,6 @@ export default function AdminCategoriesPage() {
     display_order: 0
   });
   const [uploadingImage, setUploadingImage] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     fetchCategories();
@@ -183,15 +185,64 @@ export default function AdminCategoriesPage() {
     });
   };
 
-  // Filter categories based on search and status
-  const filteredCategories = categories.filter(category => {
-    const matchesSearch = category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         category.slug.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'featured' && category.featured) ||
-                         (statusFilter === 'not-featured' && !category.featured);
-    return matchesSearch && matchesStatus;
-  });
+  // Handle column sorting
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Toggle sort order if clicking the same column
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field and default to ascending
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  // Filter and sort categories
+  const filteredCategories = categories
+    .filter(category => {
+      const matchesSearch = category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           category.slug.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' ||
+                           (statusFilter === 'featured' && category.featured) ||
+                           (statusFilter === 'not-featured' && !category.featured);
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      let aValue: any = a[sortField];
+      let bValue: any = b[sortField];
+
+      // Handle string comparisons (name)
+      if (sortField === 'name') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue.toLowerCase();
+        return sortOrder === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      // Handle boolean comparisons (featured)
+      if (sortField === 'featured') {
+        aValue = a.featured ? 1 : 0;
+        bValue = b.featured ? 1 : 0;
+      }
+
+      // Handle numeric and date comparisons
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+
+  // Render sort icon
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-30" />;
+    }
+    return sortOrder === 'asc'
+      ? <ArrowUp className="h-4 w-4 ml-1 inline text-blue-600" />
+      : <ArrowDown className="h-4 w-4 ml-1 inline text-blue-600" />;
+  };
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -238,16 +289,6 @@ export default function AdminCategoriesPage() {
         </div>
       </div>
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <div className="flex items-center">
-            <AlertTriangle className="h-5 w-5 mr-2" />
-            {error}
-          </div>
-        </div>
-      )}
-
       {/* Loading State */}
       {loading && (
         <div className="flex justify-center items-center py-12">
@@ -263,11 +304,35 @@ export default function AdminCategoriesPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('name')}
+                  >
+                    Category
+                    <SortIcon field="name" />
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Featured</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('featured')}
+                  >
+                    Featured
+                    <SortIcon field="featured" />
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('display_order')}
+                  >
+                    Order
+                    <SortIcon field="display_order" />
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 select-none"
+                    onClick={() => handleSort('created_at')}
+                  >
+                    Created
+                    <SortIcon field="created_at" />
+                  </th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
