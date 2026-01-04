@@ -421,7 +421,7 @@ function ConsultationContent() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
                 <MapPin className="h-12 w-12 text-blue-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Professional Measurement</h3>
@@ -439,7 +439,7 @@ function ConsultationContent() {
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
                 <Mail className="h-12 w-12 text-primary-red" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Custom Quote</h3>

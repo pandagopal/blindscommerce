@@ -208,7 +208,7 @@ const Navbar = () => {
         </div>
       </div>
       
-      <header className="bg-header-bg shadow-sm sticky top-0 z-50">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button */}
@@ -244,7 +244,7 @@ const Navbar = () => {
               className="text-black hover:text-primary-red font-medium flex items-center gap-1"
             >
               AI Features
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                 New
               </span>
             </Link>
@@ -454,7 +454,7 @@ const Navbar = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               AI Features
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                 New
               </span>
             </Link>

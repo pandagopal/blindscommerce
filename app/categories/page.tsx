@@ -87,7 +87,7 @@ export default function CategoriesPage() {
                 <li key={sub}>
                   <Link 
                     href={`/categories/${sub.toLowerCase().replace(/\s|\//g, '-')}`}
-                    className="text-gray-700 hover:bg-gradient-to-r hover:from-purple-600 hover:to-blue-600 hover:bg-clip-text hover:text-transparent font-medium transition-all"
+                    className="text-gray-700 hover:text-primary-red font-medium transition-all"
                   >
                     {sub}
                   </Link>

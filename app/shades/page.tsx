@@ -94,17 +94,17 @@ export default function ShadesPage() {
 
   const benefits = [
     {
-      icon: <Shield className="h-8 w-8 text-blue-600" />,
+      icon: <Shield className="h-8 w-8 text-primary-red" />,
       title: 'Child Safety',
       description: 'Cordless and motorized options for maximum safety'
     },
     {
-      icon: <Star className="h-8 w-8 text-yellow-500" />,
+      icon: <Star className="h-8 w-8 text-primary-red" />,
       title: 'Energy Efficiency',
       description: 'Reduce heating and cooling costs by up to 25%'
     },
     {
-      icon: <Truck className="h-8 w-8 text-green-600" />,
+      icon: <Truck className="h-8 w-8 text-primary-red" />,
       title: 'Free Installation',
       description: 'Professional installation included with purchase'
     }
@@ -124,7 +124,7 @@ export default function ShadesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 to-purple-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -159,19 +159,19 @@ export default function ShadesPage() {
                 <h3 className="text-2xl font-bold mb-4">Why Choose Smart Blinds?</h3>
                 <ul className="space-y-3">
                   <li className="flex items-center">
-                    <ChevronRight className="h-5 w-5 text-blue-300 mr-2" />
+                    <ChevronRight className="h-5 w-5 text-red-300 mr-2" />
                     Free samples and consultation
                   </li>
                   <li className="flex items-center">
-                    <ChevronRight className="h-5 w-5 text-blue-300 mr-2" />
+                    <ChevronRight className="h-5 w-5 text-red-300 mr-2" />
                     Professional installation included
                   </li>
                   <li className="flex items-center">
-                    <ChevronRight className="h-5 w-5 text-blue-300 mr-2" />
+                    <ChevronRight className="h-5 w-5 text-red-300 mr-2" />
                     Lifetime warranty on all products
                   </li>
                   <li className="flex items-center">
-                    <ChevronRight className="h-5 w-5 text-blue-300 mr-2" />
+                    <ChevronRight className="h-5 w-5 text-red-300 mr-2" />
                     Custom sizing at no extra charge
                   </li>
                 </ul>
@@ -238,14 +238,14 @@ export default function ShadesPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
                       <span className="text-4xl text-gray-400">🪟</span>
                     </div>
                   )}
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
                       {product.category_name}
                     </span>
                   </div>
@@ -295,12 +295,12 @@ export default function ShadesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-20">
+      <section className="bg-gradient-to-r from-primary-red to-red-700 text-white py-20">
         <div className="container mx-auto text-center px-4">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Transform Your Windows?
           </h2>
-          <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
             Get started with a free consultation and see why thousands choose Smart Blinds.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
@@ -318,7 +318,7 @@ export default function ShadesPage() {
             </Link>
             <a
               href="tel:+1-316-530-2635"
-              className="flex items-center justify-center border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-blue-600 transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+              className="flex items-center justify-center border-2 border-white text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-white hover:text-primary-red transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
             >
               <Phone className="h-5 w-5 mr-2" />
               Call (316) 530-2635

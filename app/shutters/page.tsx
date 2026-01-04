@@ -56,17 +56,17 @@ export default function ShuttersPage() {
 
   const benefits = [
     {
-      icon: <Home className="h-8 w-8 text-blue-600" />,
+      icon: <Home className="h-8 w-8 text-primary-red" />,
       title: 'Increase Home Value',
       description: 'Add 5-10% to your home value with custom shutters'
     },
     {
-      icon: <Shield className="h-8 w-8 text-green-600" />,
+      icon: <Shield className="h-8 w-8 text-primary-red" />,
       title: 'Superior Insulation',
       description: 'Reduce energy costs by up to 30% year-round'
     },
     {
-      icon: <Star className="h-8 w-8 text-yellow-500" />,
+      icon: <Star className="h-8 w-8 text-primary-red" />,
       title: 'Lifetime Beauty',
       description: 'Timeless style that never goes out of fashion'
     }
@@ -88,14 +88,14 @@ export default function ShuttersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-amber-900 to-orange-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold mb-6">
                 Custom Plantation Shutters
               </h1>
-              <p className="text-xl mb-8 text-orange-100">
+              <p className="text-xl mb-8 text-red-100">
                 Transform your home with our premium plantation shutters. Handcrafted 
                 for perfect fit, superior light control, and timeless elegance that 
                 increases your home's value.
@@ -103,13 +103,13 @@ export default function ShuttersPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link 
                   href="/products?category=12"
-                  className="bg-white text-orange-900 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors text-center"
+                  className="bg-white text-red-900 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors text-center"
                 >
                   Shop Shutters
                 </Link>
                 <Link 
                   href="/measure-install"
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-orange-900 transition-colors text-center"
+                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-red-900 transition-colors text-center"
                 >
                   Free Measure
                 </Link>
@@ -121,8 +121,8 @@ export default function ShuttersPage() {
                 <div className="space-y-4">
                   {features.map((feature, index) => (
                     <div key={index} className="flex items-center">
-                      <ChevronRight className="h-5 w-5 text-orange-300 mr-3 flex-shrink-0" />
-                      <span className="text-orange-100">{feature}</span>
+                      <ChevronRight className="h-5 w-5 text-red-300 mr-3 flex-shrink-0" />
+                      <span className="text-red-100">{feature}</span>
                     </div>
                   ))}
                 </div>
@@ -150,7 +150,7 @@ export default function ShuttersPage() {
             onClick={() => setSelectedMaterial('all')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               selectedMaterial === 'all'
-                ? 'bg-orange-600 text-white'
+                ? 'bg-primary-red text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -160,7 +160,7 @@ export default function ShuttersPage() {
             onClick={() => setSelectedMaterial('wood')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               selectedMaterial === 'wood'
-                ? 'bg-orange-600 text-white'
+                ? 'bg-primary-red text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -170,7 +170,7 @@ export default function ShuttersPage() {
             onClick={() => setSelectedMaterial('composite')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               selectedMaterial === 'composite'
-                ? 'bg-orange-600 text-white'
+                ? 'bg-primary-red text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -180,7 +180,7 @@ export default function ShuttersPage() {
             onClick={() => setSelectedMaterial('vinyl')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               selectedMaterial === 'vinyl'
-                ? 'bg-orange-600 text-white'
+                ? 'bg-primary-red text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -193,8 +193,8 @@ export default function ShuttersPage() {
           {filteredShutters.map((shutter) => (
             <div key={shutter.id} className="bg-white rounded-lg shadow-lg overflow-hidden group hover:shadow-xl transition-shadow">
               <div className="aspect-w-16 aspect-h-9 bg-gray-200">
-                <div className="w-full h-64 bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center">
-                  <span className="text-orange-800 font-medium">{shutter.name}</span>
+                <div className="w-full h-64 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                  <span className="text-red-800 font-medium">{shutter.name}</span>
                 </div>
               </div>
               <div className="p-6">
@@ -216,7 +216,7 @@ export default function ShuttersPage() {
                   {shutter.features.map((feature, index) => (
                     <span
                       key={index}
-                      className="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded-full"
+                      className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full"
                     >
                       {feature}
                     </span>
@@ -231,13 +231,13 @@ export default function ShuttersPage() {
                 <div className="space-y-2">
                   <Link
                     href={`/products?category=${shutter.material === 'wood' ? '14' : shutter.material === 'composite' ? '15' : '13'}`}
-                    className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors text-center block"
+                    className="w-full bg-primary-red text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors text-center block"
                   >
                     Shop {shutter.name}
                   </Link>
                   <Link
                     href="/samples"
-                    className="w-full border border-orange-600 text-orange-600 py-2 px-4 rounded-lg font-medium hover:bg-orange-50 transition-colors text-center block"
+                    className="w-full border border-primary-red text-primary-red py-2 px-4 rounded-lg font-medium hover:bg-red-50 transition-colors text-center block"
                   >
                     Get Free Sample
                   </Link>
@@ -273,7 +273,7 @@ export default function ShuttersPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h4 className="text-lg font-bold text-green-600 mb-4">✓ Smart Blinds Advantage</h4>
+                <h4 className="text-lg font-bold text-primary-red mb-4">✓ Smart Blinds Advantage</h4>
                 <ul className="space-y-2 text-gray-700">
                   <li>• Custom measured by professionals</li>
                   <li>• Premium materials and hardware</li>
@@ -300,29 +300,29 @@ export default function ShuttersPage() {
       </div>
 
       {/* Process Section */}
-      <div className="bg-orange-50 py-16">
+      <div className="bg-red-50 py-16">
         <div className="max-w-7xl mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
             Our Simple 4-Step Process
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="bg-orange-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+              <div className="bg-primary-red text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Free Consultation</h3>
               <p className="text-gray-600">Schedule your free in-home design consultation</p>
             </div>
             <div className="text-center">
-              <div className="bg-orange-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+              <div className="bg-primary-red text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Professional Measure</h3>
               <p className="text-gray-600">Expert measurement for perfect fit</p>
             </div>
             <div className="text-center">
-              <div className="bg-orange-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+              <div className="bg-primary-red text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Custom Manufacturing</h3>
               <p className="text-gray-600">Handcrafted to your exact specifications</p>
             </div>
             <div className="text-center">
-              <div className="bg-orange-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
+              <div className="bg-primary-red text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Expert Installation</h3>
               <p className="text-gray-600">Professional installation and final inspection</p>
             </div>
@@ -331,25 +331,25 @@ export default function ShuttersPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-red-700 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready for Custom Plantation Shutters?
           </h2>
-          <p className="text-xl mb-8 text-orange-100">
+          <p className="text-xl mb-8 text-red-100">
             Schedule your free consultation today and discover why Smart Blinds is America's #1 choice for custom shutters.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-orange-600 px-8 py-3 rounded-lg font-semibold hover:bg-orange-50 transition-colors flex items-center justify-center"
+              className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors flex items-center justify-center"
             >
               <Ruler className="h-5 w-5 mr-2" />
               Free In-Home Consultation
             </Link>
             <a
               href="tel:+1-316-530-2635"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-orange-600 transition-colors flex items-center justify-center"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors flex items-center justify-center"
             >
               <Phone className="h-5 w-5 mr-2" />
               Call (316) 530-2635

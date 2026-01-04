@@ -43,7 +43,7 @@ export default function HelpPage() {
       ]
     },
     {
-      icon: <HelpCircle className="h-8 w-8 text-orange-600" />,
+      icon: <HelpCircle className="h-8 w-8 text-primary-red" />,
       title: 'General Support',
       description: 'Contact options, policies, and general information',
       links: [
@@ -164,7 +164,7 @@ export default function HelpPage() {
               <MessageSquare className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Live Chat</h3>
               <p className="text-gray-600 mb-4">Chat with us online</p>
-              <button className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors">
+              <button className="bg-primary-red text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors">
                 Start Chat
               </button>
             </div>

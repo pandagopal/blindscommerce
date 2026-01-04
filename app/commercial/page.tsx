@@ -36,7 +36,7 @@ export default function CommercialPage() {
       features: ['Child safety features', 'Vandal resistant', 'Classroom darkening', 'Budget-friendly']
     },
     {
-      icon: <Award className="h-8 w-8 text-orange-600" />,
+      icon: <Award className="h-8 w-8 text-primary-red" />,
       title: 'Hospitality',
       description: 'Elegant treatments for hotels and restaurants',
       features: ['Custom designs', 'Brand coordination', 'Guest comfort', 'Maintenance support']
@@ -86,7 +86,7 @@ export default function CommercialPage() {
       description: 'Extended warranty coverage for commercial applications'
     },
     {
-      icon: <FileText className="h-8 w-8 text-orange-600" />,
+      icon: <FileText className="h-8 w-8 text-primary-red" />,
       title: 'Specification Support',
       description: 'Technical documentation and specification assistance'
     }
@@ -201,7 +201,7 @@ export default function CommercialPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="h-48 bg-gradient-to-br from-blue-200 to-indigo-300 flex items-center justify-center">
+              <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
                 <span className="text-blue-800 font-medium">Motorized Solar Shades</span>
               </div>
               <div className="p-6">
@@ -237,8 +237,8 @@ export default function CommercialPage() {
             </div>
 
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="h-48 bg-gradient-to-br from-amber-200 to-orange-300 flex items-center justify-center">
-                <span className="text-amber-800 font-medium">Commercial Blinds</span>
+              <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                <span className="text-red-800 font-medium">Commercial Blinds</span>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Vertical & Horizontal Blinds</h3>

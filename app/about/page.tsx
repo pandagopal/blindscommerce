@@ -188,8 +188,8 @@ export default function AboutPage() {
             {teamMembers.map((member, index) => (
               <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="aspect-w-1 aspect-h-1 bg-gray-200">
-                  <div className="h-64 bg-gradient-to-br from-blue-200 to-indigo-300 flex items-center justify-center">
-                    <span className="text-blue-800 font-medium text-center px-4">{member.name}</span>
+                  <div className="h-64 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                    <span className="text-red-800 font-medium text-center px-4">{member.name}</span>
                   </div>
                 </div>
                 <div className="p-6">

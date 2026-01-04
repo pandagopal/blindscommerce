@@ -121,7 +121,7 @@ export default function InspirationPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -161,7 +161,7 @@ export default function InspirationPage() {
                 onClick={() => setSelectedRoom(category.id)}
                 className={`px-4 py-2 rounded-full font-medium transition-colors flex items-center gap-2 ${
                   selectedRoom === category.id
-                    ? 'bg-purple-600 text-white'
+                    ? 'bg-primary-red text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
@@ -179,7 +179,7 @@ export default function InspirationPage() {
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-l-lg ${
-                  viewMode === 'grid' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                  viewMode === 'grid' ? 'bg-primary-red text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 <Grid className="h-5 w-5" />
@@ -187,7 +187,7 @@ export default function InspirationPage() {
               <button
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-r-lg ${
-                  viewMode === 'list' ? 'bg-purple-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+                  viewMode === 'list' ? 'bg-primary-red text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 <List className="h-5 w-5" />
@@ -232,7 +232,7 @@ export default function InspirationPage() {
               } bg-gray-200 relative overflow-hidden`}>
                 <div className={`${
                   viewMode === 'list' ? 'h-64 md:h-full' : 'h-64'
-                } bg-gradient-to-br from-purple-200 to-indigo-300 flex items-center justify-center`}>
+                } bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center`}>
                   <span className="text-primary-dark font-medium text-center px-4">
                     {item.title}
                   </span>
@@ -249,7 +249,7 @@ export default function InspirationPage() {
               
               <div className={`${viewMode === 'list' ? 'md:w-1/2' : ''} p-6`}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="bg-purple-100 text-primary-dark text-xs px-2 py-1 rounded-full">
+                  <span className="bg-red-100 text-primary-dark text-xs px-2 py-1 rounded-full">
                     {item.room.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
                   </span>
                   <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
@@ -264,7 +264,7 @@ export default function InspirationPage() {
                   {item.products.map((product, index) => (
                     <span
                       key={index}
-                      className="bg-indigo-100 text-primary-dark text-xs px-2 py-1 rounded-full"
+                      className="bg-red-100 text-primary-dark text-xs px-2 py-1 rounded-full"
                     >
                       {product}
                     </span>
@@ -286,7 +286,7 @@ export default function InspirationPage() {
                 
                 <Link
                   href="/consultation"
-                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors text-center block"
+                  className="w-full bg-primary-red text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors text-center block"
                 >
                   Get This Look
                 </Link>
@@ -305,7 +305,7 @@ export default function InspirationPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Link href="#" className="group">
               <div className="aspect-w-16 aspect-h-12 bg-gray-200 rounded-lg overflow-hidden mb-4">
-                <div className="h-48 bg-gradient-to-br from-blue-200 to-purple-300 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <div className="h-48 bg-gradient-to-br from-red-100 to-red-300 flex items-center justify-center group-hover:scale-105 transition-transform">
                   <span className="text-blue-800 font-medium">Living Room Ideas</span>
                 </div>
               </div>
@@ -329,8 +329,8 @@ export default function InspirationPage() {
             
             <Link href="#" className="group">
               <div className="aspect-w-16 aspect-h-12 bg-gray-200 rounded-lg overflow-hidden mb-4">
-                <div className="h-48 bg-gradient-to-br from-orange-200 to-red-300 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  <span className="text-orange-800 font-medium">Kitchen Ideas</span>
+                <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <span className="text-red-800 font-medium">Kitchen Ideas</span>
                 </div>
               </div>
               <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-red">
@@ -343,7 +343,7 @@ export default function InspirationPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-red-700 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Create Your Dream Space?
