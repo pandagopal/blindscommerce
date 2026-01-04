@@ -22,12 +22,29 @@ interface CompanyInfo {
   tagline: string;
 }
 
+interface Category {
+  category_id: number;
+  name: string;
+  slug: string;
+}
+
+interface GroupedCategories {
+  blinds: Category[];
+  shades: Category[];
+  motorized: Category[];
+}
+
 const Navbar = () => {
   const { itemCount } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<GroupedCategories>({
+    blinds: [],
+    shades: [],
+    motorized: []
+  });
   const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
     companyName: 'Smart Blinds Hub',
     emergencyHotline: '1-800-BLINDS',
@@ -35,6 +52,34 @@ const Navbar = () => {
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Fetch categories for navigation
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/v2/categories');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const allCategories: Category[] = result.data;
+
+            // Group categories dynamically based on name
+            const grouped: GroupedCategories = {
+              blinds: allCategories.filter(cat => cat.name.toLowerCase().includes('blind') && !cat.name.toLowerCase().includes('motorized') && !cat.name.toLowerCase().includes('smart')),
+              shades: allCategories.filter(cat => cat.name.toLowerCase().includes('shade') && !cat.name.toLowerCase().includes('motorized')),
+              motorized: allCategories.filter(cat => cat.name.toLowerCase().includes('motorized') || cat.name.toLowerCase().includes('smart'))
+            };
+
+            setCategories(grouped);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Fetch company info
   useEffect(() => {
@@ -259,12 +304,14 @@ const Navbar = () => {
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products?category=1" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Venetian Blinds</Link>
-                  <Link href="/products?category=2" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vertical Blinds</Link>
-                  <Link href="/products?category=3" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Blinds</Link>
-                  <Link href="/products?category=4" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roman Blinds</Link>
-                  <Link href="/products?category=5" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wooden Blinds</Link>
-                  <Link href="/products?category=6" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Faux Wood Blinds</Link>
+                  {categories.blinds.map(cat => (
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      {cat.name}
+                    </Link>
+                  ))}
+                  {categories.blinds.length === 0 && (
+                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -279,39 +326,39 @@ const Navbar = () => {
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products?category=7" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Cellular Shades</Link>
-                  <Link href="/products?category=8" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Roller Shades</Link>
-                  <Link href="/products?category=9" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Solar Shades</Link>
-                  <Link href="/products?category=10" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Woven Wood Shades</Link>
-                  <Link href="/products?category=11" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Pleated Shades</Link>
+                  {categories.shades.map(cat => (
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      {cat.name}
+                    </Link>
+                  ))}
+                  {categories.shades.length === 0 && (
+                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="relative group">
               <Link
-                href="/shutters"
+                href="/products"
                 className="text-black hover:text-primary-red font-medium flex items-center gap-1"
               >
-                Shutters
+                Motorized
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
               <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
                 <div className="py-2">
-                  <Link href="/products?category=12" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Plantation Shutters</Link>
-                  <Link href="/products?category=13" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Vinyl Shutters</Link>
-                  <Link href="/products?category=14" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Wood Shutters</Link>
-                  <Link href="/products?category=15" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Composite Shutters</Link>
+                  {categories.motorized.map(cat => (
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      {cat.name}
+                    </Link>
+                  ))}
+                  {categories.motorized.length === 0 && (
+                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                  )}
                 </div>
               </div>
             </div>
-
-            <Link
-              href="/products?category=22"
-              className="text-black hover:text-primary-red font-medium"
-            >
-              Motorized
-            </Link>
 
             <div className="relative group">
               <span className="text-black hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">

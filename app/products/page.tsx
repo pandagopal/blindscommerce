@@ -199,7 +199,7 @@ export default async function ProductsPage({
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         {/* Dynamic Header Based on Filters */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-6">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
             {pageContext.isRoomFiltered 
               ? `${pageContext.roomName} Window Treatments`

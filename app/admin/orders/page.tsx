@@ -90,8 +90,18 @@ export default function AdminOrdersPage() {
       });
 
       const response = await fetch(`/api/v2/admin/orders?${queryParams}`);
+
       if (!response.ok) {
-        throw new Error('Failed to fetch orders');
+        // Handle 404 or other errors gracefully
+        if (response.status === 404) {
+          setOrders([]);
+          setTotalOrders(0);
+        } else {
+          console.error('Failed to fetch orders:', response.status, response.statusText);
+          setOrders([]);
+          setTotalOrders(0);
+        }
+        return;
       }
 
       const data = await response.json();
@@ -101,6 +111,9 @@ export default function AdminOrdersPage() {
       setTotalOrders(ordersData.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      // Set empty state on error
+      setOrders([]);
+      setTotalOrders(0);
     } finally {
       setLoading(false);
     }

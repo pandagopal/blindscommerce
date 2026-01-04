@@ -87,8 +87,19 @@ export default function ProductFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // State for filters
-  const [selectedCategories, setSelectedCategories] = useState<number[]>(defaultCategoryId ? [defaultCategoryId] : []);
+  // State for filters - initialize from URL params or props
+  const [selectedCategories, setSelectedCategories] = useState<number[]>(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const categoryParam = params.get('category');
+    if (categoryParam) {
+      try {
+        return [parseInt(categoryParam, 10)];
+      } catch (e) {
+        return defaultCategoryId ? [defaultCategoryId] : [];
+      }
+    }
+    return defaultCategoryId ? [defaultCategoryId] : [];
+  });
   const [minPrice, setMinPrice] = useState<string>(initialMinPrice ? initialMinPrice.toString() : '');
   const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice ? initialMaxPrice.toString() : '');
   const [sortBy, setSortBy] = useState<string>(initialSort);
@@ -102,7 +113,7 @@ export default function ProductFilters({
   const [isApplyingFilters, setIsApplyingFilters] = useState<boolean>(false);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
-  // Initialize state from URL parameters when component mounts
+  // Sync state with URL parameters when they change
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -115,18 +126,21 @@ export default function ProductFilters({
       } catch (e) {
         console.error('Invalid category parameter', e);
       }
+    } else {
+      // Clear category selection if no category in URL
+      setSelectedCategories([]);
     }
 
     // Parse price range
     const minPriceParam = params.get('minPrice');
-    if (minPriceParam) setMinPrice(minPriceParam);
+    setMinPrice(minPriceParam || '');
 
     const maxPriceParam = params.get('maxPrice');
-    if (maxPriceParam) setMaxPrice(maxPriceParam);
+    setMaxPrice(maxPriceParam || '');
 
     // Parse sort
     const sortParam = params.get('sort');
-    if (sortParam) setSortBy(sortParam);
+    setSortBy(sortParam || 'recommended');
 
     // Parse features
     const featuresParam = params.get('features');
@@ -136,16 +150,19 @@ export default function ProductFilters({
         setSelectedFeatures(featuresIds);
       } catch (e) {
         console.error('Invalid features parameter', e);
+        setSelectedFeatures([]);
       }
+    } else {
+      setSelectedFeatures([]);
     }
 
     // Parse room
     const roomParam = params.get('room');
-    if (roomParam) setSelectedRoom(roomParam);
+    setSelectedRoom(roomParam || '');
 
     // Parse sale
     const saleParam = params.get('sale');
-    if (saleParam === 'true') setSaleOnly(true);
+    setSaleOnly(saleParam === 'true');
   }, [searchParams]);
 
   // Map sort values to API parameters
@@ -272,7 +289,7 @@ export default function ProductFilters({
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mt-12">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-medium">Filters</h2>
         {(selectedCategories.length > 0 || minPrice || maxPrice || selectedFeatures.length > 0 || selectedRoom || saleOnly) && (
@@ -285,109 +302,63 @@ export default function ProductFilters({
         )}
       </div>
 
-      {/* Categories - Grouped by Type */}
+      {/* Categories - Dynamically Grouped by Type */}
       <div className="mb-6">
         <h3 className="text-sm font-medium mb-2">Categories</h3>
         <div className="space-y-3">
-          {/* Blinds Group */}
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Blinds</h4>
-            <div className="space-y-1 pl-2">
-              {Array.isArray(categories) && categories.filter(cat => 
-                ['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds'].includes(cat.name)
-              ).map((category) => (
-                <div key={category.category_id || category.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`category-${category.category_id || category.id}`}
-                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
-                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
-                  />
-                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
-                    {category.name}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Shades Group */}
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shades</h4>
-            <div className="space-y-1 pl-2">
-              {Array.isArray(categories) && categories.filter(cat => 
-                ['Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades'].includes(cat.name)
-              ).map((category) => (
-                <div key={category.category_id || category.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`category-${category.category_id || category.id}`}
-                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
-                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
-                  />
-                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
-                    {category.name}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Shutters Group */}
-          <div>
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shutters</h4>
-            <div className="space-y-1 pl-2">
-              {Array.isArray(categories) && categories.filter(cat => 
-                ['Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
-              ).map((category) => (
-                <div key={category.category_id || category.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`category-${category.category_id || category.id}`}
-                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                    checked={selectedCategories.includes(category.category_id || category.id || 0)}
-                    onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
-                  />
-                  <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
-                    {category.name}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Other Categories */}
-          {Array.isArray(categories) && categories.filter(cat => 
-            !['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds',
-              'Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades',
-              'Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
-          ).length > 0 && (
-            <div>
-              <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Other</h4>
-              <div className="space-y-1 pl-2">
-                {categories.filter(cat => 
-                  !['Venetian Blinds', 'Vertical Blinds', 'Roller Blinds', 'Roman Blinds', 'Wooden Blinds', 'Faux Wood Blinds',
-                    'Cellular Shades', 'Roller Shades', 'Solar Shades', 'Woven Wood Shades', 'Pleated Shades',
-                    'Plantation Shutters', 'Vinyl Shutters', 'Wood Shutters', 'Composite Shutters'].includes(cat.name)
-                ).map((category) => (
-                  <div key={category.category_id || category.id} className="flex items-center">
-                    <input
-                      type="checkbox"
-                      id={`category-${category.category_id || category.id}`}
-                      className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
-                      checked={selectedCategories.includes(category.category_id || category.id || 0)}
-                      onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
-                    />
-                    <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
-                      {category.name}
-                    </label>
+          {(() => {
+            // Helper function to determine category group from name
+            const getCategoryGroup = (name: string): string => {
+              const lowerName = name.toLowerCase();
+              if (lowerName.includes('blind')) return 'Blinds';
+              if (lowerName.includes('shade')) return 'Shades';
+              if (lowerName.includes('control')) return 'Controls';
+              if (lowerName.includes('shutter')) return 'Shutters';
+              return 'Other';
+            };
+
+            // Group categories dynamically
+            const grouped = Array.isArray(categories) ? categories.reduce((acc, cat) => {
+              const group = getCategoryGroup(cat.name);
+              if (!acc[group]) acc[group] = [];
+              acc[group].push(cat);
+              return acc;
+            }, {} as Record<string, Category[]>) : {};
+
+            // Sort groups: Controls at top, then Blinds, Shades, Shutters, Other
+            const groupOrder = ['Controls', 'Blinds', 'Shades', 'Shutters', 'Other'];
+            const sortedGroups = groupOrder.filter(g => grouped[g] && grouped[g].length > 0);
+
+            return sortedGroups.map(groupName => {
+              // Determine if this group should have blue color
+              const isBlueGroup = ['Controls', 'Blinds', 'Shades'].includes(groupName);
+              const headerClass = isBlueGroup
+                ? "text-xs font-medium text-blue-600 uppercase tracking-wider mb-1"
+                : "text-xs font-medium text-gray-500 uppercase tracking-wider mb-1";
+
+              return (
+                <div key={groupName}>
+                  <h4 className={headerClass}>{groupName}</h4>
+                  <div className="space-y-1 pl-2">
+                    {grouped[groupName].map((category) => (
+                      <div key={category.category_id || category.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id={`category-${category.category_id || category.id}`}
+                          className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
+                          checked={selectedCategories.includes(category.category_id || category.id || 0)}
+                          onChange={() => handleCategoryChange(category.category_id || category.id || 0)}
+                        />
+                        <label htmlFor={`category-${category.category_id || category.id}`} className="ml-2 text-sm text-gray-700">
+                          {category.name}
+                        </label>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                </div>
+              );
+            });
+          })()}
         </div>
       </div>
 
