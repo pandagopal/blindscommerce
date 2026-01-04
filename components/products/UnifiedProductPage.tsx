@@ -341,16 +341,48 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       if (!res.ok) {
         setError(data.message || data.error || 'Failed to load product data');
+        setLoading(false);
         return;
       }
       
       if (!data.success) throw new Error(data.message || 'API request failed');
-      
-      if (data.data?.product) {
-        const product = data.data.product;
-        
+
+      // Handle both response formats: data.data.data.product (double nested) or data.data.product or data.data
+      const product = data.data?.data?.product || data.data?.product || data.data;
+
+      if (product) {
+        // Debug: Log the product data
+        console.log('Product data:', {
+          primary_category: product.primary_category,
+          categories: product.categories,
+          category_id: product.category_id
+        });
+
         // Options and fabric data now come from the main product API response
         let optionsData = product.options;
+
+        // Determine primary category
+        let primaryCategory = '';
+        if (typeof product.primary_category === 'string' && product.primary_category) {
+          primaryCategory = product.primary_category;
+        } else if (Array.isArray(product.categories) && product.categories.length > 0) {
+          const primaryCat = product.categories.find((cat: any) => cat.is_primary === 1 || cat.is_primary === true);
+          if (primaryCat) {
+            primaryCategory = primaryCat.name || '';
+          } else {
+            // Fallback: match by category_id
+            const matchedCat = product.categories.find((cat: any) => cat.category_id === product.primary_category);
+            primaryCategory = matchedCat?.name || '';
+          }
+        }
+
+        console.log('Computed primaryCategory:', primaryCategory);
+        console.log('Pricing matrix from API:', {
+          pricing_matrix: product.pricing_matrix,
+          pricing_matrix_length: Array.isArray(product.pricing_matrix) ? product.pricing_matrix.length : 0,
+          pricing_systems: product.pricing?.systems
+        });
+
         // Map API response to expected structure
         const mappedData = {
           basicInfo: {
@@ -363,8 +395,11 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             vendorId: product.vendor_id || '',
             isActive: Boolean(product.is_active),
             isFeatured: Boolean(product.is_featured),
-            categories: Array.isArray(product.categories) ? product.categories : [],
-            primaryCategory: product.primary_category || ''
+            // Transform categories array of objects to array of category names
+            categories: Array.isArray(product.categories)
+              ? product.categories.map((cat: any) => cat.name || cat)
+              : [],
+            primaryCategory: primaryCategory
           },
           options: optionsData || {
             dimensions: optionsData?.dimensions || {
@@ -385,10 +420,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             valanceOptions: optionsData?.valanceOptions || [],
             bottomRailOptions: optionsData?.bottomRailOptions || []
           },
-          pricing: { 
+          pricing: {
             matrixEntries: Array.isArray(product.pricing_matrix) ? product.pricing_matrix : [],
-            priceMatrix: Array.isArray(product.pricing_matrix) ? 
-              convertPricingMatrixToObject(product.pricing_matrix) : {}
+            priceMatrix: Array.isArray(product.pricing_matrix) ?
+              convertPricingMatrixToObject(product.pricing_matrix) : {},
+            systems: product.pricing?.systems || [],
+            pricingModel: product.pricing?.pricingModel || 'grid',
+            perSquarePrice: product.pricing?.perSquarePrice,
+            squareUnit: product.pricing?.squareUnit,
+            minSquares: product.pricing?.minSquares
           },
           images: Array.isArray(product.images) ? product.images : [],
           features: Array.isArray(product.features) ? product.features : [],
@@ -397,7 +437,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
           rendering3D: product.rendering3D || {
             model3D: null,
             renderingConfig: {
-              engine: 'three.js',
+              engine: 'three.js' as const,
               environment: 'studio',
               lighting: {
                 ambient: 0.4,
@@ -405,7 +445,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 shadowSoftness: 0.5
               },
               camera: {
-                defaultPosition: [0, 0, 5],
+                defaultPosition: [0, 0, 5] as [number, number, number],
                 fov: 45
               },
               quality: {
@@ -426,7 +466,14 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             }
           }
         };
-        
+
+        console.log('Mapped pricing data:', {
+          matrixEntries: mappedData.pricing.matrixEntries,
+          matrixEntriesLength: mappedData.pricing.matrixEntries?.length,
+          systems: mappedData.pricing.systems,
+          pricingModel: mappedData.pricing.pricingModel
+        });
+
         setProductData(mappedData);
       } else {
         setError('Failed to load product data');
@@ -440,10 +487,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
   };
 
   const updateProductData = (section: string, data: any) => {
-    setProductData(prev => ({
-      ...prev,
-      [section]: data
-    }));
+    try {
+      setProductData(prev => ({
+        ...prev,
+        [section]: data
+      }));
+    } catch (error) {
+      console.error(`Error updating ${section}:`, error);
+      toast.error(`Failed to update ${section}`);
+    }
   };
 
   // Isolated method to process fabric images - handles upload for blob URLs
@@ -589,7 +641,15 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       // Process product images - upload any new images that are still using blob URLs
       const processedImages = await processProductImages(productData.images, productId);
-      
+
+      // Debug: Log the data being sent
+      console.log('Save Product - Debug Data:', {
+        primaryCategory: productData.basicInfo.primaryCategory,
+        categories: productData.basicInfo.categories,
+        pricingSystems: productData.pricing.systems,
+        pricingMatrixEntries: productData.pricing.matrixEntries
+      });
+
       // Transform productData to the format expected by the API
       const apiData = {
         // Basic info fields
@@ -604,16 +664,23 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         is_featured: productData.basicInfo.isFeatured,
         categories: productData.basicInfo.categories,
         primary_category: productData.basicInfo.primaryCategory,
-        
+
         // Other tabs data
         images: processedImages,
         options: productData.options,
-        pricing_matrix: productData.pricing.matrixEntries,
+        // Extract pricing matrix from systems array - flatten all matrixEntries from all systems
+        pricing_matrix: productData.pricing.systems?.flatMap((system: any) => system.matrixEntries || []) || productData.pricing.matrixEntries || [],
         fabric: processedFabricData,
         features: productData.features,
         roomRecommendations: productData.roomRecommendations,
         rendering3D: productData.rendering3D
       };
+
+      console.log('Save Product - API Data:', {
+        primaryCategory: apiData.primary_category,
+        categories: apiData.categories,
+        pricingMatrixLength: apiData.pricing_matrix?.length
+      });
       
       const response = await fetch(apiEndpoint, {
         method,
@@ -1086,11 +1153,9 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isViewMode ? 'View Product' : isEditMode ? 'Edit Product' : 'Create New Product'}
                 </h1>
-                <p className="text-gray-600">
-                  {isViewMode 
-                    ? 'View product details and specifications'
-                    : isEditMode 
-                    ? 'Update product information and settings'
+                <p className="text-blue-600">
+                  {isViewMode || isEditMode
+                    ? productData.basicInfo.name
                     : 'Add a new product to your catalog'
                   }
                 </p>
@@ -1165,12 +1230,16 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <PricingMatrixAdvanced
                   dimensions={productData.options.dimensions}
                   initialData={{
-                    systems: productData.pricing.systems || (productData.pricing.priceMatrix ? [{
-                      systemType: 'square_cassette',
-                      fabricCode: '',
-                      priceMatrix: productData.pricing.priceMatrix || {},
-                      matrixEntries: productData.pricing.matrixEntries || []
-                    }] : []),
+                    systems: (productData.pricing.systems && productData.pricing.systems.length > 0)
+                      ? productData.pricing.systems
+                      : (productData.pricing.priceMatrix || productData.pricing.matrixEntries?.length > 0)
+                        ? [{
+                            systemType: 'square_cassette',
+                            fabricCode: '',
+                            priceMatrix: productData.pricing.priceMatrix || {},
+                            matrixEntries: productData.pricing.matrixEntries || []
+                          }]
+                        : [],
                     pricingModel: productData.pricing.pricingModel || 'grid',
                     perSquarePrice: productData.pricing.perSquarePrice,
                     squareUnit: productData.pricing.squareUnit,
@@ -1181,7 +1250,10 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                     fabric_name: f.name,
                     fabric_code: f.id // Use ID as code since fabric doesn't have separate code
                   })) || []}
-                  onChange={(data) => updateProductData('pricing', data)}
+                  onChange={(data) => {
+                    console.log('Pricing data update:', data);
+                    updateProductData('pricing', data);
+                  }}
                   isReadOnly={isViewMode}
                 />
               </TabsContent>
@@ -1217,7 +1289,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                   onChange={(data) => updateProductData('rendering3D', data)}
                   isReadOnly={isViewMode}
                   productId={productId}
-                  fabrics={productData.fabric.fabrics.map(f => ({
+                  fabrics={(productData.fabric?.fabrics || []).map((f: any) => ({
                     id: f.id,
                     name: f.name,
                     texture_url: f.image?.url

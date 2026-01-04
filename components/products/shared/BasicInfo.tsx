@@ -122,7 +122,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
       // Force form reset with proper values after a delay to avoid render loops
       const timer = setTimeout(() => {
         form.reset(formData);
-        
+
         // Set primary category after form reset if we have categories and a primary category
         if (data.categories?.length > 0 && data.primaryCategory) {
           // Give extra time for categories to populate in the form
@@ -131,7 +131,7 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           }, 100);
         }
       }, 50);
-      
+
       return () => clearTimeout(timer);
     }
   }, [data?.name, data?.categories?.length, data?.primaryCategory]); // Include primaryCategory in deps
@@ -329,14 +329,22 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
           control={form.control}
           name="primaryCategory"
           render={({ field }) => {
-            // Get current categories from form state  
+            // Get current categories from form state
             const currentCategories = form.watch("categories") || [];
-            
+
+            // Debug logging
+            console.log('BasicInfo Primary Category Debug:', {
+              fieldValue: field.value,
+              currentCategories: currentCategories,
+              dataFromProps: data?.primaryCategory,
+              match: currentCategories.includes(field.value)
+            });
+
             return (
               <FormItem>
                 <FormLabel>Primary Category *</FormLabel>
-                <Select 
-                  onValueChange={field.onChange} 
+                <Select
+                  onValueChange={field.onChange}
                   value={field.value || ""}
                   disabled={isReadOnly || currentCategories.length === 0}
                 >

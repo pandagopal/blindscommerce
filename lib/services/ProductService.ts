@@ -58,10 +58,11 @@ export class ProductService extends BaseService {
   async getProductWithDetails(
     productId: number,
     customerId?: number,
-    vendorId?: number
+    vendorId?: number,
+    includeInactive: boolean = false
   ): Promise<ProductWithDetails | null> {
     const query = `
-      SELECT 
+      SELECT
         p.*,
         c.name as category_name,
         c.slug as category_slug,
@@ -72,13 +73,13 @@ export class ProductService extends BaseService {
         COALESCE(vp.vendor_price, p.base_price) as effective_price
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id 
+      LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
         ${vendorId ? 'AND vp.vendor_id = ?' : ''}
-      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
+      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
         AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
-      WHERE p.product_id = ? AND p.is_active = 1
+      WHERE p.product_id = ? ${includeInactive ? '' : 'AND p.is_active = 1'}
       LIMIT 1
     `;
 
@@ -94,12 +95,15 @@ export class ProductService extends BaseService {
     
     const product = parseProductPrices(rows[0]);
     
-    // Get images, features, fabric options, and control types in parallel
+    // Get images, features, fabric options, control types, pricing matrix, categories, and dimensions in parallel
     const result = await this.executeParallel<{
       images: any[] | null;
       features: any[] | null;
       fabricOptions: any[] | null;
       controlTypes: any[] | null;
+      pricingMatrix: any[] | null;
+      categories: any[] | null;
+      dimensions: any[] | null;
     }>({
       images: {
         query: 'SELECT * FROM product_images WHERE product_id = ? ORDER BY display_order',
@@ -107,7 +111,7 @@ export class ProductService extends BaseService {
       },
       features: {
         query: `
-          SELECT pf.*, f.name, f.description 
+          SELECT pf.*, f.name, f.description
           FROM product_features pf
           JOIN features f ON pf.feature_id = f.feature_id
           WHERE pf.product_id = ?
@@ -117,9 +121,9 @@ export class ProductService extends BaseService {
       },
       fabricOptions: {
         query: `
-          SELECT fabric_option_id, product_id, vendor_id, fabric_type, 
+          SELECT fabric_option_id, product_id, vendor_id, fabric_type,
                  fabric_name, description, texture_url, opacity
-          FROM product_fabric_options 
+          FROM product_fabric_options
           WHERE product_id = ? AND is_enabled = 1
           ORDER BY render_priority, fabric_name
         `,
@@ -127,13 +131,43 @@ export class ProductService extends BaseService {
       },
       controlTypes: {
         query: `
-          SELECT control_type_id, name, description, operation_method, 
+          SELECT control_type_id, name, description, operation_method,
                  automation_compatible, child_safety_features
-          FROM control_types 
+          FROM control_types
           WHERE is_active = 1
           ORDER BY is_popular DESC, name
         `,
         params: []
+      },
+      pricingMatrix: {
+        query: `
+          SELECT id, product_id, system_type, fabric_code, width_min, width_max,
+                 height_min, height_max, base_price, price_per_sqft,
+                 effective_date, expires_date, is_active
+          FROM product_pricing_matrix
+          WHERE product_id = ? AND is_active = 1
+          ORDER BY width_min, height_min
+        `,
+        params: [productId]
+      },
+      categories: {
+        query: `
+          SELECT pc.category_id, pc.is_primary, c.name, c.slug
+          FROM product_categories pc
+          JOIN categories c ON pc.category_id = c.category_id
+          WHERE pc.product_id = ?
+          ORDER BY pc.is_primary DESC, c.name
+        `,
+        params: [productId]
+      },
+      dimensions: {
+        query: `
+          SELECT pd.*, dt.name as dimension_type_name
+          FROM product_dimensions pd
+          JOIN dimension_types dt ON pd.dimension_type_id = dt.dimension_type_id
+          WHERE pd.product_id = ?
+        `,
+        params: [productId]
       }
     });
 
@@ -142,6 +176,9 @@ export class ProductService extends BaseService {
     const features = result?.features || [];
     const fabricOptions = result?.fabricOptions || [];
     const controlTypes = result?.controlTypes || [];
+    const pricingMatrix = result?.pricingMatrix || [];
+    const categories = result?.categories || [];
+    const dimensions = result?.dimensions || [];
 
     // Transform image field names to match frontend expectations
     product.images = images.map(img => ({
@@ -152,10 +189,356 @@ export class ProductService extends BaseService {
       display_order: img.display_order || 0
     }));
     product.features = features;
+
+    // Transform fabric options to match frontend expectations
+    product.fabric = {
+      fabrics: fabricOptions.map(fabric => ({
+        id: fabric.fabric_option_id?.toString() || '',
+        name: fabric.fabric_name || '',
+        fabricType: fabric.fabric_type || '',
+        description: fabric.description || '',
+        image: fabric.texture_url ? {
+          url: fabric.texture_url,
+          alt: fabric.fabric_name || ''
+        } : null,
+        opacity: fabric.opacity || 1
+      }))
+    };
+
     product.fabricOptions = fabricOptions;
     product.controlTypes = controlTypes;
-    
+    product.pricing_matrix = pricingMatrix;
+    product.categories = categories.map(cat => ({
+      category_id: cat.category_id,
+      name: cat.name,
+      slug: cat.slug,
+      is_primary: cat.is_primary === 1
+    }));
+
+    // Set primary_category for backward compatibility
+    const primaryCat = categories.find(cat => cat.is_primary === 1);
+    if (primaryCat) {
+      product.primary_category = primaryCat.category_id;
+    }
+
+    // Build options object from dimensions
+    const widthDim = dimensions.find(d => d.dimension_type_name?.toLowerCase() === 'width');
+    const heightDim = dimensions.find(d => d.dimension_type_name?.toLowerCase() === 'height');
+
+    product.options = {
+      dimensions: {
+        minWidth: widthDim ? parseFloat(widthDim.min_value) : 12,
+        maxWidth: widthDim ? parseFloat(widthDim.max_value) : 96,
+        minHeight: heightDim ? parseFloat(heightDim.min_value) : 12,
+        maxHeight: heightDim ? parseFloat(heightDim.max_value) : 120,
+        widthIncrement: widthDim ? parseFloat(widthDim.increment_value) : 0.125,
+        heightIncrement: heightDim ? parseFloat(heightDim.increment_value) : 0.125
+      },
+      mountTypes: [],
+      controlTypes: {
+        liftSystems: [],
+        wandSystem: [],
+        stringSystem: [],
+        remoteControl: []
+      },
+      valanceOptions: [],
+      bottomRailOptions: []
+    };
+
     return product;
+  }
+
+  /**
+   * Get product with full enhanced details including all tab data
+   * This is used by both Admin and Vendor handlers
+   */
+  async getProductWithFullDetails(
+    productId: number,
+    vendorId?: number,
+    includeInactive: boolean = false
+  ): Promise<any> {
+    // Get basic product details
+    const product = await this.getProductWithDetails(productId, undefined, vendorId, includeInactive);
+
+    if (!product) {
+      return null;
+    }
+
+    try {
+      // Get additional data needed for all tabs
+      const results = await this.executeParallel<{
+        categories: any[];
+        options: any[];
+        specifications: any[];
+        pricingMatrix: any[];
+        fabric: any[];
+        rooms: any[];
+        features: any[];
+      }>({
+        categories: {
+          query: `
+            SELECT c.name, pc.is_primary, c.category_id
+            FROM product_categories pc
+            JOIN categories c ON pc.category_id = c.category_id
+            WHERE pc.product_id = ?
+          `,
+          params: [productId]
+        },
+        options: {
+          query: `
+            SELECT * FROM product_dimensions
+            WHERE product_id = ?
+          `,
+          params: [productId]
+        },
+        specifications: {
+          query: `
+            SELECT spec_category, spec_value
+            FROM product_specifications
+            WHERE product_id = ?
+            AND spec_category IN ('mount_type', 'lift_system', 'wand_system', 'string_system', 'remote_control', 'valance_option', 'bottom_rail_option')
+            ORDER BY spec_category, display_order
+          `,
+          params: [productId]
+        },
+        pricingMatrix: {
+          query: `
+            SELECT * FROM product_pricing_matrix
+            WHERE product_id = ?
+            ORDER BY width_min, height_min
+          `,
+          params: [productId]
+        },
+        fabric: {
+          query: `
+            SELECT
+              fo.*,
+              fi.image_url,
+              fi.image_name,
+              fp.price_per_sqft
+            FROM product_fabric_options fo
+            LEFT JOIN product_fabric_images fi ON fo.fabric_option_id = fi.fabric_option_id
+            LEFT JOIN product_fabric_pricing fp ON fo.fabric_option_id = fp.fabric_option_id
+            WHERE fo.product_id = ?
+          `,
+          params: [productId]
+        },
+        rooms: {
+          query: `
+            SELECT pr.*, pr.room_type as room_name
+            FROM product_rooms pr
+            WHERE pr.product_id = ?
+          `,
+          params: [productId]
+        },
+        features: {
+          query: `
+            SELECT f.*, pf.id as product_feature_id
+            FROM product_features pf
+            JOIN features f ON pf.feature_id = f.feature_id
+            WHERE pf.product_id = ?
+            ORDER BY f.display_order
+          `,
+          params: [productId]
+        }
+      });
+
+      const { categories, options, specifications, pricingMatrix, fabric, rooms, features } = results;
+
+      // Debug: Check raw categories from query
+      console.log('Raw categories from executeParallel:', categories);
+
+      // Safe defaults
+      const safeCategories = categories || [];
+      const safeOptions = options || [];
+      const safeSpecifications = specifications || [];
+      const safePricingMatrix = pricingMatrix || [];
+      const safeFabric = fabric || [];
+      const safeRooms = rooms || [];
+      const safeFeatures = features || [];
+
+      // Get primary category
+      const primaryCategoryResult = await this.executeQuery(
+        `SELECT c.name as category_name, c.category_id
+         FROM products p
+         LEFT JOIN categories c ON p.category_id = c.category_id
+         WHERE p.product_id = ?`,
+        [productId]
+      );
+      const primaryCategory = primaryCategoryResult[0];
+
+      // Parse fabric data
+      let fabricData = { fabrics: [] };
+      if (safeFabric && safeFabric.length > 0) {
+        fabricData.fabrics = safeFabric.map(f => ({
+          id: f.fabric_option_id?.toString() || '',
+          name: f.fabric_name || '',
+          image: f.texture_url ? {
+            url: f.texture_url,
+            alt: f.fabric_name || ''
+          } : (f.image_url ? {
+            url: f.image_url,
+            name: f.image_name || f.fabric_name || ''
+          } : null),
+          price: f.price_per_sqft ? parseFloat(f.price_per_sqft) * 100 : 0,
+          fabricType: f.fabric_type || 'colored',
+          enabled: f.is_enabled === 1,
+          description: f.description || '',
+          textureUrl: f.texture_url || null,
+          textureScale: f.texture_scale || 1.0,
+          materialFinish: f.material_finish || 'matte',
+          opacity: f.opacity || 1.0
+        }));
+      }
+
+      // Parse options data
+      let optionsData = {
+        dimensions: {
+          minWidth: 12,
+          maxWidth: 96,
+          minHeight: 12,
+          maxHeight: 120,
+          widthIncrement: 0.125,
+          heightIncrement: 0.125
+        },
+        mountTypes: [],
+        controlTypes: {
+          liftSystems: [],
+          wandSystem: [],
+          stringSystem: [],
+          remoteControl: []
+        },
+        valanceOptions: [],
+        bottomRailOptions: []
+      };
+
+      // If we have dimension data, use it
+      if (safeOptions && safeOptions.length > 0) {
+        const widthDim = safeOptions.find(o => o.dimension_type_id === 1);
+        const heightDim = safeOptions.find(o => o.dimension_type_id === 2);
+
+        if (widthDim) {
+          optionsData.dimensions.minWidth = parseFloat(widthDim.min_value) || 12;
+          optionsData.dimensions.maxWidth = parseFloat(widthDim.max_value) || 96;
+          optionsData.dimensions.widthIncrement = parseFloat(widthDim.increment_value) || 0.125;
+        }
+
+        if (heightDim) {
+          optionsData.dimensions.minHeight = parseFloat(heightDim.min_value) || 12;
+          optionsData.dimensions.maxHeight = parseFloat(heightDim.max_value) || 120;
+          optionsData.dimensions.heightIncrement = parseFloat(heightDim.increment_value) || 0.125;
+        }
+      }
+
+      // Process specifications into options
+      if (safeSpecifications && safeSpecifications.length > 0) {
+        const mountTypes: any[] = [];
+        const liftSystems: any[] = [];
+        const wandSystem: any[] = [];
+        const stringSystem: any[] = [];
+        const remoteControl: any[] = [];
+        const valanceOptions: any[] = [];
+        const bottomRailOptions: any[] = [];
+
+        safeSpecifications.forEach(spec => {
+          let value = spec.spec_value;
+          try {
+            if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
+              value = JSON.parse(value);
+            }
+          } catch (e) {
+            value = { name: value, price_adjustment: 0, enabled: true };
+          }
+
+          if (typeof value === 'string') {
+            value = { name: value, price_adjustment: 0, enabled: true };
+          }
+
+          switch (spec.spec_category) {
+            case 'mount_type':
+              mountTypes.push(value);
+              break;
+            case 'lift_system':
+              liftSystems.push(value);
+              break;
+            case 'wand_system':
+              wandSystem.push(value);
+              break;
+            case 'string_system':
+              stringSystem.push(value);
+              break;
+            case 'remote_control':
+              remoteControl.push(value);
+              break;
+            case 'valance_option':
+              valanceOptions.push(value);
+              break;
+            case 'bottom_rail_option':
+              bottomRailOptions.push(value);
+              break;
+          }
+        });
+
+        optionsData.mountTypes = mountTypes;
+        optionsData.controlTypes.liftSystems = liftSystems;
+        optionsData.controlTypes.wandSystem = wandSystem;
+        optionsData.controlTypes.stringSystem = stringSystem;
+        optionsData.controlTypes.remoteControl = remoteControl;
+        optionsData.valanceOptions = valanceOptions;
+        optionsData.bottomRailOptions = bottomRailOptions;
+      }
+
+      // Use categories from enhanced query, or fall back to product.categories from base query
+      const finalCategories = safeCategories.length > 0 ? safeCategories : (product.categories || []);
+
+      // Get primary category name - try from primaryCategoryResult, then from categories array
+      let primaryCategoryName = primaryCategory?.category_name;
+      if (!primaryCategoryName && finalCategories.length > 0) {
+        const primaryCat = finalCategories.find(c => c.is_primary === 1 || c.is_primary === true);
+        primaryCategoryName = primaryCat?.name || '';
+      }
+
+      // Debug logging
+      console.log('ProductService.getProductWithFullDetails - final data:', {
+        productId: productId,
+        safeCategoriesLength: safeCategories.length,
+        productCategoriesLength: product.categories?.length || 0,
+        finalCategoriesLength: finalCategories.length,
+        finalCategories: finalCategories,
+        primaryCategoryFromQuery: primaryCategory?.category_name,
+        primaryCategoryName: primaryCategoryName
+      });
+
+      // Build enhanced product response
+      return {
+        ...product,
+        categories: finalCategories,
+        primary_category: primaryCategoryName || '',
+        options: optionsData,
+        pricing_matrix: safePricingMatrix.length > 0 ? safePricingMatrix : (product.pricing_matrix || []),
+        fabric: fabricData,
+        roomRecommendations: safeRooms.map(room => ({
+          id: room.id?.toString() || '',
+          roomType: room.room_type || room.room_name || '',
+          recommendation: room.special_considerations || '',
+          priority: room.suitability_score || 5
+        })) || [],
+        features: safeFeatures.length > 0 ? safeFeatures : (product.features || [])
+      };
+    } catch (error) {
+      console.error('Error fetching enhanced product details:', error);
+      // Return basic product data if enhanced fetch fails
+      return {
+        ...product,
+        categories: product.categories || [],
+        primary_category: product.primary_category || product.category_id,
+        options: product.options || null,
+        pricing_matrix: product.pricing_matrix || [],
+        fabric: product.fabric || { fabrics: [] },
+        roomRecommendations: [],
+        features: product.features || []
+      };
+    }
   }
 
   /**

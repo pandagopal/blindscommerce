@@ -274,7 +274,10 @@ const Fabric = forwardRef<FabricRef, FabricProps>(({ data, onChange, isReadOnly 
                           src={fabric.image.url}
                           alt={fabric.name || 'Fabric image'}
                           className="w-full h-full object-cover"
-                          onError={(e) => console.error('Image failed to load:', fabric.image?.url, e)}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/images/placeholder.jpg';
+                          }}
                         />
                         {!isReadOnly && (
                           <button

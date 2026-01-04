@@ -211,7 +211,7 @@ export class AdminHandler extends BaseHandler {
       `;
       
       let countQuery = `
-        SELECT COUNT(*) as total
+        SELECT COUNT(DISTINCT vi.vendor_info_id) as total
         FROM users u
         INNER JOIN vendor_info vi ON u.user_id = vi.user_id
         WHERE u.role = 'vendor'
@@ -243,14 +243,14 @@ export class AdminHandler extends BaseHandler {
       query += ` LIMIT ? OFFSET ?`;
 
       // Get total count before adding limit params
-      const [countResult] = await pool.execute(countQuery, params);
+      const [countResult] = await pool.query(countQuery, params);
       const total = (countResult as any[])[0].total;
 
       // Add limit and offset params
       params.push(limit, offset);
 
       // Get paginated results
-      const [vendors] = await pool.execute(query, params);
+      const [vendors] = await pool.query(query, params);
       
       return {
         vendors: vendors || [],
@@ -1324,11 +1324,28 @@ export class AdminHandler extends BaseHandler {
 
   private async getProduct(id: string) {
     try {
-      const product = await productService.getProductWithDetails(parseInt(id));
+      // Use shared method with full details - includes inactive products for admin editing
+      const product = await productService.getProductWithFullDetails(parseInt(id), undefined, true);
       if (!product) {
         throw new ApiError('Product not found', 404);
       }
-      return product;
+
+      // Debug logging
+      console.log('AdminHandler.getProduct - returning:', {
+        product_id: product?.product_id,
+        primary_category: product?.primary_category,
+        categories: product?.categories,
+        category_id: product?.category_id,
+        pricing_matrix: product?.pricing_matrix,
+        pricing_matrix_length: product?.pricing_matrix?.length || 0
+      });
+
+      return {
+        success: true,
+        data: {
+          product: product
+        }
+      };
     } catch (error) {
       if (error instanceof ApiError) throw error;
       throw new ApiError('Failed to fetch product', 500);
@@ -1358,20 +1375,475 @@ export class AdminHandler extends BaseHandler {
   }
 
   private async updateProduct(id: string, req: NextRequest) {
-    const body = await req.json();
-    
+    const productId = parseInt(id);
+    const data = await req.json();
+
+    // Debug: Log the incoming data
+    console.log('AdminHandler.updateProduct - received data:', {
+      productId: productId,
+      hasPricingMatrix: !!data.pricing_matrix,
+      pricingMatrixLength: data.pricing_matrix?.length || 0,
+      pricingMatrix: data.pricing_matrix
+    });
+
     try {
       // Handle vendor_id - convert "marketplace" to null
-      if (body.vendor_id === 'marketplace' || body.vendor_id === '') {
-        body.vendor_id = null;
-      } else if (body.vendor_id) {
-        body.vendor_id = parseInt(body.vendor_id);
+      if (data.vendor_id === 'marketplace' || data.vendor_id === '') {
+        data.vendor_id = null;
+      } else if (data.vendor_id) {
+        data.vendor_id = parseInt(data.vendor_id);
       }
-      
-      await productService.update(parseInt(id), body);
-      return { success: true };
+
+      // Begin transaction
+      const pool = await getPool();
+      const conn = await pool.getConnection();
+
+      try {
+        await conn.beginTransaction();
+
+        // Get category_id from category name
+        let categoryId = null;
+        if (data.primaryCategory) {
+          const [category] = await conn.execute(
+            'SELECT category_id FROM categories WHERE name = ?',
+            [data.primaryCategory]
+          ) as any[];
+          if (category && category[0]) {
+            categoryId = (category as any)[0].category_id;
+          }
+        }
+
+        // Update basic product info including dimension limits
+        await conn.execute(
+          `UPDATE products SET
+            name = ?,
+            slug = ?,
+            sku = ?,
+            short_description = ?,
+            full_description = ?,
+            base_price = ?,
+            vendor_id = ?,
+            is_active = ?,
+            is_featured = ?,
+            category_id = ?,
+            custom_width_min = ?,
+            custom_width_max = ?,
+            custom_height_min = ?,
+            custom_height_max = ?,
+            updated_at = NOW()
+          WHERE product_id = ?`,
+          [
+            data.name,
+            data.slug,
+            data.sku,
+            data.short_description,
+            data.full_description || data.description || data.short_description,
+            data.base_price,
+            data.vendor_id,
+            data.is_active ? 1 : 0,
+            data.is_featured ? 1 : 0,
+            categoryId,
+            // Use dimensions from options or defaults
+            data.options?.dimensions?.minWidth || 12,
+            data.options?.dimensions?.maxWidth || 96,
+            data.options?.dimensions?.minHeight || 12,
+            data.options?.dimensions?.maxHeight || 120,
+            productId
+          ]
+        );
+
+        // Update categories
+        if (data.categories && Array.isArray(data.categories)) {
+          console.log('AdminHandler - Updating categories:', {
+            categories: data.categories,
+            primaryCategory: data.primaryCategory,
+            primary_category: data.primary_category
+          });
+
+          // Delete existing categories
+          await conn.execute('DELETE FROM product_categories WHERE product_id = ?', [productId]);
+
+          // Insert new categories with is_primary flag
+          for (const categoryName of data.categories) {
+            const [category] = await conn.execute(
+              'SELECT category_id FROM categories WHERE name = ?',
+              [categoryName]
+            ) as any[];
+            if (category && category[0]) {
+              // Check if this is the primary category - check both primaryCategory and primary_category
+              const primaryCategoryValue = data.primaryCategory || data.primary_category;
+              const isPrimary = primaryCategoryValue && categoryName === primaryCategoryValue ? 1 : 0;
+              console.log('AdminHandler - Inserting category:', {
+                categoryName,
+                primaryCategoryValue,
+                isPrimary
+              });
+              await conn.execute(
+                'INSERT INTO product_categories (product_id, category_id, is_primary) VALUES (?, ?, ?)',
+                [productId, (category as any)[0].category_id, isPrimary]
+              );
+            }
+          }
+        }
+
+        // Update options (using product_dimensions table)
+        if (data.options) {
+          // Delete existing dimensions and specifications
+          await conn.execute('DELETE FROM product_dimensions WHERE product_id = ?', [productId]);
+          await conn.execute('DELETE FROM product_specifications WHERE product_id = ? AND spec_category IN (?, ?, ?, ?, ?, ?, ?)',
+            [productId, 'mount_type', 'lift_system', 'wand_system', 'string_system', 'remote_control', 'valance_option', 'bottom_rail_option']);
+
+          // Save dimensions
+          if (data.options.dimensions) {
+            // Insert width dimension
+            await conn.execute(
+              `INSERT INTO product_dimensions (
+                product_id, dimension_type_id, min_value, max_value, increment_value, unit
+              ) VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                productId,
+                1, // Width type
+                data.options.dimensions.minWidth || 12,
+                data.options.dimensions.maxWidth || 96,
+                data.options.dimensions.widthIncrement || 0.125,
+                'inches'
+              ]
+            );
+
+            // Insert height dimension
+            await conn.execute(
+              `INSERT INTO product_dimensions (
+                product_id, dimension_type_id, min_value, max_value, increment_value, unit
+              ) VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                productId,
+                2, // Height type
+                data.options.dimensions.minHeight || 12,
+                data.options.dimensions.maxHeight || 120,
+                data.options.dimensions.heightIncrement || 0.125,
+                'inches'
+              ]
+            );
+          }
+
+          // Save mount types
+          if (data.options.mountTypes && Array.isArray(data.options.mountTypes)) {
+            for (let i = 0; i < data.options.mountTypes.length; i++) {
+              const value = typeof data.options.mountTypes[i] === 'object'
+                ? JSON.stringify(data.options.mountTypes[i])
+                : data.options.mountTypes[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'mount_type', value, 'mount_type', i]
+              );
+            }
+          }
+
+          // Save control types
+          if (data.options.controlTypes) {
+            // Lift systems
+            if (Array.isArray(data.options.controlTypes.liftSystems)) {
+              for (let i = 0; i < data.options.controlTypes.liftSystems.length; i++) {
+                const value = typeof data.options.controlTypes.liftSystems[i] === 'object'
+                  ? JSON.stringify(data.options.controlTypes.liftSystems[i])
+                  : data.options.controlTypes.liftSystems[i];
+                await conn.execute(
+                  `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [productId, 'lift_system', value, 'lift_system', i]
+                );
+              }
+            }
+
+            // Wand system
+            if (Array.isArray(data.options.controlTypes.wandSystem)) {
+              for (let i = 0; i < data.options.controlTypes.wandSystem.length; i++) {
+                const value = typeof data.options.controlTypes.wandSystem[i] === 'object'
+                  ? JSON.stringify(data.options.controlTypes.wandSystem[i])
+                  : data.options.controlTypes.wandSystem[i];
+                await conn.execute(
+                  `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [productId, 'wand_system', value, 'wand_system', i]
+                );
+              }
+            }
+
+            // String system
+            if (Array.isArray(data.options.controlTypes.stringSystem)) {
+              for (let i = 0; i < data.options.controlTypes.stringSystem.length; i++) {
+                const value = typeof data.options.controlTypes.stringSystem[i] === 'object'
+                  ? JSON.stringify(data.options.controlTypes.stringSystem[i])
+                  : data.options.controlTypes.stringSystem[i];
+                await conn.execute(
+                  `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [productId, 'string_system', value, 'string_system', i]
+                );
+              }
+            }
+
+            // Remote control
+            if (Array.isArray(data.options.controlTypes.remoteControl)) {
+              for (let i = 0; i < data.options.controlTypes.remoteControl.length; i++) {
+                const value = typeof data.options.controlTypes.remoteControl[i] === 'object'
+                  ? JSON.stringify(data.options.controlTypes.remoteControl[i])
+                  : data.options.controlTypes.remoteControl[i];
+                await conn.execute(
+                  `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                   VALUES (?, ?, ?, ?, ?)`,
+                  [productId, 'remote_control', value, 'remote_control', i]
+                );
+              }
+            }
+          }
+
+          // Save valance options
+          if (data.options.valanceOptions && Array.isArray(data.options.valanceOptions)) {
+            for (let i = 0; i < data.options.valanceOptions.length; i++) {
+              const value = typeof data.options.valanceOptions[i] === 'object'
+                ? JSON.stringify(data.options.valanceOptions[i])
+                : data.options.valanceOptions[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'valance_option', value, 'valance_option', i]
+              );
+            }
+          }
+
+          // Save bottom rail options
+          if (data.options.bottomRailOptions && Array.isArray(data.options.bottomRailOptions)) {
+            for (let i = 0; i < data.options.bottomRailOptions.length; i++) {
+              const value = typeof data.options.bottomRailOptions[i] === 'object'
+                ? JSON.stringify(data.options.bottomRailOptions[i])
+                : data.options.bottomRailOptions[i];
+              await conn.execute(
+                `INSERT INTO product_specifications (product_id, spec_name, spec_value, spec_category, display_order)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [productId, 'bottom_rail_option', value, 'bottom_rail_option', i]
+              );
+            }
+          }
+        }
+
+        // Update pricing matrix
+        if (data.pricing_matrix && Array.isArray(data.pricing_matrix)) {
+          // Delete existing pricing matrix entries
+          await conn.execute('DELETE FROM product_pricing_matrix WHERE product_id = ?', [productId]);
+
+          // Insert new pricing matrix entries
+          for (const price of data.pricing_matrix) {
+            await conn.execute(
+              `INSERT INTO product_pricing_matrix (
+                product_id, width_min, width_max, height_min, height_max,
+                base_price, price_per_sqft, is_active
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                productId,
+                price.width_min,
+                price.width_max,
+                price.height_min,
+                price.height_max,
+                price.base_price || 0,
+                price.price_per_sqft || 0,
+                price.is_active !== undefined ? price.is_active : 1
+              ]
+            );
+          }
+        }
+
+        // Update pricing formula
+        if (data.pricing_formula) {
+          // Update or insert pricing formula
+          await conn.execute(`
+            INSERT INTO product_pricing_formulas
+            (product_id, pricing_type, fixed_base, width_rate, height_rate, area_rate, min_price, max_price)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+            pricing_type = VALUES(pricing_type),
+            fixed_base = VALUES(fixed_base),
+            width_rate = VALUES(width_rate),
+            height_rate = VALUES(height_rate),
+            area_rate = VALUES(area_rate),
+            min_price = VALUES(min_price),
+            max_price = VALUES(max_price),
+            updated_at = NOW()
+          `, [
+            productId,
+            data.pricing_formula.pricing_type || 'formula',
+            data.pricing_formula.fixed_base || 0,
+            data.pricing_formula.width_rate || 0,
+            data.pricing_formula.height_rate || 0,
+            data.pricing_formula.area_rate || 0,
+            data.pricing_formula.min_price || null,
+            data.pricing_formula.max_price || null
+          ]);
+        }
+
+        // Update fabric (using product_fabric_options table)
+        if (data.fabric && data.fabric.fabrics) {
+          // Delete existing fabric options and images
+          await conn.execute('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
+          await conn.execute('DELETE FROM product_fabric_images WHERE product_id = ?', [productId]);
+
+          // Insert new fabric options
+          for (const fabric of data.fabric.fabrics) {
+            if (fabric.name) {
+              // Insert fabric option
+              const [fabricResult] = await conn.execute(
+                `INSERT INTO product_fabric_options (
+                  product_id, vendor_id, fabric_name, fabric_type, is_enabled,
+                  texture_url, texture_scale, material_finish, opacity, render_priority
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                  productId,
+                  data.vendor_id,
+                  fabric.name,
+                  fabric.fabricType || 'colored',
+                  fabric.enabled ? 1 : 0,
+                  fabric.textureUrl || null,
+                  fabric.textureScale || 1.0,
+                  fabric.materialFinish || 'matte',
+                  fabric.opacity || 1.0,
+                  fabric.renderPriority || 0
+                ]
+              );
+
+              const fabricOptionId = (fabricResult as any).insertId;
+
+              // Insert fabric image if exists
+              if (fabric.image && fabric.image.url) {
+                await conn.execute(
+                  `INSERT INTO product_fabric_images (
+                    fabric_option_id, product_id, image_url, image_name, image_alt, image_size, image_type, is_primary
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    fabricOptionId,
+                    productId,
+                    fabric.image.url,
+                    fabric.image.name || fabric.name,
+                    fabric.name,
+                    fabric.image.size || 0,
+                    fabric.image.type || 'image/jpeg',
+                    1
+                  ]
+                );
+              }
+
+              // Optionally insert fabric pricing (using a simple flat price for now)
+              if (fabric.price && fabric.price > 0) {
+                await conn.execute(
+                  `INSERT INTO product_fabric_pricing (
+                    fabric_option_id, product_id, min_width, max_width, min_height, max_height, price_per_sqft
+                  ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                  [
+                    fabricOptionId,
+                    productId,
+                    0,      // min_width
+                    999,    // max_width (large number for "all sizes")
+                    0,      // min_height
+                    999,    // max_height
+                    fabric.price / 100  // Convert to price per sqft (rough approximation)
+                  ]
+                );
+              }
+            }
+          }
+        }
+
+        // Update features
+        if (data.features && Array.isArray(data.features)) {
+          // Delete existing features
+          await conn.execute('DELETE FROM product_features WHERE product_id = ?', [productId]);
+
+          // Insert new features
+          for (let i = 0; i < data.features.length; i++) {
+            const feature = data.features[i];
+            // First, try to find or create the feature
+            let [existingFeature] = await conn.execute(
+              'SELECT feature_id FROM features WHERE name = ?',
+              [feature.name || feature.title]
+            ) as any[];
+
+            let featureId;
+            if (!existingFeature || !(existingFeature as any)[0]) {
+              // Create new feature
+              const [result] = await conn.execute(
+                'INSERT INTO features (name, description, display_order) VALUES (?, ?, ?)',
+                [feature.name || feature.title, feature.description || '', i]
+              );
+              featureId = (result as any).insertId;
+            } else {
+              featureId = (existingFeature as any)[0].feature_id;
+            }
+
+            // Link feature to product
+            await conn.execute(
+              'INSERT INTO product_features (product_id, feature_id) VALUES (?, ?)',
+              [productId, featureId]
+            );
+          }
+        }
+
+        // Update room recommendations (using product_rooms table)
+        if (data.roomRecommendations && Array.isArray(data.roomRecommendations)) {
+          // Delete existing recommendations
+          await conn.execute('DELETE FROM product_rooms WHERE product_id = ?', [productId]);
+
+          // Insert new recommendations
+          for (const room of data.roomRecommendations) {
+            if (room.roomType || room.room_type || room.name) {
+              await conn.execute(
+                `INSERT INTO product_rooms
+                 (product_id, room_type, suitability_score, special_considerations)
+                 VALUES (?, ?, ?, ?)`,
+                [
+                  productId,
+                  room.roomType || room.room_type || room.name,
+                  room.priority || room.suitability_score || 5,
+                  room.recommendation || room.special_considerations || null
+                ]
+              );
+            }
+          }
+        }
+
+        // Update images (handled separately if needed)
+        if (data.images && Array.isArray(data.images)) {
+          // Delete existing images
+          await conn.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
+
+          // Insert new images
+          for (let i = 0; i < data.images.length; i++) {
+            const image = data.images[i];
+            await conn.execute(
+              `INSERT INTO product_images
+               (product_id, image_url, alt_text, is_primary, display_order)
+               VALUES (?, ?, ?, ?, ?)`,
+              [
+                productId,
+                image.url,
+                image.alt || '',
+                image.isPrimary || i === 0 ? 1 : 0,
+                i
+              ]
+            );
+          }
+        }
+
+        await conn.commit();
+        return { success: true };
+      } catch (error) {
+        await conn.rollback();
+        throw error;
+      } finally {
+        conn.release();
+      }
     } catch (error) {
-      throw new ApiError('Failed to update product', 500);
+      console.error('Failed to update product:', error);
+      throw new ApiError('Failed to update product: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
     }
   }
 
