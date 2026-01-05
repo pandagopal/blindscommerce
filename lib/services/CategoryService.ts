@@ -40,7 +40,7 @@ export class CategoryService extends BaseService {
     } = options;
 
     let query = `
-      SELECT 
+      SELECT
         category_id,
         name,
         slug,

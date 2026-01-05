@@ -4,6 +4,7 @@
  */
 
 import { BaseService } from './BaseService';
+import { getCache, setCache } from '@/lib/cache/cacheManager';
 
 export interface HeroBanner {
   banner_id: number;
@@ -43,8 +44,17 @@ export interface Review {
 export class ContentService extends BaseService {
   async getHeroBanners(): Promise<{ banners: HeroBanner[] }> {
     try {
+      const cacheKey = 'hero-banners:active=true';
+
+      // Try to get from cache first
+      const cached = await getCache<HeroBanner[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached hero banners (service)');
+        return { banners: cached };
+      }
+
       const query = `
-        SELECT 
+        SELECT
           banner_id,
           title,
           subtitle,
@@ -63,6 +73,10 @@ export class ContentService extends BaseService {
       `;
 
       const result = await this.executeQuery<HeroBanner>(query);
+
+      // Cache the result for 5 minutes
+      await setCache(cacheKey, result, 300);
+
       return { banners: result };
     } catch (error) {
       console.error('Error fetching hero banners:', error);
@@ -72,8 +86,17 @@ export class ContentService extends BaseService {
 
   async getRooms(): Promise<{ rooms: Room[] }> {
     try {
+      const cacheKey = 'rooms:admin=false';
+
+      // Try to get from cache first
+      const cached = await getCache<Room[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached rooms (service)');
+        return { rooms: cached };
+      }
+
       const query = `
-        SELECT 
+        SELECT
           room_type_id,
           name,
           description,
@@ -86,6 +109,10 @@ export class ContentService extends BaseService {
       `;
 
       const result = await this.executeQuery<Room>(query);
+
+      // Cache the result for 5 minutes
+      await setCache(cacheKey, result, 300);
+
       return { rooms: result };
     } catch (error) {
       console.error('Error fetching rooms:', error);
@@ -97,9 +124,17 @@ export class ContentService extends BaseService {
     try {
       // Validate limit is a positive integer
       const validatedLimit = Math.max(1, Math.floor(limit));
-      
+      const cacheKey = `reviews:limit=${validatedLimit}`;
+
+      // Try to get from cache first
+      const cached = await getCache<Review[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached reviews');
+        return { reviews: cached };
+      }
+
       const query = `
-        SELECT 
+        SELECT
           pr.review_id,
           p.name as product_name,
           COALESCE(CONCAT(u.first_name, ' ', u.last_name), pr.guest_name) as user_name,
@@ -117,6 +152,10 @@ export class ContentService extends BaseService {
       `;
 
       const result = await this.executeQuery<Review>(query);
+
+      // Cache the result for 5 minutes
+      await setCache(cacheKey, result, 300);
+
       return { reviews: result };
     } catch (error) {
       console.error('Error fetching reviews:', error);

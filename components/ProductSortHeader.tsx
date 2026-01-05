@@ -6,23 +6,31 @@ import { useState, useEffect } from 'react';
 interface ProductSortHeaderProps {
   productCount: number;
   initialSort?: string;
+  sortBy?: string;
+  setSortBy?: (sort: string) => void;
 }
 
 export default function ProductSortHeader({
   productCount,
-  initialSort = 'recommended'
+  initialSort = 'recommended',
+  sortBy: controlledSortBy,
+  setSortBy: controlledSetSortBy
 }: ProductSortHeaderProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [sortBy, setSortBy] = useState<string>(initialSort);
+  const [internalSortBy, internalSetSortBy] = useState<string>(initialSort);
+
+  // Use controlled or internal state
+  const sortBy = controlledSortBy ?? internalSortBy;
+  const setSortBy = controlledSetSortBy ?? internalSetSortBy;
 
   // Map sort values to API parameters
   const sortToApiMapping: Record<string, { sortBy: string; sortOrder: string }> = {
     'recommended': { sortBy: 'rating', sortOrder: 'desc' },
-    'price-low': { sortBy: 'base_price', sortOrder: 'asc' },
-    'price-high': { sortBy: 'base_price', sortOrder: 'desc' },
+    'price-low': { sortBy: 'price', sortOrder: 'asc' },
+    'price-high': { sortBy: 'price', sortOrder: 'desc' },
     'rating': { sortBy: 'rating', sortOrder: 'desc' },
-    'newest': { sortBy: 'product_id', sortOrder: 'desc' }
+    'newest': { sortBy: 'created_at', sortOrder: 'desc' }
   };
 
   // Initialize from URL parameters
@@ -38,7 +46,7 @@ export default function ProductSortHeader({
     const value = event.target.value;
     setSortBy(value);
 
-    // Apply sorting immediately
+    // Apply sorting immediately - preserve all existing filters
     const params = new URLSearchParams(searchParams.toString());
 
     if (value !== 'recommended') {
@@ -51,12 +59,14 @@ export default function ProductSortHeader({
         params.set('sortOrder', sortMapping.sortOrder);
       }
     } else {
+      // Remove sort parameters when switching back to recommended
       params.delete('sort');
       params.delete('sortBy');
       params.delete('sortOrder');
     }
 
-    router.push(`/products?${params.toString()}`);
+    // Use window.location for full page reload to ensure server component refetches
+    window.location.href = `/products?${params.toString()}`;
   };
 
   return (

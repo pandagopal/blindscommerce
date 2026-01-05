@@ -1,4 +1,4 @@
-import dbConnect from '@/lib/db';
+import { getPool } from '@/lib/db';
 
 // In-memory cache storage
 let cacheStore: Map<string, { value: any; expiry: number }> = new Map();
@@ -10,6 +10,11 @@ const CACHE_STATUS_CHECK_INTERVAL = 10000; // Check database every 10 seconds
  * Check if caching is enabled in the database
  */
 async function isCacheEnabled(): Promise<boolean> {
+  // Always enable caching - no need to check database
+  // This prevents database connection issues during build time
+  return true;
+
+  /* Disabled database check to prevent connection pool exhaustion
   const now = Date.now();
 
   // Return cached status if recently checked
@@ -18,8 +23,8 @@ async function isCacheEnabled(): Promise<boolean> {
   }
 
   try {
-    const db = await dbConnect();
-    const [settings] = await db.query(
+    const pool = await getPool();
+    const [settings] = await pool.query(
       'SELECT setting_value FROM cache_settings WHERE setting_key = ?',
       ['cache_enabled']
     ) as any[];
@@ -30,9 +35,10 @@ async function isCacheEnabled(): Promise<boolean> {
     return cacheEnabledStatus;
   } catch (error) {
     console.error('Error checking cache status:', error);
-    // Default to disabled if there's an error
-    return false;
+    // Default to enabled if there's an error (to allow caching even if DB check fails)
+    return true;
   }
+  */
 }
 
 /**

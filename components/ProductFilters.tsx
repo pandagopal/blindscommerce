@@ -62,6 +62,21 @@ interface ProductFiltersProps {
   productCount: number;
   showAdvancedFilters?: boolean;
   pageContext?: PageContext;
+  // Optional controlled state props
+  selectedCategories?: number[];
+  setSelectedCategories?: (categories: number[]) => void;
+  minPrice?: string;
+  setMinPrice?: (price: string) => void;
+  maxPrice?: string;
+  setMaxPrice?: (price: string) => void;
+  selectedFeatures?: number[];
+  setSelectedFeatures?: (features: number[]) => void;
+  selectedRoom?: string;
+  setSelectedRoom?: (room: string) => void;
+  saleOnly?: boolean;
+  setSaleOnly?: (sale: boolean) => void;
+  sortBy?: string;
+  setSortBy?: (sort: string) => void;
 }
 
 export default function ProductFilters({
@@ -82,13 +97,33 @@ export default function ProductFilters({
   initialSale = false,
   productCount,
   showAdvancedFilters = true,
-  pageContext
+  pageContext,
+  // Controlled state props
+  selectedCategories: controlledSelectedCategories,
+  setSelectedCategories: controlledSetSelectedCategories,
+  minPrice: controlledMinPrice,
+  setMinPrice: controlledSetMinPrice,
+  maxPrice: controlledMaxPrice,
+  setMaxPrice: controlledSetMaxPrice,
+  selectedFeatures: controlledSelectedFeatures,
+  setSelectedFeatures: controlledSetSelectedFeatures,
+  selectedRoom: controlledSelectedRoom,
+  setSelectedRoom: controlledSetSelectedRoom,
+  saleOnly: controlledSaleOnly,
+  setSaleOnly: controlledSetSaleOnly,
+  sortBy: controlledSortBy,
+  setSortBy: controlledSetSortBy
 }: ProductFiltersProps) {
+  console.log('🔧 ProductFilters rendered with:', {
+    hasControlledSetCategories: !!controlledSetSelectedCategories,
+    controlledSelectedCategories
+  });
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // State for filters - initialize from URL params or props
-  const [selectedCategories, setSelectedCategories] = useState<number[]>(() => {
+  // Use controlled state if provided, otherwise use internal state
+  const [internalSelectedCategories, internalSetSelectedCategories] = useState<number[]>(() => {
     const params = new URLSearchParams(searchParams.toString());
     const categoryParam = params.get('category');
     if (categoryParam) {
@@ -100,21 +135,43 @@ export default function ProductFilters({
     }
     return defaultCategoryId ? [defaultCategoryId] : [];
   });
-  const [minPrice, setMinPrice] = useState<string>(initialMinPrice ? initialMinPrice.toString() : '');
-  const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice ? initialMaxPrice.toString() : '');
-  const [sortBy, setSortBy] = useState<string>(initialSort);
-  const [selectedFeatures, setSelectedFeatures] = useState<number[]>(initialFeatures);
+  const [internalMinPrice, internalSetMinPrice] = useState<string>(initialMinPrice ? initialMinPrice.toString() : '');
+  const [internalMaxPrice, internalSetMaxPrice] = useState<string>(initialMaxPrice ? initialMaxPrice.toString() : '');
+  const [internalSortBy, internalSetSortBy] = useState<string>(initialSort);
+  const [internalSelectedFeatures, internalSetSelectedFeatures] = useState<number[]>(initialFeatures);
   const [selectedBrands, setSelectedBrands] = useState<string[]>(initialBrands);
   const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>(initialMaterials);
-  const [selectedRoom, setSelectedRoom] = useState<string>(initialRoom || '');
-  const [saleOnly, setSaleOnly] = useState<boolean>(initialSale);
+  const [internalSelectedRoom, internalSetSelectedRoom] = useState<string>(initialRoom || '');
+  const [internalSaleOnly, internalSetSaleOnly] = useState<boolean>(initialSale);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [isApplyingFilters, setIsApplyingFilters] = useState<boolean>(false);
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
 
-  // Sync state with URL parameters when they change
+  // Use controlled or internal state
+  const selectedCategories = controlledSelectedCategories ?? internalSelectedCategories;
+  const setSelectedCategories = controlledSetSelectedCategories ?? internalSetSelectedCategories;
+  const minPrice = controlledMinPrice ?? internalMinPrice;
+  const setMinPrice = controlledSetMinPrice ?? internalSetMinPrice;
+  const maxPrice = controlledMaxPrice ?? internalMaxPrice;
+  const setMaxPrice = controlledSetMaxPrice ?? internalSetMaxPrice;
+  const sortBy = controlledSortBy ?? internalSortBy;
+  const setSortBy = controlledSetSortBy ?? internalSetSortBy;
+  const selectedFeatures = controlledSelectedFeatures ?? internalSelectedFeatures;
+  const setSelectedFeatures = controlledSetSelectedFeatures ?? internalSetSelectedFeatures;
+  const selectedRoom = controlledSelectedRoom ?? internalSelectedRoom;
+  const setSelectedRoom = controlledSetSelectedRoom ?? internalSetSelectedRoom;
+  const saleOnly = controlledSaleOnly ?? internalSaleOnly;
+  const setSaleOnly = controlledSetSaleOnly ?? internalSetSaleOnly;
+
+  // Sync state with URL parameters when they change (only when not using controlled state)
   useEffect(() => {
+    // Skip URL syncing if using controlled state
+    if (controlledSetSelectedCategories) {
+      console.log('⏭️  Skipping URL sync - using controlled state');
+      return;
+    }
+
     const params = new URLSearchParams(searchParams.toString());
 
     // Parse categories
@@ -168,20 +225,21 @@ export default function ProductFilters({
   // Map sort values to API parameters
   const sortToApiMapping: Record<string, { sortBy: string; sortOrder: string }> = {
     'recommended': { sortBy: 'rating', sortOrder: 'desc' },
-    'price-low': { sortBy: 'base_price', sortOrder: 'asc' },
-    'price-high': { sortBy: 'base_price', sortOrder: 'desc' },
+    'price-low': { sortBy: 'price', sortOrder: 'asc' },
+    'price-high': { sortBy: 'price', sortOrder: 'desc' },
     'rating': { sortBy: 'rating', sortOrder: 'desc' },
-    'newest': { sortBy: 'product_id', sortOrder: 'desc' }
+    'newest': { sortBy: 'created_at', sortOrder: 'desc' }
   };
 
-  // Handle category selection
+  // Handle category selection - allow multiple selections
   const handleCategoryChange = (categoryId: number) => {
+    console.log('📦 Category change clicked:', categoryId);
     setSelectedCategories(prev => {
-      if (prev.includes(categoryId)) {
-        return prev.filter(id => id !== categoryId);
-      } else {
-        return [...prev, categoryId];
-      }
+      const newCategories = prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId];
+      console.log('Selected categories updated:', prev, '->', newCategories);
+      return newCategories;
     });
   };
 
@@ -194,6 +252,16 @@ export default function ProductFilters({
         return [...prev, featureId];
       }
     });
+  };
+
+  // Handle room selection
+  const handleRoomChange = (room: string) => {
+    setSelectedRoom(room);
+  };
+
+  // Handle sale filter
+  const handleSaleChange = (checked: boolean) => {
+    setSaleOnly(checked);
   };
 
   // Apply filters and update URL
@@ -245,9 +313,9 @@ export default function ProductFilters({
 
     // Create the URL with the search parameters
     const url = `/products?${params.toString()}`;
-    router.push(url);
 
-    setIsApplyingFilters(false);
+    // Use window.location for full page reload to ensure server component refetches
+    window.location.href = url;
   };
 
   // Handle sort change
@@ -285,7 +353,7 @@ export default function ProductFilters({
     setSelectedFeatures([]);
     setSelectedRoom('');
     setSaleOnly(false);
-    router.push('/products');
+    window.location.href = '/products';
   };
 
   return (
@@ -411,7 +479,7 @@ export default function ProductFilters({
         <h3 className="text-sm font-medium mb-2">Room Type</h3>
         <select
           value={selectedRoom}
-          onChange={(e) => setSelectedRoom(e.target.value)}
+          onChange={(e) => handleRoomChange(e.target.value)}
           className="w-full rounded border-gray-300 text-sm p-2"
         >
           <option value="">All Rooms</option>
@@ -433,7 +501,7 @@ export default function ProductFilters({
             id="sale-only"
             className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
             checked={saleOnly}
-            onChange={(e) => setSaleOnly(e.target.checked)}
+            onChange={(e) => handleSaleChange(e.target.checked)}
           />
           <label htmlFor="sale-only" className="ml-2 text-sm text-gray-700">
             Sale Items Only

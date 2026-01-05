@@ -1,9 +1,9 @@
 import HomeClient from './components/home/HomeClient';
 import { productService, categoryService, contentService } from '@/lib/services/singletons';
 
-// Caching disabled temporarily for testing
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
+// Enable caching with 5 minute revalidation
+export const revalidate = 300; // 5 minutes
+export const dynamic = 'force-dynamic'; // Prevent static generation during build
 
 async function getHomePageData() {
   try {

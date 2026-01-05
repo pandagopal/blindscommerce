@@ -10,6 +10,7 @@ import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { randomUUID } from 'crypto';
+import { getCache, setCache, deleteCachePattern } from '@/lib/cache/cacheManager';
 
 export class ContentHandler extends BaseHandler {
   /**
@@ -91,14 +92,25 @@ export class ContentHandler extends BaseHandler {
 
   private async getRooms(user: any) {
     try {
-      const pool = await getPool();
-      
       // For admin users, get all rooms including inactive ones
       const isAdmin = user?.role === 'ADMIN';
+      const cacheKey = `rooms:admin=${isAdmin}`;
+
+      // Try to get from cache first
+      const cached = await getCache<any[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached rooms');
+        return {
+          success: true,
+          rooms: cached
+        };
+      }
+
+      const pool = await getPool();
       const whereClause = isAdmin ? '' : 'WHERE is_active = 1';
-      
+
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT 
+        `SELECT
           room_type_id,
           name,
           description,
@@ -114,6 +126,9 @@ export class ContentHandler extends BaseHandler {
         ${whereClause}
         ORDER BY name ASC`
       );
+
+      // Cache the result for 5 minutes
+      await setCache(cacheKey, rows, 300);
 
       return {
         success: true,
@@ -131,9 +146,21 @@ export class ContentHandler extends BaseHandler {
 
   private async getHeroBanners() {
     try {
+      const cacheKey = 'hero-banners:active=true';
+
+      // Try to get from cache first
+      const cached = await getCache<any[]>(cacheKey);
+      if (cached) {
+        console.log('📦 Returning cached hero banners');
+        return {
+          success: true,
+          banners: cached
+        };
+      }
+
       const pool = await getPool();
       const [rows] = await pool.execute<RowDataPacket[]>(
-        `SELECT 
+        `SELECT
           banner_id,
           title,
           subtitle,
@@ -152,6 +179,9 @@ export class ContentHandler extends BaseHandler {
         WHERE is_active = 1
         ORDER BY display_order ASC, created_at DESC`
       );
+
+      // Cache the result for 5 minutes
+      await setCache(cacheKey, rows, 300);
 
       return {
         success: true,
@@ -236,6 +266,10 @@ export class ContentHandler extends BaseHandler {
         ]
       );
 
+      // Invalidate rooms cache
+      deleteCachePattern('rooms:*');
+      console.log('🗑️  Cleared rooms cache after create');
+
       return {
         success: true,
         room_type_id: result.insertId,
@@ -298,6 +332,10 @@ export class ContentHandler extends BaseHandler {
         throw new ApiError('Room not found', 404);
       }
 
+      // Invalidate rooms cache
+      deleteCachePattern('rooms:*');
+      console.log('🗑️  Cleared rooms cache after update');
+
       return {
         success: true,
         message: 'Room updated successfully'
@@ -327,6 +365,10 @@ export class ContentHandler extends BaseHandler {
       if (result.affectedRows === 0) {
         throw new ApiError('Room not found', 404);
       }
+
+      // Invalidate rooms cache
+      deleteCachePattern('rooms:*');
+      console.log('🗑️  Cleared rooms cache after delete');
 
       return {
         success: true,

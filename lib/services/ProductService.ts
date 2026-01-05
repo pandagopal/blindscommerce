@@ -546,6 +546,7 @@ export class ProductService extends BaseService {
    */
   async getProducts(options: {
     categoryId?: number;
+    categoryIds?: number[];
     vendorId?: number;
     search?: string;
     minPrice?: number;
@@ -561,6 +562,7 @@ export class ProductService extends BaseService {
   }): Promise<{ products: ProductWithDetails[]; total: number }> {
     const {
       categoryId,
+      categoryIds,
       vendorId,
       search,
       minPrice,
@@ -584,7 +586,12 @@ export class ProductService extends BaseService {
       whereParams.push(isActive ? 1 : 0);
     }
 
-    if (categoryId) {
+    // Support both single categoryId and multiple categoryIds
+    if (categoryIds && categoryIds.length > 0) {
+      const placeholders = categoryIds.map(() => '?').join(',');
+      whereConditions.push(`p.category_id IN (${placeholders})`);
+      whereParams.push(...categoryIds);
+    } else if (categoryId) {
       whereConditions.push('p.category_id = ?');
       whereParams.push(categoryId);
     }
@@ -676,8 +683,8 @@ export class ProductService extends BaseService {
     
 
     // Get products with all details
-    const sortColumn = sortBy === 'price' 
-      ? 'COALESCE(vp.vendor_price, p.base_price)' 
+    const sortColumn = sortBy === 'price'
+      ? 'COALESCE(MIN(vp.vendor_price), p.base_price)'
       : `p.${sortBy}`;
     
     // Validate sortBy column to prevent SQL injection
@@ -690,7 +697,7 @@ export class ProductService extends BaseService {
     const validatedSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
 
     const query = `
-      SELECT DISTINCT
+      SELECT
         p.*,
         c.name as category_name,
         c.slug as category_slug,
@@ -706,7 +713,7 @@ export class ProductService extends BaseService {
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
-      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id 
+      LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())
         AND (vd.valid_until IS NULL OR vd.valid_until >= NOW())
@@ -714,9 +721,9 @@ export class ProductService extends BaseService {
       LEFT JOIN product_reviews pr ON p.product_id = pr.product_id
       ${features ? 'LEFT JOIN product_features pf ON p.product_id = pf.product_id' : ''}
       ${whereClause}
-      GROUP BY p.product_id, p.name, p.slug, p.sku, p.short_description, 
-               p.full_description, p.base_price, p.cost_price, p.category_id, 
-               p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count, 
+      GROUP BY p.product_id, p.name, p.slug, p.sku, p.short_description,
+               p.full_description, p.base_price, p.cost_price, p.category_id,
+               p.primary_image_url, p.is_active, p.is_featured, p.rating, p.review_count,
                p.created_at, p.updated_at, c.name, c.slug, pi.image_url
       ${havingClause}
       ORDER BY ${sortColumn} ${validatedSortOrder}

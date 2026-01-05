@@ -1,11 +1,8 @@
 import { Metadata } from "next";
-import ProductFilters from "@/components/ProductFilters";
-import ProductGrid from "@/components/ProductGrid";
-import ProductSortHeader from "@/components/ProductSortHeader";
+import ProductsClient from "@/components/ProductsClient";
 
-// Caching disabled temporarily for testing
-export const revalidate = 0;
-export const dynamic = 'force-dynamic';
+// Enable caching with 5 minute revalidation
+export const revalidate = 300; // 5 minutes
 
 // Generate dynamic metadata based on search parameters
 export async function generateMetadata({
@@ -117,8 +114,26 @@ export default async function ProductsPage({
   const minPriceParam = typeof params.minPrice === 'string' ? params.minPrice : undefined;
   const maxPriceParam = typeof params.maxPrice === 'string' ? params.maxPrice : undefined;
   const sortParam = typeof params.sort === 'string' ? params.sort : "recommended";
-  const sortByParam = typeof params.sortBy === 'string' ? params.sortBy : "rating";
+
+  // Map sort parameters - validate and correct invalid values
+  let sortByParam = typeof params.sortBy === 'string' ? params.sortBy : "rating";
   const sortOrderParam = typeof params.sortOrder === 'string' ? params.sortOrder : "desc";
+
+  // Map legacy/invalid sortBy values to valid ones
+  const sortByMapping: Record<string, string> = {
+    'base_price': 'price',
+    'product_id': 'created_at'
+  };
+  if (sortByMapping[sortByParam]) {
+    sortByParam = sortByMapping[sortByParam];
+  }
+
+  // Validate sortBy is in allowed list
+  const allowedSortColumns = ['name', 'price', 'rating', 'created_at'];
+  if (!allowedSortColumns.includes(sortByParam)) {
+    sortByParam = 'rating'; // Fallback to default
+  }
+
   const searchParam = typeof params.search === 'string' ? params.search : undefined;
   const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
   const messageParam = typeof params.message === 'string' ? params.message : undefined;
@@ -152,13 +167,13 @@ export default async function ProductsPage({
 
   // Use singleton service instances to prevent connection pool exhaustion
   const { productService, categoryService } = await import('@/lib/services/singletons');
-  
+
   let categories = [];
   let products = [];
   let features = [];
 
   try {
-    // Fetch data in parallel
+    // Fetch data in parallel (caching happens at API level via cacheManager)
     const [categoriesResult, productsResult] = await Promise.all([
       categoryService.getCategories({}),
       productService.getProducts({
@@ -177,7 +192,7 @@ export default async function ProductsPage({
 
     categories = categoriesResult || [];
     products = productsResult?.products || [];
-    
+
     // Features will be empty for now
     features = [];
     
@@ -270,34 +285,20 @@ export default async function ProductsPage({
           </div>
         )}
 
-      {/* Filters and products section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Filters sidebar */}
-        <div className="md:col-span-1">
-          <ProductFilters
-            categories={categories}
-            features={features}
-            defaultCategoryId={categoryId}
-            initialMinPrice={minPrice}
-            initialMaxPrice={maxPrice}
-            initialSort={sortParam}
-            initialFeatures={featureIds}
-            initialRoom={roomParam}
-            initialSale={saleParam === 'true'}
-            productCount={products.length}
-            pageContext={pageContext}
-          />
-        </div>
-
-        {/* Products section with sorting header */}
-        <div className="md:col-span-3">
-          <ProductSortHeader
-            productCount={products.length}
-            initialSort={sortParam}
-          />
-          <ProductGrid products={products} />
-        </div>
-        </div>
+      {/* Filters and products section - Client-side filtering */}
+      <ProductsClient
+        initialProducts={products}
+        categories={categories}
+        features={features}
+        initialCategoryId={categoryId}
+        initialMinPrice={minPrice}
+        initialMaxPrice={maxPrice}
+        initialSort={sortParam}
+        initialFeatures={featureIds}
+        initialRoom={roomParam}
+        initialSale={saleParam === 'true'}
+        pageContext={pageContext}
+      />
       </div>
     </div>
   );

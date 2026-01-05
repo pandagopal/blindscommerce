@@ -5,18 +5,19 @@
 
 import { NextRequest } from 'next/server';
 import { BaseHandler, ApiError } from '@/lib/api/v2/BaseHandler';
-import { 
-  productService, 
-  cartService, 
+import {
+  productService,
+  cartService,
   orderService,
   categoryService,
   settingsService,
   paymentService,
-  pricingService 
+  pricingService
 } from '@/lib/services/singletons';
 import { z } from 'zod';
 import { getPool } from '@/lib/db';
 import { parseDecimal } from '@/lib/utils/priceUtils';
+import { getCache, setCache } from '@/lib/cache/cacheManager';
 
 // Validation schemas
 const AddToCartSchema = z.object({
@@ -148,10 +149,24 @@ export class CommerceHandler extends BaseHandler {
     const featured = searchParams.get('featured') === 'true';
     const limit = this.sanitizeNumber(searchParams.get('limit'), 1, 100);
 
+    // Create cache key based on parameters
+    const cacheKey = `categories:featured=${featured}:limit=${limit}`;
+
+    // Try to get from cache first
+    const cached = await getCache<any[]>(cacheKey);
+    if (cached) {
+      console.log('📦 Returning cached categories');
+      return { categories: cached };
+    }
+
+    // Fetch from database
     const categories = await this.categoryService.getCategories({
       isFeatured: featured || undefined,
       limit: limit || undefined,
     });
+
+    // Cache the result for 5 minutes
+    await setCache(cacheKey, categories, 300);
 
     return { categories };
   }
@@ -176,8 +191,22 @@ export class CommerceHandler extends BaseHandler {
       vendorOnly: true,  // Always show only vendor products in public API
     };
 
+    // Create cache key based on query parameters
+    const cacheKey = `products:cat=${options.categoryId}:vendor=${options.vendorId}:search=${options.search}:minPrice=${options.minPrice}:maxPrice=${options.maxPrice}:featured=${options.isFeatured}:sortBy=${options.sortBy}:sortOrder=${options.sortOrder}:limit=${limit}:offset=${offset}`;
+
+    // Try to get from cache first
+    const cached = await getCache<{ products: any[]; total: number }>(cacheKey);
+    if (cached) {
+      console.log('📦 Returning cached products');
+      return this.buildPaginatedResponse(cached.products, cached.total, page, limit);
+    }
+
+    // Fetch from database
     const { products, total } = await this.productService.getProducts(options);
-    
+
+    // Cache the result for 5 minutes
+    await setCache(cacheKey, { products, total }, 300);
+
     return this.buildPaginatedResponse(products, total, page, limit);
   }
 

@@ -10,6 +10,8 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { getPool } from '@/lib/db';
 import { createHash, randomBytes } from 'crypto';
+import { FileUploadService } from '@/lib/utils/fileUpload';
+import { deleteCachePattern } from '@/lib/cache/cacheManager';
 
 // Validation schemas
 const UpdateVendorSchema = z.object({
@@ -321,6 +323,10 @@ export class VendorsHandler extends BaseHandler {
         vendorId.toString()
       );
 
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after vendor create');
+
       return {
         success: true,
         product_id: result.product_id,
@@ -350,6 +356,10 @@ export class VendorsHandler extends BaseHandler {
         vendorId.toString()
       );
 
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after vendor update');
+
       return {
         success: true,
         message: result.message
@@ -375,6 +385,10 @@ export class VendorsHandler extends BaseHandler {
         user.userId || user.user_id || 'vendor',
         vendorId.toString()
       );
+
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after vendor delete');
 
       return {
         success: true,
@@ -1767,63 +1781,33 @@ export class VendorsHandler extends BaseHandler {
   private async uploadFile(req: NextRequest, user: any) {
     try {
       const formData = await req.formData();
-      const file = formData.get('file') as File;
-      const type = formData.get('type') as string || 'product';
-      
-      if (!file) {
-        throw new ApiError('No file provided', 400);
-      }
-      
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
-      }
-      
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new ApiError('File size too large. Maximum size is 5MB', 400);
-      }
-      
-      // Generate unique filename
-      const timestamp = Date.now();
-      const randomString = randomBytes(8).toString('hex');
-      const fileExtension = file.name.split('.').pop();
-      const filename = `vendor-${user.userId}-${timestamp}-${randomString}.${fileExtension}`;
-      
-      // Create upload directory path based on type
-      const uploadDir = type === 'fabric' ? 'fabric' : 'products';
-      const uploadPath = `uploads/${uploadDir}/${filename}`;
-      
-      // Convert file to buffer
-      const buffer = Buffer.from(await file.arrayBuffer());
-      
-      // Use the file system to save the file
-      const fs = require('fs').promises;
-      const path = require('path');
-      const fullPath = path.join(process.cwd(), 'public', uploadPath);
-      
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(fullPath), { recursive: true });
-      
-      // Write file
-      await fs.writeFile(fullPath, buffer);
-      
+      const file = await FileUploadService.extractFileFromFormData(formData);
+      const type = (formData.get('type') as string) || 'products';
+
+      // Validate upload type
+      const validTypes = ['products', 'fabric'];
+      const uploadType = validTypes.includes(type) ? type as 'products' | 'fabric' : 'products';
+
+      const result = await FileUploadService.uploadFile(file, {
+        type: uploadType,
+        userId: user.userId.toString()
+      });
+
       // Return the response in the format expected by the frontend
       return {
         success: true,
         uploaded: [{
-          secureUrl: `/${uploadPath}`,
-          url: `/${uploadPath}`,
-          filename: filename,
-          size: file.size,
-          type: file.type
+          secureUrl: result.url,
+          url: result.url,
+          filename: result.filename,
+          size: result.size,
+          type: result.type
         }]
       };
     } catch (error) {
       console.error('Upload error:', error);
       if (error instanceof ApiError) throw error;
-      throw new ApiError('Failed to upload file', 500);
+      throw new ApiError(error instanceof Error ? error.message : 'Failed to upload file', 500);
     }
   }
 

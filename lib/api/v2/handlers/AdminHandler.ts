@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { userService, vendorService, orderService, productService, settingsService, shippingService, productManager } from '@/lib/services/singletons';
 import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
+import { FileUploadService } from '@/lib/utils/fileUpload';
+import { deleteCachePattern } from '@/lib/cache/cacheManager';
 
 // Validation schemas
 const CategorySchema = z.object({
@@ -54,11 +56,12 @@ export class AdminHandler extends BaseHandler {
 
   async handlePOST(req: NextRequest, action: string[], user: any): Promise<any> {
     this.requireRole(user, 'ADMIN');
-    
+
     const routes = {
       'categories': () => this.createCategory(req),
-      'upload/categories': () => this.uploadCategoryImage(req),
-      'upload/hero-banners': () => this.uploadHeroBannerImage(req),
+      'upload/categories': () => this.uploadImage(req, 'categories'),
+      'upload/hero-banners': () => this.uploadImage(req, 'hero-banners', 10),
+      'upload/rooms': () => this.uploadImage(req, 'rooms'),
       'hero-banners': () => this.createHeroBanner(req),
       'tax-rates': () => this.createTaxRate(req),
       'tax-rates/upload': () => this.uploadTaxRates(req),
@@ -409,7 +412,11 @@ export class AdminHandler extends BaseHandler {
         'SELECT * FROM categories WHERE category_id = ?',
         [categoryId]
       );
-      
+
+      // Invalidate categories cache
+      deleteCachePattern('categories:*');
+      console.log('🗑️  Cleared categories cache after create');
+
       return {
         success: true,
         category: (newCategory as any[])[0]
@@ -473,7 +480,11 @@ export class AdminHandler extends BaseHandler {
         'SELECT * FROM categories WHERE category_id = ?',
         [id]
       );
-      
+
+      // Invalidate categories cache
+      deleteCachePattern('categories:*');
+      console.log('🗑️  Cleared categories cache after update');
+
       return {
         success: true,
         category: (updatedCategory as any[])[0]
@@ -517,7 +528,11 @@ export class AdminHandler extends BaseHandler {
         'DELETE FROM categories WHERE category_id = ?',
         [id]
       );
-      
+
+      // Invalidate categories cache
+      deleteCachePattern('categories:*');
+      console.log('🗑️  Cleared categories cache after delete');
+
       return {
         success: true,
         message: 'Category deleted successfully'
@@ -529,113 +544,32 @@ export class AdminHandler extends BaseHandler {
     }
   }
 
-  private async uploadCategoryImage(req: NextRequest) {
+  /**
+   * Unified image upload method using FileUploadService
+   */
+  private async uploadImage(
+    req: NextRequest,
+    type: 'categories' | 'hero-banners' | 'rooms',
+    maxSizeInMB: number = 5
+  ) {
     try {
       const formData = await req.formData();
-      const file = formData.get('file') as File;
+      const file = await FileUploadService.extractFileFromFormData(formData);
 
-      if (!file) {
-        throw new ApiError('No file provided', 400);
-      }
-
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
-      }
-
-      // Validate file size (5MB max)
-      if (file.size > 5 * 1024 * 1024) {
-        throw new ApiError('File size too large. Maximum size is 5MB', 400);
-      }
-
-      // Generate unique filename
-      const timestamp = Date.now();
-      const randomString = randomBytes(4).toString('hex');
-      const extension = file.name.split('.').pop() || 'jpg';
-      const filename = `category_${timestamp}_${randomString}.${extension}`;
-
-      // Save file to public/uploads/categories directory
-      const fs = require('fs').promises;
-      const path = require('path');
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
-      const filePath = path.join(uploadDir, filename);
-
-      // Ensure directory exists
-      await fs.mkdir(uploadDir, { recursive: true });
-
-      // Convert file to buffer and save
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await fs.writeFile(filePath, buffer);
-
-      // Return public URL
-      const url = `/uploads/categories/${filename}`;
+      const result = await FileUploadService.uploadFile(file, {
+        type,
+        maxSizeInMB
+      });
 
       return {
         success: true,
-        url: url,
-        filename: filename
+        url: result.url,
+        filename: result.filename
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
-      console.error('Error uploading category image:', error);
-      throw new ApiError('Failed to upload image', 500);
-    }
-  }
-
-  private async uploadHeroBannerImage(req: NextRequest) {
-    try {
-      const formData = await req.formData();
-      const file = formData.get('file') as File;
-
-      if (!file) {
-        throw new ApiError('No file provided', 400);
-      }
-
-      // Validate file type
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
-        throw new ApiError('Invalid file type. Only JPEG, PNG, and WebP images are allowed', 400);
-      }
-
-      // Validate file size (10MB max for hero banners - larger than categories)
-      if (file.size > 10 * 1024 * 1024) {
-        throw new ApiError('File size too large. Maximum size is 10MB', 400);
-      }
-
-      // Generate unique filename
-      const timestamp = Date.now();
-      const randomString = randomBytes(4).toString('hex');
-      const extension = file.name.split('.').pop() || 'jpg';
-      const filename = `hero_banner_${timestamp}_${randomString}.${extension}`;
-
-      // Save file to public/uploads/hero-banners directory
-      const fs = require('fs').promises;
-      const path = require('path');
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'hero-banners');
-      const filePath = path.join(uploadDir, filename);
-
-      // Ensure directory exists
-      await fs.mkdir(uploadDir, { recursive: true });
-
-      // Convert file to buffer and save
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      await fs.writeFile(filePath, buffer);
-
-      // Return public URL
-      const url = `/uploads/hero-banners/${filename}`;
-
-      return {
-        success: true,
-        url: url,
-        filename: filename
-      };
-    } catch (error) {
-      if (error instanceof ApiError) throw error;
-      console.error('Error uploading hero banner image:', error);
-      throw new ApiError('Failed to upload image', 500);
+      console.error(`Error uploading ${type} image:`, error);
+      throw new ApiError(error instanceof Error ? error.message : 'Failed to upload image', 500);
     }
   }
 
@@ -699,7 +633,11 @@ export class AdminHandler extends BaseHandler {
           body.display_order || 0
         ]
       );
-      
+
+      // Invalidate hero banners cache
+      deleteCachePattern('hero-banners:*');
+      console.log('🗑️  Cleared hero banners cache after create');
+
       return {
         success: true,
         bannerId: (result as any).insertId
@@ -736,7 +674,11 @@ export class AdminHandler extends BaseHandler {
           id
         ]
       );
-      
+
+      // Invalidate hero banners cache
+      deleteCachePattern('hero-banners:*');
+      console.log('🗑️  Cleared hero banners cache after update');
+
       return { success: true };
     } catch (error) {
       throw new ApiError('Failed to update banner', 500);
@@ -747,6 +689,11 @@ export class AdminHandler extends BaseHandler {
     try {
       const pool = await getPool();
       await pool.execute('DELETE FROM hero_banners WHERE banner_id = ?', [id]);
+
+      // Invalidate hero banners cache
+      deleteCachePattern('hero-banners:*');
+      console.log('🗑️  Cleared hero banners cache after delete');
+
       return { success: true };
     } catch (error) {
       throw new ApiError('Failed to delete banner', 500);
@@ -1375,6 +1322,10 @@ export class AdminHandler extends BaseHandler {
         vendorId
       );
 
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after create');
+
       return {
         success: true,
         product_id: result.product_id,
@@ -1407,6 +1358,10 @@ export class AdminHandler extends BaseHandler {
         vendorId
       );
 
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after update');
+
       return {
         success: true,
         message: result.message
@@ -1426,6 +1381,10 @@ export class AdminHandler extends BaseHandler {
         'ADMIN',
         'admin'
       );
+
+      // Invalidate products cache
+      deleteCachePattern('products:*');
+      console.log('🗑️  Cleared products cache after delete');
 
       return {
         success: true,

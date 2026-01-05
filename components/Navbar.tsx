@@ -57,11 +57,11 @@ const Navbar = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/v2/categories');
+        const response = await fetch('/api/v2/commerce/categories');
         if (response.ok) {
           const result = await response.json();
           if (result.success && result.data) {
-            const allCategories: Category[] = result.data;
+            const allCategories: Category[] = result.data.categories || result.data;
 
             // Group categories dynamically based on name
             const grouped: GroupedCategories = {
