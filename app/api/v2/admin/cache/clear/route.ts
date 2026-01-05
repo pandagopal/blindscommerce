@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/api/v2/utils/auth';
-import dbConnect from '@/lib/db';
+import { getPool } from '@/lib/db';
 import { clearAllCache } from '@/lib/cache/cacheManager';
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const db = await dbConnect();
+    const db = await getPool();
 
     // Check if user is admin
     const [users] = await db.query(

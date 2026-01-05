@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUserId } from '@/lib/api/v2/utils/auth';
-import dbConnect from '@/lib/db';
+import { getPool } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const db = await dbConnect();
+    const db = await getPool();
 
     // Check if user is admin
     const [users] = await db.query(
