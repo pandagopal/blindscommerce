@@ -8,6 +8,7 @@ const protectedPaths = [
   '/account',
   '/vendor',
   '/admin',
+  '/sales',
 ];
 
 // Paths that are public

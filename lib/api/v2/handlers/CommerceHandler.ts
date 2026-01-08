@@ -91,6 +91,9 @@ export class CommerceHandler extends BaseHandler {
       'orders': () => this.getOrders(req, user),
       'orders/:id': () => this.getOrder(action[1], user),
       'order-stats': () => this.getOrderStats(user),
+      'quotes': () => this.getQuotes(req, user),
+      'quotes/:id': () => this.getQuote(action[1], user),
+      'quote-stats': () => this.getQuoteStats(user),
       'payment-methods': () => this.getPaymentMethods(req),
       'payment/paypal/create-order': () => this.getPayPalClientToken(req, user),
     };
@@ -110,6 +113,9 @@ export class CommerceHandler extends BaseHandler {
       'orders/create': () => this.createOrder(req, user),
       'orders/create-guest': () => this.createGuestOrder(req),
       'orders/:id/cancel': () => this.cancelOrder(action[1], user),
+      'quotes': () => this.createQuote(req, user),
+      'quotes/:id/send': () => this.sendQuote(action[1], user),
+      'quotes/:id/duplicate': () => this.duplicateQuote(action[1], user),
       'payment/process': () => this.processPayment(req, user),
       'payment/paypal/create-order': () => this.createPayPalOrder(req, user),
       'payment/paypal/capture-order': () => this.capturePayPalPayment(req),
@@ -880,6 +886,323 @@ export class CommerceHandler extends BaseHandler {
     }
 
     return { message: 'Order cancelled successfully' };
+  }
+
+  // Quote methods
+  private async getQuotes(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    // Check if user has sales or admin role
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const pool = await getPool();
+    const searchParams = this.getSearchParams(req);
+    const { page, limit, offset } = this.getPagination(searchParams);
+    const status = searchParams.get('status');
+
+    let whereClause = '1=1';
+    const params: any[] = [];
+
+    if (status && status !== 'all') {
+      whereClause += ' AND q.status = ?';
+      params.push(status);
+    }
+
+    // Only show quotes created by this user unless admin
+    if (user.role !== 'admin') {
+      whereClause += ' AND q.created_by = ?';
+      params.push(user.user_id);
+    }
+
+    const [quotes] = await pool.execute(
+      `SELECT
+        q.quote_id as id,
+        q.quote_number,
+        q.customer_name,
+        q.customer_email,
+        q.customer_phone,
+        q.project_name,
+        q.status,
+        q.total_amount,
+        q.valid_until,
+        q.sent_date,
+        q.notes,
+        q.follow_up_date,
+        q.created_at as created_date
+      FROM quotes q
+      WHERE ${whereClause}
+      ORDER BY q.created_at DESC
+      LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
+    );
+
+    // Get items for each quote
+    for (const quote of quotes as any[]) {
+      const [items] = await pool.execute(
+        `SELECT
+          qi.quote_item_id as id,
+          qi.product_name,
+          qi.description,
+          qi.quantity,
+          qi.unit_price,
+          qi.total_price,
+          qi.room
+        FROM quote_items qi
+        WHERE qi.quote_id = ?`,
+        [quote.id]
+      );
+      quote.items = items || [];
+    }
+
+    return quotes;
+  }
+
+  private async getQuote(id: string, user: any) {
+    this.requireAuth(user);
+
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const quoteId = parseInt(id);
+    if (isNaN(quoteId)) {
+      throw new ApiError('Invalid quote ID', 400);
+    }
+
+    const pool = await getPool();
+
+    const [quotes] = await pool.execute(
+      `SELECT
+        q.quote_id as id,
+        q.quote_number,
+        q.customer_name,
+        q.customer_email,
+        q.customer_phone,
+        q.project_name,
+        q.status,
+        q.total_amount,
+        q.valid_until,
+        q.sent_date,
+        q.notes,
+        q.follow_up_date,
+        q.created_at as created_date
+      FROM quotes q
+      WHERE q.quote_id = ?`,
+      [quoteId]
+    );
+
+    if ((quotes as any[]).length === 0) {
+      throw new ApiError('Quote not found', 404);
+    }
+
+    const quote = (quotes as any[])[0];
+
+    // Get items
+    const [items] = await pool.execute(
+      `SELECT
+        qi.quote_item_id as id,
+        qi.product_name,
+        qi.description,
+        qi.quantity,
+        qi.unit_price,
+        qi.total_price,
+        qi.room
+      FROM quote_items qi
+      WHERE qi.quote_id = ?`,
+      [quoteId]
+    );
+
+    quote.items = items;
+
+    return quote;
+  }
+
+  private async getQuoteStats(user: any) {
+    this.requireAuth(user);
+
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const pool = await getPool();
+
+    let whereClause = '1=1';
+    const params: any[] = [];
+
+    if (user.role !== 'admin') {
+      whereClause = 'q.created_by = ?';
+      params.push(user.user_id);
+    }
+
+    const [stats] = await pool.execute(
+      `SELECT
+        COUNT(*) as total_quotes,
+        SUM(CASE WHEN q.status IN ('draft', 'sent', 'viewed') THEN 1 ELSE 0 END) as pending_quotes,
+        SUM(CASE WHEN q.status = 'accepted' THEN 1 ELSE 0 END) as accepted_quotes,
+        SUM(q.total_amount) as total_value,
+        ROUND(SUM(CASE WHEN q.status = 'accepted' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) as conversion_rate
+      FROM quotes q
+      WHERE ${whereClause}`,
+      params
+    );
+
+    const row = (stats as any[])[0];
+
+    return {
+      total_quotes: row.total_quotes || 0,
+      pending_quotes: row.pending_quotes || 0,
+      accepted_quotes: row.accepted_quotes || 0,
+      total_value: parseFloat(row.total_value) || 0,
+      conversion_rate: parseFloat(row.conversion_rate) || 0
+    };
+  }
+
+  private async createQuote(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const body = await req.json();
+    const { customer_name, customer_email, customer_phone, project_name, items, notes, valid_days = 30 } = body;
+
+    if (!customer_name || !customer_email) {
+      throw new ApiError('Customer name and email are required', 400);
+    }
+
+    const pool = await getPool();
+
+    // Generate quote number
+    const quoteNumber = `QT-${Date.now()}`;
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + valid_days);
+
+    // Calculate total
+    let totalAmount = 0;
+    if (items && items.length > 0) {
+      totalAmount = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
+    }
+
+    const [result] = await pool.execute(
+      `INSERT INTO quotes (quote_number, customer_name, customer_email, customer_phone, project_name,
+       status, total_amount, valid_until, notes, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, NOW())`,
+      [quoteNumber, customer_name, customer_email, customer_phone || null, project_name || null,
+       totalAmount, validUntil.toISOString().split('T')[0], notes || null, user.user_id]
+    );
+
+    const quoteId = (result as any).insertId;
+
+    // Insert items
+    if (items && items.length > 0) {
+      for (const item of items) {
+        await pool.execute(
+          `INSERT INTO quote_items (quote_id, product_name, description, quantity, unit_price, total_price, room)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [quoteId, item.product_name, item.description || null, item.quantity || 1,
+           item.unit_price, item.unit_price * (item.quantity || 1), item.room || null]
+        );
+      }
+    }
+
+    return {
+      message: 'Quote created successfully',
+      quote_id: quoteId,
+      quote_number: quoteNumber
+    };
+  }
+
+  private async sendQuote(id: string, user: any) {
+    this.requireAuth(user);
+
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const quoteId = parseInt(id);
+    if (isNaN(quoteId)) {
+      throw new ApiError('Invalid quote ID', 400);
+    }
+
+    const pool = await getPool();
+
+    // Update quote status to sent
+    await pool.execute(
+      `UPDATE quotes SET status = 'sent', sent_date = NOW() WHERE quote_id = ?`,
+      [quoteId]
+    );
+
+    // In a real implementation, you would send an email here
+
+    return { message: 'Quote sent successfully' };
+  }
+
+  private async duplicateQuote(id: string, user: any) {
+    this.requireAuth(user);
+
+    if (user.role !== 'sales' && user.role !== 'admin') {
+      throw new ApiError('Access denied. Sales role required.', 403);
+    }
+
+    const quoteId = parseInt(id);
+    if (isNaN(quoteId)) {
+      throw new ApiError('Invalid quote ID', 400);
+    }
+
+    const pool = await getPool();
+
+    // Get original quote
+    const [quotes] = await pool.execute(
+      `SELECT * FROM quotes WHERE quote_id = ?`,
+      [quoteId]
+    );
+
+    if ((quotes as any[]).length === 0) {
+      throw new ApiError('Quote not found', 404);
+    }
+
+    const original = (quotes as any[])[0];
+
+    // Generate new quote number
+    const newQuoteNumber = `QT-${Date.now()}`;
+    const validUntil = new Date();
+    validUntil.setDate(validUntil.getDate() + 30);
+
+    // Create new quote
+    const [result] = await pool.execute(
+      `INSERT INTO quotes (quote_number, customer_name, customer_email, customer_phone, project_name,
+       status, total_amount, valid_until, notes, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?, NOW())`,
+      [newQuoteNumber, original.customer_name, original.customer_email, original.customer_phone,
+       original.project_name, original.total_amount, validUntil.toISOString().split('T')[0],
+       original.notes, user.user_id]
+    );
+
+    const newQuoteId = (result as any).insertId;
+
+    // Copy items
+    const [items] = await pool.execute(
+      `SELECT * FROM quote_items WHERE quote_id = ?`,
+      [quoteId]
+    );
+
+    for (const item of items as any[]) {
+      await pool.execute(
+        `INSERT INTO quote_items (quote_id, product_name, description, quantity, unit_price, total_price, room)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [newQuoteId, item.product_name, item.description, item.quantity,
+         item.unit_price, item.total_price, item.room]
+      );
+    }
+
+    return {
+      message: 'Quote duplicated successfully',
+      quote_id: newQuoteId,
+      quote_number: newQuoteNumber
+    };
   }
 
   // New methods for cart pricing, payment, and guest orders

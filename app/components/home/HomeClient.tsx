@@ -28,10 +28,12 @@ interface Product {
 }
 
 interface Room {
-  id: number;
+  room_type_id?: number;
+  id?: number;
   name: string;
-  image: string;
-  link: string;
+  image?: string;
+  image_url?: string;
+  link?: string;
 }
 
 interface Review {
@@ -155,7 +157,7 @@ export default function HomeClient({ categories, products, rooms = [], reviews =
   const displayRooms = Array.isArray(rooms) ? rooms.map(room => ({
     id: room.room_type_id || room.id,
     name: room.name,
-    image: room.image_url || room.image || '/images/rooms/default-room.jpg',
+    image: room.image_url || room.image || '/images/rooms/living-room.jpg',
     link: `/products?room=${room.name.toLowerCase().replace(/\s+/g, '-')}`
   })) : [];
 
