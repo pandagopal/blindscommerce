@@ -76,7 +76,7 @@ export default function ViewProductPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-warm-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading product details...</p>
@@ -87,13 +87,13 @@ export default function ViewProductPage() {
 
   if (error || !productData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-warm-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Product</h1>
           <p className="text-gray-600 mb-6">{error || 'Product not found'}</p>
           <button
             onClick={() => router.back()}
-            className="bg-purple-600 hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-lg transition-colors"
+            className="bg-primary-red hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-lg transition-colors"
           >
             Go Back
           </button>
@@ -103,7 +103,7 @@ export default function ViewProductPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-warm-gray-50 to-red-50">
       <ProductCreationForm 
         userRole={user?.role || 'vendor'} 
         isViewMode={true}

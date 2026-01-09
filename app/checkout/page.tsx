@@ -910,14 +910,14 @@ export default function CheckoutPage() {
   // Order confirmation
   if (orderCompleted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center px-4">
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-red-100 p-8 text-center">
           {paymentStatus === 'success' ? (
             <>
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <ShieldCheck className="h-8 w-8 text-green-600" />
               </div>
-              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">Payment Successful!</h1>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-600 to-primary-red bg-clip-text text-transparent">Payment Successful!</h1>
               <p className="text-gray-600 mb-6">Thank you for your purchase. Your payment has been processed successfully.</p>
 
               <div className="bg-gray-50 p-4 rounded-lg mb-6 inline-block">
@@ -929,7 +929,7 @@ export default function CheckoutPage() {
                 We've sent a confirmation email to <span className="font-medium">{formData.email}</span> with all the details of your order and payment.
               </p>
 
-              <Link href="/" className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
+              <Link href="/" className="bg-primary-red hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block">
                 Continue Shopping
               </Link>
             </>
@@ -940,7 +940,7 @@ export default function CheckoutPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">Payment Failed</h1>
+              <h1 className="text-3xl font-bold mb-2 text-primary-red">Payment Failed</h1>
               <p className="text-gray-600 mb-6">There was an issue processing your payment. Please try again.</p>
 
               <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -961,7 +961,7 @@ export default function CheckoutPage() {
                     setOrderCompleted(false);
                     setPaymentStatus(null);
                   }}
-                  className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
+                  className="bg-primary-red hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl"
                 >
                   Try Again
                 </button>
@@ -980,7 +980,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="mb-4">
-          <Link href="/cart" className="text-blue-600 hover:text-blue-800 font-medium flex items-center">
+          <Link href="/cart" className="text-primary-red hover:text-primary-dark font-medium flex items-center">
             <ChevronLeft size={16} className="mr-1" />
             Back to Cart
           </Link>
@@ -1014,7 +1014,7 @@ export default function CheckoutPage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                       />
                     </div>
                     <div>
@@ -1030,7 +1030,7 @@ export default function CheckoutPage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         required
-                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                       />
                     </div>
                   </div>
@@ -1049,7 +1049,7 @@ export default function CheckoutPage() {
                         onChange={handleInputChange}
                         required
                         readOnly={!isGuest}
-                        className={`w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 ${!isGuest ? 'bg-gray-50 text-gray-600' : ''}`}
+                        className={`w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red ${!isGuest ? 'bg-gray-50 text-gray-600' : ''}`}
                       />
                     </div>
                     <div>
@@ -1082,7 +1082,7 @@ export default function CheckoutPage() {
                           value={formData.address}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           placeholder="123 Main St"
                         />
                       </div>
@@ -1093,7 +1093,7 @@ export default function CheckoutPage() {
                           name="apt"
                           value={formData.apt}
                           onChange={handleInputChange}
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           placeholder="Apt #"
                         />
                       </div>
@@ -1107,7 +1107,7 @@ export default function CheckoutPage() {
                           value={formData.city}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                         />
                       </div>
                       <div>
@@ -1118,7 +1118,7 @@ export default function CheckoutPage() {
                           value={formData.state}
                           onChange={handleInputChange}
                           required
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                         />
                       </div>
                       <div>
@@ -1130,7 +1130,7 @@ export default function CheckoutPage() {
                           onChange={handleInputChange}
                           onBlur={handleZipCodeBlur}
                           required
-                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                         />
                       </div>
                     </div>
@@ -1150,7 +1150,7 @@ export default function CheckoutPage() {
                         name="sameAsShipping"
                         checked={formData.sameAsShipping}
                         onChange={handleInputChange}
-                        className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="h-3.5 w-3.5 text-primary-red focus:ring-primary-red border-gray-300 rounded"
                       />
                       <span className="ml-1.5 text-xs text-gray-700">Same as shipping address</span>
                     </label>
@@ -1167,7 +1167,7 @@ export default function CheckoutPage() {
                             value={formData.billingAddress}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           />
                         </div>
                         <div>
@@ -1177,7 +1177,7 @@ export default function CheckoutPage() {
                             name="billingApt"
                             value={formData.billingApt}
                             onChange={handleInputChange}
-                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           />
                         </div>
                       </div>
@@ -1190,7 +1190,7 @@ export default function CheckoutPage() {
                             value={formData.billingCity}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           />
                         </div>
                         <div>
@@ -1201,7 +1201,7 @@ export default function CheckoutPage() {
                             value={formData.billingState}
                             onChange={handleInputChange}
                             required={!formData.sameAsShipping}
-                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           />
                         </div>
                         <div>
@@ -1213,7 +1213,7 @@ export default function CheckoutPage() {
                             onChange={handleInputChange}
                             onBlur={handleZipCodeBlur}
                             required={!formData.sameAsShipping}
-                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full p-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-red focus:border-primary-red"
                           />
                         </div>
                       </div>
@@ -1244,7 +1244,7 @@ export default function CheckoutPage() {
                           key={method.id}
                           className={`border rounded-lg p-4 cursor-pointer transition-all ${
                             selectedPaymentMethod === method.id 
-                              ? 'border-blue-500 bg-blue-50' 
+                              ? 'border-primary-red bg-red-50' 
                               : 'border-gray-300 hover:border-gray-400'
                           }`}
                         >
@@ -1255,7 +1255,7 @@ export default function CheckoutPage() {
                               value={method.id}
                               checked={selectedPaymentMethod === method.id}
                               onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                              className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                              className="mt-1 h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300"
                             />
                             <div className="ml-3 flex-1">
                               <div className="flex items-center justify-between">
@@ -1264,7 +1264,7 @@ export default function CheckoutPage() {
                                   <p className="text-xs text-gray-500">{method.description}</p>
                                   {/* Show installment info for BNPL methods */}
                                   {method.type === 'bnpl' && method.installments && (
-                                    <p className="text-xs text-blue-600 mt-1">
+                                    <p className="text-xs text-primary-red mt-1">
                                       {method.installments} interest-free payments
                                     </p>
                                   )}
@@ -1286,7 +1286,7 @@ export default function CheckoutPage() {
                                     value={paymentData.cardNumber}
                                     onChange={handlePaymentDataChange}
                                     placeholder="1234 5678 9012 3456"
-                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-primary-red focus:border-primary-red ${
                                       paymentErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     maxLength="19"
@@ -1308,7 +1308,7 @@ export default function CheckoutPage() {
                                     value={paymentData.expiryDate}
                                     onChange={handlePaymentDataChange}
                                     placeholder="MM/YY"
-                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-primary-red focus:border-primary-red ${
                                       paymentErrors.expiryDate ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     maxLength="5"
@@ -1325,7 +1325,7 @@ export default function CheckoutPage() {
                                     value={paymentData.cvc}
                                     onChange={handlePaymentDataChange}
                                     placeholder="123"
-                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                    className={`w-full px-3 py-2 border rounded-md focus:ring-primary-red focus:border-primary-red ${
                                       paymentErrors.cvc ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     maxLength="4"
@@ -1342,7 +1342,7 @@ export default function CheckoutPage() {
                                   name="cardholderName"
                                   value={paymentData.cardholderName || `${formData.firstName} ${formData.lastName}`.trim()}
                                   onChange={handlePaymentDataChange}
-                                  className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                  className={`w-full px-3 py-2 border rounded-md focus:ring-primary-red focus:border-primary-red ${
                                     paymentErrors.cardholderName ? 'border-red-500' : 'border-gray-300'
                                   }`}
                                 />
@@ -1403,10 +1403,10 @@ export default function CheckoutPage() {
                       checked={formData.acceptTerms}
                       onChange={handleInputChange}
                       required
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
+                      className="h-4 w-4 text-primary-red focus:ring-primary-red border-gray-300 rounded mt-1"
                     />
                     <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-700">
-                      I agree to the <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+                      I agree to the <Link href="/terms" className="text-primary-red hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary-red hover:underline">Privacy Policy</Link>
                     </label>
                   </div>
                   
@@ -1420,7 +1420,7 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     disabled={loading || !selectedPaymentMethod || paymentMethods.length === 0 || !isPaymentDetailsValid() || !formData.acceptTerms}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                    className="w-full bg-primary-red hover:bg-primary-dark disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
                   >
                     {loading ? (
                       <>

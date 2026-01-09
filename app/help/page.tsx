@@ -10,7 +10,7 @@ export default function HelpPage() {
 
   const helpCategories = [
     {
-      icon: <Package className="h-8 w-8 text-blue-600" />,
+      icon: <Package className="h-8 w-8 text-primary-red" />,
       title: 'Orders & Products',
       description: 'Track orders, product information, and purchasing help',
       links: [
@@ -106,13 +106,13 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <div className="bg-primary-red text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               How Can We Help You?
             </h1>
-            <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl mb-8 text-white/80 max-w-3xl mx-auto">
               Find answers to common questions, browse our help resources, or contact our support team. 
               We're here to help you every step of the way.
             </p>
@@ -126,7 +126,7 @@ export default function HelpPage() {
                   placeholder="Search for help topics, products, or questions..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-4 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-red focus:border-transparent"
                 />
               </div>
             </div>
@@ -139,12 +139,12 @@ export default function HelpPage() {
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <Phone className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <Phone className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Call Support</h3>
               <p className="text-gray-600 mb-4">Speak with our experts</p>
               <a 
                 href="tel:+1-316-530-2635"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
+                className="bg-primary-red text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors inline-block"
               >
                 (316) 530-2635
               </a>
@@ -188,7 +188,7 @@ export default function HelpPage() {
                   <Link
                     key={idx}
                     href={link.href}
-                    className="block text-blue-600 hover:text-blue-700 hover:underline"
+                    className="block text-primary-red hover:text-primary-dark hover:underline"
                   >
                     {link.title}
                   </Link>
@@ -254,7 +254,7 @@ export default function HelpPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Link href="/help/measuring" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <Book className="h-12 w-12 text-blue-600 mb-4" />
+              <Book className="h-12 w-12 text-primary-red mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Measuring Guide</h3>
               <p className="text-gray-600">Step-by-step instructions for accurate window measurements</p>
             </Link>
@@ -275,7 +275,7 @@ export default function HelpPage() {
       </div>
 
       {/* Support Hours */}
-      <div className="bg-blue-50 py-12">
+      <div className="bg-red-50 py-12">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Support Hours</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -301,19 +301,19 @@ export default function HelpPage() {
           <h2 className="text-3xl font-bold mb-4">
             Still Need Help?
           </h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-xl mb-8 text-red-100">
             Our support team is ready to assist you with any questions or concerns.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/contact"
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
             >
               Contact Support
             </Link>
             <Link
               href="/consultation"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors"
             >
               Schedule Consultation
             </Link>

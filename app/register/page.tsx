@@ -123,15 +123,15 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-100 p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Create Customer Account</h1>
           <p className="text-gray-600 mt-2">
             Join Smart Blinds Hub to enjoy a personalized shopping experience.
           </p>
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700">
+          <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-primary-red">
               <strong>Customer Registration:</strong> This form is for individual customers only. 
               For business accounts (vendors, installers, trade professionals), please contact our admin team.
             </p>
@@ -294,14 +294,14 @@ export default function RegisterPage() {
               I agree to the{" "}
               <Link
                 href="/terms"
-                className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
+                className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-primary-dark font-medium"
               >
                 Terms of Service
               </Link>{" "}
               and{" "}
               <Link
                 href="/privacy"
-                className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
+                className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-primary-dark font-medium"
               >
                 Privacy Policy
               </Link>
@@ -332,7 +332,7 @@ export default function RegisterPage() {
             <span>Already have an account?</span>
             <Link
               href="/login"
-              className="ml-1 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
+              className="ml-1 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-primary-dark font-semibold"
             >
               Sign in
             </Link>

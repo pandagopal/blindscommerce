@@ -92,7 +92,7 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-xl shadow-lg border border-red-100 p-8 max-w-md mx-auto">
           <div className="mb-6">
             <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto" />
@@ -113,7 +113,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Shopping Cart</h1>
@@ -181,7 +181,7 @@ export default function CartPage() {
                               </button>
                               <button
                                 onClick={() => toggleExpanded(item.cart_item_id)}
-                                className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                                className="flex items-center text-sm text-primary-red hover:text-primary-dark"
                               >
                                 <Info className="h-3.5 w-3.5 mr-1" />
                                 {expandedItems.has(item.cart_item_id) ? 'Hide' : 'Show'} Details
@@ -256,22 +256,22 @@ export default function CartPage() {
                           
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
                             {/* Basic Configuration */}
-                            <div className="bg-blue-50 p-2 rounded">
-                              <h5 className="font-medium text-blue-800 mb-1">Basic Details</h5>
+                            <div className="bg-red-50 p-2 rounded">
+                              <h5 className="font-medium text-primary-dark mb-1">Basic Details</h5>
                               {(item.configuration?.roomType || item.roomType) && (
-                                <div className="flex justify-between text-blue-700">
+                                <div className="flex justify-between text-primary-red">
                                   <span>room:</span>
                                   <span className="font-medium">{(item.configuration?.roomType || item.roomType || '').toLowerCase()}</span>
                                 </div>
                               )}
                               {(item.configuration?.mountType || item.mountType) && (
-                                <div className="flex justify-between text-blue-700">
+                                <div className="flex justify-between text-primary-red">
                                   <span>mount:</span>
                                   <span className="font-medium">{(item.configuration?.mountType || item.mountType || '').replace(/-/g, ' ').toLowerCase()}</span>
                                 </div>
                               )}
                               {(item.configuration?.width || item.width || item.configuration?.height || item.height) && (
-                                <div className="flex justify-between text-blue-700">
+                                <div className="flex justify-between text-primary-red">
                                   <span>size:</span>
                                   <span className="font-medium">{item.configuration?.width || item.width || 0}" × {item.configuration?.height || item.height || 0}"</span>
                                 </div>
@@ -386,7 +386,7 @@ export default function CartPage() {
               <div className="p-4 flex justify-end items-center">
                 <Link
                   href="/products"
-                  className="text-sm bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
+                  className="text-sm bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-primary-dark font-semibold"
                 >
                   Continue Shopping
                 </Link>

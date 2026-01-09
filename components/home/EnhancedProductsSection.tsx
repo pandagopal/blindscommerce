@@ -137,7 +137,7 @@ export default function EnhancedProductsSection({
                 }}
                 className={`px-6 py-3 text-sm font-medium transition-all duration-500 tracking-wide ${
                   activeTab === tab.id
-                    ? 'bg-primary-red text-white shadow-lg shadow-red-200/50'
+                    ? 'bg-primary-red text-white shadow-lg shadow-primary-red/30'
                     : 'bg-white text-gray-600 hover:text-primary-red border border-gray-200 hover:border-primary-red'
                 }`}
               >

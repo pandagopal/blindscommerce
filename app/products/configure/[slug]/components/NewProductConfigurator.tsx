@@ -77,7 +77,7 @@ const CollapsibleSection = ({
 }) => {
   return (
     <div className={`bg-white rounded-xl shadow-lg border transition-all duration-300 ${
-      isExpanded ? 'border-blue-500 shadow-blue-100' : isCompleted ? 'border-green-200' : 'border-gray-100'
+      isExpanded ? 'border-primary-red shadow-red-100' : isCompleted ? 'border-green-200' : 'border-gray-100'
     }`}>
       {/* Section Header - Always Visible */}
       <button
@@ -134,24 +134,24 @@ const CollapsibleSection = ({
                   key={index}
                   className={`p-3 rounded-lg flex items-start space-x-3 ${
                     rec.type === 'warning' ? 'bg-amber-50 border border-amber-200' :
-                    rec.type === 'suggestion' ? 'bg-blue-50 border border-blue-200' :
+                    rec.type === 'suggestion' ? 'bg-red-50 border border-red-200' :
                     'bg-gray-50 border border-gray-200'
                   }`}
                 >
                   <rec.icon size={18} className={`mt-0.5 flex-shrink-0 ${
                     rec.type === 'warning' ? 'text-amber-600' :
-                    rec.type === 'suggestion' ? 'text-blue-600' :
+                    rec.type === 'suggestion' ? 'text-primary-red' :
                     'text-gray-600'
                   }`} />
                   <div className="flex-1">
                     <p className={`text-sm font-medium ${
                       rec.type === 'warning' ? 'text-amber-800' :
-                      rec.type === 'suggestion' ? 'text-blue-800' :
+                      rec.type === 'suggestion' ? 'text-primary-dark' :
                       'text-gray-800'
                     }`}>{rec.title}</p>
                     <p className={`text-xs mt-0.5 ${
                       rec.type === 'warning' ? 'text-amber-700' :
-                      rec.type === 'suggestion' ? 'text-blue-700' :
+                      rec.type === 'suggestion' ? 'text-primary-red' :
                       'text-gray-600'
                     }`}>{rec.message}</p>
                   </div>
@@ -709,7 +709,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
     switch(fabricType?.toLowerCase()) {
       case 'sheer': return 'from-gray-100 to-gray-200';
       case 'blackout': return 'from-gray-800 to-gray-900';
-      case 'colored': return 'from-blue-100 to-blue-200';
+      case 'colored': return 'from-red-100 to-red-200';
       case 'woven': return 'from-amber-100 to-amber-200';
       case 'natural': return 'from-green-100 to-green-200';
       case 'designer': return 'from-purple-100 to-purple-200';
@@ -722,13 +722,13 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         (product?.controlTypes?.bottomRailOptions?.filter((o: any) => o.enabled).length > 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-red-50">
       <div className="container mx-auto px-4 py-4">
         {/* Back link */}
         <div className="mb-6">
           <Link
             href="/products"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium group"
+            className="inline-flex items-center text-primary-red hover:text-primary-dark transition-colors text-sm font-medium group"
           >
             <ArrowLeft size={16} className="mr-1 group-hover:-translate-x-1 transition-transform" />
             Back to Products
@@ -753,7 +753,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
               <select
                 value={config.roomType}
                 onChange={(e) => handleRoomTypeChange(e.target.value)}
-                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 ${
+                className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red transition-all text-gray-700 ${
                   errors.roomType ? 'border-red-300' : 'border-gray-300'
                 }`}
               >
@@ -788,13 +788,13 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 <div
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                     config.mountType === 'inside'
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      ? 'border-primary-red bg-red-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => handleMountTypeChange('inside')}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-14 h-14 bg-gradient-to-br from-red-100 to-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
                       <div className="w-10 h-10 bg-white rounded shadow-sm"></div>
                     </div>
                     <div className="flex-1 min-w-0">
@@ -804,7 +804,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                       </p>
                     </div>
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                      config.mountType === 'inside' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                      config.mountType === 'inside' ? 'border-primary-red bg-red-500' : 'border-gray-300'
                     }`}>
                       {config.mountType === 'inside' && <div className="w-2 h-2 bg-white rounded-full"></div>}
                     </div>
@@ -815,7 +815,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 <div
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
                     config.mountType === 'outside'
-                      ? 'border-blue-500 bg-blue-50 shadow-md'
+                      ? 'border-primary-red bg-red-50 shadow-md'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                   onClick={() => handleMountTypeChange('outside')}
@@ -831,7 +831,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                       </p>
                     </div>
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${
-                      config.mountType === 'outside' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                      config.mountType === 'outside' ? 'border-primary-red bg-red-500' : 'border-gray-300'
                     }`}>
                       {config.mountType === 'outside' && <div className="w-2 h-2 bg-white rounded-full"></div>}
                     </div>
@@ -862,7 +862,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 <div className="flex space-x-4">
                   {/* Window illustration */}
                   <div className="hidden sm:flex items-center justify-center">
-                    <div className="w-20 h-24 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-2">
+                    <div className="w-20 h-24 bg-gradient-to-br from-red-100 to-red-200 rounded-lg p-2">
                       <div className="w-full h-full bg-white rounded shadow-inner grid grid-cols-2 grid-rows-2">
                         <div className="border-r border-b border-gray-200"></div>
                         <div className="border-b border-gray-200"></div>
@@ -882,7 +882,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           value={config.width}
                           onChange={(e) => handleDimensionChange('width', e.target.value)}
                           placeholder="0"
-                          className={`w-24 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          className={`w-24 p-2 border rounded-lg focus:ring-2 focus:ring-primary-red ${
                             errors.width ? 'border-red-300' : 'border-gray-300'
                           }`}
                         />
@@ -914,7 +914,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           value={config.height}
                           onChange={(e) => handleDimensionChange('height', e.target.value)}
                           placeholder="0"
-                          className={`w-24 p-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                          className={`w-24 p-2 border rounded-lg focus:ring-2 focus:ring-primary-red ${
                             errors.height ? 'border-red-300' : 'border-gray-300'
                           }`}
                         />
@@ -964,7 +964,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         value={fabricSearch}
                         onChange={(e) => setFabricSearch(e.target.value)}
                         placeholder="Search fabrics..."
-                        className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                        className="w-full pl-9 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-primary-red text-sm"
                       />
                       {fabricSearch && (
                         <button
@@ -981,14 +981,14 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                       onClick={() => setShowFilters(!showFilters)}
                       className={`flex items-center px-3 py-2 border rounded-lg text-sm font-medium transition-colors ${
                         showFilters || opacityFilter !== 'all'
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          ? 'bg-red-50 border-red-300 text-primary-red'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       <Filter size={16} className="mr-2" />
                       Filters
                       {opacityFilter !== 'all' && (
-                        <span className="ml-2 bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded">1</span>
+                        <span className="ml-2 bg-primary-red text-white text-xs px-1.5 py-0.5 rounded">1</span>
                       )}
                     </button>
                   </div>
@@ -1004,8 +1004,8 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             onClick={() => setOpacityFilter(filter.id)}
                             className={`flex items-center px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                               opacityFilter === filter.id
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white border border-gray-300 text-gray-700 hover:border-blue-300'
+                                ? 'bg-primary-red text-white'
+                                : 'bg-white border border-gray-300 text-gray-700 hover:border-red-300'
                             }`}
                             title={filter.description}
                           >
@@ -1025,7 +1025,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                         onClick={() => setActiveFabricType(fabricTypeGroup.type)}
                         className={`flex-shrink-0 py-2 px-4 rounded-md text-sm font-medium transition-all capitalize ${
                           activeFabricType === fabricTypeGroup.type
-                            ? 'bg-white text-blue-600 shadow-sm'
+                            ? 'bg-white text-primary-red shadow-sm'
                             : 'text-gray-600 hover:text-gray-900'
                         }`}
                       >
@@ -1042,7 +1042,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           key={fabric.fabric_option_id}
                           className={`cursor-pointer transition-all hover:scale-[1.02] group ${
                             config.fabricType === fabric.fabric_option_id.toString()
-                              ? 'ring-2 ring-blue-500 ring-offset-2 rounded-lg'
+                              ? 'ring-2 ring-primary-red ring-offset-2 rounded-lg'
                               : ''
                           }`}
                           onClick={() => {
@@ -1054,7 +1054,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             {/* Fabric Image with Opacity Badge */}
                             <div className={`relative aspect-square rounded-lg overflow-hidden border-2 ${
                               config.fabricType === fabric.fabric_option_id.toString()
-                                ? 'border-blue-500'
+                                ? 'border-primary-red'
                                 : 'border-gray-200 group-hover:border-gray-300'
                             }`}>
                               {fabric.fabric_image_url ? (
@@ -1078,7 +1078,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
                               {/* Selection Check */}
                               {config.fabricType === fabric.fabric_option_id.toString() && (
-                                <div className="absolute top-2 left-2 bg-blue-500 rounded-full p-1">
+                                <div className="absolute top-2 left-2 bg-red-500 rounded-full p-1">
                                   <Check size={12} className="text-white" />
                                 </div>
                               )}
@@ -1108,7 +1108,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           setFabricSearch('');
                           setOpacityFilter('all');
                         }}
-                        className="text-blue-600 text-sm mt-2 hover:underline"
+                        className="text-primary-red text-sm mt-2 hover:underline"
                       >
                         Clear filters
                       </button>
@@ -1158,7 +1158,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                                 key={controlId}
                                 className={`relative flex items-start p-3 border rounded-lg cursor-pointer transition-all hover:shadow-sm ${
                                   config.controlOption === controlId
-                                    ? 'border-blue-500 bg-blue-50'
+                                    ? 'border-primary-red bg-red-50'
                                     : 'border-gray-200 hover:border-gray-300'
                                 }`}
                               >
@@ -1171,7 +1171,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                                     setConfig(prev => ({ ...prev, controlOption: e.target.value }));
                                     setErrors(prev => ({ ...prev, controlOption: '' }));
                                   }}
-                                  className="mt-0.5 text-blue-600 focus:ring-blue-500"
+                                  className="mt-0.5 text-primary-red focus:ring-primary-red"
                                 />
                                 <div className="ml-3 flex-1">
                                   <div className="flex items-center">
@@ -1188,7 +1188,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                                      system.name.includes('Motor') ? 'Remote or app controlled' :
                                      'Chain/cord operation'}
                                   </p>
-                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                  <p className="text-xs text-primary-red font-medium mt-1">
                                     {system.price_adjustment === 0 ? 'Included' : `+$${system.price_adjustment}`}
                                   </p>
                                 </div>
@@ -1210,7 +1210,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
                             return (
                               <label key={controlId} className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all ${
-                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                config.controlOption === controlId ? 'border-primary-red bg-red-50' : 'border-gray-200 hover:border-gray-300'
                               }`}>
                                 <input
                                   type="radio"
@@ -1221,11 +1221,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                                     setConfig(prev => ({ ...prev, controlOption: e.target.value }));
                                     setErrors(prev => ({ ...prev, controlOption: '' }));
                                   }}
-                                  className="mt-0.5 text-blue-600"
+                                  className="mt-0.5 text-primary-red"
                                 />
                                 <div className="ml-3">
                                   <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
-                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                  <p className="text-xs text-primary-red font-medium mt-1">
                                     {system.price_adjustment === 0 ? 'Included' : `+$${system.price_adjustment}`}
                                   </p>
                                 </div>
@@ -1246,7 +1246,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                             const controlId = system.name.toLowerCase().replace(/\s+/g, '-');
                             return (
                               <label key={controlId} className={`flex items-start p-3 border rounded-lg cursor-pointer transition-all ${
-                                config.controlOption === controlId ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                                config.controlOption === controlId ? 'border-primary-red bg-red-50' : 'border-gray-200 hover:border-gray-300'
                               }`}>
                                 <input
                                   type="radio"
@@ -1257,11 +1257,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                                     setConfig(prev => ({ ...prev, controlOption: e.target.value }));
                                     setErrors(prev => ({ ...prev, controlOption: '' }));
                                   }}
-                                  className="mt-0.5 text-blue-600"
+                                  className="mt-0.5 text-primary-red"
                                 />
                                 <div className="ml-3">
                                   <h4 className="text-sm font-medium text-gray-900">{system.name}</h4>
-                                  <p className="text-xs text-blue-600 font-medium mt-1">
+                                  <p className="text-xs text-primary-red font-medium mt-1">
                                     {system.price_adjustment === 0 ? 'Included' : `+$${system.price_adjustment}`}
                                   </p>
                                 </div>
@@ -1309,7 +1309,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           setConfig(prev => ({ ...prev, valanceOption: e.target.value }));
                           setErrors(prev => ({ ...prev, valanceOption: '' }));
                         }}
-                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-primary-red ${
                           errors.valanceOption ? 'border-red-300' : 'border-gray-300'
                         }`}
                       >
@@ -1338,7 +1338,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                           setConfig(prev => ({ ...prev, bottomRailOption: e.target.value }));
                           setErrors(prev => ({ ...prev, bottomRailOption: '' }));
                         }}
-                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
+                        className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-primary-red ${
                           errors.bottomRailOption ? 'border-red-300' : 'border-gray-300'
                         }`}
                       >
@@ -1368,7 +1368,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   disabled={!areMandatoryFieldsComplete()}
                   className={`w-full md:flex-1 font-semibold py-3 px-5 rounded-lg transition-all shadow-lg flex items-center justify-center ${
                     areMandatoryFieldsComplete()
-                      ? 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:shadow-xl cursor-pointer'
+                      ? 'bg-primary-red hover:bg-primary-dark text-white hover:shadow-xl cursor-pointer'
                       : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                   }`}
                 >
@@ -1385,7 +1385,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                   <p className="text-yellow-800 font-medium mb-2">Please log in to add items to cart</p>
                   <Link
                     href="/login"
-                    className="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+                    className="inline-flex items-center bg-primary-red hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg"
                   >
                     <User size={16} className="mr-2" />
                     Log In to Continue
@@ -1399,11 +1399,11 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
 
               {userRole === 'customer' && (
                 <Link href="/cart" className="block w-full md:w-auto">
-                  <button className="w-full md:w-auto font-semibold py-3 px-5 rounded-lg border-2 border-gray-300 hover:border-blue-600 text-gray-700 hover:text-blue-600 flex items-center justify-center">
+                  <button className="w-full md:w-auto font-semibold py-3 px-5 rounded-lg border-2 border-gray-300 hover:border-primary-red text-gray-700 hover:text-primary-red flex items-center justify-center">
                     <ShoppingCart size={16} className="mr-2" />
                     View Cart
                     {itemCount > 0 && (
-                      <span className="ml-2 bg-blue-600 text-white text-xs rounded-full px-2 py-1">({itemCount})</span>
+                      <span className="ml-2 bg-primary-red text-white text-xs rounded-full px-2 py-1">({itemCount})</span>
                     )}
                   </button>
                 </Link>
@@ -1417,7 +1417,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 <p className="text-xs text-gray-600">100% Secure</p>
               </div>
               <div className="bg-white rounded-lg p-3 text-center shadow-sm">
-                <Truck className="w-6 h-6 text-blue-600 mx-auto mb-1" />
+                <Truck className="w-6 h-6 text-primary-red mx-auto mb-1" />
                 <p className="text-xs text-gray-600">Free Shipping</p>
               </div>
               <div className="bg-white rounded-lg p-3 text-center shadow-sm">
@@ -1432,7 +1432,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
             {/* Header Card with Progress */}
             <div className="bg-white rounded-xl shadow-lg p-4 border border-gray-100">
               <div className="flex items-center mb-3">
-                <Sparkles className="text-blue-600 mr-2" size={20} />
+                <Sparkles className="text-primary-red mr-2" size={20} />
                 <h1 className="text-lg font-bold text-gray-900">Configure Your Perfect Blind</h1>
               </div>
 
@@ -1448,7 +1448,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                 </div>
                 <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-primary-red to-green-500 transition-all duration-500"
                     style={{
                       width: `${([isStepCompleted('1'), isStepCompleted('2'), isStepCompleted('3'),
                         isStepCompleted('4'), isStepCompleted('5'),
@@ -1466,7 +1466,7 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
                       isStepCompleted(String(index + 1))
                         ? 'bg-green-500 text-white'
                         : expandedSection === String(index + 1)
-                        ? 'bg-blue-500 text-white'
+                        ? 'bg-red-500 text-white'
                         : 'bg-gray-200 text-gray-500'
                     }`}>
                       {isStepCompleted(String(index + 1)) ? <Check size={12} /> : index + 1}

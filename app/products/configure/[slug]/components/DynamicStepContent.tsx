@@ -177,7 +177,7 @@ export function DynamicStepContent({ step }: DynamicStepContentProps) {
                     className={`
                       relative w-16 h-16 rounded-lg border-2 transition-all hover:scale-105
                       ${selectedValue?.value_id === value.value_id 
-                        ? 'border-blue-500 ring-2 ring-blue-200' 
+                        ? 'border-primary-red ring-2 ring-red-200' 
                         : 'border-gray-300 hover:border-gray-400'
                       }
                     `}
@@ -193,7 +193,7 @@ export function DynamicStepContent({ step }: DynamicStepContentProps) {
                     )}
                     {selectedValue?.value_id === value.value_id && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                        <div className="w-6 h-6 bg-primary-red rounded-full flex items-center justify-center">
                           <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -312,7 +312,7 @@ export function DynamicStepContent({ step }: DynamicStepContentProps) {
     <div className="space-y-6">
       {/* Step Header */}
       <div className="text-center space-y-2">
-        <div className="flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mx-auto">
+        <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full mx-auto">
           {getStepIcon(step.step_name)}
         </div>
         <h2 className="text-2xl font-bold">{step.step_title}</h2>
@@ -327,7 +327,7 @@ export function DynamicStepContent({ step }: DynamicStepContentProps) {
           {step.options
             .sort((a, b) => (a.step_display_order || a.display_order) - (b.step_display_order || b.display_order))
             .map((option) => (
-              <Card key={option.option_id} className={option.is_primary ? 'border-blue-200 bg-blue-50/50' : ''}>
+              <Card key={option.option_id} className={option.is_primary ? 'border-red-200 bg-red-50/50' : ''}>
                 <CardContent className="p-6">
                   {renderOptionInput(option)}
                 </CardContent>
@@ -341,7 +341,7 @@ export function DynamicStepContent({ step }: DynamicStepContentProps) {
           <Card className="mt-6">
             <CardContent className="p-4">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                <Info className="w-5 h-5 text-primary-red mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-gray-700">
                   <div dangerouslySetInnerHTML={{ __html: step.help_content }} />
                 </div>

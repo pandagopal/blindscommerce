@@ -314,6 +314,31 @@ export default function EnhancedProductsClient({
     return filters;
   }, [debouncedSearch, selectedCategories, categories, minPrice, maxPrice, selectedRoom, saleOnly]);
 
+  // Refetch products from API (used when clearing category filter)
+  const refetchAllProducts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set('limit', '50');
+      params.set('offset', '0');
+      params.set('isActive', 'true');
+      params.set('vendorOnly', 'true');
+
+      const response = await fetch(`/api/v2/commerce/products?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        const newProducts = data.data?.products || data.products || [];
+        setProducts(newProducts);
+        setPage(1);
+        setHasMore(newProducts.length === 50);
+      }
+    } catch (error) {
+      console.error('Error refetching products:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Remove filter
   const removeFilter = useCallback((type: string, value: string) => {
     switch (type) {
@@ -321,7 +346,12 @@ export default function EnhancedProductsClient({
         setSearchQuery('');
         break;
       case 'category':
-        setSelectedCategories(prev => prev.filter(id => id.toString() !== value));
+        const newCategories = selectedCategories.filter(id => id.toString() !== value);
+        setSelectedCategories(newCategories);
+        // If all category filters are removed, refetch all products
+        if (newCategories.length === 0) {
+          refetchAllProducts();
+        }
         break;
       case 'price':
         setMinPrice('');
@@ -334,7 +364,7 @@ export default function EnhancedProductsClient({
         setSaleOnly(false);
         break;
     }
-  }, []);
+  }, [selectedCategories, refetchAllProducts]);
 
   // Clear all filters
   const clearAllFilters = useCallback(() => {
@@ -346,7 +376,9 @@ export default function EnhancedProductsClient({
     setSelectedRoom('');
     setSaleOnly(false);
     setSortBy('recommended');
-  }, []);
+    // Refetch all products when clearing all filters
+    refetchAllProducts();
+  }, [refetchAllProducts]);
 
   // Handle search submit
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -377,7 +409,7 @@ export default function EnhancedProductsClient({
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
                 placeholder="Search blinds, shades, shutters..."
-                className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-primary-red focus:border-primary-red text-base"
               />
               {searchQuery && (
                 <button
@@ -404,7 +436,7 @@ export default function EnhancedProductsClient({
                     <span dangerouslySetInnerHTML={{
                       __html: suggestion.replace(
                         new RegExp(`(${searchQuery})`, 'gi'),
-                        '<strong class="text-blue-600">$1</strong>'
+                        '<strong class="text-primary-red">$1</strong>'
                       )
                     }} />
                   </button>
@@ -428,7 +460,7 @@ export default function EnhancedProductsClient({
               <SlidersHorizontal size={18} />
               <span>Filters</span>
               {activeFilters.length > 0 && (
-                <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                <span className="bg-primary-red text-white text-xs px-1.5 py-0.5 rounded-full">
                   {activeFilters.length}
                 </span>
               )}
@@ -449,7 +481,7 @@ export default function EnhancedProductsClient({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="appearance-none bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-primary-red cursor-pointer"
               >
                 {SORT_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -467,14 +499,14 @@ export default function EnhancedProductsClient({
                 className={`p-2 ${gridView === 'comfortable' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
                 title="Comfortable view"
               >
-                <LayoutGrid size={18} className={gridView === 'comfortable' ? 'text-blue-600' : 'text-gray-400'} />
+                <LayoutGrid size={18} className={gridView === 'comfortable' ? 'text-primary-red' : 'text-gray-400'} />
               </button>
               <button
                 onClick={() => setGridView('compact')}
                 className={`p-2 ${gridView === 'compact' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
                 title="Compact view"
               >
-                <Grid3X3 size={18} className={gridView === 'compact' ? 'text-blue-600' : 'text-gray-400'} />
+                <Grid3X3 size={18} className={gridView === 'compact' ? 'text-primary-red' : 'text-gray-400'} />
               </button>
             </div>
           </div>
@@ -499,7 +531,7 @@ export default function EnhancedProductsClient({
                 {activeFilters.length > 0 && (
                   <button
                     onClick={clearAllFilters}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+                    className="text-xs text-primary-red hover:text-primary-dark"
                   >
                     Clear all
                   </button>
@@ -522,15 +554,20 @@ export default function EnhancedProductsClient({
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => {
-                            setSelectedCategories(prev =>
-                              isSelected
-                                ? prev.filter(id => id !== catId)
-                                : [...prev, catId]
-                            );
+                            if (isSelected) {
+                              const newCategories = selectedCategories.filter(id => id !== catId);
+                              setSelectedCategories(newCategories);
+                              // If all categories are unchecked, refetch all products
+                              if (newCategories.length === 0) {
+                                refetchAllProducts();
+                              }
+                            } else {
+                              setSelectedCategories(prev => [...prev, catId]);
+                            }
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
                         />
-                        <span className={`text-sm ${isSelected ? 'text-blue-600 font-medium' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <span className={`text-sm ${isSelected ? 'text-primary-red font-medium' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {category.name}
                         </span>
                         {category.product_count && (
@@ -553,7 +590,7 @@ export default function EnhancedProductsClient({
                       placeholder="Min"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red"
                     />
                   </div>
                   <span className="text-gray-400">-</span>
@@ -564,7 +601,7 @@ export default function EnhancedProductsClient({
                       placeholder="Max"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red"
                     />
                   </div>
                 </div>
@@ -576,7 +613,7 @@ export default function EnhancedProductsClient({
                 <select
                   value={selectedRoom}
                   onChange={(e) => setSelectedRoom(e.target.value)}
-                  className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red"
                 >
                   <option value="">All Rooms</option>
                   {ROOM_OPTIONS.map(room => (
@@ -592,7 +629,7 @@ export default function EnhancedProductsClient({
                     type="checkbox"
                     checked={saleOnly}
                     onChange={(e) => setSaleOnly(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
                   />
                   <span className="text-sm text-gray-700">On Sale</span>
                   <Tag size={14} className="text-red-500" />
@@ -620,7 +657,7 @@ export default function EnhancedProductsClient({
                                 : [...prev, feature.id]
                             );
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-primary-red focus:ring-primary-red"
                         />
                         <span className="text-sm text-gray-700">{feature.name}</span>
                       </label>
@@ -644,7 +681,7 @@ export default function EnhancedProductsClient({
                 </p>
                 <button
                   onClick={clearAllFilters}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-primary-red hover:text-primary-dark font-medium"
                 >
                   Clear all filters
                 </button>
@@ -670,7 +707,7 @@ export default function EnhancedProductsClient({
                   {!isLoading && hasMore && (
                     <button
                       onClick={loadMore}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-6 py-2 bg-primary-red text-white rounded-lg hover:bg-primary-dark transition-colors"
                     >
                       Load More Products
                     </button>

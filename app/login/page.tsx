@@ -1,14 +1,12 @@
 'use client';
 
-import { Metadata } from "next";
 import Link from "next/link";
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/';
 
@@ -136,11 +134,16 @@ function LoginForm() {
   // };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4 py-12">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-red-100 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-warm-gray-50 to-red-50/30 flex items-center justify-center px-4 py-12">
+      <div className="max-w-md w-full bg-white shadow-lg border border-warm-gray-200 p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Sign In</h1>
-          <p className="text-gray-600 mt-2">
+          <div className="inline-flex items-center gap-3 mb-4">
+            <span className="w-8 h-px bg-primary-red" />
+            <span className="text-primary-red text-xs font-medium tracking-[0.2em] uppercase">Welcome Back</span>
+            <span className="w-8 h-px bg-primary-red" />
+          </div>
+          <h1 className="text-3xl font-semibold text-charcoal-950">Sign In</h1>
+          <p className="text-warm-gray-500 mt-2 font-light">
             Sign in to your account to access your orders, favorites, and more.
           </p>
         </div>
@@ -181,7 +184,7 @@ function LoginForm() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-medium"
+                className="text-sm text-primary-red hover:text-primary-dark font-medium transition-colors"
               >
                 Forgot password?
               </Link>
@@ -219,7 +222,7 @@ function LoginForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary-red hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-70 flex justify-center items-center"
+              className="w-full bg-primary-red hover:bg-primary-dark text-white font-medium py-3.5 px-4 transition-all hover:shadow-lg disabled:opacity-70 flex justify-center items-center uppercase tracking-wider text-sm"
             >
               {loading ? (
                 <>
@@ -232,21 +235,20 @@ function LoginForm() {
             </button>
           </div>
 
-          <div className="text-center text-sm text-gray-600">
-            <span>Don't have an account?</span>
+          <div className="text-center text-sm text-warm-gray-600">
+            <span>Don&apos;t have an account?</span>
             <Link
               href="/register"
-              className="ml-1 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent hover:from-purple-700 hover:to-blue-700 font-semibold"
+              className="ml-1 text-primary-red hover:text-primary-dark font-semibold transition-colors"
             >
               Sign up
             </Link>
           </div>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-8 pt-6 border-t border-warm-gray-200">
           <SocialLoginButtons />
         </div>
-        {/* Demo credentials section */}
       </div>
     </div>
   );
@@ -255,7 +257,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-warm-gray-50 to-red-50/30 p-6">
         <div className="flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary-red" />
         </div>

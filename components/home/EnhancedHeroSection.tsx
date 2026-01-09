@@ -113,7 +113,7 @@ export default function EnhancedHeroSection({
   const hasVideo = !!currentBanner.video_url;
 
   return (
-    <section className="relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden bg-black">
+    <section className="relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden bg-charcoal-950">
       {/* Background Slides */}
       {slides.map((slide, index) => (
         <div
@@ -144,9 +144,9 @@ export default function EnhancedHeroSection({
             </div>
           )}
 
-          {/* Elegant Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          {/* Elegant Gradient Overlay - Using charcoal instead of black */}
+          <div className="absolute inset-0 bg-gradient-to-r from-charcoal-950/95 via-charcoal-950/70 to-charcoal-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/60 via-transparent to-transparent" />
         </div>
       ))}
 

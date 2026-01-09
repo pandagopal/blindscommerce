@@ -41,7 +41,7 @@ const RoomVisualizer = ({ roomType, product, config }: RoomVisualizerProps) => {
         <h3 className="font-medium text-gray-800">Room Visualization: {roomType}</h3>
         <button
           onClick={toggleProduct}
-          className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+          className="flex items-center text-sm text-primary-red hover:text-primary-dark"
         >
           {showProduct ? (
             <>

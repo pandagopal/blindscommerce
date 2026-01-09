@@ -265,7 +265,7 @@ export default function EnhancedReviewsSection({
                   {/* User Info */}
                   <div className="flex items-center justify-between pt-5 border-t border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-primary-red to-red-400 flex items-center justify-center text-white font-medium">
+                      <div className="w-10 h-10 bg-primary-red flex items-center justify-center text-white font-medium">
                         {review.user_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -344,14 +344,14 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
           {/* Header */}
           <div className="flex items-start justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-gradient-to-br from-primary-red to-red-400 flex items-center justify-center text-white text-xl font-medium">
+              <div className="w-14 h-14 bg-primary-red flex items-center justify-center text-white text-xl font-medium">
                 {review.user_name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <p className="font-medium text-gray-900 flex items-center gap-2 tracking-wide">
                   {review.user_name}
                   {review.verified_purchase && (
-                    <span className="inline-flex items-center gap-1 text-xs text-primary-red bg-red-50 px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 text-xs text-primary-red bg-primary-red/10 px-2 py-0.5">
                       <CheckCircle className="w-3 h-3" />
                       Verified
                     </span>

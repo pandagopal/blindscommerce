@@ -18,7 +18,7 @@ const config: Config = {
                 'primary-red': 'var(--primary-red)',
                 'primary-dark': 'var(--primary-dark)',
                 'hover-primary': 'var(--hover-primary)',
-                'accent-yellow': 'var(--accent-yellow)',
+                'accent-gold': 'var(--accent-gold)',
                 'footer-bg': 'var(--bg-footer)',
                 'header-bg': 'var(--bg-header)',
 
@@ -50,6 +50,36 @@ const config: Config = {
                     800: '#850622',
                     900: '#6f0820',
                     950: '#4a050d',
+                },
+
+                // Charcoal - Replaces black throughout the site (warm, sophisticated)
+                'charcoal': {
+                    50: '#f7f7f6',
+                    100: '#e5e4e2',
+                    200: '#cbc9c5',
+                    300: '#aaa7a1',
+                    400: '#89857d',
+                    500: '#6e6a62',
+                    600: '#57544d',
+                    700: '#474440',
+                    800: '#3b3936',
+                    900: '#33312f',
+                    950: '#1a1918',  // Deep charcoal (use instead of black)
+                },
+
+                // Slate - Neutral warm gray for text and backgrounds
+                'warm-gray': {
+                    50: '#fafaf9',
+                    100: '#f5f5f4',
+                    200: '#e7e5e4',
+                    300: '#d6d3d1',
+                    400: '#a8a29e',
+                    500: '#78716c',
+                    600: '#57534e',
+                    700: '#44403c',
+                    800: '#292524',
+                    900: '#1c1917',
+                    950: '#0c0a09',
                 },
 
                 // Shadcn UI colors

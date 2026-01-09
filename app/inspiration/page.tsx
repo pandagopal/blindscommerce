@@ -121,21 +121,21 @@ export default function InspirationPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
+      <div className="bg-primary-red text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Design Inspiration Gallery
             </h1>
-            <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
-              Discover beautiful window treatment ideas for every room in your home. 
-              Get inspired by real customer transformations and see how the right 
+            <p className="text-xl mb-8 text-white/80 max-w-3xl mx-auto">
+              Discover beautiful window treatment ideas for every room in your home.
+              Get inspired by real customer transformations and see how the right
               window treatments can elevate your space.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link 
+              <Link
                 href="/consultation"
-                className="bg-white text-red-900 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
+                className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
               >
                 Get Design Help
               </Link>
@@ -343,12 +343,12 @@ export default function InspirationPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-primary-red to-red-700 text-white py-16">
+      <div className="bg-primary-red text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Create Your Dream Space?
           </h2>
-          <p className="text-xl mb-8 text-red-100">
+          <p className="text-xl mb-8 text-white/80">
             Our design experts will help you achieve the perfect look for every room in your home.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

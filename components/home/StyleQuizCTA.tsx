@@ -97,13 +97,13 @@ export default function StyleQuizCTA({ variant = 'banner' }: StyleQuizCTAProps) 
             <div className="flex flex-col items-center md:items-end gap-4">
               <Link
                 href="/style-quiz"
-                className="group relative inline-flex items-center gap-4 bg-primary-red text-white font-medium px-10 py-5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/30"
+                className="group relative inline-flex items-center gap-4 bg-primary-red text-white font-medium px-10 py-5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-primary-red/30"
               >
                 <span className="relative z-10 uppercase tracking-wider text-sm">Find My Style</span>
                 <div className="relative z-10 w-10 h-10 border border-white/30 flex items-center justify-center group-hover:border-white/60 transition-colors duration-500">
                   <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-r from-red-700 to-red-600 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-primary-dark translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
               </Link>
               <p className="text-white/40 text-sm font-light tracking-wide">
                 Takes only 2 minutes

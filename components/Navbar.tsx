@@ -260,7 +260,7 @@ const Navbar = () => {
           <div className="flex md:hidden">
             <button
               type="button"
-              className="text-black hover:text-primary-red focus:outline-none"
+              className="text-charcoal-950 hover:text-primary-red focus:outline-none transition-colors"
               aria-label="Toggle menu"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -286,10 +286,10 @@ const Navbar = () => {
           <nav className="hidden md:flex space-x-8">
             <Link
               href="/ai-features"
-              className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+              className="text-charcoal-950 hover:text-primary-red font-medium flex items-center gap-1 transition-colors"
             >
               AI Features
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-primary-red text-white">
                 New
               </span>
             </Link>
@@ -297,42 +297,42 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/products"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-charcoal-950 hover:text-primary-red font-medium flex items-center gap-1 transition-colors"
               >
                 Blinds
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-warm-gray-200">
                 <div className="py-2">
                   {categories.blinds.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">
                       {cat.name}
                     </Link>
                   ))}
                   {categories.blinds.length === 0 && (
-                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                    <div className="px-4 py-2 text-sm text-warm-gray-500">Loading...</div>
                   )}
                 </div>
               </div>
             </div>
-            
+
             <div className="relative group">
               <Link
                 href="/shades"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-charcoal-950 hover:text-primary-red font-medium flex items-center gap-1 transition-colors"
               >
                 Shades
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-warm-gray-200">
                 <div className="py-2">
                   {categories.shades.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">
                       {cat.name}
                     </Link>
                   ))}
                   {categories.shades.length === 0 && (
-                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                    <div className="px-4 py-2 text-sm text-warm-gray-500">Loading...</div>
                   )}
                 </div>
               </div>
@@ -341,36 +341,36 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/products"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-charcoal-950 hover:text-primary-red font-medium flex items-center gap-1 transition-colors"
               >
                 Motorized
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-warm-gray-200">
                 <div className="py-2">
                   {categories.motorized.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">
                       {cat.name}
                     </Link>
                   ))}
                   {categories.motorized.length === 0 && (
-                    <div className="px-4 py-2 text-sm text-gray-500">Loading...</div>
+                    <div className="px-4 py-2 text-sm text-warm-gray-500">Loading...</div>
                   )}
                 </div>
               </div>
             </div>
 
             <div className="relative group">
-              <span className="text-black hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">
+              <span className="text-charcoal-950 hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer transition-colors">
                 Services
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </span>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-warm-gray-200">
                 <div className="py-2">
-                  <Link href="/measure-install" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Measure & Install</Link>
-                  <Link href="/consultation" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Consultation</Link>
-                  <Link href="/samples" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Samples</Link>
-                  <Link href="/warranty" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warranty Service</Link>
+                  <Link href="/measure-install" className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">Measure & Install</Link>
+                  <Link href="/consultation" className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">Free Consultation</Link>
+                  <Link href="/samples" className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">Free Samples</Link>
+                  <Link href="/warranty" className="block px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red transition-colors">Warranty Service</Link>
                 </div>
               </div>
             </div>
@@ -380,7 +380,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <button
               type="button"
-              className="text-black hover:text-primary-red focus:outline-none"
+              className="text-charcoal-950 hover:text-primary-red focus:outline-none transition-colors"
               aria-label="Search"
             >
               <Search size={20} />
@@ -393,24 +393,24 @@ const Navbar = () => {
                   <button
                     type="button"
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center text-black hover:text-primary-red focus:outline-none"
+                    className="flex items-center text-charcoal-950 hover:text-primary-red focus:outline-none transition-colors"
                   >
                     <span className="hidden sm:inline-block mr-1 font-medium">{getDisplayName()}</span>
                     <ChevronDown size={16} />
                   </button>
 
                   {dropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-20 border border-gray-200">
-                      <div className="py-2 px-4 border-b border-gray-200">
-                        <p className="text-sm font-medium text-gray-900">{user.firstName} {user.lastName}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
-                        <p className="text-xs mt-1 bg-gray-100 px-2 py-0.5 rounded inline-block text-gray-700 capitalize">{user.role}</p>
+                    <div className="absolute right-0 mt-2 w-56 bg-white shadow-lg z-20 border border-warm-gray-200">
+                      <div className="py-2 px-4 border-b border-warm-gray-200">
+                        <p className="text-sm font-medium text-charcoal-950">{user.firstName} {user.lastName}</p>
+                        <p className="text-xs text-warm-gray-500">{user.email}</p>
+                        <p className="text-xs mt-1 bg-red-50 text-primary-red px-2 py-0.5 inline-block capitalize">{user.role}</p>
                       </div>
                       <div className="py-1">
                         <Link
                           href={getDashboardUrl()}
                           onClick={() => setDropdownOpen(false)}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                         >
                           <Settings size={16} className="mr-2" />
                           Dashboard
@@ -418,7 +418,7 @@ const Navbar = () => {
                         <Link
                           href="/account/orders"
                           onClick={() => setDropdownOpen(false)}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                         >
                           <Package size={16} className="mr-2" />
                           My Orders
@@ -426,7 +426,7 @@ const Navbar = () => {
                         <Link
                           href="/account/configurations"
                           onClick={() => setDropdownOpen(false)}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                         >
                           <List size={16} className="mr-2" />
                           Saved Configurations
@@ -435,7 +435,7 @@ const Navbar = () => {
                           <Link
                             href="/customer/commercial-templates"
                             onClick={() => setDropdownOpen(false)}
-                            className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                            className="px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                           >
                             <FileText size={16} className="mr-2" />
                             Commercial Orders (5+)
@@ -444,14 +444,14 @@ const Navbar = () => {
                         <Link
                           href="/account/wishlist"
                           onClick={() => setDropdownOpen(false)}
-                          className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                         >
                           <Heart size={16} className="mr-2" />
                           Wishlist
                         </Link>
                         <button
                           onClick={handleLogout}
-                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center"
+                          className="w-full text-left px-4 py-2 text-sm text-charcoal-800 hover:bg-red-50 hover:text-primary-red flex items-center transition-colors"
                         >
                           <LogOut size={16} className="mr-2" />
                           Sign Out
@@ -463,7 +463,7 @@ const Navbar = () => {
               ) : (
                 <button
                   onClick={handleSignIn}
-                  className="flex items-center text-black hover:text-primary-red focus:outline-none"
+                  className="flex items-center text-charcoal-950 hover:text-primary-red focus:outline-none transition-colors"
                   aria-label="Account"
                 >
                   <User size={20} />
@@ -476,12 +476,12 @@ const Navbar = () => {
             {(!user || user.role === 'customer') && (
               <Link
                 href="/cart"
-                className="text-black hover:text-primary-red focus:outline-none relative"
+                className="text-charcoal-950 hover:text-primary-red focus:outline-none relative transition-colors"
                 aria-label="Cart"
               >
                 <ShoppingCart size={20} />
                 {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-primary-red text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-primary-red text-white text-xs h-5 w-5 flex items-center justify-center">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
                 )}
@@ -493,49 +493,49 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
+        <div className="md:hidden bg-white border-t border-warm-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1">
             <Link
               href="/ai-features"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50 flex items-center gap-2"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 flex items-center gap-2 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               AI Features
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-primary-red text-white">
                 New
               </span>
             </Link>
             <Link
               href="/products"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Blinds
             </Link>
             <Link
               href="/shades"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Shades
             </Link>
             <Link
               href="/shutters"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Shutters
             </Link>
             <Link
               href="/motorized"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Motorized
             </Link>
             <Link
               href="/measure-install"
-              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+              className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               Measure & Install
@@ -545,14 +545,14 @@ const Navbar = () => {
               <>
                 <Link
                   href={getDashboardUrl()}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+                  className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Dashboard
                 </Link>
                 <Link
                   href="/account/orders"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+                  className="block px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   My Orders
@@ -562,7 +562,7 @@ const Navbar = () => {
                     handleLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
                 >
                   Sign Out
                 </button>
@@ -573,7 +573,7 @@ const Navbar = () => {
                   handleSignIn();
                   setMobileMenuOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary-red hover:bg-gray-50"
+                className="block w-full text-left px-3 py-2 text-base font-medium text-charcoal-800 hover:text-primary-red hover:bg-red-50 transition-colors"
               >
                 Sign In
               </button>
@@ -582,24 +582,24 @@ const Navbar = () => {
         </div>
       )}
     </header>
-    
+
     {/* Secondary navigation bar */}
-    <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
+    <div className="bg-warm-gray-50 border-b border-warm-gray-200 hidden lg:block">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center space-x-8 py-3 text-sm">
-          <Link href="/products" className="text-black hover:text-primary-red font-medium">
+          <Link href="/products" className="text-charcoal-950 hover:text-primary-red font-medium transition-colors">
             Shop by Room
           </Link>
-          <Link href="/products?sale=true" className="text-red-600 hover:text-red-700 font-bold">
+          <Link href="/products?sale=true" className="text-primary-red hover:text-primary-dark font-bold transition-colors">
             Sale - Up to 50% Off
           </Link>
-          <Link href="/samples" className="text-black hover:text-primary-red font-medium">
+          <Link href="/samples" className="text-charcoal-950 hover:text-primary-red font-medium transition-colors">
             Free Samples
           </Link>
-          <Link href="/inspiration" className="text-black hover:text-primary-red font-medium">
+          <Link href="/inspiration" className="text-charcoal-950 hover:text-primary-red font-medium transition-colors">
             Design Ideas
           </Link>
-          <Link href="/commercial" className="text-black hover:text-primary-red font-medium">
+          <Link href="/commercial" className="text-charcoal-950 hover:text-primary-red font-medium transition-colors">
             Commercial
           </Link>
         </div>

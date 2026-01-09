@@ -25,7 +25,7 @@ export default function AboutPage() {
       description: 'We source and manufacture only the highest quality window treatments.'
     },
     {
-      icon: <Shield className="h-8 w-8 text-blue-500" />,
+      icon: <Shield className="h-8 w-8 text-primary-red" />,
       title: 'Integrity',
       description: 'Honest pricing, transparent processes, and trustworthy service.'
     },
@@ -73,7 +73,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <section className="bg-primary-red text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
@@ -110,7 +110,7 @@ export default function AboutPage() {
             {stats.map((stat, index) => (
               <div key={index}>
                 <div className="text-4xl font-bold mb-2">{stat.number}</div>
-                <div className="text-blue-100">{stat.label}</div>
+                <div className="text-red-100">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -147,7 +147,7 @@ export default function AboutPage() {
               <div className="space-y-4">
                 {milestones.map((milestone, index) => (
                   <div key={index} className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0">
+                    <div className="bg-primary-red text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0">
                       {milestone.year.slice(-2)}
                     </div>
                     <div>
@@ -194,7 +194,7 @@ export default function AboutPage() {
                 </div>
                 <div className="p-6">
                   <h3 className="text-lg font-bold text-gray-900">{member.name}</h3>
-                  <p className="text-blue-600 font-medium mb-2">{member.role}</p>
+                  <p className="text-primary-red font-medium mb-2">{member.role}</p>
                   <p className="text-gray-600 text-sm">{member.bio}</p>
                 </div>
               </div>
@@ -211,7 +211,7 @@ export default function AboutPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <Home className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <Home className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Local Expertise</h3>
               <p className="text-gray-600">
                 Washington-based company with deep understanding of local styles, climate, and customer needs.
@@ -271,7 +271,7 @@ export default function AboutPage() {
               <p className="text-gray-600 text-sm">Window Treatment Specialists</p>
             </div>
             <div className="text-center">
-              <Star className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+              <Star className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="font-bold text-gray-900">A+ BBB Rating</h3>
               <p className="text-gray-600 text-sm">Better Business Bureau</p>
             </div>
@@ -295,7 +295,7 @@ export default function AboutPage() {
           <h2 className="text-4xl font-bold mb-6">
             Ready to Join the Smart Blinds Family?
           </h2>
-          <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
             Discover why over 50,000 Washington families have trusted us with their window treatment needs.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">

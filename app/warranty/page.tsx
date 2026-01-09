@@ -29,7 +29,7 @@ export default function WarrantyPage() {
         'Installation-related issues'
       ],
       duration: '10 years from purchase',
-      icon: <Shield className="h-8 w-8 text-blue-500" />
+      icon: <Shield className="h-8 w-8 text-primary-red" />
     },
     {
       name: '5-Year Basic Warranty',
@@ -103,32 +103,32 @@ export default function WarrantyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <div className="bg-primary-red text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Smart Blinds Warranty Protection
             </h1>
-            <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
-              We stand behind every product with comprehensive warranty coverage. 
-              From lifetime protection on premium shutters to 5-year coverage on all products, 
+            <p className="text-xl mb-8 text-white/80 max-w-3xl mx-auto">
+              We stand behind every product with comprehensive warranty coverage.
+              From lifetime protection on premium shutters to 5-year coverage on all products,
               your investment is protected.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
-                <Shield className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Shield className="h-12 w-12 text-white/80 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Comprehensive Coverage</h3>
-                <p className="text-blue-100">Protection against manufacturing defects and material failures</p>
+                <p className="text-white/70">Protection against manufacturing defects and material failures</p>
               </div>
               <div className="text-center">
-                <Clock className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Clock className="h-12 w-12 text-white/80 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Fast Resolution</h3>
-                <p className="text-blue-100">Quick warranty claims processing and service</p>
+                <p className="text-white/70">Quick warranty claims processing and service</p>
               </div>
               <div className="text-center">
-                <Users className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Users className="h-12 w-12 text-white/80 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Expert Support</h3>
-                <p className="text-blue-100">Dedicated warranty team ready to help</p>
+                <p className="text-white/70">Dedicated warranty team ready to help</p>
               </div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default function WarrantyPage() {
                   {plan.icon}
                 </div>
                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <p className="text-blue-100">{plan.description}</p>
+                <p className="text-white/70">{plan.description}</p>
               </div>
               <div className="p-6">
                 <div className="mb-6">
@@ -189,10 +189,10 @@ export default function WarrantyPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {warrantyProcess.map((step, index) => (
               <div key={index} className="text-center">
-                <div className="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <div className="bg-primary-red text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
                   {step.icon}
                 </div>
-                <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mx-auto mb-4">
+                <div className="bg-primary-red text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mx-auto mb-4">
                   {step.step}
                 </div>
                 <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
@@ -214,12 +214,12 @@ export default function WarrantyPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
             <div className="bg-white/10 rounded-lg p-6">
-              <Phone className="h-8 w-8 text-blue-400 mx-auto mb-4" />
+              <Phone className="h-8 w-8 text-primary-red mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Call Us</h3>
               <p className="text-gray-300 mb-4">Speak directly with our warranty specialists</p>
               <a 
                 href="tel:+1-316-530-2635"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
+                className="bg-primary-red text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors inline-block"
               >
                 (316) 530-2635
               </a>
@@ -260,24 +260,24 @@ export default function WarrantyPage() {
       </div>
 
       {/* Product Registration CTA */}
-      <div className="bg-blue-600 text-white py-16">
+      <div className="bg-primary-red text-white py-16">
         <div className="max-w-4xl mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">
             Register Your Products
           </h2>
-          <p className="text-xl mb-8 text-blue-100">
+          <p className="text-xl mb-8 text-white/80">
             Register your Smart Blinds products to ensure full warranty coverage and faster service.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/account/products/register"
-              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
             >
               Register Products
             </Link>
             <Link
               href="/consultation"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors"
             >
               Schedule Service Call
             </Link>
@@ -293,7 +293,7 @@ export default function WarrantyPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <Wrench className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <Wrench className="h-12 w-12 text-primary-red mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Free Repairs</h3>
               <p className="text-gray-600">
                 Covered repairs are performed at no cost, including parts and labor.

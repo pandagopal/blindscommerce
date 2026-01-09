@@ -10,12 +10,12 @@ function CheckoutSuccessContent() {
   const orderNumber = searchParams.get('order') || 'Order confirmed';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center px-4">
       <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-red-100 p-8 text-center">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <ShieldCheck className="h-8 w-8 text-green-600" />
         </div>
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-600 to-primary-red bg-clip-text text-transparent">
           Payment Successful!
         </h1>
         <p className="text-gray-600 mb-6">
@@ -38,9 +38,9 @@ function CheckoutSuccessContent() {
           >
             View Orders
           </Link>
-          <Link 
-            href="/" 
-            className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block"
+          <Link
+            href="/"
+            className="bg-primary-red hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-xl inline-block"
           >
             Continue Shopping
           </Link>
@@ -53,7 +53,7 @@ function CheckoutSuccessContent() {
 export default function CheckoutSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center px-4">
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg border border-red-100 p-8 text-center">
           <p>Loading...</p>
         </div>
