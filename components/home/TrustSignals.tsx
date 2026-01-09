@@ -5,118 +5,109 @@ import { Shield, Truck, Award, CreditCard, Clock, Headphones } from 'lucide-reac
 const trustItems = [
   {
     icon: Truck,
-    title: 'Free Shipping',
-    description: 'On orders over $100',
-    highlight: true
+    title: 'Complimentary Shipping',
+    description: 'On orders over $100'
   },
   {
     icon: Shield,
     title: 'Lifetime Warranty',
-    description: 'Quality guaranteed',
-    highlight: false
+    description: 'Craftsmanship guaranteed'
   },
   {
     icon: Clock,
-    title: 'Easy Returns',
-    description: '30-day return policy',
-    highlight: false
+    title: 'Effortless Returns',
+    description: '30-day satisfaction policy'
   },
   {
     icon: Award,
-    title: '50,000+ Customers',
-    description: 'Trusted nationwide',
-    highlight: false
+    title: '50,000+ Clients',
+    description: 'Trusted nationwide'
   },
   {
     icon: CreditCard,
-    title: 'Secure Payment',
-    description: 'SSL encrypted checkout',
-    highlight: false
+    title: 'Secure Checkout',
+    description: 'SSL encrypted transactions'
   },
   {
     icon: Headphones,
-    title: 'Expert Support',
-    description: 'Mon-Fri 8am-8pm EST',
-    highlight: false
+    title: 'Concierge Support',
+    description: 'Mon-Fri 8am-8pm EST'
   }
 ];
 
 export default function TrustSignals() {
   return (
-    <section className="bg-white py-8 border-b border-gray-100">
+    <section className="bg-white border-b border-gray-100">
       <div className="container mx-auto px-4">
-        {/* Trust Items Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
+        {/* Trust Items - Elegant Horizontal Strip */}
+        <div className="py-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-0 divide-x divide-gray-100">
           {trustItems.map((item, index) => (
             <div
               key={index}
-              className={`flex flex-col items-center text-center p-4 rounded-xl transition-all duration-300 hover:shadow-md ${
-                item.highlight
-                  ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-100'
-                  : 'hover:bg-gray-50'
-              }`}
+              className="group flex flex-col items-center text-center px-4 py-4 transition-all duration-500 hover:bg-gradient-to-b hover:from-red-50/50 hover:to-transparent"
             >
-              <div className={`p-3 rounded-full mb-3 ${
-                item.highlight
-                  ? 'bg-primary-red text-white'
-                  : 'bg-blue-50 text-blue-600'
-              }`}>
-                <item.icon className="w-5 h-5" />
+              <div className="p-3 mb-3 border border-gray-200 group-hover:border-primary-red group-hover:bg-primary-red transition-all duration-500">
+                <item.icon className="w-5 h-5 text-gray-600 group-hover:text-white transition-colors duration-500" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-sm">{item.title}</h3>
-              <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+              <h3 className="font-medium text-gray-900 text-sm tracking-wide">{item.title}</h3>
+              <p className="text-xs text-gray-500 mt-1 font-light">{item.description}</p>
             </div>
           ))}
         </div>
 
-        {/* Rating Badges */}
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 md:gap-10 pt-6 border-t border-gray-100">
-          {/* Google Reviews */}
-          <div className="flex items-center gap-2">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <svg key={star} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
-                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                </svg>
-              ))}
+        {/* Rating & Credentials Bar */}
+        <div className="py-6 border-t border-gray-100">
+          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+            {/* Google Reviews */}
+            <div className="flex items-center gap-3">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg key={star} className="w-4 h-4 text-primary-red fill-current" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                ))}
+              </div>
+              <div className="text-sm">
+                <span className="font-semibold text-gray-900">4.8</span>
+                <span className="text-gray-400 font-light"> / 5</span>
+                <span className="text-gray-400 text-xs ml-2 tracking-wide">(2,450+ reviews)</span>
+              </div>
             </div>
-            <div className="text-sm">
-              <span className="font-bold text-gray-900">4.8</span>
-              <span className="text-gray-500"> / 5</span>
-              <span className="text-gray-400 text-xs ml-1">(2,450+ reviews)</span>
+
+            {/* Elegant Divider */}
+            <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
+
+            {/* BBB Rating */}
+            <div className="flex items-center gap-3">
+              <div className="bg-primary-red text-white text-xs font-bold px-3 py-1.5 tracking-wider">
+                A+
+              </div>
+              <span className="text-sm text-gray-600 font-light tracking-wide">BBB Accredited</span>
             </div>
-          </div>
 
-          {/* Divider */}
-          <div className="hidden md:block w-px h-8 bg-gray-200" />
+            {/* Elegant Divider */}
+            <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-gray-300 to-transparent" />
 
-          {/* BBB Rating */}
-          <div className="flex items-center gap-2">
-            <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
-              A+
+            {/* Secure Checkout */}
+            <div className="flex items-center gap-3">
+              <Shield className="w-5 h-5 text-primary-red" />
+              <span className="text-sm text-gray-600 font-light tracking-wide">256-bit SSL Secure</span>
             </div>
-            <span className="text-sm text-gray-600">BBB Accredited</span>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden md:block w-px h-8 bg-gray-200" />
-
-          {/* Secure Checkout */}
-          <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-green-600" />
-            <span className="text-sm text-gray-600">256-bit SSL Secure</span>
           </div>
         </div>
 
-        {/* Payment Methods - Using text fallback since images may not exist */}
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-gray-400">
-          <span className="text-xs uppercase tracking-wide">We Accept:</span>
+        {/* Payment Methods - Refined */}
+        <div className="py-5 border-t border-gray-100 flex flex-wrap items-center justify-center gap-6">
+          <span className="text-xs uppercase tracking-[0.2em] text-gray-400 font-medium">Accepted Payment Methods</span>
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Visa</span>
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Mastercard</span>
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Amex</span>
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">PayPal</span>
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Apple Pay</span>
+            {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay'].map((method) => (
+              <span
+                key={method}
+                className="text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1.5 border border-gray-100 hover:border-primary-red hover:text-primary-red transition-colors duration-300"
+              >
+                {method}
+              </span>
+            ))}
           </div>
         </div>
       </div>

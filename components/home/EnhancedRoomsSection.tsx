@@ -49,16 +49,27 @@ export default function EnhancedRoomsSection({
   };
 
   return (
-    <section className="py-16 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-white relative">
+      {/* Subtle Top Accent */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+
+      <div className="container mx-auto px-6 lg:px-12">
         {/* Header */}
-        <ScrollAnimationWrapper animation="fadeInUp" className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{title}</h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">{subtitle}</p>
+        <ScrollAnimationWrapper animation="fadeInUp" className="text-center mb-14">
+          <div className="inline-flex items-center gap-4 mb-6">
+            <span className="w-12 h-px bg-primary-red" />
+            <span className="text-primary-red text-sm font-medium tracking-[0.3em] uppercase">Explore Spaces</span>
+            <span className="w-12 h-px bg-primary-red" />
+          </div>
+          <h2 className="text-4xl md:text-5xl text-gray-900 mb-4">
+            <span className="font-light">{title.split(' ').slice(0, 2).join(' ')}</span>{' '}
+            <span className="font-semibold">{title.split(' ').slice(2).join(' ')}</span>
+          </h2>
+          <p className="text-gray-500 text-lg max-w-2xl mx-auto font-light">{subtitle}</p>
         </ScrollAnimationWrapper>
 
         {/* Bento Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 auto-rows-[200px] lg:auto-rows-[180px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 auto-rows-[220px] lg:auto-rows-[200px]">
           {/* Featured Room - Large Card */}
           <ScrollAnimationWrapper
             animation="fadeInUp"
@@ -81,7 +92,6 @@ export default function EnhancedRoomsSection({
               key={room.room_type_id || room.id || index}
               animation="fadeInUp"
               delay={(index + 1) * 100}
-              className={index < 2 ? '' : ''}
             >
               <RoomCard
                 room={room}
@@ -96,13 +106,13 @@ export default function EnhancedRoomsSection({
         </div>
 
         {/* View All Rooms Link */}
-        <ScrollAnimationWrapper animation="fadeInUp" delay={400} className="text-center mt-10">
+        <ScrollAnimationWrapper animation="fadeInUp" delay={400} className="text-center mt-12">
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 text-primary-red hover:text-primary-red-dark font-semibold transition-colors group"
+            className="inline-flex items-center gap-3 text-gray-900 hover:text-primary-red font-medium transition-all duration-500 group"
           >
-            Browse All Rooms
-            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            <span className="uppercase tracking-wider text-sm">Browse All Rooms</span>
+            <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-2" />
           </Link>
         </ScrollAnimationWrapper>
       </div>
@@ -110,7 +120,7 @@ export default function EnhancedRoomsSection({
   );
 }
 
-// Room Card Component with Parallax Tilt Effect
+// Room Card Component with Parallax Tilt Effect - Luxury Styled
 function RoomCard({
   room,
   isHovered,
@@ -139,8 +149,8 @@ function RoomCard({
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
 
-    const rotateX = (y - centerY) / 20;
-    const rotateY = (centerX - x) / 20;
+    const rotateX = (y - centerY) / 25;
+    const rotateY = (centerX - x) / 25;
 
     setTiltStyle({
       transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`
@@ -158,7 +168,7 @@ function RoomCard({
     <Link href={getRoomLink(room)}>
       <div
         ref={cardRef}
-        className="relative h-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-500"
+        className="relative h-full overflow-hidden group cursor-pointer transition-all duration-700"
         style={tiltStyle}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => onHover(roomId)}
@@ -169,35 +179,29 @@ function RoomCard({
           src={getImageUrl(room)}
           alt={room.name}
           fill
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          className="object-cover transition-transform duration-1000 group-hover:scale-110"
         />
 
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-500" />
+        {/* Gradient Overlay - More Elegant */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-500" />
 
-        {/* Shine Effect on Hover */}
-        <div
-          className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent transition-opacity duration-500 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}
-          style={{
-            transform: 'translateX(-100%)',
-            animation: isHovered ? 'shine 0.7s ease-in-out forwards' : 'none'
-          }}
-        />
+        {/* Red Accent Line on Hover */}
+        <div className={`absolute bottom-0 left-0 h-1 bg-primary-red transition-all duration-700 ${
+          isHovered ? 'w-full' : 'w-0'
+        }`} />
 
         {/* Content */}
         <div className="absolute inset-0 p-6 flex flex-col justify-end">
-          {/* Product Count Badge */}
+          {/* Product Count Badge - Elegant */}
           {room.product_count && (
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
-              <Package className="w-3.5 h-3.5" />
+            <div className="absolute top-5 right-5 bg-white/95 backdrop-blur-sm text-gray-900 text-xs font-medium px-4 py-2 flex items-center gap-2 tracking-wide">
+              <Package className="w-3.5 h-3.5 text-primary-red" />
               {room.product_count} products
             </div>
           )}
 
           {/* Room Name */}
-          <h3 className={`font-bold text-white mb-2 transition-transform duration-300 group-hover:-translate-y-1 ${
+          <h3 className={`font-semibold text-white mb-2 transition-transform duration-500 group-hover:-translate-y-1 tracking-wide ${
             isFeatured ? 'text-3xl' : 'text-xl'
           }`}>
             {room.name}
@@ -205,27 +209,29 @@ function RoomCard({
 
           {/* Description (Featured Only) */}
           {isFeatured && room.description && (
-            <p className="text-white/80 text-sm mb-3 line-clamp-2 max-w-md">
+            <p className="text-white/70 text-sm mb-4 line-clamp-2 max-w-md font-light">
               {room.description}
             </p>
           )}
 
-          {/* Shop Now Link */}
-          <div className="flex items-center gap-2 text-white font-medium transition-all duration-300 group-hover:gap-3">
-            <span className={isFeatured ? 'text-base' : 'text-sm'}>Shop Now</span>
-            <ArrowRight className={`transition-transform duration-300 group-hover:translate-x-1 ${
+          {/* Shop Now Link - Elegant */}
+          <div className="flex items-center gap-2 text-white font-medium transition-all duration-500 group-hover:text-primary-red">
+            <span className={`uppercase tracking-wider ${isFeatured ? 'text-sm' : 'text-xs'}`}>Shop Now</span>
+            <ArrowRight className={`transition-transform duration-500 group-hover:translate-x-2 ${
               isFeatured ? 'w-5 h-5' : 'w-4 h-4'
             }`} />
           </div>
         </div>
 
-        {/* Border Glow Effect */}
+        {/* Shine Effect on Hover */}
         <div
-          className={`absolute inset-0 rounded-2xl border-2 transition-all duration-500 ${
-            isHovered
-              ? 'border-white/50 shadow-[inset_0_0_20px_rgba(255,255,255,0.1)]'
-              : 'border-transparent'
+          className={`absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent transition-opacity duration-500 ${
+            isHovered ? 'opacity-100' : 'opacity-0'
           }`}
+          style={{
+            transform: 'translateX(-100%)',
+            animation: isHovered ? 'shine 0.8s ease-in-out forwards' : 'none'
+          }}
         />
       </div>
     </Link>

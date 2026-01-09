@@ -136,6 +136,14 @@ export default function EnhancedProductsClient({
     }
   }, [searchQuery, initialProducts]);
 
+  // Sync state with props when navigation changes (e.g., switching categories)
+  useEffect(() => {
+    setProducts(initialProducts);
+    setSelectedCategories(initialCategoryId ? [initialCategoryId] : []);
+    setPage(1);
+    setHasMore(initialProducts.length < (totalCount || 0));
+  }, [initialProducts, initialCategoryId, totalCount]);
+
   // Load wishlist from localStorage
   useEffect(() => {
     try {
@@ -224,7 +232,7 @@ export default function EnhancedProductsClient({
       params.set('offset', (nextPage * 20).toString());
 
       if (selectedCategories.length === 1) {
-        params.set('category', selectedCategories[0].toString());
+        params.set('categoryId', selectedCategories[0].toString());
       }
       if (debouncedSearch) {
         params.set('search', debouncedSearch);
