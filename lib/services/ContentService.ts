@@ -84,9 +84,9 @@ export class ContentService extends BaseService {
     }
   }
 
-  async getRooms(): Promise<{ rooms: Room[] }> {
+  async getRooms(activeOnly: boolean = true): Promise<{ rooms: Room[] }> {
     try {
-      const cacheKey = 'rooms:admin=false';
+      const cacheKey = `rooms:activeOnly=${activeOnly}`;
 
       // Try to get from cache first
       const cached = await getCache<Room[]>(cacheKey);
@@ -103,8 +103,10 @@ export class ContentService extends BaseService {
           image_url,
           typical_humidity,
           light_exposure,
-          privacy_requirements
+          privacy_requirements,
+          is_active
         FROM room_types
+        ${activeOnly ? 'WHERE is_active = 1' : ''}
         ORDER BY name ASC
       `;
 

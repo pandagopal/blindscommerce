@@ -297,9 +297,9 @@ export class CommerceHandler extends BaseHandler {
         },
         pricingFormula: {
           query: `
-            SELECT formula_id, pricing_type, fixed_base, 
+            SELECT formula_id, pricing_type, fixed_base,
                    width_rate, height_rate, area_rate,
-                   min_price, max_price
+                   min_charge, system_type, fabric_code
             FROM product_pricing_formulas
             WHERE product_id = ? AND is_active = 1
             LIMIT 1

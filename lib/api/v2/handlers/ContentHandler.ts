@@ -19,7 +19,7 @@ export class ContentHandler extends BaseHandler {
   async handleGET(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'social-accounts': () => this.getSocialAccounts(),
-      'rooms': () => this.getRooms(user),
+      'rooms': () => this.getRooms(req, user),
       'hero-banners': () => this.getHeroBanners(),
       'recently-viewed': () => this.getRecentlyViewed(req),
       'email-templates': () => this.getEmailTemplates(user),
@@ -90,11 +90,16 @@ export class ContentHandler extends BaseHandler {
     }
   }
 
-  private async getRooms(user: any) {
+  private async getRooms(req: NextRequest, user: any) {
     try {
-      // For admin users, get all rooms including inactive ones
+      // Check for 'all' query parameter to get all rooms (for product configurator)
+      const url = new URL(req.url);
+      const showAll = url.searchParams.get('all') === 'true';
+
+      // For admin users or when 'all' param is true, get all rooms including inactive ones
       const isAdmin = user?.role === 'ADMIN';
-      const cacheKey = `rooms:admin=${isAdmin}`;
+      const includeInactive = isAdmin || showAll;
+      const cacheKey = `rooms:includeInactive=${includeInactive}`;
 
       // Try to get from cache first
       const cached = await getCache<any[]>(cacheKey);
@@ -107,7 +112,7 @@ export class ContentHandler extends BaseHandler {
       }
 
       const pool = await getPool();
-      const whereClause = isAdmin ? '' : 'WHERE is_active = 1';
+      const whereClause = includeInactive ? '' : 'WHERE is_active = 1';
 
       const [rows] = await pool.execute<RowDataPacket[]>(
         `SELECT

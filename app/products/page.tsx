@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import ProductsClient from "@/components/ProductsClient";
+import { EnhancedProductsClient } from "@/components/products";
 
 // Enable caching with 5 minute revalidation
 export const revalidate = 300; // 5 minutes
@@ -11,16 +11,16 @@ export async function generateMetadata({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const params = await searchParams;
-  
+
   const categoryParam = typeof params.category === 'string' ? params.category : undefined;
   const roomParam = typeof params.room === 'string' ? params.room : undefined;
   const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
   const searchParam = typeof params.search === 'string' ? params.search : undefined;
-  
+
   // Category ID to name mapping for SEO
   const categoryNames: Record<string, string> = {
     '1': 'Venetian Blinds',
-    '2': 'Vertical Blinds', 
+    '2': 'Vertical Blinds',
     '3': 'Roller Blinds',
     '4': 'Roman Blinds',
     '5': 'Wooden Blinds',
@@ -36,10 +36,10 @@ export async function generateMetadata({
     '15': 'Composite Shutters',
     '22': 'Motorized Window Treatments'
   };
-  
+
   let title = "Shop Custom Window Treatments | Smart Blinds Hub";
   let description = "Browse our wide selection of custom blinds, shades, and shutters. Find the perfect window treatment for your home.";
-  
+
   if (roomParam) {
     const roomName = roomParam.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     title = `${roomName} Window Treatments | Smart Blinds Hub`;
@@ -55,7 +55,7 @@ export async function generateMetadata({
     title = `Search Results: "${searchParam}" | Smart Blinds Hub`;
     description = `Find window treatments matching "${searchParam}". Browse our selection of custom blinds, shades, and shutters.`;
   }
-  
+
   return {
     title,
     description,
@@ -72,10 +72,6 @@ export async function generateMetadata({
     }
   };
 }
-
-// Caching disabled - manual refresh only from Admin dashboard
-
-// Dynamic metadata will be generated in generateMetadata function
 
 // Function to parse category ID from URL
 const getCategoryIdFromParam = (categoryParam: string | undefined): number | null => {
@@ -107,7 +103,7 @@ export default async function ProductsPage({
 }) {
   // Await searchParams as required in Next.js 15
   const params = await searchParams;
-  
+
   // Extract query parameters - handle potential arrays by taking the first value
   const categoryParam = typeof params.category === 'string' ? params.category : undefined;
   const roomParam = typeof params.room === 'string' ? params.room : undefined;
@@ -136,7 +132,6 @@ export default async function ProductsPage({
 
   const searchParam = typeof params.search === 'string' ? params.search : undefined;
   const saleParam = typeof params.sale === 'string' ? params.sale : undefined;
-  const messageParam = typeof params.message === 'string' ? params.message : undefined;
 
   // Parse the feature IDs if present
   const featureIds: number[] = [];
@@ -154,7 +149,7 @@ export default async function ProductsPage({
   const categoryId = getCategoryIdFromParam(categoryParam);
   const minPrice = getPriceFromParam(minPriceParam);
   const maxPrice = getPriceFromParam(maxPriceParam);
-  
+
   // Determine page context for dynamic content
   const pageContext = {
     isRoomFiltered: !!roomParam,
@@ -171,6 +166,7 @@ export default async function ProductsPage({
   let categories = [];
   let products = [];
   let features = [];
+  let totalCount = 0;
 
   try {
     // Fetch data in parallel (caching happens at API level via cacheManager)
@@ -192,13 +188,14 @@ export default async function ProductsPage({
 
     categories = categoriesResult || [];
     products = productsResult?.products || [];
+    totalCount = productsResult?.total || products.length;
 
     // Features will be empty for now
     features = [];
-    
+
     // Update page context with category name
     if (categoryId && categories.length > 0) {
-      const selectedCategory = categories.find(cat => cat.category_id === categoryId);
+      const selectedCategory = categories.find((cat: any) => cat.category_id === categoryId);
       if (selectedCategory) {
         pageContext.categoryName = selectedCategory.name;
       }
@@ -211,85 +208,65 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Dynamic Header Based on Filters */}
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-            {pageContext.isRoomFiltered 
-              ? `${pageContext.roomName} Window Treatments`
-              : pageContext.isCategoryFiltered 
-              ? `${pageContext.categoryName} Collection`
-              : pageContext.isSaleFiltered
-              ? `Sale - Up to 50% Off Window Treatments`
-              : pageContext.isSearchFiltered
-              ? `Search Results: "${searchParam}"`
-              : `Shop Custom Window Treatments`}
-          </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            {pageContext.isRoomFiltered 
-              ? `Perfect window treatments designed specifically for your ${pageContext.roomName?.toLowerCase()}`
-              : pageContext.isCategoryFiltered 
-              ? `Explore our premium ${pageContext.categoryName?.toLowerCase()} collection`
-              : pageContext.isSaleFiltered
-              ? `Limited time offers on premium blinds, shades, and shutters`
-              : pageContext.isSearchFiltered
-              ? `Found ${products.length} products matching your search`
-              : `Discover our premium collection of blinds, shades, and window treatments crafted for your home`}
-          </p>
-          
-          {/* Breadcrumb Navigation */}
-          <div className="mt-4 text-sm text-gray-500">
-            <span>Home</span>
-            <span className="mx-2">›</span>
-            <span>Products</span>
-            {pageContext.isRoomFiltered && (
-              <>
-                <span className="mx-2">›</span>
-                <span className="text-primary-red">{pageContext.roomName}</span>
-              </>
-            )}
-            {pageContext.isCategoryFiltered && (
-              <>
-                <span className="mx-2">›</span>
-                <span className="text-primary-red">{pageContext.categoryName}</span>
-              </>
-            )}
-            {pageContext.isSaleFiltered && (
-              <>
-                <span className="mx-2">›</span>
-                <span className="text-primary-red">Sale</span>
-              </>
-            )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-3xl">
+            {/* Breadcrumb */}
+            <nav className="text-sm text-blue-200 mb-4">
+              <a href="/" className="hover:text-white">Home</a>
+              <span className="mx-2">/</span>
+              <span className="text-white">Products</span>
+              {pageContext.isRoomFiltered && (
+                <>
+                  <span className="mx-2">/</span>
+                  <span className="text-white">{pageContext.roomName}</span>
+                </>
+              )}
+              {pageContext.isCategoryFiltered && (
+                <>
+                  <span className="mx-2">/</span>
+                  <span className="text-white">{pageContext.categoryName}</span>
+                </>
+              )}
+            </nav>
+
+            {/* Title */}
+            <h1 className="text-3xl md:text-4xl font-bold mb-3">
+              {pageContext.isRoomFiltered
+                ? `${pageContext.roomName} Window Treatments`
+                : pageContext.isCategoryFiltered
+                ? pageContext.categoryName
+                : pageContext.isSaleFiltered
+                ? "Sale Items"
+                : pageContext.isSearchFiltered
+                ? `Results for "${searchParam}"`
+                : "Shop All Window Treatments"}
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-blue-100 text-lg">
+              {pageContext.isRoomFiltered
+                ? `Find the perfect blinds and shades for your ${pageContext.roomName?.toLowerCase()}`
+                : pageContext.isCategoryFiltered
+                ? `Premium quality ${pageContext.categoryName?.toLowerCase()} for every home`
+                : pageContext.isSaleFiltered
+                ? "Limited time offers - up to 50% off select items"
+                : pageContext.isSearchFiltered
+                ? `Found ${totalCount} products matching your search`
+                : "Discover premium blinds, shades & shutters for your home"}
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Message Alert */}
-        {messageParam === 'category-not-found' && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start">
-              <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-              </svg>
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-blue-800">
-                  We couldn't find that specific category
-                </h3>
-                <p className="mt-1 text-sm text-blue-700">
-                  {searchParam 
-                    ? `We're showing results for "${searchParam}" instead. Browse all our products below or use the filters to find what you need.`
-                    : "Browse all our window treatments below or use the filters to find exactly what you're looking for."}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-      {/* Filters and products section - Client-side filtering */}
-      <ProductsClient
+      {/* Enhanced Products Section */}
+      <EnhancedProductsClient
         initialProducts={products}
         categories={categories}
         features={features}
+        totalCount={totalCount}
         initialCategoryId={categoryId}
         initialMinPrice={minPrice}
         initialMaxPrice={maxPrice}
@@ -297,9 +274,8 @@ export default async function ProductsPage({
         initialFeatures={featureIds}
         initialRoom={roomParam}
         initialSale={saleParam === 'true'}
-        pageContext={pageContext}
+        initialSearch={searchParam}
       />
-      </div>
     </div>
   );
 }
