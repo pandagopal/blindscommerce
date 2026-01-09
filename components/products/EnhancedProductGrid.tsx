@@ -59,16 +59,16 @@ const ColorSwatch = ({ colors }: { colors: string[] }) => {
 // Product badge component
 const ProductBadge = ({ type }: { type: 'new' | 'sale' | 'bestseller' }) => {
   const badges = {
-    new: { bg: 'bg-charcoal-950', text: 'New', icon: Sparkles },
-    sale: { bg: 'bg-primary-red', text: 'Sale', icon: Tag },
-    bestseller: { bg: 'bg-accent-gold text-charcoal-950', text: 'Best Seller', icon: Star },
+    new: { bg: 'bg-green-500', text: 'New', icon: Sparkles },
+    sale: { bg: 'bg-red-500', text: 'Sale', icon: Tag },
+    bestseller: { bg: 'bg-amber-500', text: 'Best Seller', icon: Star },
   };
 
   const badge = badges[type];
   const Icon = badge.icon;
 
   return (
-    <span className={`${badge.bg} text-white text-xs font-medium px-2 py-1 flex items-center gap-1`}>
+    <span className={`${badge.bg} text-white text-xs font-medium px-2 py-1 rounded-full flex items-center gap-1`}>
       <Icon size={10} />
       {badge.text}
     </span>
@@ -90,18 +90,18 @@ const RatingStars = ({ rating, reviewCount }: { rating?: number; reviewCount?: n
             size={12}
             className={`${
               i < fullStars
-                ? 'text-primary-red fill-primary-red'
+                ? 'text-yellow-400 fill-yellow-400'
                 : i === fullStars && hasHalfStar
-                ? 'text-primary-red fill-primary-red/50'
-                : 'text-warm-gray-300'
+                ? 'text-yellow-400 fill-yellow-400/50'
+                : 'text-gray-300'
             }`}
           />
         ))}
       </div>
-      <span className="text-xs text-warm-gray-500">
+      <span className="text-xs text-gray-500">
         {displayRating > 0 ? displayRating.toFixed(1) : 'N/A'}
         {reviewCount && reviewCount > 0 && (
-          <span className="text-warm-gray-400"> ({reviewCount})</span>
+          <span className="text-gray-400"> ({reviewCount})</span>
         )}
       </span>
     </div>
@@ -137,8 +137,8 @@ const ProductCard = ({
 
   return (
     <div
-      className={`group bg-white border border-warm-gray-200 overflow-hidden transition-all duration-500 ${
-        isHovered ? 'shadow-lg border-primary-red/30 -translate-y-1' : 'shadow-sm hover:shadow-md'
+      className={`group bg-white rounded-xl border border-gray-200 overflow-hidden transition-all duration-300 ${
+        isHovered ? 'shadow-lg border-gray-300 -translate-y-1' : 'shadow-sm hover:shadow-md'
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -177,13 +177,13 @@ const ProductCard = ({
 
         {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-2 right-2 bg-primary-red text-white text-xs font-bold px-2 py-1">
+          <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
             -{discountPercent}%
           </div>
         )}
 
         {/* Hover Actions */}
-        <div className={`absolute inset-0 bg-charcoal-950/50 flex items-center justify-center gap-3 transition-opacity duration-300 ${
+        <div className={`absolute inset-0 bg-black/40 flex items-center justify-center gap-3 transition-opacity duration-300 ${
           isHovered ? 'opacity-100' : 'opacity-0'
         }`}>
           <button
@@ -191,7 +191,7 @@ const ProductCard = ({
               e.preventDefault();
               onQuickView();
             }}
-            className="bg-white text-charcoal-800 p-3 hover:bg-primary-red hover:text-white transition-colors shadow-lg"
+            className="bg-white text-gray-800 p-3 rounded-full hover:bg-gray-100 transition-colors shadow-lg"
             title="Quick View"
           >
             <Eye size={18} />
@@ -201,10 +201,10 @@ const ProductCard = ({
               e.preventDefault();
               onToggleWishlist();
             }}
-            className={`p-3 transition-colors shadow-lg ${
+            className={`p-3 rounded-full transition-colors shadow-lg ${
               isWishlisted
-                ? 'bg-primary-red text-white hover:bg-primary-dark'
-                : 'bg-white text-charcoal-800 hover:bg-primary-red hover:text-white'
+                ? 'bg-red-500 text-white hover:bg-red-600'
+                : 'bg-white text-gray-800 hover:bg-gray-100'
             }`}
             title={isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
           >
@@ -218,10 +218,10 @@ const ProductCard = ({
             e.preventDefault();
             onToggleWishlist();
           }}
-          className={`md:hidden absolute top-2 right-2 p-2 transition-colors ${
+          className={`md:hidden absolute top-2 right-2 p-2 rounded-full transition-colors ${
             isWishlisted
-              ? 'bg-primary-red text-white'
-              : 'bg-white/90 text-charcoal-600'
+              ? 'bg-red-500 text-white'
+              : 'bg-white/80 text-gray-600'
           }`}
         >
           <Heart size={16} className={isWishlisted ? 'fill-current' : ''} />
@@ -232,12 +232,12 @@ const ProductCard = ({
       <Link href={`/products/configure/${product.slug}`}>
         <div className={`p-3 ${isCompact ? 'p-2' : 'p-4'}`}>
           {/* Category */}
-          <p className="text-xs text-primary-red font-medium uppercase tracking-wider mb-1">
+          <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">
             {product.category_name}
           </p>
 
           {/* Product Name */}
-          <h3 className={`font-medium text-charcoal-900 line-clamp-2 group-hover:text-primary-red transition-colors ${
+          <h3 className={`font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors ${
             isCompact ? 'text-sm' : 'text-base'
           }`}>
             {product.name}
@@ -245,7 +245,7 @@ const ProductCard = ({
 
           {/* Description (hidden in compact mode) */}
           {!isCompact && product.short_description && (
-            <p className="text-sm text-warm-gray-500 mt-1 line-clamp-2 font-light">
+            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
               {product.short_description}
             </p>
           )}
@@ -265,15 +265,15 @@ const ProductCard = ({
             <div className="flex items-baseline gap-2">
               {hasDiscount ? (
                 <>
-                  <span className="text-lg font-bold text-primary-red">
+                  <span className="text-lg font-bold text-red-600">
                     ${product.sale_price!.toFixed(2)}
                   </span>
-                  <span className="text-sm text-warm-gray-400 line-through">
+                  <span className="text-sm text-gray-400 line-through">
                     ${product.base_price.toFixed(2)}
                   </span>
                 </>
               ) : (
-                <span className={`font-bold text-charcoal-900 ${isCompact ? 'text-base' : 'text-lg'}`}>
+                <span className={`font-bold text-gray-900 ${isCompact ? 'text-base' : 'text-lg'}`}>
                   ${product.base_price.toFixed(2)}
                 </span>
               )}
@@ -281,7 +281,7 @@ const ProductCard = ({
 
             {/* Configure Button (hidden in compact mode) */}
             {!isCompact && (
-              <span className="text-xs text-primary-red font-medium uppercase tracking-wider group-hover:underline">
+              <span className="text-xs text-blue-600 font-medium group-hover:underline">
                 Configure
               </span>
             )}

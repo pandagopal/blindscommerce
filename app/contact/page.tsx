@@ -42,7 +42,7 @@ export default function ContactPage() {
 
   const contactMethods = [
     {
-      icon: <Phone className="h-8 w-8 text-primary-red" />,
+      icon: <Phone className="h-8 w-8 text-blue-600" />,
       title: 'Phone Support',
       description: 'Speak with our experts',
       contact: '(316) 530-2635',
@@ -97,7 +97,7 @@ export default function ContactPage() {
           <div className="space-y-3">
             <Link 
               href="/consultation"
-              className="w-full bg-primary-red text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors block"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors block"
             >
               Schedule Consultation
             </Link>
@@ -116,31 +116,31 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-primary-red text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Contact Smart Blinds
             </h1>
-            <p className="text-xl mb-8 text-white/70 max-w-3xl mx-auto">
+            <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
               We're here to help with all your window treatment needs. Get in touch with our expert team 
               for consultations, support, or any questions about our products and services.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
-                <Headphones className="h-12 w-12 text-white/80 mx-auto mb-4" />
+                <Headphones className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Expert Support</h3>
-                <p className="text-white/70">Knowledgeable team ready to assist you</p>
+                <p className="text-blue-100">Knowledgeable team ready to assist you</p>
               </div>
               <div className="text-center">
-                <Clock className="h-12 w-12 text-white/80 mx-auto mb-4" />
+                <Clock className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Quick Response</h3>
-                <p className="text-white/70">Fast replies to all inquiries</p>
+                <p className="text-blue-100">Fast replies to all inquiries</p>
               </div>
               <div className="text-center">
-                <Home className="h-12 w-12 text-white/80 mx-auto mb-4" />
+                <Home className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Local Service</h3>
-                <p className="text-white/70">Serving Washington and surrounding areas</p>
+                <p className="text-blue-100">Serving Washington and surrounding areas</p>
               </div>
             </div>
           </div>
@@ -172,7 +172,7 @@ export default function ContactPage() {
               </div>
               <a
                 href={method.action}
-                className="bg-primary-red text-white px-6 py-2 rounded-lg font-medium hover:bg-primary-dark transition-colors inline-block"
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
               >
                 {method.actionText}
               </a>
@@ -187,7 +187,7 @@ export default function ContactPage() {
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white p-6">
               <h2 className="text-2xl font-bold mb-2">Send Us a Message</h2>
-              <p className="text-white/70">Fill out the form below and we'll get back to you soon.</p>
+              <p className="text-blue-100">Fill out the form below and we'll get back to you soon.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -201,7 +201,7 @@ export default function ContactPage() {
                     required
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -212,7 +212,7 @@ export default function ContactPage() {
                     required
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -223,7 +223,7 @@ export default function ContactPage() {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -233,7 +233,7 @@ export default function ContactPage() {
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -246,7 +246,7 @@ export default function ContactPage() {
                     name="inquiryType"
                     value={formData.inquiryType}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select inquiry type</option>
                     {inquiryTypes.map(type => (
@@ -262,7 +262,7 @@ export default function ContactPage() {
                     required
                     value={formData.subject}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -277,14 +277,14 @@ export default function ContactPage() {
                   value={formData.message}
                   onChange={handleInputChange}
                   placeholder="Tell us how we can help you..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-red focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-primary-red text-white py-3 px-6 rounded-lg font-semibold hover:bg-primary-dark transition-colors flex items-center justify-center"
+                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
               >
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Send Message
@@ -304,7 +304,7 @@ export default function ContactPage() {
             {locations.map((location, index) => (
               <div key={index} className="bg-white rounded-lg shadow-lg p-6">
                 <div className="flex items-start mb-4">
-                  <MapPin className="h-6 w-6 text-primary-red mt-1 mr-3 flex-shrink-0" />
+                  <MapPin className="h-6 w-6 text-blue-600 mt-1 mr-3 flex-shrink-0" />
                   <div>
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{location.name}</h3>
                     <p className="text-gray-600 whitespace-pre-line mb-2">{location.address}</p>
@@ -363,19 +363,19 @@ export default function ContactPage() {
           <h2 className="text-3xl font-bold mb-4">
             Ready to Get Started?
           </h2>
-          <p className="text-xl mb-8 text-white/70">
+          <p className="text-xl mb-8 text-blue-100">
             Contact us today for your free consultation and discover why Smart Blinds is the right choice.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
+              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
             >
               Schedule Free Consultation
             </Link>
             <Link
               href="/samples"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
             >
               Order Free Samples
             </Link>

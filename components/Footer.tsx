@@ -4,42 +4,39 @@ import SocialMediaLinks from "./social/SocialMediaLinks";
 
 const Footer = () => {
   return (
-    <footer className="bg-charcoal-950 text-white">
-      {/* Red accent line at top */}
-      <div className="h-1 bg-primary-red" />
-
-      <div className="container mx-auto px-6 lg:px-12 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+    <footer className="bg-footer-bg text-white">
+      <div className="container mx-auto px-4 py-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div>
-            <div className="mb-6">
+            <div className="mb-4">
               <Image
                 src="/images/logo/SmartBlindsLogo.png"
                 alt="Smart Blinds Hub"
                 width={150}
                 height={50}
-                className="brightness-200"
+                className="dark:brightness-200"
               />
             </div>
-            <p className="text-warm-gray-400 mb-6 font-light leading-relaxed">
-              The premier destination for all your window treatment needs. Quality
-              custom blinds, shades, and shutters at exceptional prices.
+            <p className="text-gray-300 mb-4">
+              The best destination for all your window treatment needs. Quality
+              custom blinds, shades, and shutters at great prices.
             </p>
-            <SocialMediaLinks
-              position="footer"
+            <SocialMediaLinks 
+              position="footer" 
               size="medium"
-              className="text-warm-gray-400"
+              className="text-gray-300"
             />
           </div>
 
           {/* Products */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 tracking-wide">Products</h3>
-            <ul className="space-y-3">
+            <h3 className="text-lg font-bold mb-4">Products</h3>
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/products?category=faux-wood-blinds"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Faux Wood Blinds
                 </Link>
@@ -47,7 +44,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=wood-blinds"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Wood Blinds
                 </Link>
@@ -55,7 +52,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=cellular-shades"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Cellular Shades
                 </Link>
@@ -63,7 +60,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=roller-shades"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Roller Shades
                 </Link>
@@ -71,7 +68,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=roman-shades"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Roman Shades
                 </Link>
@@ -81,12 +78,12 @@ const Footer = () => {
 
           {/* Customer Service */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 tracking-wide">Customer Service</h3>
-            <ul className="space-y-3">
+            <h3 className="text-lg font-bold mb-4">Customer Service</h3>
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/help"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Help Center
                 </Link>
@@ -94,7 +91,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/measure-install"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Measurement & Installation
                 </Link>
@@ -102,7 +99,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/returns"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Returns & Warranty
                 </Link>
@@ -110,7 +107,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/contact"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Contact Us
                 </Link>
@@ -120,12 +117,12 @@ const Footer = () => {
 
           {/* About */}
           <div>
-            <h3 className="text-lg font-semibold mb-6 tracking-wide">About</h3>
-            <ul className="space-y-3">
+            <h3 className="text-lg font-bold mb-4">About</h3>
+            <ul className="space-y-2">
               <li>
                 <Link
                   href="/about"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   About Us
                 </Link>
@@ -133,7 +130,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/vendors"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   For Vendors
                 </Link>
@@ -141,7 +138,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/careers"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Careers
                 </Link>
@@ -149,7 +146,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/wiki"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Wiki
                 </Link>
@@ -157,7 +154,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/privacy"
-                  className="text-warm-gray-400 hover:text-primary-red transition-colors font-light"
+                  className="text-gray-300 hover:text-white transition-colors"
                 >
                   Privacy Policy
                 </Link>
@@ -166,8 +163,8 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 text-center text-warm-gray-500 text-sm border-t border-charcoal-800">
-          <p className="font-light">&copy; {new Date().getFullYear()} Smart Blinds Hub. All rights reserved.</p>
+        <div className="mt-8 pt-8 text-center text-gray-300 text-sm border-t border-white border-opacity-10">
+          <p>&copy; {new Date().getFullYear()} Smart Blinds Hub. All rights reserved.</p>
         </div>
       </div>
     </footer>

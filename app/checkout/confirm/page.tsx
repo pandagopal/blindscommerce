@@ -112,7 +112,7 @@ function CheckoutConfirmContent() {
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => router.push('/checkout')}
-              className="bg-primary-red hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
             >
               Return to Checkout
             </button>
@@ -126,7 +126,7 @@ function CheckoutConfirmContent() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary-red mx-auto mb-4" />
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Confirming Your Payment</h1>
           <p className="text-gray-600">Please wait while we process your payment...</p>
         </div>
@@ -141,7 +141,7 @@ export default function CheckoutConfirmPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary-red mx-auto mb-4" />
+            <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Loading...</h1>
           </div>
         </div>

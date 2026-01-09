@@ -124,7 +124,7 @@ export default function ShadesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-primary-red text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
         <div className="container mx-auto px-4 py-20">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -142,7 +142,7 @@ export default function ShadesPage() {
               <div className="flex flex-wrap gap-4">
                 <Link 
                   href={`/products/shades`}
-                  className="bg-primary-red hover:bg-primary-dark text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                  className="bg-primary-red hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
                 >
                   Shop All Shades
                 </Link>
@@ -259,7 +259,7 @@ export default function ShadesPage() {
                   </div>
                   <Link
                     href={`/products/configure/${product.slug}`}
-                    className="w-full bg-primary-red text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary-dark transition-colors text-center block"
+                    className="w-full bg-primary-red text-white py-3 px-4 rounded-lg font-semibold hover:bg-red-700 transition-colors text-center block"
                   >
                     Configure {product.name}
                   </Link>
@@ -295,18 +295,18 @@ export default function ShadesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary-red text-white py-20">
+      <section className="bg-gradient-to-r from-primary-red to-red-700 text-white py-20">
         <div className="container mx-auto text-center px-4">
           <h2 className="text-4xl font-bold mb-6">
             Ready to Transform Your Windows?
           </h2>
-          <p className="text-xl mb-8 text-white/80 max-w-3xl mx-auto">
+          <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
             Get started with a free consultation and see why thousands choose Smart Blinds.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-primary-red hover:bg-primary-dark text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+              className="bg-primary-red hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
             >
               Schedule Free Consultation
             </Link>

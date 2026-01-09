@@ -88,28 +88,28 @@ export default function ShuttersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-primary-red text-white">
+      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-5xl font-bold mb-6">
                 Custom Plantation Shutters
               </h1>
-              <p className="text-xl mb-8 text-white/80">
-                Transform your home with our premium plantation shutters. Handcrafted
-                for perfect fit, superior light control, and timeless elegance that
+              <p className="text-xl mb-8 text-red-100">
+                Transform your home with our premium plantation shutters. Handcrafted 
+                for perfect fit, superior light control, and timeless elegance that 
                 increases your home's value.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
+                <Link 
                   href="/products?category=12"
-                  className="bg-white text-primary-red px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors text-center"
+                  className="bg-white text-red-900 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors text-center"
                 >
                   Shop Shutters
                 </Link>
-                <Link
+                <Link 
                   href="/measure-install"
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-red transition-colors text-center"
+                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-red-900 transition-colors text-center"
                 >
                   Free Measure
                 </Link>
@@ -331,12 +331,12 @@ export default function ShuttersPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-primary-red text-white py-16">
+      <div className="bg-gradient-to-r from-primary-red to-red-700 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready for Custom Plantation Shutters?
           </h2>
-          <p className="text-xl mb-8 text-white/80">
+          <p className="text-xl mb-8 text-red-100">
             Schedule your free consultation today and discover why Smart Blinds is America's #1 choice for custom shutters.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

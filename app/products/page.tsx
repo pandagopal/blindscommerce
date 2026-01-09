@@ -208,13 +208,13 @@ export default async function ProductsPage({
   }
 
   return (
-    <div className="min-h-screen bg-warm-gray-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Hero Header */}
-      <div className="bg-primary-red text-white">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl">
             {/* Breadcrumb */}
-            <nav className="text-sm text-white/70 mb-4">
+            <nav className="text-sm text-blue-200 mb-4">
               <a href="/" className="hover:text-white">Home</a>
               <span className="mx-2">/</span>
               <span className="text-white">Products</span>
@@ -246,7 +246,7 @@ export default async function ProductsPage({
             </h1>
 
             {/* Subtitle */}
-            <p className="text-white/80 text-lg">
+            <p className="text-blue-100 text-lg">
               {pageContext.isRoomFiltered
                 ? `Find the perfect blinds and shades for your ${pageContext.roomName?.toLowerCase()}`
                 : pageContext.isCategoryFiltered

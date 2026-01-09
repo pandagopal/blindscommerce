@@ -136,7 +136,7 @@ export default function QuickViewModal({
                   </span>
                 )}
                 {hasDiscount && (
-                  <span className="bg-primary-red text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full">
                     -{discountPercent}% OFF
                   </span>
                 )}
@@ -146,7 +146,7 @@ export default function QuickViewModal({
             {/* Content Section */}
             <div className="p-6 md:p-8 flex flex-col">
               {/* Category */}
-              <p className="text-sm text-primary-red font-medium uppercase tracking-wide mb-2">
+              <p className="text-sm text-blue-600 font-medium uppercase tracking-wide mb-2">
                 {product.category_name}
               </p>
 
@@ -182,13 +182,13 @@ export default function QuickViewModal({
               <div className="flex items-baseline gap-3 mb-4">
                 {hasDiscount ? (
                   <>
-                    <span className="text-3xl font-bold text-primary-red">
+                    <span className="text-3xl font-bold text-red-600">
                       ${product.sale_price!.toFixed(2)}
                     </span>
                     <span className="text-lg text-gray-400 line-through">
                       ${product.base_price.toFixed(2)}
                     </span>
-                    <span className="text-sm text-primary-red font-medium">
+                    <span className="text-sm text-red-500 font-medium">
                       Save ${(product.base_price - product.sale_price!).toFixed(2)}
                     </span>
                   </>
@@ -243,7 +243,7 @@ export default function QuickViewModal({
                     onClick={onToggleWishlist}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg border font-medium transition-colors ${
                       isWishlisted
-                        ? 'bg-primary-red/10 border-primary-red/30 text-primary-red hover:bg-primary-red/20'
+                        ? 'bg-red-50 border-red-200 text-red-600 hover:bg-red-100'
                         : 'border-gray-300 text-gray-700 hover:bg-gray-50'
                     }`}
                   >

@@ -95,7 +95,7 @@ function RecentOrdersList() {
       <div className="text-center py-8">
         <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 mb-4">No orders yet</p>
-        <Link href="/products" className="text-primary-red hover:text-primary-dark font-medium">
+        <Link href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
           Start Shopping →
         </Link>
       </div>
@@ -109,7 +109,7 @@ function RecentOrdersList() {
       case 'shipped':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
-        return 'bg-red-100 text-primary-dark';
+        return 'bg-blue-100 text-blue-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -164,7 +164,7 @@ function RecentOrdersList() {
       ))}
       
       <div className="text-center pt-4">
-        <Link href="/account/orders" className="text-primary-red hover:text-primary-dark font-medium">
+        <Link href="/account/orders" className="text-blue-600 hover:text-blue-700 font-medium">
           View All Orders →
         </Link>
       </div>
@@ -297,11 +297,11 @@ function AccountPageContent() {
     <div className="container mx-auto px-4 py-8">
       {/* Admin View Banner */}
       {isAdminView && (
-        <div className="mb-6 bg-primary-red text-white px-4 py-3 rounded-lg flex items-center justify-between">
+        <div className="mb-6 bg-blue-500 text-white px-4 py-3 rounded-lg flex items-center justify-between">
           <span>
             Viewing {user?.firstName} {user?.lastName}'s dashboard as administrator
           </span>
-          <Link href="/admin/users" className="text-red-100 hover:text-white underline">
+          <Link href="/admin/users" className="text-blue-100 hover:text-white underline">
             Back to Admin Users
           </Link>
         </div>
@@ -332,7 +332,7 @@ function AccountPageContent() {
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
                 <p className="text-2xl font-bold text-gray-900">{orderStats.totalOrders}</p>
               </div>
-              <ShoppingBag className="w-8 h-8 text-primary-red" />
+              <ShoppingBag className="w-8 h-8 text-blue-600" />
             </div>
           </CardContent>
         </Card>
@@ -404,7 +404,7 @@ function AccountPageContent() {
                 <RecentOrdersList />
 
                 <div className="text-center pt-4">
-                  <Link href="/account/orders" className="text-primary-red hover:text-primary-dark font-medium">
+                  <Link href="/account/orders" className="text-blue-600 hover:text-blue-700 font-medium">
                     View All Orders →
                   </Link>
                 </div>
@@ -425,7 +425,7 @@ function AccountPageContent() {
               <div className="text-center py-8">
                 <Ruler className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 mb-4">No measurements saved yet</p>
-                <Link href="/account/measurements" className="text-primary-red hover:text-primary-dark font-medium">
+                <Link href="/account/measurements" className="text-blue-600 hover:text-blue-700 font-medium">
                   Add Your First Measurement →
                 </Link>
               </div>
@@ -445,7 +445,7 @@ function AccountPageContent() {
               <div className="text-center py-8">
                 <BookmarkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500 mb-4">No saved configurations yet</p>
-                <Link href="/products" className="text-primary-red hover:text-primary-dark font-medium">
+                <Link href="/products" className="text-blue-600 hover:text-blue-700 font-medium">
                   Browse Products to Configure →
                 </Link>
               </div>

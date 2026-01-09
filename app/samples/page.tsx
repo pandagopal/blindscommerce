@@ -121,7 +121,7 @@ export default function SamplesPage() {
           <div className="space-y-3">
             <Link 
               href="/consultation"
-              className="w-full bg-primary-red text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-dark transition-colors block"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors block"
             >
               Schedule Consultation
             </Link>
@@ -373,7 +373,7 @@ export default function SamplesPage() {
               </p>
             </div>
             <div className="text-center">
-              <Home className="h-12 w-12 text-primary-red mx-auto mb-4" />
+              <Home className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Match Your Decor</h3>
               <p className="text-gray-600">
                 Compare colors and textures against your walls, furniture, and existing decor.

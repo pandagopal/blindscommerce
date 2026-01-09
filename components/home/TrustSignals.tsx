@@ -5,109 +5,118 @@ import { Shield, Truck, Award, CreditCard, Clock, Headphones } from 'lucide-reac
 const trustItems = [
   {
     icon: Truck,
-    title: 'Complimentary Shipping',
-    description: 'On orders over $100'
+    title: 'Free Shipping',
+    description: 'On orders over $100',
+    highlight: true
   },
   {
     icon: Shield,
     title: 'Lifetime Warranty',
-    description: 'Craftsmanship guaranteed'
+    description: 'Quality guaranteed',
+    highlight: false
   },
   {
     icon: Clock,
-    title: 'Effortless Returns',
-    description: '30-day satisfaction policy'
+    title: 'Easy Returns',
+    description: '30-day return policy',
+    highlight: false
   },
   {
     icon: Award,
-    title: '50,000+ Clients',
-    description: 'Trusted nationwide'
+    title: '50,000+ Customers',
+    description: 'Trusted nationwide',
+    highlight: false
   },
   {
     icon: CreditCard,
-    title: 'Secure Checkout',
-    description: 'SSL encrypted transactions'
+    title: 'Secure Payment',
+    description: 'SSL encrypted checkout',
+    highlight: false
   },
   {
     icon: Headphones,
-    title: 'Concierge Support',
-    description: 'Mon-Fri 8am-8pm EST'
+    title: 'Expert Support',
+    description: 'Mon-Fri 8am-8pm EST',
+    highlight: false
   }
 ];
 
 export default function TrustSignals() {
   return (
-    <section className="bg-warm-gray-50 border-b border-warm-gray-200">
+    <section className="bg-white py-8 border-b border-gray-100">
       <div className="container mx-auto px-4">
-        {/* Trust Items - Elegant Cards with Shadow */}
-        <div className="py-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {/* Trust Items Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
           {trustItems.map((item, index) => (
             <div
               key={index}
-              className="group flex flex-col items-center text-center px-4 py-6 bg-white border border-warm-gray-200 shadow-sm hover:shadow-lg hover:border-primary-red/30 transition-all duration-500 hover:-translate-y-1"
+              className={`flex flex-col items-center text-center p-4 rounded-xl transition-all duration-300 hover:shadow-md ${
+                item.highlight
+                  ? 'bg-gradient-to-br from-red-50 to-orange-50 border border-red-100'
+                  : 'hover:bg-gray-50'
+              }`}
             >
-              <div className="p-3 mb-3 bg-red-50 border border-red-100 group-hover:bg-primary-red group-hover:border-primary-red transition-all duration-500">
-                <item.icon className="w-5 h-5 text-primary-red group-hover:text-white transition-colors duration-500" />
+              <div className={`p-3 rounded-full mb-3 ${
+                item.highlight
+                  ? 'bg-primary-red text-white'
+                  : 'bg-blue-50 text-blue-600'
+              }`}>
+                <item.icon className="w-5 h-5" />
               </div>
-              <h3 className="font-semibold text-charcoal-900 text-sm tracking-wide">{item.title}</h3>
-              <p className="text-xs text-warm-gray-500 mt-1 font-light">{item.description}</p>
+              <h3 className="font-semibold text-gray-900 text-sm">{item.title}</h3>
+              <p className="text-xs text-gray-500 mt-1">{item.description}</p>
             </div>
           ))}
         </div>
 
-        {/* Rating & Credentials Bar */}
-        <div className="py-6 bg-white border-t border-warm-gray-200">
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-            {/* Google Reviews */}
-            <div className="flex items-center gap-3">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <svg key={star} className="w-4 h-4 text-primary-red fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
-                ))}
-              </div>
-              <div className="text-sm">
-                <span className="font-semibold text-charcoal-900">4.8</span>
-                <span className="text-warm-gray-400 font-light"> / 5</span>
-                <span className="text-warm-gray-400 text-xs ml-2 tracking-wide">(2,450+ reviews)</span>
-              </div>
+        {/* Rating Badges */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-6 md:gap-10 pt-6 border-t border-gray-100">
+          {/* Google Reviews */}
+          <div className="flex items-center gap-2">
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <svg key={star} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                </svg>
+              ))}
             </div>
-
-            {/* Elegant Divider */}
-            <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-warm-gray-300 to-transparent" />
-
-            {/* BBB Rating */}
-            <div className="flex items-center gap-3">
-              <div className="bg-primary-red text-white text-xs font-bold px-3 py-1.5 tracking-wider">
-                A+
-              </div>
-              <span className="text-sm text-charcoal-800 font-light tracking-wide">BBB Accredited</span>
+            <div className="text-sm">
+              <span className="font-bold text-gray-900">4.8</span>
+              <span className="text-gray-500"> / 5</span>
+              <span className="text-gray-400 text-xs ml-1">(2,450+ reviews)</span>
             </div>
+          </div>
 
-            {/* Elegant Divider */}
-            <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-warm-gray-300 to-transparent" />
+          {/* Divider */}
+          <div className="hidden md:block w-px h-8 bg-gray-200" />
 
-            {/* Secure Checkout */}
-            <div className="flex items-center gap-3">
-              <Shield className="w-5 h-5 text-primary-red" />
-              <span className="text-sm text-charcoal-800 font-light tracking-wide">256-bit SSL Secure</span>
+          {/* BBB Rating */}
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
+              A+
             </div>
+            <span className="text-sm text-gray-600">BBB Accredited</span>
+          </div>
+
+          {/* Divider */}
+          <div className="hidden md:block w-px h-8 bg-gray-200" />
+
+          {/* Secure Checkout */}
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-green-600" />
+            <span className="text-sm text-gray-600">256-bit SSL Secure</span>
           </div>
         </div>
 
-        {/* Payment Methods - Refined */}
-        <div className="py-5 bg-white border-t border-warm-gray-200 flex flex-wrap items-center justify-center gap-6">
-          <span className="text-xs uppercase tracking-[0.2em] text-warm-gray-400 font-medium">Accepted Payment Methods</span>
+        {/* Payment Methods - Using text fallback since images may not exist */}
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-gray-400">
+          <span className="text-xs uppercase tracking-wide">We Accept:</span>
           <div className="flex items-center gap-3">
-            {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay'].map((method) => (
-              <span
-                key={method}
-                className="text-xs font-medium text-charcoal-700 bg-warm-gray-50 px-3 py-1.5 border border-warm-gray-200 hover:border-primary-red hover:text-primary-red transition-colors duration-300"
-              >
-                {method}
-              </span>
-            ))}
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Visa</span>
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Mastercard</span>
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Amex</span>
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">PayPal</span>
+            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">Apple Pay</span>
           </div>
         </div>
       </div>

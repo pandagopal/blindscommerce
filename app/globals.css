@@ -18,108 +18,93 @@
 @layer base {
   :root {
     /* Smart Blinds Hub Color Palette */
-    /* ================================ */
-    /* Primary: Red (#da0530) - Brand color for buttons, links, accents */
-    /* Secondary: Charcoal (#1a1918) - Replaces black for elegance */
-    /* Accent: Gold (#c9a962) - Premium feel for highlights */
-
     /* Base colors */
     --bg-default: #FFFFFF;
-    --text-default: #33312f;  /* Charcoal-900 for body text */
+    --text-default: #2e2f32;
 
     /* Primary colors - Brand Red */
     --primary-red: #da0530;
     --primary-dark: #a00424;
 
-    /* Secondary colors - Charcoal (replaces black) */
-    --charcoal: #1a1918;
-    --charcoal-light: #33312f;
-    --charcoal-dark: #0c0a09;
+    /* Accent color - Yellow */
+    --accent-yellow: #ffc220;
 
-    /* Accent color - Gold (premium feel) */
-    --accent-gold: #c9a962;
-    --accent-gold-light: #d4ba7a;
-    --accent-gold-dark: #a68b4b;
-
-    /* Text colors - Warm charcoal tones */
-    --text-primary: #1a1918;    /* Deep charcoal */
-    --text-secondary: #57534e;  /* Warm gray-600 */
-    --text-muted: #78716c;      /* Warm gray-500 */
+    /* Text colors */
+    --text-primary: #2e2f32;
+    --text-secondary: #6c6e73;
 
     /* Background colors */
     --bg-main: #FFFFFF;
     --bg-white: #FFFFFF;
-    --bg-light-gray: #fafaf9;   /* Warm gray-50 */
-    --bg-cream: #f5f5f4;        /* Warm gray-100 */
-    --bg-footer: #1a1918;       /* Charcoal (was dark blue) */
-    --bg-header: #fef2f3;       /* Light red tint */
+    --bg-light-gray: #f2f2f2;
+    --bg-footer: #030c16;
+    --bg-header: #f5d5d5;
 
     /* Border colors */
-    --border-light: #e7e5e4;    /* Warm gray-200 */
-    --border-main: #d6d3d1;     /* Warm gray-300 */
+    --border-light: #e6e6e6;
+    --border-main: #c4c4c4;
 
     /* Status colors */
-    --status-success: #16a34a;  /* Green-600 */
-    --status-error: #da0530;    /* Brand red */
-    --status-warning: #c9a962;  /* Gold accent */
-    --status-info: #da0530;     /* Brand red */
+    --status-success: #46b450;
+    --status-error: #dc2626;
+    --status-warning: #ffc220;
+    --status-info: #da0530;
 
     /* Hover states */
     --hover-primary: #a00424;
-    --hover-charcoal: #33312f;
-    --hover-gray: #f5f5f4;
+    --hover-gray: #f7f7f7;
 
     /* Component radius */
-    --radius: 0rem;  /* Square corners for luxury feel */
+    --radius: 0.5rem;
 
     /* Chart colors - Brand theme */
-    --chart-1: 347 97% 43%;     /* Brand red #da0530 */
-    --chart-2: 43 52% 59%;      /* Gold #c9a962 */
-    --chart-3: 347 97% 38%;     /* Dark red */
-    --chart-4: 30 6% 10%;       /* Charcoal */
-    --chart-5: 30 6% 96%;       /* Light warm */
+    --chart-1: 347 97% 43%;   /* Brand red #da0530 */
+    --chart-2: 48 100% 56%;   /* Yellow */
+    --chart-3: 347 97% 38%;   /* Dark red */
+    --chart-4: 0 0% 18%;      /* Dark gray */
+    --chart-5: 0 0% 95%;      /* Light gray */
 
     /* Shadcn UI Variables - Light Mode */
     --background: 0 0% 100%;
-    --foreground: 30 6% 10%;    /* Charcoal */
+    --foreground: 0 0% 18%;
     --card: 0 0% 100%;
-    --card-foreground: 30 6% 10%;
+    --card-foreground: 0 0% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 30 6% 10%;
-    --primary: 347 97% 43%;     /* Brand red #da0530 */
+    --popover-foreground: 0 0% 18%;
+    --primary: 347 97% 43%;   /* Brand red #da0530 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 6% 96%;     /* Warm light */
-    --secondary-foreground: 30 6% 10%;
-    --muted: 30 6% 96%;
-    --muted-foreground: 30 4% 46%;
-    --accent: 43 52% 59%;       /* Gold #c9a962 */
-    --accent-foreground: 30 6% 10%;
-    --destructive: 347 97% 43%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 30 6% 90%;
-    --input: 30 6% 90%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 18%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 48 100% 56%;    /* Yellow #ffc220 */
+    --accent-foreground: 0 0% 18%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 347 97% 43%;
   }
 
   .dark {
-    --background: 30 6% 6%;
-    --foreground: 30 6% 96%;
-    --card: 30 6% 8%;
-    --card-foreground: 30 6% 96%;
-    --popover: 30 6% 6%;
-    --popover-foreground: 30 6% 96%;
-    --primary: 347 97% 43%;     /* Brand red */
+    --background: 0 0% 10%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 347 97% 43%;   /* Brand red */
     --primary-foreground: 0 0% 100%;
-    --secondary: 30 6% 15%;
-    --secondary-foreground: 30 6% 96%;
-    --muted: 30 6% 15%;
-    --muted-foreground: 30 6% 65%;
-    --accent: 43 52% 59%;       /* Gold */
-    --accent-foreground: 30 6% 10%;
-    --destructive: 347 97% 35%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 30 6% 20%;
-    --input: 30 6% 20%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 48 100% 56%;    /* Yellow */
+    --accent-foreground: 0 0% 18%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 86% 97%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
     --ring: 347 97% 43%;
   }
 }
@@ -163,15 +148,13 @@
   /* Swiper customization */
   .swiper-button-next,
   .swiper-button-prev {
-    @apply w-14 h-14 backdrop-blur-sm transition-all duration-300 flex items-center justify-center;
-    background-color: rgba(26, 25, 24, 0.6) !important; /* Charcoal with opacity */
+    @apply w-14 h-14 bg-black/50 rounded-full backdrop-blur-sm transition-all duration-300 flex items-center justify-center;
     color: white !important;
   }
 
   .swiper-button-next:hover,
   .swiper-button-prev:hover {
-    background-color: var(--primary-red) !important;
-    transform: scale(1.1);
+    @apply bg-black/70 scale-110;
   }
 
   .swiper-button-next::after,
@@ -211,15 +194,13 @@
     @apply -translate-y-1 shadow-lg;
   }
 
-  /* Custom gradient overlays - Using charcoal instead of black */
+  /* Custom gradient overlays */
   .gradient-overlay-bottom {
-    @apply absolute inset-0;
-    background: linear-gradient(to top, rgba(26, 25, 24, 0.7), transparent);
+    @apply absolute inset-0 bg-gradient-to-t from-black/60 to-transparent;
   }
 
   .gradient-overlay-right {
-    @apply absolute inset-0;
-    background: linear-gradient(to left, rgba(26, 25, 24, 0.7), transparent);
+    @apply absolute inset-0 bg-gradient-to-l from-black/60 to-transparent;
   }
 
   /* Fix transparent backgrounds for comboboxes */

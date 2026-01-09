@@ -165,23 +165,14 @@ export default function HomeClient({
         <EnhancedRoomsSection rooms={rooms} />
       )}
 
-      {/* Featured Categories - Luxury Styled */}
-      <section className="py-20 bg-gradient-to-b from-gray-50 to-white relative">
-        <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        <div className="container mx-auto px-6 lg:px-12">
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-4 mb-6">
-              <span className="w-12 h-px bg-primary-red" />
-              <span className="text-primary-red text-sm font-medium tracking-[0.3em] uppercase">Collections</span>
-              <span className="w-12 h-px bg-primary-red" />
-            </div>
-            <h2 className="text-4xl md:text-5xl text-gray-900 mb-4">
-              <span className="font-light">Browse</span>{' '}
-              <span className="font-semibold">Categories</span>
-            </h2>
-            <p className="text-gray-500 text-lg font-light">Find the perfect style for your windows</p>
+      {/* Featured Categories */}
+      <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Browse Categories</h2>
+            <p className="text-gray-600 text-lg">Find the perfect style for your windows</p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {Array.isArray(categories) && categories.map((category, index) => (
               <Link
                 href={`/products?category=${category.category_id || category.id}`}
@@ -189,7 +180,7 @@ export default function HomeClient({
                 className="group"
               >
                 <div
-                  className="relative aspect-square overflow-hidden shadow-sm hover:shadow-xl transition-all duration-700"
+                  className="relative aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
                   style={{
                     animationDelay: `${index * 50}ms`
                   }}
@@ -199,20 +190,18 @@ export default function HomeClient({
                       src={category.image_url || category.image || ''}
                       alt={category.name}
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-1000"
+                      className="object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-4xl text-gray-300">🪟</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                      <span className="text-4xl text-gray-400">🪟</span>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4 group-hover:from-black/90 transition-all duration-500">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4 group-hover:from-black/80 transition-all">
                     <div>
-                      <h3 className="text-white font-medium text-sm md:text-base line-clamp-2 tracking-wide group-hover:text-primary-red transition-colors duration-500">{category.name}</h3>
+                      <h3 className="text-white font-semibold text-sm md:text-base line-clamp-2">{category.name}</h3>
                     </div>
                   </div>
-                  {/* Red accent line on hover */}
-                  <div className="absolute bottom-0 left-0 h-1 bg-primary-red w-0 group-hover:w-full transition-all duration-700" />
                 </div>
               </Link>
             ))}

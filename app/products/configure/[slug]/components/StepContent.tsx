@@ -106,7 +106,7 @@ const StepContent = () => {
                 error={dimensionErrors.height}
               />
             </div>
-            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-primary-red">
+            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
               <div className="flex">
                 <Info size={14} className="mr-1 flex-shrink-0" />
                 <span>For the most accurate fit, measure to the nearest 1/8 inch.</span>

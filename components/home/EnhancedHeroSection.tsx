@@ -29,20 +29,20 @@ interface EnhancedHeroSectionProps {
 const defaultSlides: HeroBanner[] = [
   {
     banner_id: 1,
-    title: 'Elevate Your Living Space',
-    subtitle: 'Bespoke Window Treatments',
-    description: 'Discover our curated collection of premium custom blinds and shades, crafted to perfection.',
+    title: 'Transform Your Space',
+    subtitle: 'Premium Custom Blinds & Shades',
+    description: 'Discover our collection of custom-made window treatments, designed to perfectly fit your style and budget.',
     background_image: '/images/hero/hero-1.jpg',
-    cta_primary_text: 'Explore Collection',
+    cta_primary_text: 'Shop Now',
     cta_primary_link: '/products',
-    cta_secondary_text: 'Request Samples',
+    cta_secondary_text: 'Free Samples',
     cta_secondary_link: '/samples'
   },
   {
     banner_id: 2,
-    title: 'Exclusive Savings',
-    subtitle: 'Up to 50% Off Select Styles',
-    description: 'Indulge in luxury at exceptional value. Premium quality meets unmatched craftsmanship.',
+    title: 'Up to 50% Off',
+    subtitle: 'Limited Time Sale',
+    description: 'Save big on premium blinds and shades. Professional quality at factory-direct prices.',
     background_image: '/images/hero/hero-2.jpg',
     cta_primary_text: 'Shop Sale',
     cta_primary_link: '/products?sale=true',
@@ -51,11 +51,11 @@ const defaultSlides: HeroBanner[] = [
   },
   {
     banner_id: 3,
-    title: 'Intelligent Luxury',
+    title: 'Smart Home Ready',
     subtitle: 'Motorized Window Treatments',
-    description: 'Seamless integration with your smart home. Voice control meets timeless elegance.',
+    description: 'Control your blinds with voice commands. Compatible with Alexa, Google Home, and Apple HomeKit.',
     background_image: '/images/hero/hero-3.jpg',
-    cta_primary_text: 'Discover Smart Blinds',
+    cta_primary_text: 'Explore Motorized',
     cta_primary_link: '/products?category=motorized',
     cta_secondary_text: 'Learn More',
     cta_secondary_link: '/motorized'
@@ -73,12 +73,15 @@ export default function EnhancedHeroSection({
   const [progress, setProgress] = useState(0);
   const [textAnimationKey, setTextAnimationKey] = useState(0);
 
+  // Auto-advance slides
   useEffect(() => {
     if (!isPlaying || slides.length <= 1) return;
 
     const progressInterval = setInterval(() => {
       setProgress(prev => {
-        if (prev >= 100) return 0;
+        if (prev >= 100) {
+          return 0;
+        }
         return prev + (100 / (autoPlayInterval / 100));
       });
     }, 100);
@@ -113,7 +116,7 @@ export default function EnhancedHeroSection({
   const hasVideo = !!currentBanner.video_url;
 
   return (
-    <section className="relative h-[600px] md:h-[700px] lg:h-[800px] overflow-hidden bg-charcoal-950">
+    <section className="relative h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden bg-gray-900">
       {/* Background Slides */}
       {slides.map((slide, index) => (
         <div
@@ -122,6 +125,7 @@ export default function EnhancedHeroSection({
             index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
           }`}
         >
+          {/* Video Background */}
           {slide.video_url ? (
             <video
               autoPlay
@@ -133,6 +137,7 @@ export default function EnhancedHeroSection({
               <source src={slide.video_url} type="video/mp4" />
             </video>
           ) : (
+            /* Image Background */
             <div className="absolute inset-0">
               <Image
                 src={slide.background_image || '/images/hero/hero-1.jpg'}
@@ -144,90 +149,77 @@ export default function EnhancedHeroSection({
             </div>
           )}
 
-          {/* Elegant Gradient Overlay - Using charcoal instead of black */}
-          <div className="absolute inset-0 bg-gradient-to-r from-charcoal-950/95 via-charcoal-950/70 to-charcoal-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/60 via-transparent to-transparent" />
+          {/* Gradient Overlay */}
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"
+            style={{ opacity: slide.overlay_opacity || 0.7 }}
+          />
         </div>
       ))}
 
-      {/* Decorative Red Accent Line */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary-red via-red-400 to-primary-red z-20" />
-      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent z-20" />
-
       {/* Content Container */}
-      <div className="relative z-20 h-full container mx-auto px-6 lg:px-12 flex items-center">
-        <div className="max-w-3xl">
+      <div className="relative z-20 h-full container mx-auto px-4 flex items-center">
+        <div className="max-w-2xl">
           {/* Animated Text Content */}
-          <div key={textAnimationKey} className="space-y-6">
-            {/* Elegant Subtitle with Line */}
+          <div key={textAnimationKey} className="space-y-4">
+            {/* Subtitle */}
             {currentBanner.subtitle && (
-              <div
-                className="animate-fadeInUp"
+              <p
+                className="text-primary-red font-semibold tracking-wider uppercase animate-fadeInUp"
                 style={{ animationDelay: '0ms', animationFillMode: 'both' }}
               >
-                <span className="inline-flex items-center gap-4 text-primary-red font-medium tracking-[0.3em] uppercase text-sm">
-                  <span className="w-12 h-px bg-primary-red" />
-                  {currentBanner.subtitle}
-                </span>
-              </div>
+                {currentBanner.subtitle}
+              </p>
             )}
 
-            {/* Luxurious Title */}
+            {/* Title */}
             <h1
-              className="text-5xl md:text-6xl lg:text-7xl text-white leading-[1.1] tracking-tight animate-fadeInUp"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight animate-fadeInUp"
               style={{ animationDelay: '150ms', animationFillMode: 'both' }}
             >
-              {currentBanner.title.split(' ').map((word, i) => (
-                <span key={i}>
-                  {i === 0 ? (
-                    <span className="font-semibold">{word}</span>
-                  ) : (
-                    <span className="font-light">{word}</span>
-                  )}{' '}
-                </span>
-              ))}
+              {currentBanner.title}
             </h1>
 
             {/* Description */}
             {currentBanner.description && (
               <p
-                className="text-lg md:text-xl text-white/70 max-w-xl leading-relaxed font-light animate-fadeInUp"
+                className="text-lg md:text-xl text-gray-200 max-w-xl animate-fadeInUp"
                 style={{ animationDelay: '300ms', animationFillMode: 'both' }}
               >
                 {currentBanner.description}
               </p>
             )}
 
-            {/* Elegant CTA Buttons */}
+            {/* CTA Buttons */}
             <div
-              className="flex flex-wrap gap-5 pt-4 animate-fadeInUp"
+              className="flex flex-wrap gap-4 pt-4 animate-fadeInUp"
               style={{ animationDelay: '450ms', animationFillMode: 'both' }}
             >
               {currentBanner.cta_primary_text && (
                 <Link
                   href={currentBanner.cta_primary_link || '/products'}
-                  className="group relative inline-flex items-center gap-3 bg-primary-red text-white font-medium px-10 py-5 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/30"
+                  className="group relative inline-flex items-center gap-2 bg-primary-red hover:bg-primary-red-dark text-white font-semibold px-8 py-4 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl overflow-hidden"
                 >
-                  <span className="relative z-10 tracking-wider uppercase text-sm">{currentBanner.cta_primary_text}</span>
-                  <svg className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <span className="relative z-10">{currentBanner.cta_primary_text}</span>
+                  <svg className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
-                  <div className="absolute inset-0 bg-gradient-to-r from-red-700 to-red-600 translate-x-full group-hover:translate-x-0 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-red-600 to-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </Link>
               )}
               {currentBanner.cta_secondary_text && (
                 <Link
                   href={currentBanner.cta_secondary_link || '/samples'}
-                  className="group inline-flex items-center gap-3 text-white font-medium px-10 py-5 border border-white/30 hover:border-white/60 transition-all duration-500 hover:bg-white/5"
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-lg border border-white/30 transition-all duration-300 hover:-translate-y-1"
                 >
-                  <span className="tracking-wider uppercase text-sm">{currentBanner.cta_secondary_text}</span>
+                  {currentBanner.cta_secondary_text}
                 </Link>
               )}
             </div>
           </div>
         </div>
 
-        {/* Right Side Image */}
+        {/* Right Side Image (optional) */}
         {currentBanner.right_side_image && (
           <div className="hidden lg:block absolute right-0 bottom-0 w-1/2 h-full">
             <Image
@@ -240,83 +232,76 @@ export default function EnhancedHeroSection({
         )}
       </div>
 
-      {/* Elegant Navigation */}
-      <div className="absolute bottom-12 left-0 right-0 z-30">
-        <div className="container mx-auto px-6 lg:px-12">
+      {/* Navigation Controls */}
+      <div className="absolute bottom-8 left-0 right-0 z-30">
+        <div className="container mx-auto px-4">
           <div className="flex items-center justify-between">
-            {/* Slide Progress Indicators */}
-            <div className="flex items-center gap-6">
+            {/* Slide Indicators with Progress */}
+            <div className="flex items-center gap-3">
               {slides.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToSlide(index)}
-                  className="group relative"
+                  className={`relative h-1 rounded-full overflow-hidden transition-all duration-300 ${
+                    index === currentSlide ? 'w-12 bg-white/30' : 'w-8 bg-white/20 hover:bg-white/30'
+                  }`}
                   aria-label={`Go to slide ${index + 1}`}
                 >
-                  <div className={`h-px transition-all duration-500 ${
-                    index === currentSlide ? 'w-16 bg-white' : 'w-8 bg-white/30 group-hover:bg-white/50'
-                  }`}>
-                    {index === currentSlide && (
-                      <div
-                        className="h-full bg-primary-red origin-left"
-                        style={{ transform: `scaleX(${progress / 100})` }}
-                      />
-                    )}
-                  </div>
-                  <span className={`absolute -top-6 left-0 text-xs font-medium transition-opacity ${
-                    index === currentSlide ? 'text-white opacity-100' : 'text-white/50 opacity-0 group-hover:opacity-100'
-                  }`}>
-                    0{index + 1}
-                  </span>
+                  {index === currentSlide && (
+                    <div
+                      className="absolute inset-0 bg-white rounded-full origin-left"
+                      style={{ transform: `scaleX(${progress / 100})` }}
+                    />
+                  )}
                 </button>
               ))}
             </div>
 
             {/* Control Buttons */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Play/Pause */}
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
-                className="p-3 border border-white/20 hover:border-primary-red hover:bg-primary-red text-white/70 hover:text-white transition-all duration-300"
+                className="p-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full transition-colors"
                 aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               </button>
 
+              {/* Mute/Unmute (only for video) */}
               {hasVideo && (
                 <button
                   onClick={() => setIsMuted(!isMuted)}
-                  className="p-3 border border-white/20 hover:border-primary-red hover:bg-primary-red text-white/70 hover:text-white transition-all duration-300"
+                  className="p-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full transition-colors"
                   aria-label={isMuted ? 'Unmute video' : 'Mute video'}
                 >
                   {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                 </button>
               )}
 
-              <div className="w-px h-6 bg-white/20 mx-2" />
-
+              {/* Prev/Next */}
               <button
                 onClick={prevSlide}
-                className="p-3 border border-white/20 hover:border-primary-red hover:bg-primary-red text-white/70 hover:text-white transition-all duration-300"
+                className="p-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full transition-colors"
                 aria-label="Previous slide"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={nextSlide}
-                className="p-3 border border-white/20 hover:border-primary-red hover:bg-primary-red text-white/70 hover:text-white transition-all duration-300"
+                className="p-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white rounded-full transition-colors"
                 aria-label="Next slide"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Elegant Slide Counter */}
-      <div className="absolute top-8 right-8 z-30 flex items-baseline gap-1 text-white">
-        <span className="text-3xl font-light">0{currentSlide + 1}</span>
-        <span className="text-white/40 text-sm">/ 0{slides.length}</span>
+      {/* Slide Counter */}
+      <div className="absolute top-6 right-6 z-30 bg-black/30 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full">
+        {currentSlide + 1} / {slides.length}
       </div>
     </section>
   );
