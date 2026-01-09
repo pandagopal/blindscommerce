@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Search, X, SlidersHorizontal, ChevronDown, Star, Tag, Sparkles, Clock, ArrowUpDown, Grid3X3, LayoutGrid, Loader2 } from 'lucide-react';
 import EnhancedProductGrid from './EnhancedProductGrid';
 import MobileFilterDrawer from './MobileFilterDrawer';
@@ -85,6 +86,10 @@ export default function EnhancedProductsClient({
   initialSale,
   initialSearch
 }: EnhancedProductsClientProps) {
+  // Router for URL sync
+  const router = useRouter();
+  const pathname = usePathname();
+
   // State
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [isLoading, setIsLoading] = useState(false);
@@ -122,6 +127,41 @@ export default function EnhancedProductsClient({
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Sync URL with filter state - update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    // Only add params if they have values
+    if (selectedCategories.length === 1) {
+      params.set('category', selectedCategories[0].toString());
+    }
+    if (debouncedSearch) {
+      params.set('search', debouncedSearch);
+    }
+    if (minPrice) {
+      params.set('minPrice', minPrice);
+    }
+    if (maxPrice) {
+      params.set('maxPrice', maxPrice);
+    }
+    if (selectedRoom) {
+      params.set('room', selectedRoom);
+    }
+    if (saleOnly) {
+      params.set('sale', 'true');
+    }
+    if (sortBy && sortBy !== 'recommended') {
+      params.set('sort', sortBy);
+    }
+
+    // Build the new URL
+    const queryString = params.toString();
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
+
+    // Use replace to update URL without adding to browser history for each filter change
+    router.replace(newUrl, { scroll: false });
+  }, [selectedCategories, debouncedSearch, minPrice, maxPrice, selectedRoom, saleOnly, sortBy, pathname, router]);
 
   // Generate search suggestions
   useEffect(() => {

@@ -158,7 +158,7 @@ function RoomCard({
     <Link href={getRoomLink(room)}>
       <div
         ref={cardRef}
-        className="relative h-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-500"
+        className="relative h-full overflow-hidden group cursor-pointer transition-all duration-500"
         style={tiltStyle}
         onMouseMove={handleMouseMove}
         onMouseEnter={() => onHover(roomId)}
@@ -190,7 +190,7 @@ function RoomCard({
         <div className="absolute inset-0 p-6 flex flex-col justify-end">
           {/* Product Count Badge */}
           {room.product_count && (
-            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
+            <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm text-gray-800 text-xs font-medium px-3 py-1.5 flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5" />
               {room.product_count} products
             </div>
@@ -221,7 +221,7 @@ function RoomCard({
 
         {/* Border Glow Effect */}
         <div
-          className={`absolute inset-0 rounded-2xl border-2 transition-all duration-500 ${
+          className={`absolute inset-0 border-2 transition-all duration-500 ${
             isHovered
               ? 'border-white/50 shadow-[inset_0_0_20px_rgba(255,255,255,0.1)]'
               : 'border-transparent'

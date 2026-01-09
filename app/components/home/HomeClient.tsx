@@ -8,13 +8,12 @@ import { CheckCircle, X } from 'lucide-react';
 
 // Import enhanced components
 import {
-  TrustSignals,
+  TrustSignalsBar,
+  HowItWorks,
   EnhancedHeroSection,
   EnhancedProductsSection,
   EnhancedReviewsSection,
   EnhancedRoomsSection,
-  EducationalContentSection,
-  RecentlyViewedSection,
   StyleQuizCTA,
   FloatingActionButtons
 } from '@/components/home';
@@ -142,35 +141,49 @@ export default function HomeClient({
     <main className="min-h-screen bg-white">
       {/* Success Message Toast */}
       {showSuccessMessage && (
-        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-2 animate-slideInRight">
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 shadow-lg flex items-center space-x-2 animate-slideInRight">
           <CheckCircle size={20} />
           <span className="font-medium">Login successful! Welcome back.</span>
           <button
             onClick={() => setShowSuccessMessage(false)}
-            className="ml-2 hover:bg-green-600 p-1 rounded"
+            className="ml-2 hover:bg-green-600 p-1"
           >
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* Enhanced Hero Section with Video Support */}
+      {/* 1. HERO - Clear value proposition */}
       <EnhancedHeroSection heroBanners={transformedBanners} />
 
-      {/* Trust Signals */}
-      <TrustSignals />
+      {/* 2. TRUST SIGNALS BAR - Condensed single row */}
+      <TrustSignalsBar />
 
-      {/* Shop By Room - Enhanced with Parallax */}
+      {/* 3. SHOP BY ROOM - Visual inspiration */}
       {rooms.length > 0 && (
-        <EnhancedRoomsSection rooms={rooms} />
+        <EnhancedRoomsSection
+          rooms={rooms}
+          title="Shop by Room"
+          subtitle="Find the perfect blinds for every space in your home"
+        />
       )}
 
-      {/* Featured Categories */}
+      {/* 4. FEATURED PRODUCTS - Immediate shopping (most important) */}
+      <EnhancedProductsSection
+        products={products}
+        title="Featured Products"
+        subtitle="Starting from $29 - Factory direct prices, premium quality"
+      />
+
+      {/* 5. HOW IT WORKS - Reduce purchase anxiety */}
+      <HowItWorks />
+
+      {/* 6. SHOP BY CATEGORY - Single browsing method */}
       <section className="py-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Browse Categories</h2>
-            <p className="text-gray-600 text-lg">Find the perfect style for your windows</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Shop by Style</h2>
+            <p className="text-gray-600 text-lg">Find the perfect window treatment for your space</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {Array.isArray(categories) && categories.map((category, index) => (
@@ -180,7 +193,7 @@ export default function HomeClient({
                 className="group"
               >
                 <div
-                  className="relative aspect-square rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
+                  className="relative aspect-square overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500"
                   style={{
                     animationDelay: `${index * 50}ms`
                   }}
@@ -193,7 +206,7 @@ export default function HomeClient({
                       className="object-cover group-hover:scale-110 transition-transform duration-700"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-50 to-rose-100 flex items-center justify-center">
                       <span className="text-4xl text-gray-400">🪟</span>
                     </div>
                   )}
@@ -206,33 +219,33 @@ export default function HomeClient({
               </Link>
             ))}
           </div>
+
+          {/* View All Categories Link */}
+          <div className="text-center mt-8">
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-2 text-primary-red hover:text-primary-dark font-semibold transition-colors"
+            >
+              View All Categories
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Style Quiz CTA Banner */}
-      <StyleQuizCTA variant="banner" />
-
-      {/* Featured Products - Enhanced with Tabs & Quick View */}
-      <EnhancedProductsSection
-        products={products}
-        title="Featured Products"
-        subtitle="Handpicked selections for your home"
-      />
-
-      {/* Customer Reviews - Enhanced with Filters & Photos */}
+      {/* 7. CUSTOMER REVIEWS - Social proof */}
       {reviews.length > 0 && (
         <EnhancedReviewsSection
           reviews={reviews}
           title="What Our Customers Say"
-          subtitle="Real reviews from verified buyers"
+          subtitle="Join 50,000+ satisfied customers"
         />
       )}
 
-      {/* Recently Viewed Products */}
-      <RecentlyViewedSection />
-
-      {/* Educational Content Section */}
-      <EducationalContentSection />
+      {/* 8. STYLE QUIZ CTA - For undecided visitors */}
+      <StyleQuizCTA variant="banner" />
 
       {/* Floating Action Buttons */}
       <FloatingActionButtons />
@@ -299,15 +312,6 @@ export default function HomeClient({
           }
         }
 
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
-        }
-
         .animate-fadeInUp {
           animation: fadeInUp 0.6s ease-out forwards;
         }
@@ -327,14 +331,6 @@ export default function HomeClient({
         .animate-float-delayed {
           animation: float-delayed 4s ease-in-out infinite;
           animation-delay: 1s;
-        }
-
-        .animate-scroll {
-          animation: scroll 30s linear infinite;
-        }
-
-        .animate-scroll:hover {
-          animation-play-state: paused;
         }
 
         /* Hide scrollbar for carousel */

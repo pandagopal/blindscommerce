@@ -94,10 +94,14 @@ export default function EducationalContentSection({
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   return (
-    <section className="py-16 bg-gradient-to-b from-blue-50 to-white">
+    <section className="py-16 bg-gradient-to-b from-orange-50 via-red-50 to-white">
       <div className="container mx-auto px-4">
         {/* Header */}
         <ScrollAnimationWrapper animation="fadeInUp" className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 bg-primary-red/10 text-primary-red text-sm font-medium px-4 py-1.5  mb-4">
+            <BookOpen className="w-4 h-4" />
+            Resources
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{title}</h2>
           <p className="text-gray-600 text-lg">{subtitle}</p>
         </ScrollAnimationWrapper>
@@ -105,9 +109,11 @@ export default function EducationalContentSection({
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Buying Guides */}
           <ScrollAnimationWrapper animation="fadeInUp" delay={100} className="lg:col-span-2">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
+            <div className="bg-white  p-6 shadow-sm border border-gray-100 h-full">
               <div className="flex items-center gap-2 mb-6">
-                <BookOpen className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-gradient-to-br from-primary-red to-rose-600 ">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
                 <h3 className="text-xl font-bold text-gray-900">Buying Guides</h3>
               </div>
 
@@ -116,19 +122,19 @@ export default function EducationalContentSection({
                   <Link
                     key={guide.id}
                     href={guide.link}
-                    className="group bg-gray-50 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300"
+                    className="group bg-gradient-to-br from-gray-50 to-red-50  overflow-hidden hover:shadow-md transition-all duration-300"
                   >
-                    <div className="relative aspect-[16/10] bg-gradient-to-br from-blue-100 to-purple-100">
+                    <div className="relative aspect-[16/10] bg-gradient-to-br from-red-100 to-orange-100">
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <guide.icon className="w-10 h-10 text-blue-600/50" />
+                        <guide.icon className="w-10 h-10 text-primary-red/50" />
                       </div>
                     </div>
                     <div className="p-4">
-                      <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
+                      <h4 className="font-semibold text-gray-900 group-hover:text-primary-red transition-colors mb-1">
                         {guide.title}
                       </h4>
                       <p className="text-sm text-gray-500 mb-2">{guide.description}</p>
-                      <span className="text-xs text-blue-600">{guide.readTime}</span>
+                      <span className="text-xs text-primary-red font-medium">{guide.readTime}</span>
                     </div>
                   </Link>
                 ))}
@@ -136,7 +142,7 @@ export default function EducationalContentSection({
 
               <Link
                 href="/guides"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mt-6 group"
+                className="inline-flex items-center gap-2 text-primary-red hover:text-primary-dark font-medium mt-6 group"
               >
                 View All Guides
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -146,9 +152,11 @@ export default function EducationalContentSection({
 
           {/* Video Tutorials */}
           <ScrollAnimationWrapper animation="fadeInUp" delay={200}>
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full">
+            <div className="bg-white  p-6 shadow-sm border border-gray-100 h-full">
               <div className="flex items-center gap-2 mb-6">
-                <Play className="w-5 h-5 text-red-500" />
+                <div className="p-2 bg-gradient-to-br from-red-500 to-orange-500 ">
+                  <Play className="w-5 h-5 text-white" />
+                </div>
                 <h3 className="text-xl font-bold text-gray-900">Video Tutorials</h3>
               </div>
 
@@ -156,12 +164,12 @@ export default function EducationalContentSection({
                 {VIDEO_TUTORIALS.map((video) => (
                   <button
                     key={video.id}
-                    className="w-full flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors text-left group"
+                    className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-red-50  hover:from-red-50 hover:to-orange-50 transition-colors text-left group"
                   >
-                    <div className="relative w-20 h-14 rounded-lg overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0">
+                    <div className="relative w-20 h-14  overflow-hidden bg-gradient-to-br from-red-200 to-orange-200 flex-shrink-0">
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Play className="w-4 h-4 text-red-500 ml-0.5" />
+                        <div className="w-8 h-8 bg-white/90  flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                          <Play className="w-4 h-4 text-primary-red ml-0.5" />
                         </div>
                       </div>
                       <span className="absolute bottom-1 right-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
@@ -169,7 +177,7 @@ export default function EducationalContentSection({
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-gray-900 text-sm group-hover:text-blue-600 transition-colors truncate">
+                      <h4 className="font-medium text-gray-900 text-sm group-hover:text-primary-red transition-colors truncate">
                         {video.title}
                       </h4>
                     </div>
@@ -179,7 +187,7 @@ export default function EducationalContentSection({
 
               <Link
                 href="/tutorials"
-                className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mt-6 group"
+                className="inline-flex items-center gap-2 text-primary-red hover:text-primary-dark font-medium mt-6 group"
               >
                 Watch More Videos
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -190,9 +198,11 @@ export default function EducationalContentSection({
 
         {/* FAQ Section */}
         <ScrollAnimationWrapper animation="fadeInUp" delay={300} className="mt-8">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white  p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-6">
-              <HelpCircle className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 ">
+                <HelpCircle className="w-5 h-5 text-white" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900">Frequently Asked Questions</h3>
             </div>
 
@@ -200,15 +210,15 @@ export default function EducationalContentSection({
               {FAQS.map((faq, index) => (
                 <div
                   key={index}
-                  className="border border-gray-200 rounded-xl overflow-hidden"
+                  className="border border-gray-200  overflow-hidden hover:border-primary-red/30 transition-colors"
                 >
                   <button
                     onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                    className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-red-50 transition-colors"
                   >
                     <span className="font-medium text-gray-900 pr-4">{faq.question}</span>
                     {expandedFaq === index ? (
-                      <ChevronUp className="w-5 h-5 text-gray-500 flex-shrink-0" />
+                      <ChevronUp className="w-5 h-5 text-primary-red flex-shrink-0" />
                     ) : (
                       <ChevronDown className="w-5 h-5 text-gray-500 flex-shrink-0" />
                     )}
@@ -226,7 +236,7 @@ export default function EducationalContentSection({
               <p className="text-gray-600 mb-3">Still have questions?</p>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 text-white font-medium px-6 py-3  transition-all shadow-lg hover:shadow-xl"
               >
                 Contact Our Experts
               </Link>

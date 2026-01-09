@@ -1,4 +1,6 @@
 export { default as TrustSignals } from './TrustSignals';
+export { default as TrustSignalsBar } from './TrustSignalsBar';
+export { default as HowItWorks } from './HowItWorks';
 export { default as ScrollAnimationWrapper, StaggeredAnimation } from './ScrollAnimationWrapper';
 export { default as EnhancedHeroSection } from './EnhancedHeroSection';
 export { default as EnhancedProductsSection } from './EnhancedProductsSection';

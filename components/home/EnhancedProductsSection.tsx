@@ -124,7 +124,7 @@ export default function EnhancedProductsSection({
                   setActiveTab(tab.id);
                   setCurrentIndex(0);
                 }}
-                className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-5 py-2.5  text-sm font-medium transition-all duration-300 ${
                   activeTab === tab.id
                     ? 'bg-primary-red text-white shadow-lg shadow-red-200'
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
@@ -144,7 +144,7 @@ export default function EnhancedProductsSection({
               <button
                 onClick={prevSlide}
                 disabled={currentIndex === 0}
-                className={`absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-lg transition-all duration-300 ${
+                className={`absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white  shadow-lg transition-all duration-300 ${
                   currentIndex === 0
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50 hover:shadow-xl'
@@ -155,7 +155,7 @@ export default function EnhancedProductsSection({
               <button
                 onClick={nextSlide}
                 disabled={currentIndex >= maxIndex}
-                className={`absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-lg transition-all duration-300 ${
+                className={`absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white  shadow-lg transition-all duration-300 ${
                   currentIndex >= maxIndex
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50 hover:shadow-xl'
@@ -186,7 +186,7 @@ export default function EnhancedProductsSection({
                     delay={index * 100}
                     className="h-full"
                   >
-                    <div className="group bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 h-full flex flex-col">
+                    <div className="group bg-white  border border-gray-100 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 h-full flex flex-col">
                       {/* Image Container */}
                       <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                         <Image
@@ -199,17 +199,17 @@ export default function EnhancedProductsSection({
                         {/* Badges */}
                         <div className="absolute top-3 left-3 flex flex-col gap-2">
                           {product.is_new && (
-                            <span className="bg-blue-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span className="bg-primary-red text-white text-xs font-bold px-2.5 py-1 ">
                               NEW
                             </span>
                           )}
                           {product.is_bestseller && (
-                            <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-1 ">
                               BESTSELLER
                             </span>
                           )}
                           {(product.is_on_sale || product.sale_price) && (
-                            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 ">
                               SALE
                             </span>
                           )}
@@ -222,14 +222,14 @@ export default function EnhancedProductsSection({
                               e.preventDefault();
                               setQuickViewProduct(product);
                             }}
-                            className="bg-white text-gray-800 p-3 rounded-full hover:bg-gray-100 transition-colors shadow-lg transform hover:scale-110"
+                            className="bg-white text-gray-800 p-3  hover:bg-gray-100 transition-colors shadow-lg transform hover:scale-110"
                             title="Quick View"
                           >
                             <Eye className="w-5 h-5" />
                           </button>
                           <button
                             onClick={(e) => toggleWishlist(product.product_id, e)}
-                            className={`p-3 rounded-full transition-colors shadow-lg transform hover:scale-110 ${
+                            className={`p-3  transition-colors shadow-lg transform hover:scale-110 ${
                               wishlist.includes(product.product_id)
                                 ? 'bg-red-500 text-white'
                                 : 'bg-white text-gray-800 hover:bg-gray-100'
@@ -243,7 +243,7 @@ export default function EnhancedProductsSection({
                         {/* Mobile Wishlist Button */}
                         <button
                           onClick={(e) => toggleWishlist(product.product_id, e)}
-                          className={`md:hidden absolute top-3 right-3 p-2 rounded-full transition-colors ${
+                          className={`md:hidden absolute top-3 right-3 p-2  transition-colors ${
                             wishlist.includes(product.product_id)
                               ? 'bg-red-500 text-white'
                               : 'bg-white/90 text-gray-600'
@@ -257,13 +257,13 @@ export default function EnhancedProductsSection({
                       <Link href={`/products/configure/${product.slug}`} className="flex-1 p-4 flex flex-col">
                         {/* Category */}
                         {product.category_name && (
-                          <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">
+                          <p className="text-xs text-primary-red font-medium uppercase tracking-wide mb-1">
                             {product.category_name}
                           </p>
                         )}
 
                         {/* Name */}
-                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2 mb-2">
+                        <h3 className="font-semibold text-gray-900 group-hover:text-primary-red transition-colors line-clamp-2 mb-2">
                           {product.name}
                         </h3>
 
@@ -302,7 +302,7 @@ export default function EnhancedProductsSection({
                         </div>
 
                         {/* Configure Link */}
-                        <span className="mt-3 inline-flex items-center text-sm text-blue-600 font-medium group-hover:underline">
+                        <span className="mt-3 inline-flex items-center text-sm text-primary-red font-medium group-hover:underline">
                           Configure
                           <ExternalLink className="w-3.5 h-3.5 ml-1" />
                         </span>
@@ -321,7 +321,7 @@ export default function EnhancedProductsSection({
                 <button
                   key={index}
                   onClick={() => setCurrentIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`w-2 h-2  transition-all duration-300 ${
                     index === currentIndex
                       ? 'bg-primary-red w-6'
                       : 'bg-gray-300 hover:bg-gray-400'
@@ -336,7 +336,7 @@ export default function EnhancedProductsSection({
         <ScrollAnimationWrapper animation="fadeInUp" delay={300} className="text-center mt-10">
           <Link
             href="/products"
-            className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-4 rounded-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+            className="inline-flex items-center gap-2 bg-gray-900 hover:bg-gray-800 text-white font-semibold px-8 py-4  transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
           >
             View All Products
             <ChevronRight className="w-5 h-5" />
@@ -393,7 +393,7 @@ function QuickViewModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-scaleIn"
+        className="bg-white  max-w-3xl w-full max-h-[90vh] overflow-hidden shadow-2xl animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col md:flex-row">
@@ -407,7 +407,7 @@ function QuickViewModal({
             />
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-white/90 rounded-full hover:bg-white transition-colors"
+              className="absolute top-4 right-4 p-2 bg-white/90  hover:bg-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -416,7 +416,7 @@ function QuickViewModal({
           {/* Content */}
           <div className="md:w-1/2 p-6 flex flex-col">
             {product.category_name && (
-              <p className="text-sm text-blue-600 font-medium uppercase tracking-wide mb-2">
+              <p className="text-sm text-primary-red font-medium uppercase tracking-wide mb-2">
                 {product.category_name}
               </p>
             )}
@@ -469,7 +469,7 @@ function QuickViewModal({
             <div className="mt-auto space-y-3">
               <Link
                 href={`/products/configure/${product.slug}`}
-                className="w-full inline-flex items-center justify-center gap-2 bg-primary-red hover:bg-primary-red-dark text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                className="w-full inline-flex items-center justify-center gap-2 bg-primary-red hover:bg-primary-red-dark text-white font-semibold px-6 py-3  transition-colors"
               >
                 Configure & Buy
                 <ExternalLink className="w-4 h-4" />
@@ -477,7 +477,7 @@ function QuickViewModal({
 
               <button
                 onClick={onToggleWishlist}
-                className={`w-full inline-flex items-center justify-center gap-2 font-semibold px-6 py-3 rounded-lg transition-colors border ${
+                className={`w-full inline-flex items-center justify-center gap-2 font-semibold px-6 py-3  transition-colors border ${
                   isWishlisted
                     ? 'bg-red-50 border-red-200 text-red-600'
                     : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'

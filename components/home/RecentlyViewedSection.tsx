@@ -72,14 +72,14 @@ export default function RecentlyViewedSection() {
   if (isLoading || products.length === 0) return null;
 
   return (
-    <section className="py-12 bg-gray-50">
+    <section className="py-12 bg-gradient-to-b from-gray-50 to-white">
       <div className="container mx-auto px-4">
         {/* Header */}
         <ScrollAnimationWrapper animation="fadeInUp">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-gradient-to-br from-primary-red to-rose-600 rounded-lg shadow-md">
+                <Clock className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Recently Viewed</h2>
@@ -88,7 +88,7 @@ export default function RecentlyViewedSection() {
             </div>
             <button
               onClick={clearAll}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="text-sm text-gray-500 hover:text-primary-red transition-colors"
             >
               Clear All
             </button>
@@ -128,7 +128,7 @@ export default function RecentlyViewedSection() {
 
                   {/* Content */}
                   <div className="p-3">
-                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors mb-1">
+                    <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-primary-red transition-colors mb-1">
                       {product.name}
                     </h3>
 
@@ -160,7 +160,7 @@ export default function RecentlyViewedSection() {
         <ScrollAnimationWrapper animation="fadeInUp" delay={200} className="text-center mt-8">
           <Link
             href="/account/recently-viewed"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium group"
+            className="inline-flex items-center gap-2 text-primary-red hover:text-primary-dark font-medium group"
           >
             View All History
             <ChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />

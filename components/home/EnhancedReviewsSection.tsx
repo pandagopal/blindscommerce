@@ -103,17 +103,21 @@ export default function EnhancedReviewsSection({
   if (reviews.length === 0) return null;
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gradient-to-b from-rose-50 to-gray-50">
       <div className="container mx-auto px-4">
         {/* Header */}
         <ScrollAnimationWrapper animation="fadeInUp" className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-primary-red/10 text-primary-red text-sm font-medium px-4 py-1.5  mb-4">
+            <Star className="w-4 h-4 fill-current" />
+            Customer Reviews
+          </div>
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{title}</h2>
           <p className="text-gray-600 text-lg">{subtitle}</p>
         </ScrollAnimationWrapper>
 
         {/* Stats Overview */}
         <ScrollAnimationWrapper animation="fadeInUp" delay={100}>
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-10 max-w-4xl mx-auto">
+          <div className="bg-white  shadow-sm border border-gray-100 p-6 mb-10 max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row items-center gap-8">
               {/* Average Rating */}
               <div className="text-center md:border-r md:pr-8 border-gray-200">
@@ -138,9 +142,9 @@ export default function EnhancedReviewsSection({
                 {ratingDistribution.map(({ rating, count, percentage }) => (
                   <div key={rating} className="flex items-center gap-3 mb-2">
                     <span className="text-sm text-gray-600 w-8">{rating} ★</span>
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="flex-1 h-2 bg-gray-200  overflow-hidden">
                       <div
-                        className="h-full bg-yellow-400 rounded-full transition-all duration-500"
+                        className="h-full bg-yellow-400  transition-all duration-500"
                         style={{ width: `${percentage}%` }}
                       />
                     </div>
@@ -159,10 +163,10 @@ export default function EnhancedReviewsSection({
               <button
                 key={filter.value}
                 onClick={() => setActiveFilter(filter.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`px-4 py-2  text-sm font-medium transition-all duration-300 ${
                   activeFilter === filter.value
-                    ? 'bg-gray-900 text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                    ? 'bg-gradient-to-r from-primary-red to-rose-600 text-white shadow-lg'
+                    : 'bg-white text-gray-600 hover:bg-red-50 border border-gray-200 hover:border-primary-red/30'
                 }`}
               >
                 {filter.value === 'photo' && <Camera className="w-4 h-4 inline mr-1" />}
@@ -178,7 +182,7 @@ export default function EnhancedReviewsSection({
           {canScrollLeft && (
             <button
               onClick={() => scroll('left')}
-              className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all"
+              className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white  shadow-lg hover:shadow-xl transition-all"
             >
               <ChevronLeft className="w-5 h-5 text-gray-700" />
             </button>
@@ -186,7 +190,7 @@ export default function EnhancedReviewsSection({
           {canScrollRight && (
             <button
               onClick={() => scroll('right')}
-              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white rounded-full shadow-lg hover:shadow-xl transition-all"
+              className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 bg-white  shadow-lg hover:shadow-xl transition-all"
             >
               <ChevronRight className="w-5 h-5 text-gray-700" />
             </button>
@@ -206,7 +210,7 @@ export default function EnhancedReviewsSection({
                 className="flex-shrink-0 w-80"
               >
                 <div
-                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white  p-6 shadow-sm border border-gray-100 h-full flex flex-col hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => setSelectedReview(review)}
                 >
                   {/* Quote Icon */}
@@ -240,7 +244,7 @@ export default function EnhancedReviewsSection({
                   {review.images && review.images.length > 0 && (
                     <div className="flex gap-2 mb-4">
                       {review.images.slice(0, 3).map((img, i) => (
-                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden bg-gray-100">
+                        <div key={i} className="relative w-16 h-16  overflow-hidden bg-gray-100">
                           <Image src={img} alt="" fill className="object-cover" />
                           {i === 2 && review.images && review.images.length > 3 && (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-sm font-medium">
@@ -255,7 +259,7 @@ export default function EnhancedReviewsSection({
                   {/* User Info */}
                   <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                      <div className="w-10 h-10  bg-gradient-to-br from-primary-red to-rose-600 flex items-center justify-center text-white font-semibold shadow-md">
                         {review.user_name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -278,7 +282,7 @@ export default function EnhancedReviewsSection({
 
                   {/* Product Name */}
                   {review.product_name && (
-                    <p className="text-xs text-blue-600 mt-3">
+                    <p className="text-xs text-primary-red mt-3">
                       Purchased: {review.product_name}
                     </p>
                   )}
@@ -327,21 +331,21 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white  max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
           {/* Header */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-semibold">
+              <div className="w-14 h-14  bg-gradient-to-br from-primary-red to-rose-600 flex items-center justify-center text-white text-xl font-semibold shadow-lg">
                 {review.user_name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <p className="font-semibold text-gray-900 flex items-center gap-2">
                   {review.user_name}
                   {review.verified_purchase && (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 ">
                       <CheckCircle className="w-3 h-3" />
                       Verified Purchase
                     </span>
@@ -352,7 +356,7 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100  transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -386,7 +390,7 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
           {review.images && review.images.length > 0 && (
             <div className="grid grid-cols-3 gap-3 mb-6">
               {review.images.map((img, i) => (
-                <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div key={i} className="relative aspect-square  overflow-hidden bg-gray-100">
                   <Image src={img} alt="" fill className="object-cover" />
                 </div>
               ))}
@@ -397,7 +401,7 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
           {review.product_name && (
             <div className="pt-4 border-t border-gray-100">
               <p className="text-sm text-gray-500">
-                Reviewed product: <span className="text-blue-600 font-medium">{review.product_name}</span>
+                Reviewed product: <span className="text-primary-red font-medium">{review.product_name}</span>
               </p>
             </div>
           )}
@@ -405,7 +409,7 @@ function ReviewDetailModal({ review, onClose }: { review: Review; onClose: () =>
           {/* Helpful */}
           <div className="flex items-center gap-4 mt-6 pt-4 border-t border-gray-100">
             <span className="text-sm text-gray-500">Was this review helpful?</span>
-            <button className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors">
+            <button className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200  transition-colors">
               <ThumbsUp className="w-4 h-4" />
               Yes {review.helpful_count ? `(${review.helpful_count})` : ''}
             </button>
