@@ -543,13 +543,13 @@ export default function MeasureInstallPage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              href="/measure-install/guide/measuring"
+              href="/guides/measuring"
               className="bg-white border border-primary-red text-primary-red hover:bg-red-50 font-medium py-2 px-6 rounded-lg transition-colors"
             >
               View Measuring Guide
             </Link>
             <Link
-              href="/measure-install/guide/installation"
+              href="/guides/installation"
               className="bg-white border border-primary-red text-primary-red hover:bg-red-50 font-medium py-2 px-6 rounded-lg transition-colors"
             >
               View Installation Guide

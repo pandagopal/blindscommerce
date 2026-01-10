@@ -25,10 +25,10 @@ export default function HelpPage() {
       title: 'Installation & Setup',
       description: 'Installation guides, troubleshooting, and maintenance',
       links: [
-        { title: 'Installation Videos', href: '/help/installation' },
-        { title: 'Measurement Guide', href: '/help/measuring' },
-        { title: 'Troubleshooting', href: '/help/troubleshooting' },
-        { title: 'Maintenance Tips', href: '/help/maintenance' }
+        { title: 'Installation Guide', href: '/guides/installation' },
+        { title: 'Measurement Guide', href: '/guides/measuring' },
+        { title: 'Care & Maintenance', href: '/guides/care-maintenance' },
+        { title: 'Choosing Blinds', href: '/guides/choosing-blinds' }
       ]
     },
     {
@@ -253,19 +253,19 @@ export default function HelpPage() {
             Popular Resources
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Link href="/help/measuring" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <Link href="/guides/measuring" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <Book className="h-12 w-12 text-blue-600 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Measuring Guide</h3>
               <p className="text-gray-600">Step-by-step instructions for accurate window measurements</p>
             </Link>
-            
-            <Link href="/help/installation" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+
+            <Link href="/guides/installation" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <Wrench className="h-12 w-12 text-green-600 mb-4" />
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Installation Videos</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Installation Guide</h3>
               <p className="text-gray-600">Watch our professional installers demonstrate proper techniques</p>
             </Link>
-            
-            <Link href="/help/care" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+
+            <Link href="/guides/care-maintenance" className="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
               <HelpCircle className="h-12 w-12 text-primary-red mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Care & Maintenance</h3>
               <p className="text-gray-600">Keep your window treatments looking their best</p>

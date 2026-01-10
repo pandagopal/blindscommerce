@@ -1,5 +1,7 @@
 import { Metadata } from "next";
 import { EnhancedProductsClient } from "@/components/products";
+import { BreadcrumbJsonLd, CollectionJsonLd } from "@/components/seo/JsonLd";
+import { siteConfig } from "@/lib/seo-config";
 
 // Enable caching with 5 minute revalidation
 export const revalidate = 300; // 5 minutes
@@ -207,8 +209,47 @@ export default async function ProductsPage({
     features = [];
   }
 
+  // Build breadcrumb items for structured data
+  const breadcrumbItems = [
+    { name: 'Home', url: '/' },
+    { name: 'Products', url: '/products' },
+  ];
+
+  if (pageContext.isRoomFiltered && pageContext.roomName) {
+    breadcrumbItems.push({ name: pageContext.roomName, url: `/products?room=${roomParam}` });
+  }
+
+  if (pageContext.isCategoryFiltered && pageContext.categoryName) {
+    breadcrumbItems.push({ name: pageContext.categoryName, url: `/products?category=${categoryId}` });
+  }
+
+  // Build collection items for structured data (first 10 products)
+  const collectionItems = products.slice(0, 10).map((product: any) => ({
+    name: product.name,
+    url: `/products/configure/${product.slug}`,
+    image: product.images?.[0]?.image_url || product.image_url,
+    price: product.base_price,
+  }));
+
+  // Collection title for structured data
+  const collectionTitle = pageContext.isRoomFiltered
+    ? `${pageContext.roomName} Window Treatments`
+    : pageContext.isCategoryFiltered
+    ? pageContext.categoryName
+    : 'Custom Window Treatments';
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Structured Data */}
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      {collectionItems.length > 0 && (
+        <CollectionJsonLd
+          name={collectionTitle}
+          description={`Browse our selection of ${collectionTitle.toLowerCase()} at ${siteConfig.name}`}
+          items={collectionItems}
+        />
+      )}
+
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="container mx-auto px-4 py-8">

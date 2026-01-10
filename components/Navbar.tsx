@@ -253,15 +253,16 @@ const Navbar = () => {
         </div>
       </div>
       
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+      <header className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button */}
           <div className="flex md:hidden">
             <button
               type="button"
-              className="text-black hover:text-primary-red focus:outline-none"
+              className="text-gray-900 hover:text-primary-red p-2 rounded-lg hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-red focus-visible:ring-offset-2 transition-colors"
               aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <Menu size={24} />
@@ -283,13 +284,13 @@ const Navbar = () => {
           </div>
 
           {/* Navigation - Desktop */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-6" role="navigation" aria-label="Main navigation">
             <Link
               href="/ai-features"
-              className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+              className="text-gray-900 hover:text-primary-red font-semibold flex items-center gap-1 py-2 px-1 border-b-2 border-transparent hover:border-primary-red transition-all"
             >
               AI Features
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-primary-red text-white">
                 New
               </span>
             </Link>
@@ -297,15 +298,16 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/products"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-gray-900 hover:text-primary-red font-semibold flex items-center gap-1 py-2 px-1 border-b-2 border-transparent hover:border-primary-red transition-all"
+                aria-haspopup="true"
               >
                 Blinds
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 mt-1" role="menu">
                 <div className="py-2">
                   {categories.blinds.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">
                       {cat.name}
                     </Link>
                   ))}
@@ -315,19 +317,20 @@ const Navbar = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative group">
               <Link
                 href="/shades"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-gray-900 hover:text-primary-red font-semibold flex items-center gap-1 py-2 px-1 border-b-2 border-transparent hover:border-primary-red transition-all"
+                aria-haspopup="true"
               >
                 Shades
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 mt-1" role="menu">
                 <div className="py-2">
                   {categories.shades.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">
                       {cat.name}
                     </Link>
                   ))}
@@ -341,15 +344,16 @@ const Navbar = () => {
             <div className="relative group">
               <Link
                 href="/products"
-                className="text-black hover:text-primary-red font-medium flex items-center gap-1"
+                className="text-gray-900 hover:text-primary-red font-semibold flex items-center gap-1 py-2 px-1 border-b-2 border-transparent hover:border-primary-red transition-all"
+                aria-haspopup="true"
               >
                 Motorized
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </Link>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 mt-1" role="menu">
                 <div className="py-2">
                   {categories.motorized.map(cat => (
-                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    <Link key={cat.category_id} href={`/products?category=${cat.category_id}`} className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">
                       {cat.name}
                     </Link>
                   ))}
@@ -361,16 +365,16 @@ const Navbar = () => {
             </div>
 
             <div className="relative group">
-              <span className="text-black hover:text-primary-red font-medium flex items-center gap-1 cursor-pointer">
+              <span className="text-gray-900 hover:text-primary-red font-semibold flex items-center gap-1 py-2 px-1 border-b-2 border-transparent hover:border-primary-red cursor-pointer transition-all" role="button" aria-haspopup="true" tabIndex={0}>
                 Services
                 <ChevronDown size={16} className="group-hover:rotate-180 transition-transform" />
               </span>
-              <div className="absolute top-full left-0 w-56 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200">
+              <div className="absolute top-full left-0 w-56 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-200 mt-1" role="menu">
                 <div className="py-2">
-                  <Link href="/measure-install" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Measure & Install</Link>
-                  <Link href="/consultation" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Consultation</Link>
-                  <Link href="/samples" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Free Samples</Link>
-                  <Link href="/warranty" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Warranty Service</Link>
+                  <Link href="/measure-install" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">Measure & Install</Link>
+                  <Link href="/consultation" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">Free Consultation</Link>
+                  <Link href="/samples" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">Free Samples</Link>
+                  <Link href="/warranty" className="block px-4 py-2.5 text-sm text-gray-700 hover:bg-primary-red/5 hover:text-primary-red font-medium transition-colors" role="menuitem">Warranty Service</Link>
                 </div>
               </div>
             </div>

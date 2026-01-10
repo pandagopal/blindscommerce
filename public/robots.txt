@@ -1,58 +1,232 @@
-# Allow all crawlers
+# robots.txt for Smart Blinds Hub
+# https://smartblindshub.com
+# Allow all legitimate search engines to crawl public pages
+
+# ==============================================
+# DEFAULT RULES - All Search Engines
+# ==============================================
 User-agent: *
-Disallow:
+Allow: /
 
-# Explicitly allow major bots (optional but clear)
+# Public pages to crawl
+Allow: /products
+Allow: /guides
+Allow: /about
+Allow: /contact
+Allow: /help
+Allow: /samples
+Allow: /consultation
+Allow: /measure-install
+Allow: /warranty
+Allow: /ai-features
+
+# Protect private/admin areas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /vendor
+Disallow: /vendor/
+Disallow: /installer
+Disallow: /installer/
+Disallow: /sales
+Disallow: /sales/
+Disallow: /account
+Disallow: /account/
+Disallow: /customer/
+
+# Protect checkout/cart (dynamic user-specific pages)
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /cart
+Disallow: /cart/
+
+# Protect API endpoints
+Disallow: /api/
+
+# Protect auth pages
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Protect Next.js internal routes
+Disallow: /_next/
+Disallow: /static/
+
+# Allow static assets for proper rendering
+Allow: /_next/static/css/
+Allow: /_next/static/js/
+Allow: /_next/static/media/
+Allow: /_next/image
+Allow: /images/
+Allow: /uploads/
+
+# Prevent crawling of query parameters that create duplicate content
+Disallow: /*?*sort=
+Disallow: /*?*page=
+Disallow: /*?*filter=
+
+# Crawl rate limit (seconds between requests)
+Crawl-delay: 1
+
+# ==============================================
+# GOOGLE - Primary Search Engine
+# ==============================================
 User-agent: Googlebot
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /vendor/
+Disallow: /installer/
+Disallow: /sales/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /cart/
+Disallow: /login
+Disallow: /register
 
+User-agent: Googlebot-Image
+Allow: /images/
+Allow: /uploads/
+Allow: /_next/image
+Disallow: /admin/
+
+# ==============================================
+# BING - Microsoft Search
+# ==============================================
 User-agent: Bingbot
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /vendor/
+Disallow: /account/
+Disallow: /checkout/
+Disallow: /cart/
+Crawl-delay: 1
 
-User-agent: GPTBot
-Disallow:
-
-User-agent: anthropic-ai
-Disallow:
-
-User-agent: CCBot
-Disallow:
-
-User-agent: FacebookBot
-Disallow:
-
-User-agent: Twitterbot
-Disallow:
-
+# ==============================================
+# OTHER MAJOR SEARCH ENGINES
+# ==============================================
 User-agent: DuckDuckBot
-Disallow:
-
-User-agent: Yandex
-Disallow:
-
-User-agent: Baiduspider
-Disallow:
-
-User-agent: Applebot
-Disallow:
-
-User-agent: Sogou
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /account/
+Crawl-delay: 1
 
 User-agent: Slurp
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
 
-User-agent: SemrushBot
-Disallow:
+User-agent: Yandex
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
 
-User-agent: AhrefsBot
-Disallow:
+User-agent: Baiduspider
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
+
+User-agent: Applebot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: PetalBot
-Disallow:
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Crawl-delay: 2
+
+# ==============================================
+# SOCIAL MEDIA BOTS (for link previews)
+# ==============================================
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: FacebookBot
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Pinterest
+Allow: /
+
+# ==============================================
+# SEO TOOLS (rate limited)
+# ==============================================
+User-agent: SemrushBot
+Crawl-delay: 10
+Disallow: /admin/
+Disallow: /api/
+
+User-agent: AhrefsBot
+Crawl-delay: 10
+Disallow: /admin/
+Disallow: /api/
 
 User-agent: MJ12bot
-Disallow:
+Crawl-delay: 10
+Disallow: /admin/
+Disallow: /api/
 
-# Your sitemap for search engine indexing
+# ==============================================
+# BLOCK AGGRESSIVE/UNWANTED BOTS
+# ==============================================
+User-agent: DotBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: SearchmetricsBot
+Disallow: /
+
+User-agent: MegaIndex.ru
+Disallow: /
+
+User-agent: ltx71
+Disallow: /
+
+User-agent: Riddler
+Disallow: /
+
+User-agent: Scrapy
+Disallow: /
+
+# ==============================================
+# AI TRAINING BOTS (optional - currently blocked)
+# Remove these if you want AI models to train on your content
+# ==============================================
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+# ==============================================
+# SITEMAP
+# ==============================================
 Sitemap: https://smartblindshub.com/sitemap.xml

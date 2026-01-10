@@ -186,10 +186,10 @@ export default function EducationalContentSection({
               </div>
 
               <Link
-                href="/tutorials"
+                href="/guides/installation"
                 className="inline-flex items-center gap-2 text-primary-red hover:text-primary-dark font-medium mt-6 group"
               >
-                Watch More Videos
+                View Installation Guide
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
