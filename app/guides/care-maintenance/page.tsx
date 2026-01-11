@@ -34,6 +34,14 @@ export default function CareMaintenancePage() {
             Keep your window treatments looking beautiful and functioning properly
             with our comprehensive care and maintenance tips.
           </p>
+          {/* Author & Date */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
+            <span>Written by <strong className="text-gray-700">Sarah Mitchell</strong>, Product Care Expert</span>
+            <span>|</span>
+            <span>Last updated: January 2024</span>
+            <span>|</span>
+            <span>6 min read</span>
+          </div>
         </div>
       </div>
 

@@ -34,6 +34,14 @@ export default function MountingGuidePage() {
             Learn the differences between inside and outside mounting to choose
             the best option for your windows and style preferences.
           </p>
+          {/* Author & Date */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
+            <span>Written by <strong className="text-gray-700">Mike Chen</strong>, Lead Window Consultant</span>
+            <span>|</span>
+            <span>Last updated: January 2024</span>
+            <span>|</span>
+            <span>5 min read</span>
+          </div>
         </div>
       </div>
 

@@ -78,8 +78,13 @@ export default function HeroSection() {
 
   return (
     <section className="relative">
-      {/* Hero Slider */}
-      <div className="relative h-[500px] md:h-[600px] lg:h-[700px]">
+      {/* SEO H1 - Visually hidden but accessible for screen readers and SEO */}
+      <h1 className="sr-only">
+        Premium Custom Window Blinds, Shades & Shutters | Smart Blinds Hub
+      </h1>
+
+      {/* Hero Slider - Max 60vh to always show content below */}
+      <div className="relative h-[400px] md:h-[450px] lg:h-[500px] max-h-[60vh]">
         {swiperModules ? (
           <Swiper
             modules={swiperModules}
@@ -110,10 +115,10 @@ export default function HeroSection() {
                   <div className="absolute inset-0 flex items-center">
                     <div className="container mx-auto px-4">
                       <div className="max-w-2xl">
-                        {/* Main Title */}
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+                        {/* Slide Title */}
+                        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
                           {slide.title}
-                        </h1>
+                        </h2>
                         
                         {/* Subtitle */}
                         <p className="text-xl md:text-2xl text-white/90 mb-2">

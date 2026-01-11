@@ -79,16 +79,40 @@ export class FileUploadService {
     // Save file to filesystem
     const fs = require('fs').promises;
     const path = require('path');
-    const fullUploadDir = path.join(process.cwd(), 'public', uploadDir);
+
+    // In standalone mode, process.cwd() is .next/standalone
+    // We need to write to the public folder that's actually served
+    // Check if we're in standalone mode by looking for .next/standalone structure
+    let baseDir = process.cwd();
+    const standalonePublicPath = path.join(baseDir, 'public');
+
+    // Also check for UPLOAD_DIR environment variable for custom upload locations
+    if (process.env.UPLOAD_DIR) {
+      baseDir = process.env.UPLOAD_DIR;
+    }
+
+    const fullUploadDir = path.join(baseDir, 'public', uploadDir);
     const filePath = path.join(fullUploadDir, filename);
 
     // Ensure directory exists
-    await fs.mkdir(fullUploadDir, { recursive: true });
+    try {
+      await fs.mkdir(fullUploadDir, { recursive: true });
+    } catch (mkdirError) {
+      console.error('Failed to create upload directory:', fullUploadDir, mkdirError);
+      throw new Error(`Failed to create upload directory: ${mkdirError instanceof Error ? mkdirError.message : 'Unknown error'}`);
+    }
 
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await fs.writeFile(filePath, buffer);
+
+    try {
+      await fs.writeFile(filePath, buffer);
+      console.log('File uploaded successfully:', filePath);
+    } catch (writeError) {
+      console.error('Failed to write file:', filePath, writeError);
+      throw new Error(`Failed to write file: ${writeError instanceof Error ? writeError.message : 'Unknown error'}`);
+    }
 
     // Return public URL
     const url = `/${uploadDir}/${filename}`;

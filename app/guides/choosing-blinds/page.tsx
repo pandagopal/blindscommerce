@@ -34,6 +34,14 @@ export default function ChoosingBlindsPage() {
             Find the perfect blinds or shades for your home. Consider light control,
             privacy, style, and functionality to make the best choice.
           </p>
+          {/* Author & Date */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
+            <span>Written by <strong className="text-gray-700">Jennifer Adams</strong>, Interior Design Consultant</span>
+            <span>|</span>
+            <span>Last updated: January 2024</span>
+            <span>|</span>
+            <span>7 min read</span>
+          </div>
         </div>
       </div>
 

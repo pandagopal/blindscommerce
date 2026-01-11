@@ -31,10 +31,18 @@ export default function MeasuringGuidePage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             How to Measure Your Windows for Blinds & Shades
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-gray-600 mb-4">
             Follow our step-by-step guide to get accurate measurements for a perfect fit.
             Proper measuring ensures your window treatments look great and function properly.
           </p>
+          {/* Author & Date */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+            <span>Written by <strong className="text-gray-700">Mike Chen</strong>, Lead Window Consultant</span>
+            <span>|</span>
+            <span>Last updated: January 2024</span>
+            <span>|</span>
+            <span>5 min read</span>
+          </div>
         </div>
       </div>
 

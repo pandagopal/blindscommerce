@@ -34,6 +34,14 @@ export default function InstallationGuidePage() {
             Follow our step-by-step installation guide to mount your window treatments
             like a professional. Most installations can be completed in 15-30 minutes per window.
           </p>
+          {/* Author & Date */}
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500 mt-4">
+            <span>Written by <strong className="text-gray-700">David Thompson</strong>, Senior Installation Specialist</span>
+            <span>|</span>
+            <span>Last updated: January 2024</span>
+            <span>|</span>
+            <span>8 min read</span>
+          </div>
         </div>
       </div>
 
