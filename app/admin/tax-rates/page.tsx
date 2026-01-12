@@ -99,7 +99,6 @@ export default function TaxRatesPage() {
       const result = await res.json();
       // V2 API wraps response in { success, data }
       const data = result.data || result;
-      console.log('Tax rates loaded:', data);
       setTaxRates(data.rates || []);
       setTotalRecords(data.pagination?.total || data.total || 0);
       setTotalPages(Math.ceil((data.pagination?.total || data.total || 0) / itemsPerPage));

@@ -165,7 +165,6 @@ export class SettingsService {
   clearCache(): void {
     this.settingsCache = null;
     this.cacheTimestamp = 0;
-    console.log('[SettingsService] Cache cleared');
   }
 
   async getAllSettings(skipCache = false): Promise<PlatformSettings> {
@@ -326,8 +325,6 @@ export class SettingsService {
                   console.warn(`Failed to decrypt ${mappedKey}, using original value`);
                   // Keep the original value if decryption fails
                 }
-              } else {
-                console.log(`${mappedKey} is not encrypted`);
               }
             }
           }
@@ -364,17 +361,7 @@ export class SettingsService {
 
   async updateSettings(category: string, settings: any): Promise<void> {
     const pool = await getPool();
-    
-    console.log(`[SettingsService] Updating ${category} settings:`, 
-      category === 'payments' ? 
-        Object.keys(settings).reduce((acc, key) => {
-          acc[key] = key.includes('secret') || key.includes('private') ? 'hidden' : settings[key];
-          return acc;
-        }, {} as any) : 
-        settings
-    );
-    
-    
+
     for (const [key, value] of Object.entries(settings)) {
            
       // Encrypt sensitive payment fields before storing
@@ -403,18 +390,14 @@ export class SettingsService {
         ];
         
         if (sensitiveKeys.includes(key)) {
-          console.log(`${key} is a sensitive key, checking if encryption needed`);
           // Only encrypt if not already encrypted
           if (!isEncrypted(value)) {
             try {
               valueToStore = encryptSensitiveData(value);
-              console.log(`Encrypted ${key}`);
             } catch (error) {
               console.error(`Failed to encrypt ${key}:`, error);
               // Continue with unencrypted value if encryption fails
             }
-          } else {
-            console.log(`${key} is already encrypted`);
           }
         }
       }
@@ -430,7 +413,6 @@ export class SettingsService {
       
       if ((existing as any[]).length > 0) {
         // Update existing setting - update both value and category
-        console.log(`Updating existing setting ${key} in category ${category}`);
         await pool.execute(
           'UPDATE company_settings SET setting_value = ?, category = ?, updated_at = NOW() WHERE setting_key = ?',
           [finalValue, category, key]

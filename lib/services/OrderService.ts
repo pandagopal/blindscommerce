@@ -502,7 +502,7 @@ export class OrderService extends BaseService {
       ${whereClause}
       GROUP BY o.order_id
       ORDER BY o.${sortBy} ${sortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     ` : `
       SELECT
         o.*,
@@ -518,13 +518,13 @@ export class OrderService extends BaseService {
       ${whereClause}
       GROUP BY o.order_id
       ORDER BY o.${sortBy} ${sortOrder}
-      LIMIT ? OFFSET ?
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
     `;
 
     // Add vendorId params at the beginning if vendor-specific query
     const queryParams = vendorId
-      ? [vendorId, vendorId, ...whereParams, limit, offset]
-      : [...whereParams, limit, offset];
+      ? [vendorId, vendorId, ...whereParams]
+      : [...whereParams];
     
     const rawOrders = await this.executeQuery<OrderWithDetails>(ordersQuery, queryParams);
     const orders = parseArrayPrices(rawOrders, [

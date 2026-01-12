@@ -63,37 +63,22 @@ export class PaymentService extends BaseService {
     try {
       const settings = await this.settingsService.getAllSettings();
       const stripeSecretKey = settings.payments?.stripe_secret_key;
-      
-      // Debug logging
-      console.log('Stripe settings:', {
-        enabled: settings.payments?.stripe_enabled,
-        hasSecretKey: !!stripeSecretKey,
-        keyPrefix: stripeSecretKey?.substring(0, 7) // Show key prefix for debugging
-      });
-      
+
       // Use test key if no key is configured but Stripe is in test mode
       const isTestMode = settings.payments?.stripe_environment !== 'live';
       let finalStripeKey = stripeSecretKey;
-      
-      if (isTestMode && !stripeSecretKey) {
-        // No fallback - Stripe key must be configured in database
-        console.log('Stripe test mode enabled but no key configured in database');
-      }
-      
+
       if (finalStripeKey) {
         // Ensure we're using the secret key, not the publishable key
         if (finalStripeKey.startsWith('pk_')) {
           console.error('ERROR: Using publishable key instead of secret key!');
           throw new Error('Invalid Stripe configuration: secret key required');
         }
-        
+
         this.stripe = new Stripe(finalStripeKey, {
           apiVersion: '2024-12-18.acacia',
         });
         this.stripeInitialized = true;
-        //console.log('Stripe initialized successfully with', finalStripeKey.substring(0, 7) + '...');
-      } else {
-        console.log('Stripe not initialized - no secret key available');
       }
     } catch (error) {
       console.error('Failed to initialize Stripe:', error);
@@ -297,7 +282,6 @@ export class PaymentService extends BaseService {
     
     // For testing without card data, use a test card
     // This allows testing the flow without entering real card details
-    console.log('Using Stripe test card for payment processing');
     const testCard = {
       number: '4242424242424242',
       exp_month: 12,

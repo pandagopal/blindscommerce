@@ -259,10 +259,10 @@ export async function getAllTaxRates(
     );
     const total = countRows[0].total;
     
-    // Get paginated results
+    // Get paginated results - use safe integer interpolation for LIMIT/OFFSET
     const [rows] = await pool.execute<any[]>(
-      `SELECT * FROM tax_rates ${whereClause} ORDER BY state_code, city, zip_code LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      `SELECT * FROM tax_rates ${whereClause} ORDER BY state_code, city, zip_code LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      params
     );
     
     return {

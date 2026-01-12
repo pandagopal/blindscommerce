@@ -449,8 +449,8 @@ export class UsersHandler extends BaseHandler {
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
       WHERE w.user_id = ?
       ORDER BY wi.added_at DESC
-      LIMIT ? OFFSET ?`,
-      [user.user_id, limit, offset]
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      [user.user_id]
     );
 
     const [countResult] = await this.userService.raw(
@@ -723,7 +723,7 @@ export class UsersHandler extends BaseHandler {
     const sortField = allowedSorts.includes(sort) ? sort : 'created_at';
     const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
 
-    // Get measurement requests - using safe integer values for LIMIT/OFFSET
+    // Get measurement requests - using safe integer interpolation for LIMIT/OFFSET
     const measurements = await this.userService.raw(
       `SELECT
         mr.*,
@@ -734,8 +734,8 @@ export class UsersHandler extends BaseHandler {
       FROM measurement_requests mr
       WHERE mr.user_id = ?
       ORDER BY ${sortField} ${sortOrder}
-      LIMIT ? OFFSET ?`,
-      [user.user_id, limit, offset]
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      [user.user_id]
     );
 
     // Get total count
@@ -825,8 +825,8 @@ export class UsersHandler extends BaseHandler {
       LEFT JOIN vendor_info vi ON sc.vendor_id = vi.vendor_info_id
       WHERE sc.user_id = ?
       ORDER BY sc.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [user.user_id, limit, offset]
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      [user.user_id]
     );
 
     // Get total count

@@ -98,22 +98,6 @@ export default function ProductConfiguratorPage() {
               if (!productToSet.custom_height_min) productToSet.custom_height_min = 10;
               if (!productToSet.custom_height_max) productToSet.custom_height_max = 300;
               
-              console.log('Setting product with:', {
-                hasData: !!detailData.data,
-                hasFabricOptions: !!productToSet.fabricOptions,
-                fabricCount: productToSet.fabricOptions?.length,
-                hasControlTypes: !!productToSet.controlTypes,
-                controlCount: productToSet.controlTypes?.length,
-                hasPricingMatrix: !!productToSet.pricingMatrix,
-                pricingMatrixCount: productToSet.pricingMatrix?.length,
-                basePrice: productToSet.base_price,
-                dimensions: {
-                  width_min: productToSet.custom_width_min,
-                  width_max: productToSet.custom_width_max,
-                  height_min: productToSet.custom_height_min,
-                  height_max: productToSet.custom_height_max
-                }
-              });
               setProduct(productToSet);
             } else {
               // Apply fallback values for search result too

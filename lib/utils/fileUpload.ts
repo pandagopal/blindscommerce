@@ -108,7 +108,6 @@ export class FileUploadService {
 
     try {
       await fs.writeFile(filePath, buffer);
-      console.log('File uploaded successfully:', filePath);
     } catch (writeError) {
       console.error('Failed to write file:', filePath, writeError);
       throw new Error(`Failed to write file: ${writeError instanceof Error ? writeError.message : 'Unknown error'}`);

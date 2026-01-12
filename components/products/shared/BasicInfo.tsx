@@ -332,14 +332,6 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
             // Get current categories from form state
             const currentCategories = form.watch("categories") || [];
 
-            // Debug logging
-            console.log('BasicInfo Primary Category Debug:', {
-              fieldValue: field.value,
-              currentCategories: currentCategories,
-              dataFromProps: data?.primaryCategory,
-              match: currentCategories.includes(field.value)
-            });
-
             return (
               <FormItem>
                 <FormLabel>Primary Category *</FormLabel>

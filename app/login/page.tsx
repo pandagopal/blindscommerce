@@ -87,6 +87,9 @@ function LoginForm() {
             case 'installer':
               targetUrl = '/installer';
               break;
+            case 'shipping_agent':
+              targetUrl = '/shipping';
+              break;
             case 'customer':
               // For customers, check if there's a redirect URL
               // If they came from product configurator, return them there

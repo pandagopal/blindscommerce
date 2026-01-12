@@ -160,9 +160,8 @@ export class AdminHandler extends BaseHandler {
       const [countResult] = await pool.execute(countQuery, params);
       const total = (countResult as any[])[0].total;
 
-      // Get paginated results
-      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
+      // Get paginated results - use safe integer interpolation for LIMIT/OFFSET
+      query += ` ORDER BY created_at DESC LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
       const [users] = await pool.execute(query, params);
       
       return {
@@ -247,14 +246,11 @@ export class AdminHandler extends BaseHandler {
       
       query += ' GROUP BY u.user_id, vi.vendor_info_id';
       query += ' ORDER BY vi.created_at DESC';
-      query += ` LIMIT ? OFFSET ?`;
+      query += ` LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
 
-      // Get total count before adding limit params
+      // Get total count
       const [countResult] = await pool.query(countQuery, params);
       const total = (countResult as any[])[0].total;
-
-      // Add limit and offset params
-      params.push(limit, offset);
 
       // Get paginated results
       const [vendors] = await pool.query(query, params);
@@ -415,7 +411,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate categories cache
       deleteCachePattern('categories:*');
-      console.log('🗑️  Cleared categories cache after create');
 
       return {
         success: true,
@@ -483,7 +478,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate categories cache
       deleteCachePattern('categories:*');
-      console.log('🗑️  Cleared categories cache after update');
 
       return {
         success: true,
@@ -531,7 +525,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate categories cache
       deleteCachePattern('categories:*');
-      console.log('🗑️  Cleared categories cache after delete');
 
       return {
         success: true,
@@ -636,7 +629,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate hero banners cache
       deleteCachePattern('hero-banners:*');
-      console.log('🗑️  Cleared hero banners cache after create');
 
       return {
         success: true,
@@ -677,7 +669,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate hero banners cache
       deleteCachePattern('hero-banners:*');
-      console.log('🗑️  Cleared hero banners cache after update');
 
       return { success: true };
     } catch (error) {
@@ -692,7 +683,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate hero banners cache
       deleteCachePattern('hero-banners:*');
-      console.log('🗑️  Cleared hero banners cache after delete');
 
       return { success: true };
     } catch (error) {
@@ -727,10 +717,9 @@ export class AdminHandler extends BaseHandler {
       );
       const total = (countResult as any[])[0].total;
 
-      // Get paginated results
-      queryParams.push(limit, offset);
+      // Get paginated results - use safe integer interpolation for LIMIT/OFFSET
       const [rates] = await pool.execute(
-        `SELECT * FROM tax_rates${whereClause} ORDER BY state_code ASC, city ASC LIMIT ? OFFSET ?`,
+        `SELECT * FROM tax_rates${whereClause} ORDER BY state_code ASC, city ASC LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
         queryParams
       );
       
@@ -1002,42 +991,33 @@ export class AdminHandler extends BaseHandler {
 
   private async updateSettings(req: NextRequest) {
     const body = await req.json();
-    
-    console.log('AdminHandler.updateSettings - Request body:', JSON.stringify(body, null, 2));
-    
+
     try {
       // If body contains a specific category, update just that category
       if (body.category && body.settings) {
-        console.log(`Updating specific category: ${body.category}`);
-        console.log('Settings to update:', JSON.stringify(body.settings, null, 2));
         await settingsService.updateSettings(body.category, body.settings);
       } else if (body.settings) {
         // Handle the case where all settings are in body.settings
-        console.log('Updating all settings from body.settings');
         for (const [category, categorySettings] of Object.entries(body.settings)) {
           if (typeof categorySettings === 'object' && categorySettings !== null) {
-            console.log(`Updating category ${category}:`, JSON.stringify(categorySettings, null, 2));
             await settingsService.updateSettings(category, categorySettings);
           }
         }
       } else {
         // Otherwise update all settings provided
-        console.log('Updating all settings from body directly');
         for (const [category, categorySettings] of Object.entries(body)) {
           if (typeof categorySettings === 'object' && categorySettings !== null) {
-            console.log(`Updating category ${category}:`, JSON.stringify(categorySettings, null, 2));
             await settingsService.updateSettings(category, categorySettings);
           }
         }
       }
-      
+
       // Reload settings after update to ensure consistency
       const updatedSettings = await settingsService.getAllSettings();
-      console.log('Updated settings loaded - payments:', JSON.stringify(updatedSettings.payments, null, 2));
-      
-      return { 
+
+      return {
         success: true,
-        settings: updatedSettings 
+        settings: updatedSettings
       };
     } catch (error) {
       console.error('Error updating settings:', error);
@@ -1281,16 +1261,6 @@ export class AdminHandler extends BaseHandler {
         throw new ApiError('Product not found', 404);
       }
 
-      // Debug logging
-      console.log('AdminHandler.getProduct - returning:', {
-        product_id: product?.product_id,
-        primary_category: product?.primary_category,
-        categories: product?.categories,
-        category_id: product?.category_id,
-        pricing_matrix: product?.pricing_matrix,
-        pricing_matrix_length: product?.pricing_matrix?.length || 0
-      });
-
       return {
         success: true,
         data: {
@@ -1324,7 +1294,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after create');
 
       return {
         success: true,
@@ -1360,7 +1329,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after update');
 
       return {
         success: true,
@@ -1384,7 +1352,6 @@ export class AdminHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after delete');
 
       return {
         success: true,
@@ -1693,9 +1660,8 @@ export class AdminHandler extends BaseHandler {
       const [countResult] = await pool.execute(countQuery, params);
       const total = (countResult as any[])[0].total;
 
-      // Get paginated results
-      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
+      // Get paginated results - use safe integer interpolation for LIMIT/OFFSET
+      query += ` ORDER BY created_at DESC LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
       const [logs] = await pool.execute(query, params);
       
       return {

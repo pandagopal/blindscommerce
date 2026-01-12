@@ -49,7 +49,6 @@ export class ContentService extends BaseService {
       // Try to get from cache first
       const cached = await getCache<HeroBanner[]>(cacheKey);
       if (cached) {
-        console.log('📦 Returning cached hero banners (service)');
         return { banners: cached };
       }
 
@@ -91,7 +90,6 @@ export class ContentService extends BaseService {
       // Try to get from cache first
       const cached = await getCache<Room[]>(cacheKey);
       if (cached) {
-        console.log('📦 Returning cached rooms (service)');
         return { rooms: cached };
       }
 
@@ -131,7 +129,6 @@ export class ContentService extends BaseService {
       // Try to get from cache first
       const cached = await getCache<Review[]>(cacheKey);
       if (cached) {
-        console.log('📦 Returning cached reviews');
         return { reviews: cached };
       }
 

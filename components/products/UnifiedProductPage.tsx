@@ -282,10 +282,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       
       const apiPath = userRole === 'admin' ? '/api/v2/admin/products' : '/api/v2/vendors/products';
       const fullUrl = `${apiPath}?${params.toString()}`;
-      
-      console.log('Fetching products with URL:', fullUrl);
-      console.log('Vendor filter:', vendorFilter);
-      
+
       const res = await fetch(fullUrl);
       const data = await res.json();
       if (!res.ok) {
@@ -351,13 +348,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       const product = data.data?.data?.product || data.data?.product || data.data;
 
       if (product) {
-        // Debug: Log the product data
-        console.log('Product data:', {
-          primary_category: product.primary_category,
-          categories: product.categories,
-          category_id: product.category_id
-        });
-
         // Options and fabric data now come from the main product API response
         let optionsData = product.options;
 
@@ -375,13 +365,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             primaryCategory = matchedCat?.name || '';
           }
         }
-
-        console.log('Computed primaryCategory:', primaryCategory);
-        console.log('Pricing matrix from API:', {
-          pricing_matrix: product.pricing_matrix,
-          pricing_matrix_length: Array.isArray(product.pricing_matrix) ? product.pricing_matrix.length : 0,
-          pricing_systems: product.pricing?.systems
-        });
 
         // Map API response to expected structure
         const mappedData = {
@@ -466,13 +449,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
             }
           }
         };
-
-        console.log('Mapped pricing data:', {
-          matrixEntries: mappedData.pricing.matrixEntries,
-          matrixEntriesLength: mappedData.pricing.matrixEntries?.length,
-          systems: mappedData.pricing.systems,
-          pricingModel: mappedData.pricing.pricingModel
-        });
 
         setProductData(mappedData);
       } else {
@@ -642,14 +618,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
       // Process product images - upload any new images that are still using blob URLs
       const processedImages = await processProductImages(productData.images, productId);
 
-      // Debug: Log the data being sent
-      console.log('Save Product - Debug Data:', {
-        primaryCategory: productData.basicInfo.primaryCategory,
-        categories: productData.basicInfo.categories,
-        pricingSystems: productData.pricing.systems,
-        pricingMatrixEntries: productData.pricing.matrixEntries
-      });
-
       // Transform productData to the format expected by the API
       const apiData = {
         // Basic info fields
@@ -676,12 +644,6 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
         rendering3D: productData.rendering3D
       };
 
-      console.log('Save Product - API Data:', {
-        primaryCategory: apiData.primary_category,
-        categories: apiData.categories,
-        pricingMatrixLength: apiData.pricing_matrix?.length
-      });
-      
       const response = await fetch(apiEndpoint, {
         method,
         headers: {
@@ -1250,10 +1212,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                     fabric_name: f.name,
                     fabric_code: f.id // Use ID as code since fabric doesn't have separate code
                   })) || []}
-                  onChange={(data) => {
-                    console.log('Pricing data update:', data);
-                    updateProductData('pricing', data);
-                  }}
+                  onChange={(data) => updateProductData('pricing', data)}
                   isReadOnly={isViewMode}
                 />
               </TabsContent>

@@ -93,7 +93,6 @@ export const resetConnectionState = async (): Promise<void> => {
   if (pool) {
     try {
       await pool.end();
-      console.log('[Pool] Existing connections properly closed');
     } catch (error) {
       console.error('[Pool] Error closing connections:', error);
     }
@@ -615,12 +614,9 @@ export const getProducts = async (params: GetProductsParams): Promise<any[]> => 
   const allowedSortColumns = ['name', 'base_price', 'created_at', 'rating'];
   const sortColumn = allowedSortColumns.includes(sortBy) ? sortBy : 'name';
   const sortDirection = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
-  
-  // Add limit and offset
-  queryParams.push(limit, offset);
-  
+
   const query = `
-    SELECT 
+    SELECT
       p.product_id,
       p.name,
       p.slug,
@@ -640,9 +636,9 @@ export const getProducts = async (params: GetProductsParams): Promise<any[]> => 
     ${whereClause}
     GROUP BY p.product_id
     ORDER BY ${sortColumn === 'rating' ? 'rating' : `p.${sortColumn}`} ${sortDirection}
-    LIMIT ? OFFSET ?
+    LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}
   `;
-  
+
   const [rows] = await pool.execute<RowDataPacket[]>(query, queryParams);
   return rows;
 };

@@ -325,7 +325,6 @@ export class VendorsHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after vendor create');
 
       return {
         success: true,
@@ -358,7 +357,6 @@ export class VendorsHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after vendor update');
 
       return {
         success: true,
@@ -388,7 +386,6 @@ export class VendorsHandler extends BaseHandler {
 
       // Invalidate products cache
       deleteCachePattern('products:*');
-      console.log('🗑️  Cleared products cache after vendor delete');
 
       return {
         success: true,

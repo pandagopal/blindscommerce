@@ -152,11 +152,15 @@ export class AuthHandler extends BaseHandler {
       case 'vendor':
         redirectUrl = '/vendor';
         break;
+      case 'sales':
       case 'sales_representative':
         redirectUrl = '/sales';
         break;
       case 'installer':
         redirectUrl = '/installer';
+        break;
+      case 'shipping_agent':
+        redirectUrl = '/shipping';
         break;
       case 'customer':
         redirectUrl = '/account';

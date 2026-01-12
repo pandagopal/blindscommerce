@@ -104,7 +104,6 @@ export class ContentHandler extends BaseHandler {
       // Try to get from cache first
       const cached = await getCache<any[]>(cacheKey);
       if (cached) {
-        console.log('📦 Returning cached rooms');
         return {
           success: true,
           rooms: cached
@@ -156,7 +155,6 @@ export class ContentHandler extends BaseHandler {
       // Try to get from cache first
       const cached = await getCache<any[]>(cacheKey);
       if (cached) {
-        console.log('📦 Returning cached hero banners');
         return {
           success: true,
           banners: cached
@@ -273,7 +271,6 @@ export class ContentHandler extends BaseHandler {
 
       // Invalidate rooms cache
       deleteCachePattern('rooms:*');
-      console.log('🗑️  Cleared rooms cache after create');
 
       return {
         success: true,
@@ -339,7 +336,6 @@ export class ContentHandler extends BaseHandler {
 
       // Invalidate rooms cache
       deleteCachePattern('rooms:*');
-      console.log('🗑️  Cleared rooms cache after update');
 
       return {
         success: true,
@@ -373,7 +369,6 @@ export class ContentHandler extends BaseHandler {
 
       // Invalidate rooms cache
       deleteCachePattern('rooms:*');
-      console.log('🗑️  Cleared rooms cache after delete');
 
       return {
         success: true,

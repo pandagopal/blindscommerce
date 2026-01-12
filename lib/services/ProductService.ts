@@ -345,9 +345,6 @@ export class ProductService extends BaseService {
 
       const { categories, options, specifications, pricingMatrix, fabric, rooms, features } = results;
 
-      // Debug: Check raw categories from query
-      console.log('Raw categories from executeParallel:', categories);
-
       // Safe defaults
       const safeCategories = categories || [];
       const safeOptions = options || [];
@@ -497,17 +494,6 @@ export class ProductService extends BaseService {
         const primaryCat = finalCategories.find(c => c.is_primary === 1 || c.is_primary === true);
         primaryCategoryName = primaryCat?.name || '';
       }
-
-      // Debug logging
-      console.log('ProductService.getProductWithFullDetails - final data:', {
-        productId: productId,
-        safeCategoriesLength: safeCategories.length,
-        productCategoriesLength: product.categories?.length || 0,
-        finalCategoriesLength: finalCategories.length,
-        finalCategories: finalCategories,
-        primaryCategoryFromQuery: primaryCategory?.category_name,
-        primaryCategoryName: primaryCategoryName
-      });
 
       // Build enhanced product response
       return {
@@ -860,11 +846,11 @@ export class ProductService extends BaseService {
           OR p.sku LIKE ?
         )
       ORDER BY relevance DESC, p.name ASC
-      LIMIT ?
+      LIMIT ${Math.floor(limit)}
     `;
 
     const searchPattern = `%${searchTerm}%`;
-    const params = [searchTerm, searchTerm, searchPattern, searchPattern, limit];
+    const params = [searchTerm, searchTerm, searchPattern, searchPattern];
 
     return this.executeQuery<ProductWithDetails>(query, params);
   }
@@ -898,9 +884,9 @@ export class ProductService extends BaseService {
         shared_features DESC,
         p2.rating DESC,
         p2.created_at DESC
-      LIMIT ?
+      LIMIT ${Math.floor(limit)}
     `;
 
-    return this.executeQuery<ProductWithDetails>(query, [productId, limit]);
+    return this.executeQuery<ProductWithDetails>(query, [productId]);
   }
 }

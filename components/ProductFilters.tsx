@@ -114,11 +114,6 @@ export default function ProductFilters({
   sortBy: controlledSortBy,
   setSortBy: controlledSetSortBy
 }: ProductFiltersProps) {
-  console.log('🔧 ProductFilters rendered with:', {
-    hasControlledSetCategories: !!controlledSetSelectedCategories,
-    controlledSelectedCategories
-  });
-
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -168,7 +163,6 @@ export default function ProductFilters({
   useEffect(() => {
     // Skip URL syncing if using controlled state
     if (controlledSetSelectedCategories) {
-      console.log('⏭️  Skipping URL sync - using controlled state');
       return;
     }
 
@@ -233,12 +227,10 @@ export default function ProductFilters({
 
   // Handle category selection - allow multiple selections
   const handleCategoryChange = (categoryId: number) => {
-    console.log('📦 Category change clicked:', categoryId);
     setSelectedCategories(prev => {
       const newCategories = prev.includes(categoryId)
         ? prev.filter(id => id !== categoryId)
         : [...prev, categoryId];
-      console.log('Selected categories updated:', prev, '->', newCategories);
       return newCategories;
     });
   };

@@ -129,18 +129,14 @@ export default function CheckoutPage() {
         const authResponse = await fetch('/api/v2/auth/me', {
           credentials: 'include' // Ensure cookies are sent
         });
-        console.log('Auth check response:', authResponse.status);
-        
+
         if (!authResponse.ok) {
-          console.log('Auth failed, setting as guest');
           setIsGuest(true);
         } else {
           const authData = await authResponse.json();
-          console.log('Auth data:', authData);
-          
+
           // Handle V2 API response format { success: true, data: { user: {...} } }
           const userData = authData.data?.user || authData.user || authData.data || authData;
-          console.log('Extracted user data:', userData);
           
           if (userData && (userData.user_id || userData.userId)) {
             setFormData(prev => ({
@@ -173,14 +169,12 @@ export default function CheckoutPage() {
                 }
               }
             } catch (addressError) {
-              console.log('Address loading error:', addressError);
+              // Address loading failed, continue without default address
             }
-            
+
             setIsGuest(false);
-            console.log('User authenticated, setting isGuest to false');
           } else {
             setIsGuest(true);
-            console.log('No user data found, setting isGuest to true');
           }
         }
 
@@ -392,8 +386,6 @@ export default function CheckoutPage() {
   // Validate payment details based on selected method
   const isPaymentDetailsValid = () => {
     if (!selectedPaymentMethod) return false;
-    
-    console.log('isPaymentDetailsValid called for:', selectedPaymentMethod);
     
     if (selectedPaymentMethod === 'stripe_card') {
       // Check if card details are filled and valid
@@ -714,12 +706,10 @@ export default function CheckoutPage() {
       if (paymentResult.requires_action) {
         if (paymentResult.provider === 'klarna') {
           // In production, integrate Klarna SDK and redirect to their checkout
-          console.log('Klarna session created:', paymentResult.session_id);
           alert('Klarna integration requires frontend SDK implementation. Session ID: ' + paymentResult.session_id);
           throw new Error('Klarna checkout requires additional implementation');
         } else if (paymentResult.provider === 'affirm') {
           // In production, integrate Affirm.js and open their checkout
-          console.log('Affirm checkout data:', paymentResult.checkout_data);
           alert('Affirm integration requires frontend SDK implementation.');
           throw new Error('Affirm checkout requires additional implementation');
         } else if (paymentResult.provider === 'paypal') {
@@ -738,7 +728,6 @@ export default function CheckoutPage() {
           }
         } else if (paymentResult.provider === 'braintree') {
           // In production, use Braintree Drop-in UI
-          console.log('Braintree configuration:', paymentResult);
           alert('Braintree requires Drop-in UI implementation on frontend.');
           throw new Error('Braintree checkout requires additional implementation');
         } else if (paymentResult.client_secret) {
@@ -805,10 +794,7 @@ export default function CheckoutPage() {
       };
 
       const apiEndpoint = isGuest ? '/api/v2/commerce/orders/create-guest' : '/api/v2/commerce/orders/create';
-      console.log('Creating order with endpoint:', apiEndpoint, 'isGuest:', isGuest);
-      console.log('Current isGuest state:', isGuest);
-      console.log('Form email:', formData.email);
-      
+
       const finalOrderData = isGuest ? {
         ...orderData,
         createAccount: formData.createAccount,

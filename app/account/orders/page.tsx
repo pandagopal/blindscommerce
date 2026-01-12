@@ -33,21 +33,18 @@ export default function OrdersPage() {
       const res = await fetch(`/api/v2/commerce/orders?limit=${ordersPerPage}&offset=${offset}`);
 
       const response = await res.json();
-      console.log('Orders API Response:', response);
-      
+
       if (!res.ok) {
-        console.error('API Error:', response);
         throw new Error(response.error || 'Failed to fetch orders');
       }
-      
+
       if (!response.success) {
         throw new Error(response.error || 'Failed to fetch orders');
       }
-      
+
       // The API returns paginated data with orders in response.data.data
       const ordersData = response.data?.data || response.data || [];
-      console.log('Extracted orders:', ordersData);
-      
+
       setOrders(Array.isArray(ordersData) ? ordersData : []);
       setTotalOrders(response.data?.total || response.pagination?.total || 0);
     } catch (error) {

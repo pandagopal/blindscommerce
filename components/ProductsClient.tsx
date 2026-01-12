@@ -69,13 +69,6 @@ export default function ProductsClient({
 
   // Client-side filtering
   const filteredProducts = useMemo(() => {
-    console.log('🔍 Filtering products:', {
-      totalProducts: initialProducts.length,
-      selectedCategories,
-      minPrice,
-      maxPrice
-    });
-
     let filtered = [...initialProducts];
 
     // Filter by categories
@@ -83,24 +76,20 @@ export default function ProductsClient({
       filtered = filtered.filter(product =>
         selectedCategories.includes(product.category_id)
       );
-      console.log('After category filter:', filtered.length, 'products');
     }
 
     // Filter by price range
     if (minPrice.trim()) {
       const min = parseFloat(minPrice);
       filtered = filtered.filter(product => product.base_price >= min);
-      console.log('After min price filter:', filtered.length, 'products');
     }
     if (maxPrice.trim()) {
       const max = parseFloat(maxPrice);
       filtered = filtered.filter(product => product.base_price <= max);
-      console.log('After max price filter:', filtered.length, 'products');
     }
 
     // TODO: Filter by features, room, sale when that data is available on products
 
-    console.log('Final filtered products:', filtered.length);
     return filtered;
   }, [initialProducts, selectedCategories, minPrice, maxPrice]);
 

@@ -259,18 +259,14 @@ export function CartProvider({ children }: CartProviderProps) {
       setIsLoading(true);
       try {
         const authenticated = await isAuthenticated();
-        console.log('CartContext: Loading cart, authenticated:', authenticated);
-        
+
         if (authenticated) {
           const response = await fetch('/api/v2/commerce/cart');
-          console.log('CartContext: Cart API response status:', response.status);
           if (response.ok) {
             const result = await response.json();
-            console.log('CartContext: Cart API result:', result);
             if (result.success) {
               const data = result.data || result;
               setItems(data.items || []);
-              console.log('CartContext: Loaded', data.items?.length || 0, 'items from API');
               // Clear localStorage after successful load from API
               try {
                 localStorage.removeItem('guest_cart');
@@ -305,16 +301,14 @@ export function CartProvider({ children }: CartProviderProps) {
     // Listen for storage events to reload cart after login
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'auth_changed') {
-        console.log('CartContext: Auth changed, reloading cart');
         loadCart();
       }
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
-    
+
     // Also check for login success in URL
     if (window.location.search.includes('login=success')) {
-      console.log('CartContext: Login success detected, reloading cart');
       setTimeout(loadCart, 1000); // Delay to ensure auth cookie is set
     }
     
@@ -333,21 +327,16 @@ export function CartProvider({ children }: CartProviderProps) {
     try {
       // Check user role - only customers and guests can add to cart
       const response = await fetch('/api/v2/auth/me');
-      console.log('Auth check response status:', response.status);
       if (response.ok) {
         const result = await response.json();
-        console.log('Auth check full result:', JSON.stringify(result, null, 2));
         const data = result.data || result;
         // Check if user exists and their role
         const userRole = data.user?.role || data.role;
-        console.log('Extracted user role:', userRole);
         if (userRole && userRole !== 'customer') {
           // User is logged in but not a customer
           alert('Only customers can add items to cart. Please log in with a customer account.');
           return;
         }
-      } else {
-        console.log('Auth check failed:', response.status, 'Treating as guest user');
       }
       // If response is not ok, user is not authenticated (guest user) - allow them to proceed
       
@@ -392,8 +381,6 @@ export function CartProvider({ children }: CartProviderProps) {
             ...(newItem.configuration || {})
           }
         };
-        
-        console.log('Sending to cart API:', apiData);
         
         const response = await fetch('/api/v2/commerce/cart/add', {
           method: 'POST',
@@ -696,8 +683,6 @@ export function CartProvider({ children }: CartProviderProps) {
         coupon_code: code
       };
 
-      console.log('Applying coupon with request:', pricingRequest);
-      
       const response = await fetch('/api/v2/commerce/cart/calculate-pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -706,27 +691,18 @@ export function CartProvider({ children }: CartProviderProps) {
 
       if (!response.ok) {
         const error = await response.json();
-        console.error('Coupon application failed:', error);
         throw new Error(error.message || error.error || 'Failed to apply coupon');
       }
 
       const result = await response.json();
-      console.log('Coupon API response:', result);
-      
+
       if (!result.success) {
         throw new Error(result.message || 'Failed to apply coupon');
       }
-      
+
       // Handle double-wrapped response from calculate-pricing endpoint
       const data = result.data?.data || result.data;
-      console.log('Extracted pricing data:', data);
-      console.log('Coupon validation result:', {
-        hasVendorCoupons: data.vendor_coupons?.length > 0,
-        vendorCoupons: data.vendor_coupons,
-        appliedPromotions: data.applied_promotions,
-        totalDiscount: data.total_discount_amount
-      });
-      
+
       // Update pricing state with new data
       const pricingData = {
         subtotal: data.subtotal || 0,
@@ -753,27 +729,12 @@ export function CartProvider({ children }: CartProviderProps) {
       }
       
       // Check if coupon was successfully applied
-      console.log('Checking coupon success:', {
-        vendorCouponsLength: data.vendor_coupons?.length,
-        vendorCoupons: data.vendor_coupons,
-        vendorCouponsType: typeof data.vendor_coupons,
-        vendorCouponsIsArray: Array.isArray(data.vendor_coupons),
-        appliedPromotionsCode: data.applied_promotions?.coupon_code,
-        providedCode: code,
-        condition1: data.vendor_coupons?.length > 0,
-        condition2: data.applied_promotions?.coupon_code === code,
-        dataKeys: Object.keys(data)
-      });
-      
-      // Force success if we have vendor coupons in the response
       const hasCoupons = Array.isArray(data.vendor_coupons) && data.vendor_coupons.length > 0;
       const hasAppliedPromotion = data.applied_promotions?.coupon_code === code;
-      
+
       if (hasCoupons || hasAppliedPromotion) {
-        console.log('Coupon successfully applied!', { hasCoupons, hasAppliedPromotion });
         return { success: true, message: 'Coupon applied successfully' };
       } else {
-        console.log('Coupon validation failed in frontend', { hasCoupons, hasAppliedPromotion });
         setAppliedCoupon(null);
         return { success: false, message: 'Coupon code not valid for items in cart' };
       }

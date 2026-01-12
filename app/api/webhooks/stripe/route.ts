@@ -36,7 +36,6 @@ export async function POST(request: NextRequest) {
     
     // Check if webhook secret is configured - if not, webhooks are disabled
     if (!stripeSettings.stripe_webhook_secret) {
-      console.log('Stripe webhook secret not configured - webhooks disabled');
       return NextResponse.json(
         { message: 'Stripe webhooks are disabled (no webhook secret configured)' },
         { status: 200 }

@@ -82,26 +82,11 @@ const StripePaymentRequest = forwardRef<StripePaymentRequestHandle, StripePaymen
 
     // Check if the Payment Request is available (Apple Pay or Google Pay)
     pr.canMakePayment().then((result) => {
-      console.log('Payment Request canMakePayment result:', result);
-      
       if (result) {
         setPaymentRequest(pr);
         setCanMakePayment(true);
-        
-        // Log which payment methods are available
-        if (result.applePay) {
-          console.log('Apple Pay is available');
-        }
-        if (result.googlePay) {
-          console.log('Google Pay is available');
-        }
       } else {
         setCanMakePayment(false);
-        console.log('Payment Request not available. Possible reasons:');
-        console.log('- No saved payment methods in browser');
-        console.log('- Not on HTTPS (except localhost)');
-        console.log('- Browser doesn\'t support Payment Request API');
-        console.log('- User has disabled payment methods');
       }
     }).catch((error) => {
       console.error('Error checking payment availability:', error);

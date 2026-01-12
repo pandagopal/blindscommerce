@@ -89,15 +89,9 @@ export default function AdminHeroBannersPage() {
 
       if (response.ok) {
         const result = await response.json();
-        console.log('Upload response:', result);
         const data = result.data || result;
         const fieldName = imageType === 'background' ? 'background_image' : 'right_side_image';
-        console.log(`Setting ${fieldName} to:`, data.url);
-        setFormData(prev => {
-          const updated = { ...prev, [fieldName]: data.url };
-          console.log('Updated formData:', updated);
-          return updated;
-        });
+        setFormData(prev => ({ ...prev, [fieldName]: data.url }));
       } else {
         const errorText = await response.text();
         console.error('Upload failed:', errorText);
@@ -114,16 +108,12 @@ export default function AdminHeroBannersPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('Submitting form data:', formData);
-
     try {
       const endpoint = editingBanner
         ? `/api/v2/admin/hero-banners/${editingBanner.banner_id}`
         : '/api/v2/admin/hero-banners';
 
       const method = editingBanner ? 'PUT' : 'POST';
-
-      console.log(`${method} ${endpoint}`);
 
       const response = await fetch(endpoint, {
         method,
@@ -134,7 +124,6 @@ export default function AdminHeroBannersPage() {
       });
 
       if (response.ok) {
-        console.log('Banner saved successfully');
         fetchBanners();
         resetForm();
       } else {

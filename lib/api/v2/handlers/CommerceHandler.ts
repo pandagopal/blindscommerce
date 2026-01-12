@@ -161,7 +161,6 @@ export class CommerceHandler extends BaseHandler {
     // Try to get from cache first
     const cached = await getCache<any[]>(cacheKey);
     if (cached) {
-      console.log('📦 Returning cached categories');
       return { categories: cached };
     }
 
@@ -203,7 +202,6 @@ export class CommerceHandler extends BaseHandler {
     // Try to get from cache first
     const cached = await getCache<{ products: any[]; total: number }>(cacheKey);
     if (cached) {
-      console.log('📦 Returning cached products');
       return this.buildPaginatedResponse(cached.products, cached.total, page, limit);
     }
 
@@ -723,10 +721,6 @@ export class CommerceHandler extends BaseHandler {
   // Order methods
   private async getOrders(req: NextRequest, user: any) {
     this.requireAuth(user);
-    
-    console.log('getOrders - user object:', user);
-    console.log('getOrders - user.user_id:', user.user_id);
-    console.log('getOrders - user.userId:', user.userId);
 
     const searchParams = this.getSearchParams(req);
     const { page, limit, offset } = this.getPagination(searchParams);
@@ -734,8 +728,8 @@ export class CommerceHandler extends BaseHandler {
     const options = {
       userId: user.user_id || user.userId,
       status: searchParams.get('status') || undefined,
-      dateFrom: searchParams.get('dateFrom') 
-        ? new Date(searchParams.get('dateFrom')!) 
+      dateFrom: searchParams.get('dateFrom')
+        ? new Date(searchParams.get('dateFrom')!)
         : undefined,
       dateTo: searchParams.get('dateTo')
         ? new Date(searchParams.get('dateTo')!)
@@ -747,10 +741,7 @@ export class CommerceHandler extends BaseHandler {
     };
 
     const { orders, total } = await this.orderService.getOrders(options);
-    
-    console.log('getOrders - found orders:', orders.length);
-    console.log('getOrders - total:', total);
-    
+
     return this.buildPaginatedResponse(orders, total, page, limit);
   }
 
@@ -934,8 +925,8 @@ export class CommerceHandler extends BaseHandler {
       FROM quotes q
       WHERE ${whereClause}
       ORDER BY q.created_at DESC
-      LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
+      params
     );
 
     // Get items for each quote

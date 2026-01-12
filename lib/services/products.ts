@@ -168,16 +168,15 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     
     query += ` ORDER BY ${orderByField} ${finalSortOrder}`;
 
-    // Add pagination
-    query += ' LIMIT ? OFFSET ?';
-    values.push(limit, offset);
+    // Add pagination - use safe integer interpolation for LIMIT/OFFSET
+    query += ` LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
 
     // Execute query using execute() for better connection management
     const [rows] = await pool.execute(query, values);
 
     // Get total count
     let countQuery: string;
-    const countValues = [...values.slice(0, -2)]; // Remove limit and offset
+    const countValues = [...values]; // Values without limit/offset since we use interpolation
 
     if (role === 'vendor' && vendorId) {
       countQuery = `

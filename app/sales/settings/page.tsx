@@ -155,7 +155,7 @@ export default function SalesSettingsPage() {
                     <Label htmlFor="firstName">First Name</Label>
                     <Input
                       id="firstName"
-                      value={profile.firstName}
+                      value={profile.firstName || ''}
                       onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                       required
                     />
@@ -164,7 +164,7 @@ export default function SalesSettingsPage() {
                     <Label htmlFor="lastName">Last Name</Label>
                     <Input
                       id="lastName"
-                      value={profile.lastName}
+                      value={profile.lastName || ''}
                       onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                       required
                     />
@@ -173,7 +173,7 @@ export default function SalesSettingsPage() {
                     <Label htmlFor="email">Email (Read Only)</Label>
                     <Input
                       id="email"
-                      value={profile.email}
+                      value={profile.email || ''}
                       disabled
                       className="bg-gray-50"
                     />
@@ -199,7 +199,7 @@ export default function SalesSettingsPage() {
                     <Label htmlFor="startDate">Start Date (Read Only)</Label>
                     <Input
                       id="startDate"
-                      value={new Date(profile.startDate).toLocaleDateString()}
+                      value={profile.startDate ? new Date(profile.startDate).toLocaleDateString() : 'Not set'}
                       disabled
                       className="bg-gray-50"
                     />

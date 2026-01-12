@@ -74,10 +74,9 @@ export class CategoryService extends BaseService {
     const sortDirection = sortOrder === 'DESC' ? 'DESC' : 'ASC';
     query += ` ORDER BY ${sortColumn} ${sortDirection}`;
 
-    // Add pagination
+    // Add pagination - use safe integer interpolation for LIMIT/OFFSET
     if (limit) {
-      query += ` LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
+      query += ` LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
     }
 
     const rows = await this.executeQuery<Category>(query, params);

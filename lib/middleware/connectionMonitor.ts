@@ -16,7 +16,7 @@ export async function connectionMonitorMiddleware(
     if (poolInfoBefore) {
       const usage = (poolInfoBefore.used / poolInfoBefore.total) * 100;
       if (usage > 60) {
-        console.log(`[Pool Monitor] ${request.url} - Before: ${poolInfoBefore.used}/${poolInfoBefore.total} connections (${usage.toFixed(1)}% usage)`);
+        // High pool usage - can enable logging for debugging if needed
       }
     }
   }
@@ -32,7 +32,7 @@ export async function logPoolStats(context: string) {
   if (process.env.NODE_ENV === 'development') {
     const poolInfo = await getPoolInfo();
     if (poolInfo) {
-      console.log(`[Pool Stats - ${context}] Used: ${poolInfo.used}, Free: ${poolInfo.free}, Queued: ${poolInfo.queued}, Total: ${poolInfo.total}`);
+      // Pool stats available - can enable logging for debugging if needed
     }
   }
 }

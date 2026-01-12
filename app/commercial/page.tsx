@@ -102,7 +102,6 @@ export default function CommercialPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission here
-    console.log('Commercial inquiry submitted:', formData);
   };
 
   return (

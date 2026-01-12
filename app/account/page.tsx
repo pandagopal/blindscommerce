@@ -55,13 +55,11 @@ function RecentOrdersList() {
         
         if (response.ok) {
           const data = await response.json();
-          console.log('Orders API response:', data);
-          
+
           // Ensure we have an array
           const orders = Array.isArray(data.data) ? data.data : [];
           setRecentOrders(orders);
         } else {
-          console.error('Failed to fetch orders:', response.status, response.statusText);
           setRecentOrders([]);
         }
       } catch (error) {
