@@ -96,8 +96,10 @@ export default function AdminUsersPage() {
       }
 
       const result = await response.json();
-        const data = result.data || result;setUsers(data.users);
-      setTotalUsers(data.total);
+      const data = result.data || result;
+      setUsers(data.users);
+      // Total count is in pagination object
+      setTotalUsers(data.pagination?.total || data.total || data.users?.length || 0);
     } catch (error) {
       console.error('Error fetching users:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch users');

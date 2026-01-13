@@ -30,6 +30,7 @@ export class AdminHandler extends BaseHandler {
     const routes = {
       'dashboard': () => this.getDashboard(),
       'users': () => this.getUsers(req),
+      'users/:id': () => this.getUser(action[1]),
       'vendors': () => this.getVendors(req),
       'orders': () => this.getOrders(req),
       'orders/:id': () => this.getOrder(action[1]),
@@ -49,6 +50,9 @@ export class AdminHandler extends BaseHandler {
       'product-approvals': () => this.getProductApprovals(req),
       'product-approvals/:id': () => this.getProductApproval(action[1]),
       'logs': () => this.getLogs(req),
+      'installer-companies': () => this.getInstallerCompanies(req),
+      'installer-companies/:id': () => this.getInstallerCompany(action[1]),
+      'installer-companies/:id/zip-codes': () => this.getInstallerCompanyZipCodes(action[1]),
     };
 
     return this.routeAction(action, routes);
@@ -74,6 +78,9 @@ export class AdminHandler extends BaseHandler {
       'orders/:id/disable': () => this.disableOrder(action[1]),
       'product-approvals/:id/approve': () => this.approveProductRequest(action[1], user),
       'product-approvals/:id/reject': () => this.rejectProductRequest(action[1], req, user),
+      'installer-companies': () => this.createInstallerCompany(req),
+      'installer-companies/:id/zip-codes': () => this.addInstallerCompanyZipCodes(action[1], req),
+      'installer-companies/import': () => this.importInstallerCompanies(req),
     };
 
     return this.routeAction(action, routes);
@@ -98,9 +105,10 @@ export class AdminHandler extends BaseHandler {
 
   async handlePATCH(req: NextRequest, action: string[], user: any): Promise<any> {
     this.requireRole(user, 'ADMIN');
-    
+
     const routes = {
       'orders/:id': () => this.updateOrderStatus(action[1], req),
+      'users/:id': () => this.patchUser(action[1], req),
     };
 
     return this.routeAction(action, routes);
@@ -129,11 +137,13 @@ export class AdminHandler extends BaseHandler {
 
   private async getUsers(req: NextRequest) {
     const searchParams = new URL(req.url).searchParams;
-    const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || '';
     const role = searchParams.get('role') || '';
-    const offset = (page - 1) * limit;
+    // Support both 'page' and 'offset' parameters for flexibility
+    const offsetParam = searchParams.get('offset');
+    const page = parseInt(searchParams.get('page') || '1');
+    const offset = offsetParam !== null ? parseInt(offsetParam) : (page - 1) * limit;
     
     try {
       const pool = await getPool();
@@ -176,6 +186,91 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       console.error('Error fetching users:', error);
       throw new ApiError('Failed to fetch users', 500);
+    }
+  }
+
+  private async getUser(userId: string) {
+    const id = parseInt(userId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    try {
+      const pool = await getPool();
+      const [rows] = await pool.execute(
+        'SELECT user_id, email, first_name, last_name, phone, role, is_active, is_verified, created_at, updated_at, last_login FROM users WHERE user_id = ?',
+        [id]
+      );
+
+      const users = rows as any[];
+      if (!users || users.length === 0) {
+        throw new ApiError('User not found', 404);
+      }
+
+      return users[0];
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error fetching user:', error);
+      throw new ApiError('Failed to fetch user', 500);
+    }
+  }
+
+  private async patchUser(userId: string, req: NextRequest) {
+    const id = parseInt(userId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    try {
+      const body = await req.json();
+      const pool = await getPool();
+
+      // Build update query dynamically based on provided fields
+      const updates: string[] = [];
+      const values: any[] = [];
+
+      if (body.is_active !== undefined) {
+        updates.push('is_active = ?');
+        values.push(body.is_active ? 1 : 0);
+      }
+
+      if (body.role !== undefined) {
+        updates.push('role = ?');
+        values.push(body.role);
+      }
+
+      if (body.first_name !== undefined) {
+        updates.push('first_name = ?');
+        values.push(body.first_name);
+      }
+
+      if (body.last_name !== undefined) {
+        updates.push('last_name = ?');
+        values.push(body.last_name);
+      }
+
+      if (body.phone !== undefined) {
+        updates.push('phone = ?');
+        values.push(body.phone);
+      }
+
+      if (updates.length === 0) {
+        throw new ApiError('No fields to update', 400);
+      }
+
+      updates.push('updated_at = NOW()');
+      values.push(id);
+
+      await pool.execute(
+        `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`,
+        values
+      );
+
+      return { success: true, message: 'User updated successfully' };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error updating user:', error);
+      throw new ApiError('Failed to update user', 500);
     }
   }
 
@@ -1481,16 +1576,32 @@ export class AdminHandler extends BaseHandler {
 
   private async updateUser(id: string, req: NextRequest) {
     const body = await req.json();
-    
+
     try {
+      // Map camelCase to snake_case for database
+      const updateData: any = {};
+
+      if (body.email !== undefined) updateData.email = body.email;
+      if (body.firstName !== undefined) updateData.first_name = body.firstName;
+      if (body.lastName !== undefined) updateData.last_name = body.lastName;
+      if (body.phone !== undefined) updateData.phone = body.phone;
+      if (body.role !== undefined) updateData.role = body.role;
+      if (body.isActive !== undefined) updateData.is_active = body.isActive ? 1 : 0;
+
       // If password is being updated, hash it
       if (body.password) {
-        body.password = await bcrypt.hash(body.password, 10);
+        updateData.password_hash = await bcrypt.hash(body.password, 10);
       }
-      
-      await userService.update(parseInt(id), body);
-      return { success: true };
+
+      if (Object.keys(updateData).length === 0) {
+        throw new ApiError('No fields to update', 400);
+      }
+
+      await userService.update(parseInt(id), updateData);
+      return { success: true, message: 'User updated successfully' };
     } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error updating user:', error);
       throw new ApiError('Failed to update user', 500);
     }
   }
@@ -1818,6 +1929,368 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       console.error('Error rejecting product request:', error);
       throw new ApiError('Failed to reject product request: ' + (error instanceof Error ? error.message : 'Unknown error'), 500);
+    }
+  }
+
+  // =====================================================
+  // Installer Companies Management
+  // =====================================================
+
+  private async getInstallerCompanies(req: NextRequest) {
+    const searchParams = new URL(req.url).searchParams;
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+    const offset = (page - 1) * limit;
+
+    try {
+      const pool = await getPool();
+
+      let query = `
+        SELECT
+          ic.*,
+          COUNT(DISTINCT icz.zip_code) as zip_code_count,
+          COUNT(DISTINCT icu.user_id) as user_count
+        FROM installer_companies ic
+        LEFT JOIN installer_company_zip_codes icz ON ic.company_id = icz.company_id AND icz.is_active = 1
+        LEFT JOIN installer_company_users icu ON ic.company_id = icu.company_id AND icu.is_active = 1
+        WHERE 1=1
+      `;
+      let countQuery = `SELECT COUNT(*) as total FROM installer_companies WHERE 1=1`;
+      const params: any[] = [];
+      const countParams: any[] = [];
+
+      if (search) {
+        const searchCondition = ` AND (ic.company_name LIKE ? OR ic.email LIKE ? OR ic.city LIKE ?)`;
+        query += searchCondition;
+        countQuery += ` AND (company_name LIKE ? OR email LIKE ? OR city LIKE ?)`;
+        params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+        countParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      }
+
+      if (status === 'active') {
+        query += ` AND ic.is_active = 1`;
+        countQuery += ` AND is_active = 1`;
+      } else if (status === 'inactive') {
+        query += ` AND ic.is_active = 0`;
+        countQuery += ` AND is_active = 0`;
+      }
+
+      query += ` GROUP BY ic.company_id ORDER BY ic.company_name ASC LIMIT ${limit} OFFSET ${offset}`;
+
+      const [companies] = await pool.execute(query, params);
+      const [countResult] = await pool.execute(countQuery, countParams);
+      const total = (countResult as any[])[0]?.total || 0;
+
+      return {
+        companies,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit)
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching installer companies:', error);
+      throw new ApiError('Failed to fetch installer companies', 500);
+    }
+  }
+
+  private async getInstallerCompany(companyId: string) {
+    const id = parseInt(companyId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid company ID', 400);
+    }
+
+    try {
+      const pool = await getPool();
+
+      const [companies] = await pool.execute(
+        `SELECT * FROM installer_companies WHERE company_id = ?`,
+        [id]
+      );
+
+      if (!(companies as any[]).length) {
+        throw new ApiError('Installer company not found', 404);
+      }
+
+      // Get zip codes
+      const [zipCodes] = await pool.execute(
+        `SELECT * FROM installer_company_zip_codes WHERE company_id = ? ORDER BY is_primary_area DESC, zip_code ASC`,
+        [id]
+      );
+
+      // Get linked users
+      const [users] = await pool.execute(
+        `SELECT icu.*, u.email, u.first_name, u.last_name, u.phone
+         FROM installer_company_users icu
+         JOIN users u ON icu.user_id = u.user_id
+         WHERE icu.company_id = ?`,
+        [id]
+      );
+
+      return {
+        ...(companies as any[])[0],
+        zip_codes: zipCodes,
+        users
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error fetching installer company:', error);
+      throw new ApiError('Failed to fetch installer company', 500);
+    }
+  }
+
+  private async getInstallerCompanyZipCodes(companyId: string) {
+    const id = parseInt(companyId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid company ID', 400);
+    }
+
+    try {
+      const pool = await getPool();
+      const [zipCodes] = await pool.execute(
+        `SELECT * FROM installer_company_zip_codes WHERE company_id = ? ORDER BY is_primary_area DESC, zip_code ASC`,
+        [id]
+      );
+      return zipCodes;
+    } catch (error) {
+      console.error('Error fetching zip codes:', error);
+      throw new ApiError('Failed to fetch zip codes', 500);
+    }
+  }
+
+  private async createInstallerCompany(req: NextRequest) {
+    const body = await req.json();
+
+    const requiredFields = ['company_name', 'email', 'phone', 'address_line1', 'city', 'state_province', 'postal_code'];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        throw new ApiError(`${field} is required`, 400);
+      }
+    }
+
+    try {
+      const pool = await getPool();
+
+      const [result] = await pool.execute(
+        `INSERT INTO installer_companies (
+          company_name, contact_name, email, phone, website,
+          address_line1, address_line2, city, state_province, postal_code, country,
+          license_number, insurance_info, years_in_business, description,
+          base_service_fee, hourly_rate, travel_fee_per_mile,
+          services_offered, product_specialties,
+          lead_time_days, max_advance_days, service_days, service_start_time, service_end_time,
+          is_active, is_verified
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          body.company_name,
+          body.contact_name || null,
+          body.email,
+          body.phone,
+          body.website || null,
+          body.address_line1,
+          body.address_line2 || null,
+          body.city,
+          body.state_province,
+          body.postal_code,
+          body.country || 'USA',
+          body.license_number || null,
+          body.insurance_info || null,
+          body.years_in_business || null,
+          body.description || null,
+          body.base_service_fee || 0,
+          body.hourly_rate || 75,
+          body.travel_fee_per_mile || 0,
+          JSON.stringify(body.services_offered || ['installation', 'measurement']),
+          JSON.stringify(body.product_specialties || ['blinds', 'shades']),
+          body.lead_time_days || 7,
+          body.max_advance_days || 60,
+          JSON.stringify(body.service_days || [1, 2, 3, 4, 5]),
+          body.service_start_time || '08:00:00',
+          body.service_end_time || '18:00:00',
+          body.is_active !== false ? 1 : 0,
+          body.is_verified ? 1 : 0
+        ]
+      );
+
+      const companyId = (result as any).insertId;
+
+      // Add zip codes if provided
+      if (body.zip_codes && Array.isArray(body.zip_codes)) {
+        for (const zip of body.zip_codes) {
+          const zipCode = typeof zip === 'string' ? zip : zip.zip_code;
+          const isPrimary = typeof zip === 'object' ? (zip.is_primary_area ? 1 : 0) : 1;
+          await pool.execute(
+            `INSERT INTO installer_company_zip_codes (company_id, zip_code, is_primary_area) VALUES (?, ?, ?)`,
+            [companyId, zipCode, isPrimary]
+          );
+        }
+      }
+
+      return {
+        success: true,
+        company_id: companyId,
+        message: 'Installer company created successfully'
+      };
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new ApiError('An installer company with this email already exists', 400);
+      }
+      console.error('Error creating installer company:', error);
+      throw new ApiError('Failed to create installer company', 500);
+    }
+  }
+
+  private async addInstallerCompanyZipCodes(companyId: string, req: NextRequest) {
+    const id = parseInt(companyId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid company ID', 400);
+    }
+
+    const body = await req.json();
+    const zipCodes = body.zip_codes;
+
+    if (!zipCodes || !Array.isArray(zipCodes) || zipCodes.length === 0) {
+      throw new ApiError('zip_codes array is required', 400);
+    }
+
+    try {
+      const pool = await getPool();
+
+      // Verify company exists
+      const [companies] = await pool.execute(
+        `SELECT company_id FROM installer_companies WHERE company_id = ?`,
+        [id]
+      );
+      if (!(companies as any[]).length) {
+        throw new ApiError('Installer company not found', 404);
+      }
+
+      let added = 0;
+      let skipped = 0;
+
+      for (const zip of zipCodes) {
+        const zipCode = typeof zip === 'string' ? zip.trim() : zip.zip_code?.trim();
+        if (!zipCode) continue;
+
+        const isPrimary = typeof zip === 'object' ? (zip.is_primary_area ? 1 : 0) : 0;
+        const additionalFee = typeof zip === 'object' ? (zip.additional_travel_fee || 0) : 0;
+
+        try {
+          await pool.execute(
+            `INSERT INTO installer_company_zip_codes (company_id, zip_code, is_primary_area, additional_travel_fee)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE is_primary_area = VALUES(is_primary_area), additional_travel_fee = VALUES(additional_travel_fee)`,
+            [id, zipCode, isPrimary, additionalFee]
+          );
+          added++;
+        } catch (e) {
+          skipped++;
+        }
+      }
+
+      return {
+        success: true,
+        added,
+        skipped,
+        message: `Added ${added} zip codes${skipped > 0 ? `, skipped ${skipped}` : ''}`
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error adding zip codes:', error);
+      throw new ApiError('Failed to add zip codes', 500);
+    }
+  }
+
+  private async importInstallerCompanies(req: NextRequest) {
+    const body = await req.json();
+    const companies = body.companies;
+
+    if (!companies || !Array.isArray(companies) || companies.length === 0) {
+      throw new ApiError('companies array is required', 400);
+    }
+
+    try {
+      const pool = await getPool();
+      let imported = 0;
+      let failed = 0;
+      const errors: string[] = [];
+
+      for (const company of companies) {
+        try {
+          // Check required fields
+          if (!company.company_name || !company.email || !company.phone) {
+            errors.push(`Skipped: ${company.company_name || 'Unknown'} - missing required fields`);
+            failed++;
+            continue;
+          }
+
+          const [result] = await pool.execute(
+            `INSERT INTO installer_companies (
+              company_name, contact_name, email, phone,
+              address_line1, address_line2, city, state_province, postal_code, country,
+              is_active
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+            ON DUPLICATE KEY UPDATE
+              company_name = VALUES(company_name),
+              contact_name = VALUES(contact_name),
+              phone = VALUES(phone),
+              address_line1 = VALUES(address_line1),
+              city = VALUES(city),
+              state_province = VALUES(state_province),
+              postal_code = VALUES(postal_code)`,
+            [
+              company.company_name,
+              company.contact_name || null,
+              company.email,
+              company.phone,
+              company.address_line1 || company.address || '',
+              company.address_line2 || null,
+              company.city || '',
+              company.state_province || company.state || '',
+              company.postal_code || company.zip || '',
+              company.country || 'USA'
+            ]
+          );
+
+          const companyId = (result as any).insertId || (result as any).affectedRows;
+
+          // If company was inserted (not updated), add zip codes
+          if ((result as any).insertId && company.zip_codes) {
+            const zipList = Array.isArray(company.zip_codes)
+              ? company.zip_codes
+              : company.zip_codes.split(',').map((z: string) => z.trim());
+
+            for (const zip of zipList) {
+              if (zip) {
+                await pool.execute(
+                  `INSERT IGNORE INTO installer_company_zip_codes (company_id, zip_code, is_primary_area) VALUES (?, ?, 1)`,
+                  [(result as any).insertId, zip]
+                );
+              }
+            }
+          }
+
+          imported++;
+        } catch (e: any) {
+          errors.push(`Failed: ${company.company_name || 'Unknown'} - ${e.message}`);
+          failed++;
+        }
+      }
+
+      return {
+        success: true,
+        imported,
+        failed,
+        errors: errors.slice(0, 10), // Return first 10 errors
+        message: `Imported ${imported} companies${failed > 0 ? `, ${failed} failed` : ''}`
+      };
+    } catch (error) {
+      console.error('Error importing installer companies:', error);
+      throw new ApiError('Failed to import installer companies', 500);
     }
   }
 }

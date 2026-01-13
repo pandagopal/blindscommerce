@@ -33,8 +33,8 @@ export const ROLE_HIERARCHY: Record<UserRole, RoleDefinition> = {
     displayName: 'Super Administrator',
     description: 'Platform owner with full system access',
     level: 100,
-    canCreate: ['admin', 'vendor', 'installer', 'customer', 'shipping_agent'],
-    canManage: ['admin', 'vendor', 'installer', 'customer', 'shipping_agent', 'sales'],
+    canCreate: ['super_admin', 'admin', 'vendor', 'sales', 'installer', 'shipping_agent'],
+    canManage: ['super_admin', 'admin', 'vendor', 'sales', 'installer', 'customer', 'shipping_agent'],
     permissions: [
       'system.all',
       'user.create.all',
@@ -53,8 +53,8 @@ export const ROLE_HIERARCHY: Record<UserRole, RoleDefinition> = {
     displayName: 'Administrator',
     description: 'Platform administrator with broad access',
     level: 90,
-    canCreate: ['vendor', 'installer', 'shipping_agent'],
-    canManage: ['vendor', 'installer', 'customer', 'shipping_agent'],
+    canCreate: ['admin', 'vendor', 'sales', 'installer', 'shipping_agent'],
+    canManage: ['admin', 'vendor', 'sales', 'installer', 'customer', 'shipping_agent'],
     permissions: [
       'user.create.vendor',
       'user.create.installer',

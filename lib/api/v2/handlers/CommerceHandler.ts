@@ -97,6 +97,10 @@ export class CommerceHandler extends BaseHandler {
       'payment-methods': () => this.getPaymentMethods(req),
       'payment/paypal/create-order': () => this.getPayPalClientToken(req, user),
       'homepage-popup-coupon': () => this.getHomepagePopupCoupon(),
+      'installation/eligible-orders': () => this.getEligibleOrdersForInstallation(user),
+      'installation/my-appointments': () => this.getMyInstallationAppointments(user),
+      'installation/installers': () => this.getInstallersByZipCode(req),
+      'installation/time-slots': () => this.getInstallationTimeSlots(req),
     };
 
     return this.routeAction(action, routes);
@@ -122,6 +126,8 @@ export class CommerceHandler extends BaseHandler {
       'payment/paypal/capture-order': () => this.capturePayPalPayment(req),
       'payment/capture-paypal': () => this.capturePayPalPayment(req),
       'bulk-uploads': () => this.storeBulkUpload(req, user),
+      'installation/book': () => this.bookInstallationAppointment(req, user),
+      'installation/appointments/:id/cancel': () => this.cancelInstallationAppointment(action[2], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -134,6 +140,7 @@ export class CommerceHandler extends BaseHandler {
     const routes = {
       'cart/items/:id': () => this.updateCartItem(action[2], req, user),
       'cart/items/:id/full': () => this.updateCartItemFull(action[2], req, user),
+      'installation/appointments/:id/reschedule': () => this.rescheduleInstallationAppointment(action[2], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -2226,6 +2233,633 @@ export class CommerceHandler extends BaseHandler {
       console.error('Error fetching homepage popup coupon:', error);
       // Return null coupon instead of throwing - don't break the page if this fails
       return { coupon: null };
+    }
+  }
+
+  // =====================================================
+  // Installation Appointment Booking
+  // =====================================================
+
+  /**
+   * Get orders eligible for installation appointment booking
+   * Requirements:
+   * - Order must be in "shipped" status
+   * - Must be at least 7 days from shipment date for appointment
+   */
+  private async getEligibleOrdersForInstallation(user: any) {
+    this.requireAuth(user);
+
+    try {
+      const pool = await getPool();
+
+      // Get shipped orders for this user that don't have an installation appointment yet
+      const [orders] = await pool.execute(
+        `SELECT
+          o.order_id,
+          o.order_number,
+          o.status,
+          o.shipped_at,
+          o.total_amount,
+          DATE_ADD(o.shipped_at, INTERVAL 7 DAY) as earliest_appointment_date,
+          usa.address_line_1,
+          usa.address_line_2,
+          usa.city,
+          usa.state_province,
+          usa.postal_code,
+          usa.country,
+          (SELECT COUNT(*) FROM installation_appointments ia WHERE ia.order_id = o.order_id) as has_appointment
+        FROM orders o
+        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+        WHERE o.user_id = ?
+          AND o.status = 'shipped'
+          AND o.shipped_at IS NOT NULL
+          AND o.shipped_at <= DATE_SUB(NOW(), INTERVAL 0 DAY)
+        ORDER BY o.shipped_at DESC`,
+        [user.user_id]
+      );
+
+      // Filter out orders that already have appointments
+      const eligibleOrders = (orders as any[]).filter(o => o.has_appointment === 0);
+
+      return {
+        orders: eligibleOrders.map(o => ({
+          order_id: o.order_id,
+          order_number: o.order_number,
+          status: o.status,
+          shipped_at: o.shipped_at,
+          total_amount: parseFloat(o.total_amount),
+          earliest_appointment_date: o.earliest_appointment_date,
+          shipping_address: {
+            address_line1: o.address_line_1,
+            address_line2: o.address_line_2,
+            city: o.city,
+            state: o.state_province,
+            postal_code: o.postal_code,
+            country: o.country
+          }
+        })),
+        minimum_days_after_shipment: 7
+      };
+    } catch (error) {
+      console.error('Error fetching eligible orders:', error);
+      throw new ApiError('Failed to fetch eligible orders', 500);
+    }
+  }
+
+  /**
+   * Get customer's installation appointments (including those scheduled by installers)
+   */
+  private async getMyInstallationAppointments(user: any) {
+    this.requireAuth(user);
+
+    try {
+      const pool = await getPool();
+
+      const [appointments] = await pool.execute(
+        `SELECT
+          ia.appointment_id,
+          ia.order_id,
+          ia.appointment_date,
+          ia.time_slot_id,
+          ia.installation_type,
+          ia.status,
+          ia.special_requirements,
+          ia.installation_address,
+          ia.contact_phone,
+          ia.base_cost,
+          ia.total_cost,
+          ia.created_at,
+          o.order_number,
+          its.slot_name as time_slot_name,
+          its.start_time,
+          its.end_time,
+          CONCAT(its.start_time, ' - ', its.end_time) as time_range,
+          CONCAT(tech_user.first_name, ' ', tech_user.last_name) as technician_name,
+          tech_user.phone as technician_phone,
+          tech_user.email as technician_email
+        FROM installation_appointments ia
+        INNER JOIN orders o ON ia.order_id = o.order_id
+        LEFT JOIN installation_time_slots its ON ia.time_slot_id = its.slot_id
+        LEFT JOIN installation_technicians it ON ia.assigned_technician_id = it.technician_id
+        LEFT JOIN users tech_user ON it.user_id = tech_user.user_id
+        WHERE ia.customer_id = ?
+        ORDER BY ia.appointment_date DESC, its.start_time ASC`,
+        [user.user_id]
+      );
+
+      return {
+        appointments: (appointments as any[]).map(apt => {
+          let address = null;
+          try {
+            address = apt.installation_address ? JSON.parse(apt.installation_address) : null;
+          } catch (e) {
+            address = { raw: apt.installation_address };
+          }
+
+          return {
+            appointment_id: apt.appointment_id,
+            order_id: apt.order_id,
+            order_number: apt.order_number,
+            appointment_date: apt.appointment_date,
+            time_slot: apt.time_slot_name,
+            time_range: apt.time_range,
+            installation_type: apt.installation_type,
+            status: apt.status,
+            special_requirements: apt.special_requirements,
+            installation_address: address,
+            contact_phone: apt.contact_phone,
+            base_cost: parseFloat(apt.base_cost) || 0,
+            total_cost: parseFloat(apt.total_cost) || 0,
+            technician: {
+              name: apt.technician_name,
+              phone: apt.technician_phone,
+              email: apt.technician_email
+            },
+            created_at: apt.created_at
+          };
+        })
+      };
+    } catch (error) {
+      console.error('Error fetching my appointments:', error);
+      throw new ApiError('Failed to fetch appointments', 500);
+    }
+  }
+
+  /**
+   * Reschedule an installation appointment
+   * Customer can change the date and time slot
+   */
+  private async rescheduleInstallationAppointment(appointmentId: string, req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const id = parseInt(appointmentId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid appointment ID', 400);
+    }
+
+    const body = await req.json();
+    const { appointment_date, time_slot_id, reason } = body;
+
+    if (!appointment_date) {
+      throw new ApiError('New appointment date is required', 400);
+    }
+    if (!time_slot_id) {
+      throw new ApiError('New time slot is required', 400);
+    }
+
+    try {
+      const pool = await getPool();
+
+      // Verify appointment belongs to this customer and is reschedulable
+      const [appointments] = await pool.execute<RowDataPacket[]>(
+        `SELECT ia.*, o.shipped_at, o.order_number
+         FROM installation_appointments ia
+         INNER JOIN orders o ON ia.order_id = o.order_id
+         WHERE ia.appointment_id = ? AND ia.customer_id = ?`,
+        [id, user.user_id]
+      );
+
+      if (!(appointments as any[]).length) {
+        throw new ApiError('Appointment not found or does not belong to you', 404);
+      }
+
+      const appointment = (appointments as any[])[0];
+
+      // Can only reschedule scheduled appointments (not completed or cancelled)
+      if (appointment.status !== 'scheduled') {
+        throw new ApiError(`Cannot reschedule an appointment with status "${appointment.status}"`, 400);
+      }
+
+      // Validate new date is at least 7 days after shipment
+      const shippedAt = new Date(appointment.shipped_at);
+      const newDate = new Date(appointment_date);
+      const minDate = new Date(shippedAt);
+      minDate.setDate(minDate.getDate() + 7);
+
+      if (newDate < minDate) {
+        throw new ApiError('New appointment date must be at least 7 days after shipment', 400);
+      }
+
+      // Validate new date is not in the past
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (newDate < today) {
+        throw new ApiError('Cannot schedule appointment in the past', 400);
+      }
+
+      // Store previous values for history
+      const previousDate = appointment.appointment_date;
+      const previousSlotId = appointment.time_slot_id;
+
+      // Update the appointment
+      await pool.execute(
+        `UPDATE installation_appointments
+         SET appointment_date = ?,
+             time_slot_id = ?,
+             reschedule_reason = ?,
+             rescheduled_at = NOW(),
+             updated_at = NOW()
+         WHERE appointment_id = ?`,
+        [appointment_date, time_slot_id, reason || null, id]
+      );
+
+      // Get the new time slot info for response
+      const [slots] = await pool.execute<RowDataPacket[]>(
+        `SELECT slot_name, start_time, end_time FROM installation_time_slots WHERE slot_id = ?`,
+        [time_slot_id]
+      );
+      const newSlot = (slots as any[])[0];
+
+      return {
+        success: true,
+        message: 'Appointment rescheduled successfully',
+        appointment: {
+          appointment_id: id,
+          order_number: appointment.order_number,
+          new_date: appointment_date,
+          new_time_slot: newSlot?.slot_name,
+          new_time_range: newSlot ? `${newSlot.start_time} - ${newSlot.end_time}` : null,
+          previous_date: previousDate,
+          previous_slot_id: previousSlotId
+        }
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error rescheduling appointment:', error);
+      throw new ApiError('Failed to reschedule appointment', 500);
+    }
+  }
+
+  /**
+   * Cancel an installation appointment
+   * Customer can cancel with a reason
+   */
+  private async cancelInstallationAppointment(appointmentId: string, req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const id = parseInt(appointmentId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid appointment ID', 400);
+    }
+
+    const body = await req.json();
+    const { reason } = body;
+
+    try {
+      const pool = await getPool();
+
+      // Verify appointment belongs to this customer
+      const [appointments] = await pool.execute<RowDataPacket[]>(
+        `SELECT ia.*, o.order_number
+         FROM installation_appointments ia
+         INNER JOIN orders o ON ia.order_id = o.order_id
+         WHERE ia.appointment_id = ? AND ia.customer_id = ?`,
+        [id, user.user_id]
+      );
+
+      if (!(appointments as any[]).length) {
+        throw new ApiError('Appointment not found or does not belong to you', 404);
+      }
+
+      const appointment = (appointments as any[])[0];
+
+      // Can only cancel scheduled appointments
+      if (appointment.status !== 'scheduled') {
+        throw new ApiError(`Cannot cancel an appointment with status "${appointment.status}"`, 400);
+      }
+
+      // Update the appointment status to cancelled
+      await pool.execute(
+        `UPDATE installation_appointments
+         SET status = 'cancelled',
+             cancellation_reason = ?,
+             cancelled_at = NOW(),
+             cancelled_by = 'customer',
+             updated_at = NOW()
+         WHERE appointment_id = ?`,
+        [reason || 'Cancelled by customer', id]
+      );
+
+      return {
+        success: true,
+        message: 'Appointment cancelled successfully',
+        appointment: {
+          appointment_id: id,
+          order_number: appointment.order_number,
+          status: 'cancelled'
+        }
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error cancelling appointment:', error);
+      throw new ApiError('Failed to cancel appointment', 500);
+    }
+  }
+
+  /**
+   * Get installer companies that serve a specific zip code
+   */
+  private async getInstallersByZipCode(req: NextRequest) {
+    const searchParams = new URL(req.url).searchParams;
+    const zipCode = searchParams.get('zip_code');
+
+    if (!zipCode) {
+      throw new ApiError('zip_code is required', 400);
+    }
+
+    try {
+      const pool = await getPool();
+
+      const [installers] = await pool.execute(
+        `SELECT
+          ic.company_id,
+          ic.company_name,
+          ic.phone,
+          ic.email,
+          ic.city,
+          ic.state_province,
+          ic.rating,
+          ic.total_reviews,
+          ic.total_installations,
+          ic.base_service_fee,
+          ic.hourly_rate,
+          ic.services_offered,
+          ic.product_specialties,
+          ic.lead_time_days,
+          ic.max_advance_days,
+          ic.service_days,
+          ic.service_start_time,
+          ic.service_end_time,
+          icz.is_primary_area,
+          icz.additional_travel_fee
+        FROM installer_companies ic
+        INNER JOIN installer_company_zip_codes icz ON ic.company_id = icz.company_id
+        WHERE icz.zip_code = ?
+          AND icz.is_active = 1
+          AND ic.is_active = 1
+        ORDER BY icz.is_primary_area DESC, ic.rating DESC`,
+        [zipCode]
+      );
+
+      return {
+        installers: (installers as any[]).map(i => ({
+          company_id: i.company_id,
+          company_name: i.company_name,
+          phone: i.phone,
+          email: i.email,
+          location: `${i.city}, ${i.state_province}`,
+          rating: parseFloat(i.rating) || 0,
+          total_reviews: i.total_reviews || 0,
+          total_installations: i.total_installations || 0,
+          base_service_fee: parseFloat(i.base_service_fee) || 0,
+          hourly_rate: parseFloat(i.hourly_rate) || 0,
+          additional_travel_fee: parseFloat(i.additional_travel_fee) || 0,
+          services_offered: typeof i.services_offered === 'string' ? JSON.parse(i.services_offered) : i.services_offered,
+          product_specialties: typeof i.product_specialties === 'string' ? JSON.parse(i.product_specialties) : i.product_specialties,
+          lead_time_days: i.lead_time_days,
+          max_advance_days: i.max_advance_days,
+          service_days: typeof i.service_days === 'string' ? JSON.parse(i.service_days) : i.service_days,
+          service_hours: `${i.service_start_time} - ${i.service_end_time}`,
+          is_primary_area: i.is_primary_area === 1
+        })),
+        zip_code: zipCode
+      };
+    } catch (error) {
+      console.error('Error fetching installers by zip code:', error);
+      throw new ApiError('Failed to fetch installers', 500);
+    }
+  }
+
+  /**
+   * Get available time slots for installation
+   */
+  private async getInstallationTimeSlots(req: NextRequest) {
+    try {
+      const pool = await getPool();
+
+      const [slots] = await pool.execute(
+        `SELECT
+          slot_id,
+          slot_name,
+          slot_code,
+          start_time,
+          end_time,
+          premium_fee
+        FROM installation_time_slots
+        WHERE is_active = 1
+        ORDER BY display_order ASC, start_time ASC`
+      );
+
+      return {
+        time_slots: (slots as any[]).map(s => ({
+          slot_id: s.slot_id,
+          name: s.slot_name,
+          code: s.slot_code,
+          start_time: s.start_time,
+          end_time: s.end_time,
+          premium_fee: parseFloat(s.premium_fee) || 0,
+          display: `${s.start_time} - ${s.end_time}`
+        }))
+      };
+    } catch (error) {
+      console.error('Error fetching time slots:', error);
+      throw new ApiError('Failed to fetch time slots', 500);
+    }
+  }
+
+  /**
+   * Book an installation appointment
+   * Validates:
+   * - User is authenticated
+   * - Order exists and belongs to user
+   * - Order is in "shipped" status
+   * - Appointment date is at least 7 days after shipment
+   * - Installer company serves the order's zip code
+   */
+  private async bookInstallationAppointment(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const body = await req.json();
+    const {
+      order_id,
+      installer_company_id,
+      appointment_date,
+      time_slot_id,
+      installation_type = 'installation',
+      special_requirements
+    } = body;
+
+    // Validate required fields
+    if (!order_id) throw new ApiError('order_id is required', 400);
+    if (!installer_company_id) throw new ApiError('installer_company_id is required', 400);
+    if (!appointment_date) throw new ApiError('appointment_date is required', 400);
+    if (!time_slot_id) throw new ApiError('time_slot_id is required', 400);
+
+    try {
+      const pool = await getPool();
+
+      // 1. Verify order exists, belongs to user, and is shipped
+      const [orders] = await pool.execute(
+        `SELECT
+          o.order_id,
+          o.order_number,
+          o.user_id,
+          o.status,
+          o.shipped_at,
+          o.total_amount,
+          usa.postal_code as shipping_zip
+        FROM orders o
+        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+        WHERE o.order_id = ?`,
+        [order_id]
+      );
+
+      if (!(orders as any[]).length) {
+        throw new ApiError('Order not found', 404);
+      }
+
+      const order = (orders as any[])[0];
+
+      if (order.user_id !== user.user_id) {
+        throw new ApiError('Order does not belong to this user', 403);
+      }
+
+      if (order.status !== 'shipped') {
+        throw new ApiError('Order must be in shipped status to book installation', 400);
+      }
+
+      if (!order.shipped_at) {
+        throw new ApiError('Order shipment date not recorded', 400);
+      }
+
+      // 2. Validate appointment date is at least 7 days after shipment
+      const shippedDate = new Date(order.shipped_at);
+      const appointmentDateObj = new Date(appointment_date);
+      const minAppointmentDate = new Date(shippedDate);
+      minAppointmentDate.setDate(minAppointmentDate.getDate() + 7);
+
+      if (appointmentDateObj < minAppointmentDate) {
+        throw new ApiError(
+          `Appointment must be at least 7 days after shipment. Earliest available date: ${minAppointmentDate.toISOString().split('T')[0]}`,
+          400
+        );
+      }
+
+      // 3. Verify installer company exists and serves this zip code
+      const [installerCheck] = await pool.execute(
+        `SELECT ic.company_id, ic.company_name, ic.lead_time_days, ic.max_advance_days
+         FROM installer_companies ic
+         INNER JOIN installer_company_zip_codes icz ON ic.company_id = icz.company_id
+         WHERE ic.company_id = ?
+           AND icz.zip_code = ?
+           AND icz.is_active = 1
+           AND ic.is_active = 1`,
+        [installer_company_id, order.shipping_zip]
+      );
+
+      if (!(installerCheck as any[]).length) {
+        throw new ApiError('Selected installer does not serve this location', 400);
+      }
+
+      const installer = (installerCheck as any[])[0];
+
+      // 4. Validate appointment date is within installer's booking window
+      const today = new Date();
+      const leadTimeDate = new Date(today);
+      leadTimeDate.setDate(leadTimeDate.getDate() + installer.lead_time_days);
+      const maxAdvanceDate = new Date(today);
+      maxAdvanceDate.setDate(maxAdvanceDate.getDate() + installer.max_advance_days);
+
+      if (appointmentDateObj < leadTimeDate) {
+        throw new ApiError(
+          `Installer requires at least ${installer.lead_time_days} days advance notice`,
+          400
+        );
+      }
+
+      if (appointmentDateObj > maxAdvanceDate) {
+        throw new ApiError(
+          `Cannot book more than ${installer.max_advance_days} days in advance`,
+          400
+        );
+      }
+
+      // 5. Verify time slot exists
+      const [timeSlots] = await pool.execute(
+        `SELECT slot_id, slot_name FROM installation_time_slots WHERE slot_id = ? AND is_active = 1`,
+        [time_slot_id]
+      );
+
+      if (!(timeSlots as any[]).length) {
+        throw new ApiError('Invalid time slot', 400);
+      }
+
+      // 6. Check if appointment already exists for this order
+      const [existingAppointment] = await pool.execute(
+        `SELECT appointment_id FROM installation_appointments WHERE order_id = ?`,
+        [order_id]
+      );
+
+      if ((existingAppointment as any[]).length) {
+        throw new ApiError('An installation appointment already exists for this order', 400);
+      }
+
+      // 7. Create the installation appointment
+      const [result] = await pool.execute(
+        `INSERT INTO installation_appointments (
+          customer_id,
+          order_id,
+          installer_company_id,
+          appointment_date,
+          time_slot_id,
+          installation_type,
+          special_requirements,
+          status,
+          created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled', NOW())`,
+        [
+          user.user_id,
+          order_id,
+          installer_company_id,
+          appointment_date,
+          time_slot_id,
+          installation_type,
+          special_requirements || null
+        ]
+      );
+
+      const appointmentId = (result as any).insertId;
+
+      // 8. Get the created appointment details
+      const [appointment] = await pool.execute(
+        `SELECT
+          ia.appointment_id,
+          ia.appointment_date,
+          its.slot_name as time_slot,
+          CONCAT(its.start_time, ' - ', its.end_time) as time_range,
+          ia.installation_type,
+          ia.status,
+          ic.company_name as installer_name,
+          ic.phone as installer_phone,
+          ic.email as installer_email,
+          o.order_number
+        FROM installation_appointments ia
+        JOIN installation_time_slots its ON ia.time_slot_id = its.slot_id
+        JOIN installer_companies ic ON ia.installer_company_id = ic.company_id
+        JOIN orders o ON ia.order_id = o.order_id
+        WHERE ia.appointment_id = ?`,
+        [appointmentId]
+      );
+
+      return {
+        success: true,
+        message: 'Installation appointment booked successfully',
+        appointment: (appointment as any[])[0]
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error booking installation appointment:', error);
+      throw new ApiError('Failed to book installation appointment', 500);
     }
   }
 }

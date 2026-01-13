@@ -50,8 +50,9 @@ export default function NewUserPage() {
       try {
         const response = await fetch('/api/v2/auth/me');
         if (response.ok) {
-          const userData = await response.json();
-          const userRole = userData.role as UserRole;
+          const result = await response.json();
+          // V2 API returns { success: true, data: { user: { role: ... } } }
+          const userRole = (result.data?.user?.role || result.role) as UserRole;
           setCurrentUserRole(userRole);
           const roles = getAvailableRolesForUser(userRole);
           setAvailableRoles(roles);

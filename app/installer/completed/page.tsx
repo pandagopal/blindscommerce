@@ -73,10 +73,12 @@ export default function InstallerCompletedJobsPage() {
     try {
       setLoading(true);
       const res = await fetch('/api/v2/installer/completed-jobs');
-      
+
       if (res.ok) {
-        const data = await res.json();
-        setCompletedJobs(data.data || []);
+        const result = await res.json();
+        // V2 API returns { success: true, data: { jobs: [...], total: ... } }
+        const jobs = result.data?.jobs || result.data || [];
+        setCompletedJobs(Array.isArray(jobs) ? jobs : []);
       } else {
         setCompletedJobs([]);
       }

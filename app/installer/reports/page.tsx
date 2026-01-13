@@ -79,10 +79,11 @@ export default function InstallerReportsPage() {
   const fetchReportData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/installer/reports?startDate=${dateRange.start}&endDate=${dateRange.end}`);
+      const response = await fetch(`/api/v2/installer/reports?dateRange=${dateRange}`);
       if (response.ok) {
-        const data = await response.json();
-        setReportData(data);
+        const result = await response.json();
+        // V2 API returns { success: true, data: { ... } }
+        setReportData(result.data || null);
       } else {
         console.error('Failed to fetch report data');
         setReportData(null);

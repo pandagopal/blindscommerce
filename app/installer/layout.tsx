@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import {
   Home, Calendar, Hammer, Map, CheckSquare,
-  FileText, Settings, LogOut, Users, User, ChevronRight, Shield
+  FileText, Settings, LogOut, Users, User, ChevronRight, Shield, Package
 } from 'lucide-react';
 
 interface UserData {
@@ -61,8 +61,9 @@ function InstallerLayoutContent({
     return null;
   }
 
-  const menuItems = [
+  const menuItems: Array<{ href: string; label: string; icon: React.ReactNode; highlight?: boolean }> = [
     { href: '/installer', label: 'Dashboard', icon: <Home size={18} /> },
+    { href: '/installer/pending-orders', label: 'Pending Orders', icon: <Package size={18} />, highlight: true },
     { href: '/installer/appointments', label: 'Appointments', icon: <Calendar size={18} /> },
     { href: '/installer/jobs', label: 'Jobs', icon: <Hammer size={18} /> },
     { href: '/installer/routes', label: 'Routes', icon: <Map size={18} /> },
@@ -126,12 +127,15 @@ function InstallerLayoutContent({
                     className={`flex items-center px-4 py-3 transition-colors ${
                       pathname === item.href
                         ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
+                        : item.highlight
+                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
-                    <span>{item.label}</span>
-                    {pathname === item.href && (
+                    <span className={item.highlight ? 'font-semibold' : ''}>{item.label}</span>
+                    {item.highlight && <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded">NEW</span>}
+                    {pathname === item.href && !item.highlight && (
                       <ChevronRight size={16} className="ml-auto" />
                     )}
                   </Link>

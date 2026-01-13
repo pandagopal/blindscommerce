@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -15,7 +15,8 @@ interface User {
   role: string;
 }
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,11 +34,12 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`/api/admin/users/${params.id}`);
+        const response = await fetch(`/api/v2/admin/users/${id}`);
         if (!response.ok) {
           throw new Error('Failed to fetch user');
         }
-        const data = await response.json();
+        const result = await response.json();
+        const data = result.data || result;
         setFormData({
           email: data.email,
           password: '',
@@ -55,7 +57,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     };
 
     fetchUser();
-  }, [params.id]);
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +65,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     setError('');
 
     try {
-      const response = await fetch(`/api/admin/users/${params.id}`, {
+      const response = await fetch(`/api/v2/admin/users/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -71,9 +73,9 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to update user');
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to update user');
       }
 
       router.push('/admin/users');

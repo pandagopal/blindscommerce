@@ -16,7 +16,8 @@ import {
   Shield,
   Heart,
   MapPin,
-  Package
+  Package,
+  Wrench
 } from 'lucide-react';
 
 interface UserData {
@@ -72,6 +73,7 @@ function AccountLayoutContent({
     { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
     { href: '/account/wishlist', label: 'Wishlist', icon: <Heart size={18} /> },
     { href: '/account/addresses', label: 'Addresses', icon: <MapPin size={18} /> },
+    { href: '/account/installation', label: 'Installation', icon: <Wrench size={18} /> },
     { href: '/account/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 
