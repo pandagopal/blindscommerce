@@ -8,16 +8,19 @@ import {
   Home,
   ShoppingCart,
   Ruler,
-  BookmarkIcon,
   Settings,
   LogOut,
   User,
   ChevronRight,
   Shield,
   Heart,
-  MapPin,
   Package,
-  Wrench
+  Wrench,
+  MessageSquare,
+  RotateCcw,
+  Star,
+  Bell,
+  Gift
 } from 'lucide-react';
 
 interface UserData {
@@ -26,6 +29,11 @@ interface UserData {
   firstName?: string;
   lastName?: string;
   role: string;
+}
+
+interface OrderCounts {
+  hasOnlineOrders: boolean;
+  hasOfflineOrders: boolean;
 }
 
 function AccountLayoutContent({
@@ -38,12 +46,57 @@ function AccountLayoutContent({
   const searchParams = useSearchParams();
   const { user, loading, logout } = useAuth();
   const isAdminView = searchParams.get('admin_view') !== null;
+  const [orderCounts, setOrderCounts] = useState<OrderCounts>({ hasOnlineOrders: true, hasOfflineOrders: false });
+  const [orderCountsLoaded, setOrderCountsLoaded] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/login?redirect=/account');
     }
   }, [user, loading, router]);
+
+  // Fetch order counts to determine which menu items to show
+  useEffect(() => {
+    if (user && !orderCountsLoaded) {
+      fetchOrderCounts();
+    }
+  }, [user, orderCountsLoaded]);
+
+  const fetchOrderCounts = async () => {
+    try {
+      // Fetch both order types in parallel
+      const [onlineRes, offlineRes] = await Promise.all([
+        fetch('/api/v2/commerce/orders?limit=1'),
+        fetch('/api/v2/offline-orders/orders?limit=1')
+      ]);
+
+      let hasOnline = false;
+      let hasOffline = false;
+
+      if (onlineRes.ok) {
+        const onlineData = await onlineRes.json();
+        hasOnline = onlineData.success && onlineData.data?.orders?.length > 0;
+      }
+
+      if (offlineRes.ok) {
+        const offlineData = await offlineRes.json();
+        hasOffline = offlineData.success && offlineData.data?.orders?.length > 0;
+      }
+
+      // If user has neither type, show online orders by default
+      if (!hasOnline && !hasOffline) {
+        hasOnline = true;
+      }
+
+      setOrderCounts({ hasOnlineOrders: hasOnline, hasOfflineOrders: hasOffline });
+      setOrderCountsLoaded(true);
+    } catch (error) {
+      console.error('Error fetching order counts:', error);
+      // Default to showing online orders on error
+      setOrderCounts({ hasOnlineOrders: true, hasOfflineOrders: false });
+      setOrderCountsLoaded(true);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -65,15 +118,21 @@ function AccountLayoutContent({
     return null;
   }
 
+  // Build menu items dynamically based on order types
   const menuItems: Array<{ href: string; label: string; icon: React.ReactNode; highlight?: boolean }> = [
     { href: '/account', label: 'Dashboard', icon: <Home size={18} /> },
-    { href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> },
-    { href: '/account/offline-orders', label: 'Local Orders', icon: <Package size={18} />, highlight: true },
+    // Show Orders if user has online orders
+    ...(orderCounts.hasOnlineOrders ? [{ href: '/account/orders', label: 'Orders', icon: <ShoppingCart size={18} /> }] : []),
+    // Show Local Orders if user has offline orders
+    ...(orderCounts.hasOfflineOrders ? [{ href: '/account/offline-orders', label: 'Local Orders', icon: <Package size={18} /> }] : []),
     { href: '/account/measurements', label: 'Measurements', icon: <Ruler size={18} /> },
-    { href: '/account/configurations', label: 'Saved Configs', icon: <BookmarkIcon size={18} /> },
     { href: '/account/wishlist', label: 'Wishlist', icon: <Heart size={18} /> },
-    { href: '/account/addresses', label: 'Addresses', icon: <MapPin size={18} /> },
     { href: '/account/installation', label: 'Installation', icon: <Wrench size={18} /> },
+    { href: '/account/support', label: 'Support', icon: <MessageSquare size={18} /> },
+    { href: '/account/returns', label: 'Returns', icon: <RotateCcw size={18} /> },
+    { href: '/account/reviews', label: 'My Reviews', icon: <Star size={18} /> },
+    { href: '/account/notifications', label: 'Notifications', icon: <Bell size={18} /> },
+    { href: '/account/loyalty', label: 'Rewards', icon: <Gift size={18} />, highlight: true },
     { href: '/account/settings', label: 'Settings', icon: <Settings size={18} /> },
   ];
 

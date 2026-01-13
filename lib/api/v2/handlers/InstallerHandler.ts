@@ -76,32 +76,42 @@ export class InstallerHandler extends BaseHandler {
    * Get appointments for the logged-in installer
    */
   private async getAppointments(req: NextRequest, user: any) {
-    const installerId = this.getInstallerId(user);
+    const userId = this.getInstallerId(user);
 
     const pool = await getPool();
     const searchParams = this.getSearchParams(req);
     const status = searchParams.get('status');
     const date = searchParams.get('date');
 
+    // Get the technician_id for this user (assigned_technician_id references installation_technicians.technician_id)
+    const technicianId = await this.getTechnicianId(userId);
+    if (!technicianId) {
+      // Return empty array if no technician profile found
+      return [];
+    }
+
     let query = `
       SELECT
         ia.appointment_id as id,
+        ia.order_id,
+        o.order_number,
         CONCAT(u.first_name, ' ', u.last_name) as customerName,
-        COALESCE(ua.address_line1, '') as address,
+        COALESCE(ua.address_line1, JSON_UNQUOTE(JSON_EXTRACT(ia.installation_address, '$.address_line_1'))) as address,
         DATE_FORMAT(ia.appointment_date, '%Y-%m-%d') as date,
         CONCAT(its.start_time, ' - ', its.end_time) as time,
         ia.status,
         ia.installation_type as type,
-        u.phone,
+        COALESCE(u.phone, ia.contact_phone) as phone,
         ia.special_requirements as notes
       FROM installation_appointments ia
       LEFT JOIN users u ON ia.customer_id = u.user_id
+      LEFT JOIN orders o ON ia.order_id = o.order_id
       LEFT JOIN user_addresses ua ON u.user_id = ua.user_id AND ua.is_default = 1
       LEFT JOIN installation_time_slots its ON ia.time_slot_id = its.slot_id
       WHERE ia.assigned_technician_id = ?
     `;
 
-    const params: (number | string)[] = [installerId];
+    const params: (number | string)[] = [technicianId];
 
     if (status && status !== 'all') {
       query += ' AND ia.status = ?';
@@ -829,12 +839,23 @@ export class InstallerHandler extends BaseHandler {
     const zipPlaceholders = zipCodes.map(() => '?').join(',');
 
     let statusCondition = '';
+    let appointmentCondition = '';
+
+    // Always exclude orders that already have appointments from Pending Orders page
+    // Orders with appointments belong in the Appointments page, not here
+    const excludeScheduledOrders = `AND NOT EXISTS (SELECT 1 FROM installation_appointments ia WHERE ia.order_id = o.order_id)`;
+
     if (filter === 'pending') {
       statusCondition = `AND o.status = 'shipped'`;
+      appointmentCondition = excludeScheduledOrders;
     } else if (filter === 'diy') {
       statusCondition = `AND o.status = 'diy'`;
+      // DIY orders might still need scheduling if customer changes mind, but exclude already scheduled
+      appointmentCondition = excludeScheduledOrders;
     } else {
+      // "All" tab: show all pending + DIY orders that don't have appointments yet
       statusCondition = `AND o.status IN ('shipped', 'diy')`;
+      appointmentCondition = excludeScheduledOrders;
     }
 
     let query = `
@@ -862,6 +883,7 @@ export class InstallerHandler extends BaseHandler {
       INNER JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
       WHERE usa.postal_code IN (${zipPlaceholders})
         ${statusCondition}
+        ${appointmentCondition}
         AND o.shipped_at IS NOT NULL
         AND o.shipped_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
     `;
@@ -878,13 +900,33 @@ export class InstallerHandler extends BaseHandler {
 
     const [orders] = await pool.execute<RowDataPacket[]>(query, params);
 
-    // Filter out orders that already have appointments (for pending filter)
-    const filteredOrders = filter === 'pending'
-      ? (orders as any[]).filter(o => o.has_appointment === 0)
-      : orders;
+    // Get counts for both tabs using SQL for accuracy
+    const [pendingCountResult] = await pool.execute<RowDataPacket[]>(`
+      SELECT COUNT(*) as count
+      FROM orders o
+      INNER JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+      WHERE usa.postal_code IN (${zipPlaceholders})
+        AND o.status = 'shipped'
+        AND NOT EXISTS (SELECT 1 FROM installation_appointments ia WHERE ia.order_id = o.order_id)
+        AND o.shipped_at IS NOT NULL
+        AND o.shipped_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `, zipCodes);
+
+    const [diyCountResult] = await pool.execute<RowDataPacket[]>(`
+      SELECT COUNT(*) as count
+      FROM orders o
+      INNER JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+      WHERE usa.postal_code IN (${zipPlaceholders})
+        AND o.status = 'diy'
+        AND o.shipped_at IS NOT NULL
+        AND o.shipped_at <= DATE_SUB(NOW(), INTERVAL 7 DAY)
+    `, zipCodes);
+
+    const pendingCount = Number(pendingCountResult[0]?.count || 0);
+    const diyCount = Number(diyCountResult[0]?.count || 0);
 
     return {
-      orders: filteredOrders.map(o => ({
+      orders: (orders as any[]).map(o => ({
         order_id: o.order_id,
         order_number: o.order_number,
         status: o.status,
@@ -892,7 +934,7 @@ export class InstallerHandler extends BaseHandler {
         shipped_at: o.shipped_at,
         ready_for_installation_date: o.ready_for_installation_date,
         days_since_shipped: o.days_since_shipped,
-        has_appointment: o.has_appointment > 0,
+        has_appointment: Number(o.has_appointment) > 0,
         customer: {
           id: o.customer_id,
           name: o.customer_name,
@@ -908,6 +950,10 @@ export class InstallerHandler extends BaseHandler {
           country: o.country
         }
       })),
+      counts: {
+        pending: pendingCount,
+        diy: diyCount
+      },
       service_zip_codes: zipCodes,
       installer_id: installerId
     };

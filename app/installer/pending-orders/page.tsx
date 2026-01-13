@@ -68,6 +68,7 @@ export default function InstallerPendingOrdersPage() {
   const router = useRouter();
   const [orders, setOrders] = useState<PendingOrder[]>([]);
   const [serviceZipCodes, setServiceZipCodes] = useState<string[]>([]);
+  const [counts, setCounts] = useState<{ pending: number; diy: number }>({ pending: 0, diy: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -131,6 +132,9 @@ export default function InstallerPendingOrdersPage() {
 
       setOrders(result.data.orders || []);
       setServiceZipCodes(result.data.service_zip_codes || []);
+      if (result.data.counts) {
+        setCounts(result.data.counts);
+      }
     } catch (error: any) {
       console.error('Error fetching pending orders:', error);
       setError(error.message || 'Failed to load pending orders');
@@ -312,10 +316,10 @@ export default function InstallerPendingOrdersPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="pending">
-            Pending ({orders.filter(o => o.status === 'shipped').length})
+            Pending ({counts.pending})
           </TabsTrigger>
           <TabsTrigger value="diy">
-            DIY ({orders.filter(o => o.status === 'diy').length})
+            DIY ({counts.diy})
           </TabsTrigger>
           <TabsTrigger value="all">All</TabsTrigger>
         </TabsList>
@@ -348,13 +352,17 @@ export default function InstallerPendingOrdersPage() {
                           <h3 className="font-semibold text-lg">
                             Order #{order.order_number}
                           </h3>
-                          <Badge variant={order.status === 'shipped' ? 'default' : 'secondary'}>
-                            {order.status === 'shipped' ? 'Ready for Scheduling' : 'DIY'}
-                          </Badge>
-                          {order.has_appointment && (
+                          {/* Show only one status badge - prioritize appointment status */}
+                          {order.has_appointment ? (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Scheduled
+                            </Badge>
+                          ) : order.status === 'diy' ? (
+                            <Badge variant="secondary">DIY</Badge>
+                          ) : (
+                            <Badge variant="default" className="bg-red-600">
+                              Ready for Scheduling
                             </Badge>
                           )}
                         </div>

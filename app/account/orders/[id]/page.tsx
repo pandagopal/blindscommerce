@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Package, MapPin, CreditCard, Calendar, Truck, Download, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Package, MapPin, CreditCard, Calendar, Truck, Download, RefreshCw, ChevronDown, ChevronUp, FileText, ExternalLink, RotateCcw, Star } from 'lucide-react';
 import Image from 'next/image';
 import { parsePriceFields, formatPrice } from '@/lib/utils/priceUtils';
 
@@ -225,14 +225,24 @@ export default function CustomerOrderDetailPage() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Badge className={getStatusColor(order.status)}>
               {order.status}
             </Badge>
-            <Button onClick={handleReorder} variant="outline">
+            <Button onClick={handleReorder} variant="outline" size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Reorder
             </Button>
+            <Button variant="outline" size="sm" onClick={() => window.print()}>
+              <FileText className="w-4 h-4 mr-2" />
+              Invoice
+            </Button>
+            {order.status === 'delivered' && (
+              <Button variant="outline" size="sm" onClick={() => router.push(`/account/returns/new?orderId=${order.order_id}`)}>
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Return
+              </Button>
+            )}
           </div>
         </div>
 
