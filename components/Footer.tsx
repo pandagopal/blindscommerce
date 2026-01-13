@@ -187,7 +187,7 @@ const Footer = () => {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-gray-400 text-sm">
-              &copy; {new Date().getFullYear()} Smart Blinds Hub. All rights reserved.
+              &copy; {new Date().getFullYear()} Smart Blinds™. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link

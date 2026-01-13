@@ -9,10 +9,15 @@ interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>
 }
 
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ className, onCheckedChange, checked, ...props }, ref) => {
+  ({ className, onCheckedChange, checked, disabled, ...props }, ref) => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       onCheckedChange?.(e.target.checked)
       props.onChange?.(e)
+    }
+
+    const handleClick = () => {
+      if (disabled) return
+      onCheckedChange?.(!checked)
     }
 
     return (
@@ -23,12 +28,15 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           className="sr-only"
           checked={checked}
           onChange={handleChange}
+          disabled={disabled}
           {...props}
         />
         <div
+          onClick={handleClick}
           className={cn(
-            "h-4 w-4 shrink-0 rounded-sm border border-gray-300 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer",
+            "h-4 w-4 shrink-0 rounded-sm border border-gray-300 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 cursor-pointer transition-colors",
             checked && "bg-primary-red border-primary-red text-white",
+            disabled && "cursor-not-allowed opacity-50",
             className
           )}
         >

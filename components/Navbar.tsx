@@ -6,6 +6,7 @@ import { ShoppingCart, User, Menu, Search, LogOut, ChevronDown, Settings, Packag
 import { useCart } from "@/context/CartContext";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import WishlistDropdown from "@/components/ecommerce/WishlistDropdown";
 
 // Type for user data
 interface UserData {
@@ -389,6 +390,9 @@ const Navbar = () => {
             >
               <Search size={20} />
             </button>
+
+            {/* Wishlist Dropdown */}
+            <WishlistDropdown />
 
             {/* User Account - changes based on auth state */}
             {!loading && (

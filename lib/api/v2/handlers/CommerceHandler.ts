@@ -96,6 +96,7 @@ export class CommerceHandler extends BaseHandler {
       'quote-stats': () => this.getQuoteStats(user),
       'payment-methods': () => this.getPaymentMethods(req),
       'payment/paypal/create-order': () => this.getPayPalClientToken(req, user),
+      'homepage-popup-coupon': () => this.getHomepagePopupCoupon(),
     };
 
     return this.routeAction(action, routes);
@@ -2167,6 +2168,64 @@ export class CommerceHandler extends BaseHandler {
         error instanceof Error ? error.message : 'Failed to get PayPal client token',
         500
       );
+    }
+  }
+
+  /**
+   * Get the active homepage popup coupon
+   * Returns the top 1 active coupon with show_on_homepage_popup = true
+   * This is a public endpoint (no authentication required)
+   */
+  private async getHomepagePopupCoupon() {
+    const pool = await getPool();
+
+    try {
+      const [rows] = await pool.execute(
+        `SELECT
+          vc.coupon_code,
+          vc.coupon_name,
+          vc.display_name,
+          vc.description,
+          vc.discount_type,
+          vc.discount_value,
+          vc.minimum_order_value,
+          vc.maximum_discount_amount,
+          vc.valid_from,
+          vc.valid_until
+        FROM vendor_coupons vc
+        WHERE vc.show_on_homepage_popup = 1
+          AND vc.is_active = 1
+          AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())
+          AND (vc.valid_until IS NULL OR vc.valid_until >= NOW())
+          AND (vc.usage_limit_total IS NULL OR vc.usage_count < vc.usage_limit_total)
+        ORDER BY vc.priority DESC, vc.created_at DESC
+        LIMIT 1`
+      );
+
+      const coupons = rows as any[];
+
+      if (coupons.length === 0) {
+        return { coupon: null };
+      }
+
+      const coupon = coupons[0];
+      return {
+        coupon: {
+          code: coupon.coupon_code,
+          name: coupon.display_name || coupon.coupon_name,
+          description: coupon.description,
+          discountType: coupon.discount_type,
+          discountValue: parseFloat(coupon.discount_value),
+          discountPercent: coupon.discount_type === 'percentage' ? parseFloat(coupon.discount_value) : null,
+          minimumOrderValue: parseFloat(coupon.minimum_order_value || 0),
+          maximumDiscount: coupon.maximum_discount_amount ? parseFloat(coupon.maximum_discount_amount) : null,
+          validUntil: coupon.valid_until,
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching homepage popup coupon:', error);
+      // Return null coupon instead of throwing - don't break the page if this fails
+      return { coupon: null };
     }
   }
 }

@@ -7,6 +7,7 @@ import EnhancedProductGrid from './EnhancedProductGrid';
 import MobileFilterDrawer from './MobileFilterDrawer';
 import ActiveFilterPills from './ActiveFilterPills';
 import QuickViewModal from './QuickViewModal';
+import { useWishlist } from '@/context/WishlistContext';
 
 interface Product {
   product_id: number;
@@ -113,9 +114,12 @@ export default function EnhancedProductsClient({
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [gridView, setGridView] = useState<'comfortable' | 'compact'>('comfortable');
-  const [wishlist, setWishlist] = useState<number[]>([]);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+
+  // Use centralized wishlist context
+  const { items: wishlistItems, toggleWishlist: contextToggleWishlist, isInWishlist } = useWishlist();
+  const wishlist = wishlistItems.map(item => item.product_id);
 
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -176,28 +180,19 @@ export default function EnhancedProductsClient({
     }
   }, [searchQuery, initialProducts]);
 
-  // Load wishlist from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('product_wishlist');
-      if (saved) {
-        setWishlist(JSON.parse(saved));
-      }
-    } catch (error) {
-      console.error('Error loading wishlist:', error);
-    }
-  }, []);
-
-  // Save wishlist to localStorage
+  // Toggle wishlist using context - creates the product object needed by context
   const toggleWishlist = useCallback((productId: number) => {
-    setWishlist(prev => {
-      const newWishlist = prev.includes(productId)
-        ? prev.filter(id => id !== productId)
-        : [...prev, productId];
-      localStorage.setItem('product_wishlist', JSON.stringify(newWishlist));
-      return newWishlist;
-    });
-  }, []);
+    const product = initialProducts.find(p => p.product_id === productId);
+    if (product) {
+      contextToggleWishlist({
+        product_id: product.product_id,
+        name: product.name,
+        slug: product.slug,
+        base_price: product.sale_price || product.base_price,
+        image: product.primary_image || ''
+      });
+    }
+  }, [initialProducts, contextToggleWishlist]);
 
   // Client-side filtering
   const filteredProducts = useMemo(() => {

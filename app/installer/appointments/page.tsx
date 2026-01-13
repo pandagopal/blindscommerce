@@ -61,7 +61,16 @@ export default function InstallerAppointmentsPage() {
       if (!result.success) {
         throw new Error(result.message || 'Failed to fetch appointments');
       }
-      setAppointments(result.data);
+      // Handle both array and object response formats
+      const data = result.data;
+      if (Array.isArray(data)) {
+        setAppointments(data);
+      } else if (data?.profileMissing) {
+        setError(data.message || 'Your installer profile is not set up yet. Please contact an administrator.');
+        setAppointments([]);
+      } else {
+        setAppointments(data?.appointments || []);
+      }
     } catch (error) {
       console.error('Error fetching appointments:', error);
       setError('Failed to load appointments');

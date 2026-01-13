@@ -59,6 +59,7 @@ interface VendorCoupon {
   valid_from: string;
   valid_until: string | null;
   is_active: boolean;
+  show_on_homepage_popup: boolean;
   stackable_with_discounts: boolean;
   priority: number;
   created_at: string;
@@ -76,6 +77,7 @@ export default function VendorDiscountsPage() {
   const [activeTab, setActiveTab] = useState('discounts');
   const [editingItem, setEditingItem] = useState<VendorDiscount | VendorCoupon | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [pagination, setPagination] = useState({
@@ -198,7 +200,7 @@ export default function VendorDiscountsPage() {
 
   const handleToggleStatus = async (item: VendorDiscount | VendorCoupon) => {
     try {
-      const endpoint = activeTab === 'discounts' 
+      const endpoint = activeTab === 'discounts'
         ? `/api/v2/vendors/discounts/${(item as VendorDiscount).discount_id}`
         : `/api/v2/vendors/coupons/${(item as VendorCoupon).coupon_id}`;
 
@@ -220,6 +222,32 @@ export default function VendorDiscountsPage() {
     }
   };
 
+  const handleCreate = async (data: any) => {
+    try {
+      const endpoint = activeTab === 'discounts'
+        ? '/api/v2/vendors/discounts'
+        : '/api/v2/vendors/coupons';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create item');
+      }
+
+      setIsCreateModalOpen(false);
+      fetchDiscountsData(); // Refresh the list
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create item');
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -238,9 +266,12 @@ export default function VendorDiscountsPage() {
             <h1 className="text-2xl font-bold text-gray-900">Discounts & Coupons</h1>
             <p className="text-gray-600 mt-1">Manage your product discounts and coupon codes</p>
           </div>
-          <Button className="inline-flex items-center px-4 py-2 bg-primary-red text-white rounded-lg hover:bg-red-700 transition-colors">
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center px-4 py-2 bg-primary-red text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
             <Plus className="h-6 w-6 mr-2" />
-            Add New
+            Add New {activeTab === 'discounts' ? 'Discount' : 'Coupon'}
           </Button>
         </div>
       </div>
@@ -534,7 +565,7 @@ export default function VendorDiscountsPage() {
               Update the details for this {activeTab === 'discounts' ? 'discount' : 'coupon'}.
             </DialogDescription>
           </DialogHeader>
-          
+
           {editingItem && (
             <EditForm
               item={editingItem}
@@ -543,6 +574,26 @@ export default function VendorDiscountsPage() {
               onCancel={() => setIsEditModalOpen(false)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Create New {activeTab === 'discounts' ? 'Discount' : 'Coupon'}
+            </DialogTitle>
+            <DialogDescription>
+              Add a new {activeTab === 'discounts' ? 'discount' : 'coupon'} for your products.
+            </DialogDescription>
+          </DialogHeader>
+
+          <CreateForm
+            type={activeTab}
+            onSave={handleCreate}
+            onCancel={() => setIsCreateModalOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>
@@ -571,6 +622,7 @@ function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
     valid_from: item.valid_from.split('T')[0], // Convert to date input format
     valid_until: item.valid_until ? item.valid_until.split('T')[0] : '',
     is_active: item.is_active,
+    show_on_homepage_popup: type === 'coupons' ? (item as VendorCoupon).show_on_homepage_popup || false : false,
     usage_limit_total: type === 'discounts' ? (item as VendorDiscount).usage_limit_total || 0 : (item as VendorCoupon).usage_limit_total || 0,
     usage_limit_per_customer: type === 'discounts' ? (item as VendorDiscount).usage_limit_per_customer || 0 : (item as VendorCoupon).usage_limit_per_customer || 0,
   });
@@ -713,13 +765,30 @@ function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
         />
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          checked={formData.is_active}
-          onCheckedChange={(checked) => handleChange('is_active', checked)}
-        />
-        <label className="text-sm font-medium">Active</label>
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            checked={formData.is_active}
+            onCheckedChange={(checked) => handleChange('is_active', checked)}
+          />
+          <label className="text-sm font-medium">Active</label>
+        </div>
+        {type === 'coupons' && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={formData.show_on_homepage_popup}
+              onCheckedChange={(checked) => handleChange('show_on_homepage_popup', checked)}
+            />
+            <label className="text-sm font-medium">Show in Homepage Popup</label>
+          </div>
+        )}
       </div>
+
+      {type === 'coupons' && formData.show_on_homepage_popup && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          This coupon will be displayed in the exit-intent popup on the homepage. Only the top active coupon with this option enabled will be shown to visitors.
+        </div>
+      )}
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
@@ -728,6 +797,306 @@ function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
         <Button type="submit" className="bg-primary-red hover:bg-red-700">
           <Save className="h-6 w-6 mr-2" />
           Save Changes
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+// Create Form Component
+interface CreateFormProps {
+  type: string;
+  onSave: (data: any) => void;
+  onCancel: () => void;
+}
+
+function CreateForm({ type, onSave, onCancel }: CreateFormProps) {
+  const today = new Date().toISOString().split('T')[0];
+
+  const [formData, setFormData] = useState({
+    discount_name: '',
+    coupon_name: '',
+    discount_code: '',
+    coupon_code: '',
+    display_name: '',
+    description: '',
+    discount_type: 'percentage' as const,
+    discount_value: 10,
+    minimum_order_value: 0,
+    maximum_discount_amount: 0,
+    minimum_quantity: 1,
+    valid_from: today,
+    valid_until: '',
+    is_active: true,
+    usage_limit_total: 0,
+    usage_limit_per_customer: 1,
+    applies_to: 'all_vendor_products' as const,
+    is_automatic: false,
+    stackable_with_coupons: false,
+    stackable_with_discounts: false,
+    show_on_homepage_popup: false,
+    priority: 0,
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Prepare data based on type
+    const dataToSend = type === 'discounts'
+      ? {
+          discount_name: formData.discount_name,
+          discount_code: formData.discount_code || null,
+          display_name: formData.display_name || null,
+          description: formData.description || null,
+          discount_type: formData.discount_type,
+          discount_value: formData.discount_value,
+          minimum_order_value: formData.minimum_order_value,
+          maximum_discount_amount: formData.maximum_discount_amount || null,
+          minimum_quantity: formData.minimum_quantity,
+          valid_from: formData.valid_from,
+          valid_until: formData.valid_until || null,
+          is_active: formData.is_active,
+          usage_limit_total: formData.usage_limit_total || null,
+          usage_limit_per_customer: formData.usage_limit_per_customer || null,
+          applies_to: formData.applies_to,
+          is_automatic: formData.is_automatic,
+          stackable_with_coupons: formData.stackable_with_coupons,
+          priority: formData.priority,
+        }
+      : {
+          coupon_name: formData.coupon_name,
+          coupon_code: formData.coupon_code,
+          display_name: formData.display_name || null,
+          description: formData.description || null,
+          discount_type: formData.discount_type,
+          discount_value: formData.discount_value,
+          minimum_order_value: formData.minimum_order_value,
+          maximum_discount_amount: formData.maximum_discount_amount || null,
+          minimum_quantity: formData.minimum_quantity,
+          valid_from: formData.valid_from,
+          valid_until: formData.valid_until || null,
+          is_active: formData.is_active,
+          usage_limit_total: formData.usage_limit_total || null,
+          usage_limit_per_customer: formData.usage_limit_per_customer,
+          applies_to: formData.applies_to,
+          stackable_with_discounts: formData.stackable_with_discounts,
+          show_on_homepage_popup: formData.show_on_homepage_popup,
+          priority: formData.priority,
+        };
+
+    onSave(dataToSend);
+  };
+
+  const handleChange = (field: string, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {type === 'discounts' ? 'Discount' : 'Coupon'} Name *
+          </label>
+          <Input
+            value={type === 'discounts' ? formData.discount_name : formData.coupon_name}
+            onChange={(e) => handleChange(type === 'discounts' ? 'discount_name' : 'coupon_name', e.target.value)}
+            placeholder={type === 'discounts' ? 'e.g., Summer Sale 10% Off' : 'e.g., Welcome Discount'}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Code {type === 'coupons' && '*'}
+          </label>
+          <Input
+            value={type === 'discounts' ? formData.discount_code : formData.coupon_code}
+            onChange={(e) => handleChange(type === 'discounts' ? 'discount_code' : 'coupon_code', e.target.value.toUpperCase())}
+            placeholder={type === 'discounts' ? 'Optional code' : 'e.g., SAVE10'}
+            required={type === 'coupons'}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Display Name
+          </label>
+          <Input
+            value={formData.display_name}
+            onChange={(e) => handleChange('display_name', e.target.value)}
+            placeholder="Customer-facing name"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Type *
+          </label>
+          <Select
+            value={formData.discount_type}
+            onValueChange={(value) => handleChange('discount_type', value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">Percentage</SelectItem>
+              <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+              {type === 'discounts' && <SelectItem value="tiered">Tiered</SelectItem>}
+              {type === 'discounts' && <SelectItem value="bulk_pricing">Bulk Pricing</SelectItem>}
+              {type === 'coupons' && <SelectItem value="free_shipping">Free Shipping</SelectItem>}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Value *
+          </label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.discount_value}
+            onChange={(e) => handleChange('discount_value', parseFloat(e.target.value) || 0)}
+            placeholder={formData.discount_type === 'percentage' ? 'e.g., 10 for 10%' : 'e.g., 5.00 for $5 off'}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Minimum Order Value ($)
+          </label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.minimum_order_value}
+            onChange={(e) => handleChange('minimum_order_value', parseFloat(e.target.value) || 0)}
+            placeholder="0 for no minimum"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Maximum Discount ($)
+          </label>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            value={formData.maximum_discount_amount}
+            onChange={(e) => handleChange('maximum_discount_amount', parseFloat(e.target.value) || 0)}
+            placeholder="0 for no cap"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Minimum Quantity
+          </label>
+          <Input
+            type="number"
+            min="1"
+            value={formData.minimum_quantity}
+            onChange={(e) => handleChange('minimum_quantity', parseInt(e.target.value) || 1)}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valid From *
+          </label>
+          <Input
+            type="date"
+            value={formData.valid_from}
+            onChange={(e) => handleChange('valid_from', e.target.value)}
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Valid Until
+          </label>
+          <Input
+            type="date"
+            value={formData.valid_until}
+            onChange={(e) => handleChange('valid_until', e.target.value)}
+            placeholder="Leave empty for no expiry"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Usage Limit (Total)
+          </label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.usage_limit_total}
+            onChange={(e) => handleChange('usage_limit_total', parseInt(e.target.value) || 0)}
+            placeholder="0 for unlimited"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Usage Limit (Per Customer)
+          </label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.usage_limit_per_customer}
+            onChange={(e) => handleChange('usage_limit_per_customer', parseInt(e.target.value) || 0)}
+            placeholder="0 for unlimited"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <Input
+          value={formData.description}
+          onChange={(e) => handleChange('description', e.target.value)}
+          placeholder="Describe what this discount/coupon is for"
+        />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            checked={formData.is_active}
+            onCheckedChange={(checked) => handleChange('is_active', checked)}
+          />
+          <label className="text-sm font-medium">Active</label>
+        </div>
+        {type === 'discounts' && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={formData.is_automatic}
+              onCheckedChange={(checked) => handleChange('is_automatic', checked)}
+            />
+            <label className="text-sm font-medium">Auto-apply</label>
+          </div>
+        )}
+        {type === 'coupons' && (
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              checked={formData.show_on_homepage_popup}
+              onCheckedChange={(checked) => handleChange('show_on_homepage_popup', checked)}
+            />
+            <label className="text-sm font-medium">Show in Homepage Popup</label>
+          </div>
+        )}
+      </div>
+
+      {type === 'coupons' && formData.show_on_homepage_popup && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+          This coupon will be displayed in the exit-intent popup on the homepage. Only the top active coupon with this option enabled will be shown to visitors.
+        </div>
+      )}
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button type="submit" className="bg-primary-red hover:bg-red-700">
+          <Plus className="h-5 w-5 mr-2" />
+          Create {type === 'discounts' ? 'Discount' : 'Coupon'}
         </Button>
       </div>
     </form>

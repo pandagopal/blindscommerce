@@ -403,12 +403,18 @@ export class OfflineOrderHandler extends BaseHandler {
       throw new ApiError('This endpoint is for vendors only', 403);
     }
 
+    // Use vendorId (camelCase) as returned by auth.ts
+    const vendorId = user.vendorId;
+    if (!vendorId) {
+      throw new ApiError('Vendor ID not found for user', 400);
+    }
+
     const pool = await getPool();
     const searchParams = new URL(req.url).searchParams;
     const status = searchParams.get('status');
 
     const query = `
-      SELECT 
+      SELECT
         o.order_id,
         o.order_number,
         o.customer_name,
@@ -430,7 +436,7 @@ export class OfflineOrderHandler extends BaseHandler {
       ORDER BY oi.created_at DESC
     `;
 
-    const params = [user.vendor_id];
+    const params: (number | string)[] = [vendorId];
     if (status) params.push(status);
 
     const [items] = await pool.execute(query, params);

@@ -9,6 +9,7 @@ import { Product } from "./components/ConfigurationContext";
 import NewProductConfigurator from "./components/NewProductConfigurator";
 import NoDrillHighlight from "@/components/ui/NoDrillHighlight";
 import { toast } from "sonner";
+import { StickyAddToCart, EstimatedDelivery } from "@/components/ecommerce";
 
 export default function ProductConfiguratorPage() {
   const params = useParams();
@@ -26,6 +27,11 @@ export default function ProductConfiguratorPage() {
   const [configName, setConfigName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // State for sticky add to cart
+  const [currentPrice, setCurrentPrice] = useState(0);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [pendingConfig, setPendingConfig] = useState<any>(null);
 
   // Scroll to top when page loads
   useEffect(() => {
@@ -166,8 +172,8 @@ export default function ProductConfiguratorPage() {
     // Find fabric name from product data if fabricType is an ID
     let fabricName = config.fabricOption || '';
     if (config.fabricType && product.fabricOptions) {
-      const selectedFabric = product.fabricOptions.find((f: any) => 
-        f.fabric_option_id?.toString() === config.fabricType || 
+      const selectedFabric = product.fabricOptions.find((f: any) =>
+        f.fabric_option_id?.toString() === config.fabricType ||
         f.id?.toString() === config.fabricType
       );
       if (selectedFabric) {
@@ -213,7 +219,7 @@ export default function ProductConfiguratorPage() {
         bottomRailOption: config.bottomRailOption
       } // API expects configuration object
     };
-    
+
     if (editCartItemId) {
       // If editing, update the existing item
       updateItem(parseInt(editCartItemId), cartItem);
@@ -221,6 +227,20 @@ export default function ProductConfiguratorPage() {
     } else {
       addItem(cartItem);
       toast.success('Item added to cart!');
+    }
+  };
+
+  // Callback for price and configuration updates from configurator
+  const handleConfigurationChange = (config: any, price: number, isComplete: boolean) => {
+    setCurrentPrice(price);
+    setIsConfigured(isComplete);
+    setPendingConfig(config);
+  };
+
+  // Handle sticky add to cart click
+  const handleStickyAddToCart = () => {
+    if (pendingConfig && isConfigured) {
+      handleAddToCart(pendingConfig, currentPrice);
     }
   };
 
@@ -269,12 +289,35 @@ export default function ProductConfiguratorPage() {
         isEditMode={!!editCartItemId}
         userRole={user?.role}
         roomTypes={roomTypes}
+        onConfigurationChange={handleConfigurationChange}
       />
-      
+
+      {/* Estimated Delivery Section */}
+      <div className="container mx-auto px-4 py-6">
+        <EstimatedDelivery
+          processingDays={5}
+          shippingDays={{ min: 3, max: 7 }}
+          isCustomProduct={true}
+        />
+      </div>
+
       {/* Guarantees and Features */}
       <div className="container mx-auto px-4 py-8 space-y-4">
         <NoDrillHighlight variant="banner" />
       </div>
+
+      {/* Sticky Add to Cart - Only show for customers */}
+      {user?.role === 'customer' && (
+        <StickyAddToCart
+          productName={product.name}
+          price={currentPrice}
+          imageUrl={product.images?.[0]?.image_url}
+          onAddToCart={handleStickyAddToCart}
+          isConfigured={isConfigured}
+          showAfterScroll={500}
+          disabled={!isConfigured}
+        />
+      )}
     </div>
   );
 }

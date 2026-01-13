@@ -60,16 +60,34 @@ const CreateDiscountSchema = z.object({
 });
 
 const CreateCouponSchema = z.object({
-  code: z.string().min(3).max(20),
-  description: z.string().optional(),
-  discountType: z.enum(['percentage', 'fixed']),
-  discountValue: z.number().positive(),
+  // Support both old API field names and new frontend field names
+  code: z.string().min(3).max(50).optional(),
+  coupon_code: z.string().min(3).max(50).optional(),
+  coupon_name: z.string().optional(),
+  display_name: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  discountType: z.enum(['percentage', 'fixed', 'fixed_amount', 'free_shipping']).optional(),
+  discount_type: z.enum(['percentage', 'fixed', 'fixed_amount', 'free_shipping']).optional(),
+  discountValue: z.number().min(0).optional(),
+  discount_value: z.number().min(0).optional(),
   minPurchase: z.number().min(0).optional(),
-  usageLimit: z.number().positive().optional(),
-  perCustomerLimit: z.number().positive().optional(),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  isActive: z.boolean().default(true),
+  minimum_order_value: z.number().min(0).optional(),
+  maximum_discount_amount: z.number().nullable().optional(),
+  minimum_quantity: z.number().min(1).optional(),
+  usageLimit: z.number().min(0).optional(),
+  usage_limit_total: z.number().nullable().optional(),
+  perCustomerLimit: z.number().min(0).optional(),
+  usage_limit_per_customer: z.number().min(0).optional(),
+  startDate: z.string().optional(),
+  valid_from: z.string().optional(),
+  endDate: z.string().nullable().optional(),
+  valid_until: z.string().nullable().optional(),
+  isActive: z.boolean().optional(),
+  is_active: z.boolean().optional(),
+  applies_to: z.enum(['all_vendor_products', 'specific_products', 'specific_categories']).optional(),
+  stackable_with_discounts: z.boolean().optional(),
+  show_on_homepage_popup: z.boolean().optional(),
+  priority: z.number().optional(),
 });
 
 export class VendorsHandler extends BaseHandler {
@@ -159,6 +177,7 @@ export class VendorsHandler extends BaseHandler {
   async handlePATCH(req: NextRequest, action: string[], user: any): Promise<any> {
     const routes = {
       'products/:id': () => this.patchProduct(action[1], req, user),
+      'orders/:id': () => this.patchOrderStatus(action[1], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -468,6 +487,128 @@ export class VendorsHandler extends BaseHandler {
     return { message: 'Order status updated successfully' };
   }
 
+  /**
+   * PATCH order status - handles PATCH /api/v2/vendors/orders/:id
+   */
+  private async patchOrderStatus(id: string, req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const orderId = parseInt(id);
+
+    if (isNaN(orderId)) {
+      throw new ApiError('Invalid order ID', 400);
+    }
+
+    const body = await req.json();
+    const { status: rawStatus, notes, tracking_number, carrier } = body;
+
+    // Normalize status to lowercase for consistency (frontend sends 'Pending', 'Shipped', etc.)
+    const status = rawStatus ? rawStatus.toLowerCase() : null;
+
+    // Verify vendor has items in this order
+    const [hasItems] = await this.vendorService.raw(
+      `SELECT 1 FROM orders o
+       WHERE o.order_id = ?
+       AND EXISTS (
+         SELECT 1 FROM order_items oi
+         WHERE oi.order_id = o.order_id AND oi.vendor_id = ?
+       )`,
+      [orderId, vendorId]
+    );
+
+    if (!hasItems) {
+      throw new ApiError('Order not found', 404);
+    }
+
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      // Update order status if provided
+      if (status) {
+        const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+          throw new ApiError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
+        }
+
+        await conn.execute(
+          'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
+          [status, orderId]
+        );
+
+        // Add to order status history if table exists
+        try {
+          await conn.execute(
+            `INSERT INTO order_status_history (order_id, status, notes, changed_by, created_at)
+             VALUES (?, ?, ?, ?, NOW())`,
+            [orderId, status, notes || null, user.userId]
+          );
+        } catch (historyError) {
+          // Table might not exist, continue without error
+          console.log('Order status history table not available');
+        }
+      }
+
+      // Update fulfillment info if tracking_number or carrier provided
+      if (tracking_number || carrier) {
+        // Check if fulfillment record exists
+        const [fulfillment] = await conn.execute(
+          'SELECT fulfillment_id FROM order_fulfillment WHERE order_id = ?',
+          [orderId]
+        ) as any[];
+
+        if (fulfillment && fulfillment.length > 0) {
+          // Update existing record
+          const updates = [];
+          const values = [];
+
+          if (tracking_number) {
+            updates.push('tracking_number = ?');
+            values.push(tracking_number);
+          }
+          if (carrier) {
+            updates.push('carrier = ?');
+            values.push(carrier);
+          }
+
+          if (updates.length > 0) {
+            updates.push('updated_at = NOW()');
+            values.push(orderId);
+
+            await conn.execute(
+              `UPDATE order_fulfillment SET ${updates.join(', ')} WHERE order_id = ?`,
+              values
+            );
+          }
+        } else {
+          // Create new fulfillment record
+          await conn.execute(
+            `INSERT INTO order_fulfillment (order_id, tracking_number, carrier, created_at, updated_at)
+             VALUES (?, ?, ?, NOW(), NOW())`,
+            [orderId, tracking_number || null, carrier || 'ups']
+          );
+        }
+      }
+
+      await conn.commit();
+
+      return {
+        success: true,
+        message: 'Order updated successfully',
+        order_id: orderId,
+        status: status || undefined
+      };
+    } catch (error) {
+      await conn.rollback();
+      if (error instanceof ApiError) throw error;
+      console.error('Error updating order:', error);
+      throw new ApiError('Failed to update order', 500);
+    } finally {
+      conn.release();
+    }
+  }
+
   // Discounts and coupons
   private async getDiscounts(user: any) {
     const vendorId = await this.getVendorId(user);
@@ -525,35 +666,66 @@ export class VendorsHandler extends BaseHandler {
     const vendorId = await this.getVendorId(user);
     const data = await this.getValidatedBody(req, CreateCouponSchema);
 
+    // Support both old and new field names
+    const couponCode = data.coupon_code || data.code;
+    const couponName = data.coupon_name || couponCode;
+    const discountType = data.discount_type || data.discountType || 'percentage';
+    const discountValue = data.discount_value ?? data.discountValue ?? 0;
+    const minimumOrderValue = data.minimum_order_value ?? data.minPurchase ?? 0;
+    const usageLimitTotal = data.usage_limit_total ?? data.usageLimit ?? null;
+    const usageLimitPerCustomer = data.usage_limit_per_customer ?? data.perCustomerLimit ?? 1;
+    const validFrom = data.valid_from || data.startDate || new Date().toISOString().split('T')[0];
+    const validUntil = data.valid_until || data.endDate || null;
+    const isActive = data.is_active ?? data.isActive ?? true;
+    const showOnHomepagePopup = data.show_on_homepage_popup ?? false;
+
+    if (!couponCode) {
+      throw new ApiError('Coupon code is required', 400);
+    }
+
     // Check if code already exists
     const [exists] = await this.vendorService.raw(
       'SELECT 1 FROM vendor_coupons WHERE coupon_code = ?',
-      [data.code]
+      [couponCode]
     );
 
     if (exists) {
       throw new ApiError('Coupon code already exists', 400);
     }
 
+    // If enabling homepage popup, disable it for other coupons first
+    if (showOnHomepagePopup) {
+      await this.vendorService.raw(
+        'UPDATE vendor_coupons SET show_on_homepage_popup = 0 WHERE vendor_id = ? AND show_on_homepage_popup = 1',
+        [vendorId]
+      );
+    }
+
     const result = await this.vendorService.raw(
       `INSERT INTO vendor_coupons (
-        vendor_id, coupon_code, coupon_name, description, discount_type, discount_value,
-        minimum_order_value, usage_limit_total, usage_limit_per_customer,
-        valid_from, valid_until, is_active, created_by, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        vendor_id, coupon_code, coupon_name, display_name, description, discount_type, discount_value,
+        minimum_order_value, maximum_discount_amount, minimum_quantity, usage_limit_total, usage_limit_per_customer,
+        valid_from, valid_until, is_active, show_on_homepage_popup, applies_to, priority, created_by, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         vendorId,
-        data.code,
-        data.code, // Use code as name if no name provided
-        data.description,
-        data.discountType,
-        data.discountValue,
-        data.minPurchase,
-        data.usageLimit,
-        data.perCustomerLimit || 1,
-        data.startDate || new Date(),
-        data.endDate || null,
-        data.isActive,
+        couponCode,
+        couponName,
+        data.display_name || null,
+        data.description || null,
+        discountType === 'fixed' ? 'fixed_amount' : discountType,
+        discountValue,
+        minimumOrderValue,
+        data.maximum_discount_amount || null,
+        data.minimum_quantity || 1,
+        usageLimitTotal,
+        usageLimitPerCustomer,
+        validFrom,
+        validUntil,
+        isActive ? 1 : 0,
+        showOnHomepagePopup ? 1 : 0,
+        data.applies_to || 'all_vendor_products',
+        data.priority || 0,
         user.userId,
       ]
     );
@@ -903,7 +1075,19 @@ export class VendorsHandler extends BaseHandler {
       updates.push('stackable_with_other_coupons = ?');
       values.push(body.stackable_with_other_coupons ? 1 : 0);
     }
-    
+
+    if (body.show_on_homepage_popup !== undefined) {
+      // If enabling homepage popup, disable it for other coupons first
+      if (body.show_on_homepage_popup) {
+        await this.vendorService.raw(
+          'UPDATE vendor_coupons SET show_on_homepage_popup = 0 WHERE vendor_id = ? AND show_on_homepage_popup = 1 AND coupon_id != ?',
+          [vendorId, couponId]
+        );
+      }
+      updates.push('show_on_homepage_popup = ?');
+      values.push(body.show_on_homepage_popup ? 1 : 0);
+    }
+
     if (updates.length === 0) {
       throw new ApiError('No fields to update', 400);
     }

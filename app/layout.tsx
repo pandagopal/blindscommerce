@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecentlyViewedProvider } from "@/context/RecentlyViewedContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import { AuthProvider } from "@/context/AuthContext";
 import NextAuthProvider from "@/components/providers/NextAuthProvider";
 import { defaultMetadata } from '@/lib/seo-config';
@@ -16,6 +17,7 @@ import { OrganizationJsonLd, WebsiteJsonLd, LocalBusinessJsonLd } from '@/compon
 import { Toaster } from "sonner";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import CookieConsent from "@/components/CookieConsent";
+import ExitIntentPopup from "@/components/ecommerce/ExitIntentPopup";
 
 const inter = Inter({
   subsets: ['latin'],
@@ -94,15 +96,18 @@ export default function RootLayout({
           <NextAuthProvider>
             <AuthProvider>
               <CartProvider>
-                <RecentlyViewedProvider>
-                  <div className="flex flex-col min-h-screen">
-                    <Navbar />
-                    <main id="main-content" className="flex-1">{children}</main>
-                    <Footer />
-                  </div>
-                  <Toaster richColors />
-                  <CookieConsent />
-                </RecentlyViewedProvider>
+                <WishlistProvider>
+                  <RecentlyViewedProvider>
+                    <div className="flex flex-col min-h-screen">
+                      <Navbar />
+                      <main id="main-content" className="flex-1">{children}</main>
+                      <Footer />
+                    </div>
+                    <Toaster richColors />
+                    <CookieConsent />
+                    <ExitIntentPopup />
+                  </RecentlyViewedProvider>
+                </WishlistProvider>
               </CartProvider>
             </AuthProvider>
           </NextAuthProvider>

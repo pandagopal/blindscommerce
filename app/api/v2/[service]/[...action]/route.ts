@@ -18,6 +18,7 @@ import { ContentHandler } from '@/lib/api/v2/handlers/ContentHandler';
 import { SettingsHandler } from '@/lib/api/v2/handlers/SettingsHandler';
 import { OfflineOrderHandler } from '@/lib/api/v2/handlers/OfflineOrderHandler';
 import { SalesHandler } from '@/lib/api/v2/handlers/SalesHandler';
+import { InstallerHandler } from '@/lib/api/v2/handlers/InstallerHandler';
 
 // Service handler mapping
 const serviceHandlers: Record<string, any> = {
@@ -31,6 +32,7 @@ const serviceHandlers: Record<string, any> = {
   settings: new SettingsHandler(),
   'offline-orders': new OfflineOrderHandler(),
   sales: new SalesHandler(),
+  installer: new InstallerHandler(),
 };
 
 // Standard API response format

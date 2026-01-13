@@ -6,6 +6,7 @@ import { Trash2, Plus, Minus, ShoppingBag, ChevronDown, ChevronUp, Info, Edit3 }
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HelpButton from "@/components/customer/HelpButton";
+import { FreeShippingProgressBar, TrustBadges, PaymentIcons } from "@/components/ecommerce";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, pricing, applyCoupon, removeCoupon, isLoading, pricingError } = useCart();
@@ -115,10 +116,13 @@ export default function CartPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Shopping Cart</h1>
           <HelpButton className="bg-purple-600 hover:bg-primary-dark text-white" />
         </div>
+
+        {/* Free Shipping Progress Bar */}
+        <FreeShippingProgressBar className="mb-6" />
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Cart Items - Left Side */}
@@ -514,6 +518,12 @@ export default function CartPage() {
                 <p className="text-xs text-center text-gray-500 mt-4">
                   By proceeding to checkout, you agree to our <a href="#" className="underline">Terms of Service</a> and <a href="#" className="underline">Privacy Policy</a>.
                 </p>
+
+                {/* Trust Badges */}
+                <div className="mt-6 pt-4 border-t border-gray-200">
+                  <TrustBadges variant="vertical" className="mb-4" />
+                  <PaymentIcons className="mt-4" />
+                </div>
               </div>
             </div>
           </div>

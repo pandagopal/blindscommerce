@@ -49,19 +49,18 @@ export default function VendorNotificationsPage() {
       console.warn('Notifications API endpoint not implemented yet');
       
       // Mock data for development
-      return { 
+      return {
         notifications: [
           {
-            id: '1',
+            notification_id: 1,
             type: 'order' as const,
             title: 'New Order Received',
             message: 'You have received a new order #1234',
-            timestamp: new Date().toISOString(),
-            read: false,
-            priority: 'high' as const,
+            created_at: new Date().toISOString(),
+            is_read: false,
           }
-        ], 
-        settings: settings 
+        ],
+        settings: settings
       };
       
       // Original API call - uncomment when endpoint is implemented

@@ -51,6 +51,7 @@ interface ProductConfiguratorProps {
   isEditMode?: boolean;
   userRole?: string;
   roomTypes?: string[];
+  onConfigurationChange?: (config: any, price: number, isComplete: boolean) => void;
 }
 
 // Collapsible Section Component
@@ -195,7 +196,7 @@ const OpacityIndicator = ({ opacity }: { opacity?: string }) => {
   );
 };
 
-export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole, roomTypes = [] }: ProductConfiguratorProps) {
+export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole, roomTypes = [], onConfigurationChange }: ProductConfiguratorProps) {
   // Use passed roomTypes or fallback to defaults
   const availableRoomTypes = roomTypes.length > 0 ? roomTypes : DEFAULT_ROOM_TYPES;
   const { itemCount } = useCart();
@@ -331,6 +332,15 @@ export default function NewProductConfigurator({ product, slug, onAddToCart, ini
       }
     }
   }, [config, errors.width, errors.height]);
+
+  // Notify parent about configuration changes for sticky add to cart
+  useEffect(() => {
+    if (onConfigurationChange) {
+      const price = calculatePrice();
+      const isComplete = areMandatoryFieldsComplete();
+      onConfigurationChange(config, price, isComplete);
+    }
+  }, [config, errors]);
 
   // Smart Recommendations based on current configuration
   const getRecommendations = (sectionId: string): Recommendation[] => {
