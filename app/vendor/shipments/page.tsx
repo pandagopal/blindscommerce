@@ -2,54 +2,83 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { useLazyLoad } from '@/hooks/useLazyLoad';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Truck, Package, MapPin, Calendar, Clock, User, 
-  Search, Download, Plus, Edit, Eye, Copy
+import {
+  Package, MapPin, Calendar, Clock,
+  Search, Eye, Copy, ExternalLink, Ship,
+  Plane, CheckCircle, AlertCircle, ChevronRight
 } from 'lucide-react';
 
-interface Shipment {
-  id: string;
-  order_id: string;
-  customer_name: string;
-  shipping_address: string;
-  tracking_number: string;
-  carrier: 'ups' | 'fedex' | 'usps' | 'dhl' | 'local';
-  status: 'pending' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'delayed' | 'failed';
-  created_date: string;
-  shipped_date?: string;
-  estimated_delivery: string;
-  actual_delivery?: string;
-  items: ShipmentItem[];
-  weight: number;
-  dimensions: string;
-  shipping_cost: number;
-  notes?: string;
+interface ShipmentLeg {
+  leg_id: number;
+  leg_order: number;
+  carrier_name: string;
+  carrier_type: string;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  status: string;
+  origin_location: string | null;
+  destination_location: string | null;
 }
 
-interface ShipmentItem {
-  id: string;
-  product_name: string;
-  quantity: number;
-  sku: string;
+interface Shipment {
+  shipment_id: number;
+  shipment_number: string;
+  order_id: number;
+  order_number: string;
+  status: string;
+  origin_country: string;
+  origin_city: string | null;
+  destination_country: string;
+  destination_address: string | null;
+  total_weight: number | null;
+  total_packages: number;
+  dimensions: string | null;
+  ship_date: string | null;
+  estimated_delivery: string | null;
+  actual_delivery: string | null;
+  shipping_cost: number;
+  created_at: string;
+  customer_name?: string;
+  legs?: ShipmentLeg[];
+  source?: 'legacy' | 'new';
 }
+
+interface ShipmentEvent {
+  event_id: number;
+  event_type: string;
+  event_description: string;
+  location: string | null;
+  event_time: string;
+  carrier_name?: string;
+}
+
+const CARRIER_TYPE_LABELS: Record<string, string> = {
+  domestic_origin: 'China',
+  domestic_china: 'China',
+  international: 'Intl',
+  domestic_destination: 'US',
+  domestic_us: 'US',
+  last_mile: 'Last Mile',
+  multi: 'Multi'
+};
 
 export default function VendorShipmentsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [selectedShipment, setSelectedShipment] = useState<Shipment | null>(null);
+  const [shipmentEvents, setShipmentEvents] = useState<ShipmentEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterCarrier, setFilterCarrier] = useState<string>('all');
 
   useEffect(() => {
     if (!authLoading) {
@@ -61,437 +90,344 @@ export default function VendorShipmentsPage() {
         router.push('/');
         return;
       }
+      fetchShipments();
     }
   }, [user, authLoading, router]);
 
-  // Lazy load shipments data only when this route is active
-  const fetchShipmentsData = async () => {
+  const fetchShipments = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/v2/vendors/shipments');
-      if (!response.ok) {
-        throw new Error('Failed to fetch shipments');
-      }
-      const data = await response.json();
-      return { shipments: data.shipments || [] };
+      if (!response.ok) throw new Error('Failed to fetch shipments');
+
+      const result = await response.json();
+      const shipmentsData = result.data?.shipments || result.shipments || [];
+
+      const shipmentsWithLegs = await Promise.all(
+        shipmentsData.map(async (shipment: Shipment) => {
+          // Skip fetching legs for legacy shipments (from order_fulfillment table)
+          if (shipment.source === 'legacy') {
+            return shipment;
+          }
+          try {
+            const legsRes = await fetch(`/api/v2/vendors/shipments/${shipment.shipment_id}/legs`);
+            if (legsRes.ok) {
+              const legsData = await legsRes.json();
+              return { ...shipment, legs: legsData.data?.legs || [] };
+            }
+          } catch (e) {
+            console.error('Error fetching legs:', e);
+          }
+          return shipment;
+        })
+      );
+
+      setShipments(shipmentsWithLegs);
     } catch (error) {
       console.error('Error fetching shipments:', error);
-      return { shipments: [] };
+    } finally {
+      setLoading(false);
     }
   };
 
-  const { 
-    data: fetchedData, 
-    loading, 
-    error, 
-    refetch 
-  } = useLazyLoad(fetchShipmentsData, {
-    targetPath: '/vendor/shipments',
-    dependencies: []
-  });
-
-  useEffect(() => {
-    if (fetchedData) {
-      setShipments(fetchedData.shipments || []);
+  const fetchShipmentEvents = async (shipment: Shipment) => {
+    // Skip for legacy shipments
+    if (shipment.source === 'legacy') {
+      setShipmentEvents([]);
+      return;
     }
-  }, [fetchedData]);
-
-  const updateShipmentStatus = async (shipmentId: string, status: Shipment['status']) => {
     try {
-      const response = await fetch(`/api/v2/vendors/shipments/${shipmentId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update shipment status');
+      const response = await fetch(`/api/v2/vendors/shipments/${shipment.shipment_id}/events`);
+      if (response.ok) {
+        const result = await response.json();
+        setShipmentEvents(result.data?.events || []);
       }
-      
-      refetch(); // Refresh data
     } catch (error) {
-      console.error('Error updating shipment status:', error);
+      console.error('Error fetching events:', error);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('en-US', {
+      month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
-
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: 'default',
-      picked_up: 'secondary',
-      in_transit: 'secondary',
-      out_for_delivery: 'warning',
-      delivered: 'success',
-      delayed: 'warning',
-      failed: 'destructive'
-    } as const;
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
-        {status.replace('_', ' ').toUpperCase()}
-      </Badge>
-    );
-  };
-
-  const getCarrierBadge = (carrier: string) => {
-    const colors = {
-      ups: 'bg-yellow-100 text-yellow-800',
-      fedex: 'bg-purple-100 text-primary-dark',
-      usps: 'bg-blue-100 text-blue-800',
-      dhl: 'bg-red-100 text-red-800',
-      local: 'bg-gray-100 text-gray-800'
+  const getStatusBadgeColor = (status: string) => {
+    const colors: Record<string, string> = {
+      preparing: 'bg-blue-100 text-blue-800',
+      in_transit: 'bg-purple-100 text-purple-800',
+      customs: 'bg-orange-100 text-orange-800',
+      delivered: 'bg-green-100 text-green-800',
+      delayed: 'bg-yellow-100 text-yellow-800',
+      failed: 'bg-red-100 text-red-800',
+      pending: 'bg-gray-100 text-gray-800',
+      picked_up: 'bg-indigo-100 text-indigo-800',
+      arrived: 'bg-teal-100 text-teal-800'
     };
-
-    return (
-      <Badge variant="outline" className={colors[carrier as keyof typeof colors]}>
-        {carrier.toUpperCase()}
-      </Badge>
-    );
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const copyTrackingNumber = (trackingNumber: string) => {
     navigator.clipboard.writeText(trackingNumber);
-    alert('Tracking number copied to clipboard!');
+  };
+
+  const openShipmentDetails = async (shipment: Shipment) => {
+    setSelectedShipment(shipment);
+    await fetchShipmentEvents(shipment);
   };
 
   const filteredShipments = shipments.filter(shipment => {
     if (filterStatus !== 'all' && shipment.status !== filterStatus) return false;
-    if (filterCarrier !== 'all' && shipment.carrier !== filterCarrier) return false;
-    if (searchTerm && !shipment.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !shipment.order_id.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        shipment.shipment_number.toLowerCase().includes(search) ||
+        shipment.order_number?.toLowerCase().includes(search) ||
+        shipment.customer_name?.toLowerCase().includes(search) ||
+        shipment.legs?.some(leg => leg.tracking_number?.toLowerCase().includes(search))
+      );
+    }
     return true;
   });
 
+  const stats = {
+    total: shipments.length,
+    preparing: shipments.filter(s => s.status === 'preparing').length,
+    inTransit: shipments.filter(s => ['in_transit', 'customs'].includes(s.status)).length,
+    delivered: shipments.filter(s => s.status === 'delivered').length,
+    delayed: shipments.filter(s => ['delayed', 'failed'].includes(s.status)).length
+  };
+
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading shipments...</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Shipments & Fulfillment
-            </h1>
-            <p className="text-gray-600">Manage your order shipments and tracking</p>
-          </div>
-          
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              className="border-red-200 text-primary-red hover:bg-red-50"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Shipment
-            </Button>
-          </div>
+    <div className="space-y-4">
+      {/* Header with Stats */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Shipments</h1>
+        <div className="flex items-center gap-4 text-sm">
+          <span className="flex items-center gap-1"><Package className="h-4 w-4" /> {stats.total}</span>
+          <span className="flex items-center gap-1 text-blue-600"><Clock className="h-4 w-4" /> {stats.preparing}</span>
+          <span className="flex items-center gap-1 text-purple-600"><Plane className="h-4 w-4" /> {stats.inTransit}</span>
+          <span className="flex items-center gap-1 text-green-600"><CheckCircle className="h-4 w-4" /> {stats.delivered}</span>
+          {stats.delayed > 0 && <span className="flex items-center gap-1 text-yellow-600"><AlertCircle className="h-4 w-4" /> {stats.delayed}</span>}
         </div>
+      </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <Package className="h-8 w-8 mx-auto text-blue-600 mb-2" />
-              <div className="text-2xl font-bold">{shipments.length}</div>
-              <div className="text-sm text-gray-600">Total Shipments</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <Truck className="h-8 w-8 mx-auto text-orange-600 mb-2" />
-              <div className="text-2xl font-bold">
-                {shipments.filter(s => s.status === 'in_transit' || s.status === 'out_for_delivery').length}
-              </div>
-              <div className="text-sm text-gray-600">In Transit</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {shipments.filter(s => s.status === 'delivered').length}
-              </div>
-              <div className="text-sm text-gray-600">Delivered</div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-red-600">
-                {shipments.filter(s => s.status === 'pending' || s.status === 'delayed').length}
-              </div>
-              <div className="text-sm text-gray-600">Pending/Delayed</div>
-            </CardContent>
-          </Card>
+      {/* Search & Filter Row */}
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search shipment, order, or tracking..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-9"
+          />
         </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-32 h-9">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="preparing">Preparing</SelectItem>
+            <SelectItem value="in_transit">In Transit</SelectItem>
+            <SelectItem value="customs">Customs</SelectItem>
+            <SelectItem value="delivered">Delivered</SelectItem>
+            <SelectItem value="delayed">Delayed</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        {/* Filters */}
-        <Card className="border-red-100 shadow-lg mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search shipments..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
-
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="picked_up">Picked Up</SelectItem>
-                  <SelectItem value="in_transit">In Transit</SelectItem>
-                  <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-                  <SelectItem value="delivered">Delivered</SelectItem>
-                  <SelectItem value="delayed">Delayed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterCarrier} onValueChange={setFilterCarrier}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Carrier" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Carriers</SelectItem>
-                  <SelectItem value="ups">UPS</SelectItem>
-                  <SelectItem value="fedex">FedEx</SelectItem>
-                  <SelectItem value="usps">USPS</SelectItem>
-                  <SelectItem value="dhl">DHL</SelectItem>
-                  <SelectItem value="local">Local</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+      {/* Shipments Table */}
+      {filteredShipments.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Ship className="h-10 w-10 mx-auto text-gray-300 mb-2" />
+            <p className="text-gray-500 text-sm mb-2">
+              {searchTerm || filterStatus !== 'all' ? 'No shipments match your filters.' : 'No shipments yet.'}
+            </p>
+            <Link href="/vendor/orders">
+              <Button size="sm" variant="outline">Go to Orders</Button>
+            </Link>
           </CardContent>
         </Card>
-
-        {/* Shipments List */}
-        <Card className="border-red-100 shadow-lg">
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Shipment Tracking ({filteredShipments.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                <th className="text-left py-2 px-3 font-medium">Shipment</th>
+                <th className="text-left py-2 px-3 font-medium">Order</th>
+                <th className="text-left py-2 px-3 font-medium">Route</th>
+                <th className="text-left py-2 px-3 font-medium">Status</th>
+                <th className="text-left py-2 px-3 font-medium">ETA</th>
+                <th className="text-right py-2 px-3 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
               {filteredShipments.map((shipment) => (
-                <div key={shipment.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-lg">{shipment.id}</h4>
-                      {getStatusBadge(shipment.status)}
-                      {getCarrierBadge(shipment.carrier)}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>{shipment.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Package className="h-4 w-4" />
-                        <span>Order: {shipment.order_id}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Est. Delivery: {formatDate(shipment.estimated_delivery)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Truck className="h-4 w-4" />
-                        <span>{shipment.tracking_number}</span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyTrackingNumber(shipment.tracking_number)}
-                          className="h-auto p-1"
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>{shipment.weight} lbs • {shipment.dimensions}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>{formatCurrency(shipment.shipping_cost)}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-1 text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mt-0.5" />
-                      <span>{shipment.shipping_address}</span>
-                    </div>
-                    {shipment.notes && (
-                      <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
-                        <strong>Notes:</strong> {shipment.notes}
-                      </div>
+                <tr key={shipment.shipment_id} className="hover:bg-gray-50">
+                  <td className="py-2 px-3">
+                    <span className="font-medium">{shipment.shipment_number}</span>
+                    {shipment.total_packages > 0 && (
+                      <span className="text-gray-400 text-xs ml-1">({shipment.total_packages} pkg)</span>
                     )}
-                  </div>
-                  
-                  <div className="flex gap-2 ml-6">
+                  </td>
+                  <td className="py-2 px-3">
+                    <Link href={`/vendor/orders/${shipment.order_id}`} className="text-blue-600 hover:underline">
+                      #{shipment.order_number}
+                    </Link>
+                  </td>
+                  <td className="py-2 px-3">
+                    <div className="flex items-center gap-1 text-gray-600">
+                      <MapPin className="h-3 w-3" />
+                      <span>{shipment.origin_city || shipment.origin_country}</span>
+                      <ChevronRight className="h-3 w-3" />
+                      <span>{shipment.destination_country}</span>
+                    </div>
+                  </td>
+                  <td className="py-2 px-3">
+                    <Badge className={`${getStatusBadgeColor(shipment.status)} text-xs`}>
+                      {shipment.status.replace('_', ' ')}
+                    </Badge>
+                  </td>
+                  <td className="py-2 px-3 text-gray-600">
+                    {formatDate(shipment.estimated_delivery)}
+                  </td>
+                  <td className="py-2 px-3 text-right">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedShipment(shipment)}
+                          className="h-7 px-2"
+                          onClick={() => openShipmentDetails(shipment)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-3xl">
+                      <DialogContent className="max-w-lg">
                         <DialogHeader>
-                          <DialogTitle>Shipment Details - {selectedShipment?.id}</DialogTitle>
+                          <DialogTitle className="flex items-center gap-2">
+                            {selectedShipment?.shipment_number}
+                            {selectedShipment && (
+                              <Badge className={getStatusBadgeColor(selectedShipment.status)}>
+                                {selectedShipment.status.replace('_', ' ')}
+                              </Badge>
+                            )}
+                          </DialogTitle>
                         </DialogHeader>
                         {selectedShipment && (
-                          <div className="space-y-6">
-                            {/* Shipment Info */}
-                            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                              <div><strong>Order ID:</strong> {selectedShipment.order_id}</div>
-                              <div><strong>Customer:</strong> {selectedShipment.customer_name}</div>
-                              <div><strong>Tracking:</strong> {selectedShipment.tracking_number}</div>
-                              <div><strong>Carrier:</strong> {selectedShipment.carrier.toUpperCase()}</div>
-                              <div><strong>Weight:</strong> {selectedShipment.weight} lbs</div>
-                              <div><strong>Dimensions:</strong> {selectedShipment.dimensions}</div>
-                              <div><strong>Shipping Cost:</strong> {formatCurrency(selectedShipment.shipping_cost)}</div>
-                              <div><strong>Status:</strong> {getStatusBadge(selectedShipment.status)}</div>
-                            </div>
-
-                            {/* Shipping Address */}
-                            <div>
-                              <h3 className="font-medium mb-2">Shipping Address</h3>
-                              <p className="p-3 bg-gray-50 rounded">{selectedShipment.shipping_address}</p>
-                            </div>
-
-                            {/* Items */}
-                            <div>
-                              <h3 className="font-medium mb-2">Items ({selectedShipment.items.length})</h3>
-                              <div className="space-y-2">
-                                {selectedShipment.items.map((item) => (
-                                  <div key={item.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                    <div>
-                                      <div className="font-medium">{item.product_name}</div>
-                                      <div className="text-sm text-gray-600">SKU: {item.sku}</div>
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="font-medium">Qty: {item.quantity}</div>
-                                    </div>
-                                  </div>
-                                ))}
+                          <div className="space-y-4 text-sm">
+                            {/* Quick Info */}
+                            <div className="grid grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg">
+                              <div>
+                                <div className="text-gray-500 text-xs">Order</div>
+                                <div className="font-medium">#{selectedShipment.order_number}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-500 text-xs">Route</div>
+                                <div className="font-medium">{selectedShipment.origin_city || selectedShipment.origin_country} → {selectedShipment.destination_country}</div>
+                              </div>
+                              <div>
+                                <div className="text-gray-500 text-xs">ETA</div>
+                                <div className="font-medium">{formatDate(selectedShipment.estimated_delivery)}</div>
                               </div>
                             </div>
 
-                            {/* Status Updates */}
-                            <div>
-                              <h3 className="font-medium mb-2">Update Status</h3>
-                              <div className="flex gap-2">
-                                {selectedShipment.status === 'pending' && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateShipmentStatus(selectedShipment.id, 'picked_up')}
-                                  >
-                                    Mark as Picked Up
-                                  </Button>
-                                )}
-                                {selectedShipment.status === 'picked_up' && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateShipmentStatus(selectedShipment.id, 'in_transit')}
-                                  >
-                                    Mark as In Transit
-                                  </Button>
-                                )}
-                                {selectedShipment.status === 'in_transit' && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateShipmentStatus(selectedShipment.id, 'out_for_delivery')}
-                                  >
-                                    Out for Delivery
-                                  </Button>
-                                )}
-                                {selectedShipment.status === 'out_for_delivery' && (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => updateShipmentStatus(selectedShipment.id, 'delivered')}
-                                  >
-                                    Mark as Delivered
-                                  </Button>
-                                )}
+                            {/* Carrier Legs */}
+                            {selectedShipment.legs && selectedShipment.legs.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-2">Carriers</div>
+                                <div className="space-y-2">
+                                  {selectedShipment.legs.map((leg) => (
+                                    <div key={leg.leg_id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-medium">
+                                        {leg.leg_order}
+                                      </span>
+                                      <span className="font-medium">{leg.carrier_name}</span>
+                                      <Badge variant="outline" className="text-xs">
+                                        {CARRIER_TYPE_LABELS[leg.carrier_type] || leg.carrier_type}
+                                      </Badge>
+                                      <Badge className={`${getStatusBadgeColor(leg.status)} text-xs`}>
+                                        {leg.status.replace('_', ' ')}
+                                      </Badge>
+                                      {leg.tracking_number && (
+                                        <div className="ml-auto flex items-center gap-1 text-gray-500">
+                                          <span className="text-xs">{leg.tracking_number}</span>
+                                          <button onClick={() => copyTrackingNumber(leg.tracking_number!)} className="hover:text-blue-600">
+                                            <Copy className="h-3 w-3" />
+                                          </button>
+                                          {leg.tracking_url && (
+                                            <a href={leg.tracking_url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                                              <ExternalLink className="h-3 w-3" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
+                            )}
+
+                            {/* Events */}
+                            {shipmentEvents.length > 0 && (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-2">History</div>
+                                <div className="space-y-1 max-h-40 overflow-y-auto">
+                                  {shipmentEvents.map((event) => (
+                                    <div key={event.event_id} className="flex gap-2 p-1.5 border-l-2 border-blue-200 pl-3 text-xs">
+                                      <div className="flex-1">
+                                        <div className="font-medium">{event.event_description}</div>
+                                        <div className="text-gray-500">
+                                          {formatDateTime(event.event_time)}
+                                          {event.location && ` • ${event.location}`}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Destination */}
+                            {selectedShipment.destination_address && (
+                              <div>
+                                <div className="text-xs text-gray-500 mb-1">Destination</div>
+                                <div className="text-xs p-2 bg-gray-50 rounded">{selectedShipment.destination_address}</div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </DialogContent>
                     </Dialog>
-
-                    <Select
-                      value={shipment.status}
-                      onValueChange={(value: Shipment['status']) => updateShipmentStatus(shipment.id, value)}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="picked_up">Picked Up</SelectItem>
-                        <SelectItem value="in_transit">In Transit</SelectItem>
-                        <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-                        <SelectItem value="delivered">Delivered</SelectItem>
-                        <SelectItem value="delayed">Delayed</SelectItem>
-                        <SelectItem value="failed">Failed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                  </td>
+                </tr>
               ))}
-            </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
-            {filteredShipments.length === 0 && (
-              <div className="text-center py-12">
-                <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">No Shipments Found</h3>
-                <p className="text-gray-500">
-                  {searchTerm || filterStatus !== 'all' || filterCarrier !== 'all'
-                    ? 'No shipments match your current filters.'
-                    : 'You haven\'t created any shipments yet.'
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+      {/* Compact Info */}
+      <p className="text-xs text-gray-500">
+        Create shipments from <Link href="/vendor/orders" className="text-blue-600 hover:underline">Orders</Link> page.
+      </p>
     </div>
   );
 }

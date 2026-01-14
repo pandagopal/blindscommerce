@@ -397,6 +397,7 @@ export class OrderService extends BaseService {
     userId?: number;
     vendorId?: number;
     status?: string | string[];
+    excludeStatus?: string | string[];
     paymentStatus?: string;
     dateFrom?: Date;
     dateTo?: Date;
@@ -410,6 +411,7 @@ export class OrderService extends BaseService {
       userId,
       vendorId,
       status,
+      excludeStatus,
       paymentStatus,
       dateFrom,
       dateTo,
@@ -444,6 +446,17 @@ export class OrderService extends BaseService {
       } else {
         whereConditions.push('o.status = ?');
         whereParams.push(status);
+      }
+    }
+
+    if (excludeStatus) {
+      if (Array.isArray(excludeStatus)) {
+        const statusPlaceholders = excludeStatus.map(() => '?').join(',');
+        whereConditions.push(`o.status NOT IN (${statusPlaceholders})`);
+        whereParams.push(...excludeStatus);
+      } else {
+        whereConditions.push('o.status != ?');
+        whereParams.push(excludeStatus);
       }
     }
 

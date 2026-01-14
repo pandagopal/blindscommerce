@@ -124,6 +124,10 @@ export class VendorsHandler extends BaseHandler {
       'storefront': () => this.getStorefront(user),
       'shipments': () => this.getShipments(req, user),
       'shipments/:id': () => this.getShipment(action[1], user),
+      'shipments/:id/legs': () => this.getShipmentLegs(action[1], user),
+      'shipments/:id/events': () => this.getShipmentEvents(action[1], user),
+      'shipments/carriers': () => this.getShippingCarriers(req),
+      'orders/:id/shippable': () => this.getShippableOrder(action[1], user),
       'validate/:userId': () => this.validateVendorAccess(action[1]),
       'files': () => this.getFiles(req, user),
       'files/stats': () => this.getFileStats(user),
@@ -149,6 +153,9 @@ export class VendorsHandler extends BaseHandler {
       'upload': () => this.uploadFile(req, user),
       'files/metadata': () => this.storeFileMetadata(req, user),
       'files/duplicate-check': () => this.checkFileDuplicate(req, user),
+      'shipments': () => this.createShipment(req, user),
+      'shipments/:id/legs': () => this.addShipmentLeg(action[1], req, user),
+      'shipments/:id/events': () => this.addShipmentEvent(action[1], req, user),
     };
 
     return this.routeAction(action, routes);
@@ -422,11 +429,16 @@ export class VendorsHandler extends BaseHandler {
     const searchParams = this.getSearchParams(req);
     const { page, limit, offset } = this.getPagination(searchParams);
 
+    const statusFilter = searchParams.get('status') || undefined;
+    // If no specific status filter, exclude shipped/delivered orders (they appear in Shipments page)
+    const excludeStatus = statusFilter ? undefined : ['shipped', 'delivered'];
+
     const { orders, total } = await this.orderService.getOrders({
       vendorId,
-      status: searchParams.get('status') || undefined,
+      status: statusFilter,
+      excludeStatus,
       search: searchParams.get('search') || undefined,
-      dateFrom: searchParams.get('dateFrom') 
+      dateFrom: searchParams.get('dateFrom')
         ? new Date(searchParams.get('dateFrom')!)
         : undefined,
       dateTo: searchParams.get('dateTo')
@@ -532,10 +544,19 @@ export class VendorsHandler extends BaseHandler {
           throw new ApiError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`, 400);
         }
 
-        await conn.execute(
-          'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
-          [status, orderId]
-        );
+        // Set shipped_at timestamp when status changes to shipped
+        // This is required for installers to see the order (they check shipped_at IS NOT NULL)
+        if (status === 'shipped') {
+          await conn.execute(
+            'UPDATE orders SET status = ?, shipped_at = NOW(), updated_at = NOW() WHERE order_id = ?',
+            [status, orderId]
+          );
+        } else {
+          await conn.execute(
+            'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
+            [status, orderId]
+          );
+        }
 
         // Add to order status history if table exists
         try {
@@ -1537,135 +1558,155 @@ export class VendorsHandler extends BaseHandler {
   private async getShipments(req: NextRequest, user: any) {
     const vendorId = await this.getVendorId(user);
     const pool = await getPool();
-    
+
     try {
       const searchParams = new URL(req.url).searchParams;
       const status = searchParams.get('status') || 'all';
-      const carrier = searchParams.get('carrier') || 'all';
       const search = searchParams.get('search') || '';
-      
-      // Get orders with shipping info and fulfillment data for this vendor
-      let query = `
-        SELECT DISTINCT
+
+      // Check if vendor_shipments table exists
+      let vendorShipmentsExists = false;
+      try {
+        await pool.execute('SELECT 1 FROM vendor_shipments LIMIT 1');
+        vendorShipmentsExists = true;
+      } catch {
+        // Table doesn't exist yet
+      }
+
+      let newShipments: any[] = [];
+
+      if (vendorShipmentsExists) {
+        // Query from new vendor_shipments table
+        let newShipmentsQuery = `
+          SELECT
+            vs.shipment_id,
+            vs.shipment_number,
+            vs.order_id,
+            o.order_number,
+            vs.status,
+            vs.origin_country,
+            vs.origin_city,
+            vs.origin_warehouse,
+            vs.destination_country,
+            vs.destination_address,
+            vs.total_weight,
+            vs.total_packages,
+            vs.dimensions,
+            vs.ship_date,
+            vs.estimated_delivery,
+            vs.actual_delivery,
+            vs.shipping_cost,
+            vs.vendor_notes,
+            vs.created_at,
+            CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+            'new' as source
+          FROM vendor_shipments vs
+          JOIN orders o ON vs.order_id = o.order_id
+          JOIN users u ON o.user_id = u.user_id
+          WHERE vs.vendor_id = ?
+        `;
+
+        const newParams: any[] = [vendorId];
+
+        if (status !== 'all') {
+          newShipmentsQuery += ' AND vs.status = ?';
+          newParams.push(status);
+        }
+
+        if (search) {
+          newShipmentsQuery += ' AND (vs.shipment_number LIKE ? OR o.order_number LIKE ?)';
+          newParams.push(`%${search}%`, `%${search}%`);
+        }
+
+        const [result] = await pool.execute(newShipmentsQuery, newParams);
+        newShipments = result as any[];
+      }
+
+      // Query shipped/delivered orders that don't have entries in vendor_shipments yet
+      // Left join order_fulfillment to get tracking info if available
+      let legacyQuery = `
+        SELECT
+          COALESCE(ofl.fulfillment_id, o.order_id) as shipment_id,
+          CONCAT('SHIP-', o.order_id) as shipment_number,
           o.order_id,
           o.order_number,
+          CASE
+            WHEN o.status = 'delivered' THEN 'delivered'
+            WHEN o.status = 'shipped' THEN 'in_transit'
+            ELSE 'preparing'
+          END as status,
+          'China' as origin_country,
+          NULL as origin_city,
+          NULL as origin_warehouse,
+          'United States' as destination_country,
+          CONCAT(usa.address_line_1, ', ', usa.city, ', ', usa.state_province, ' ', usa.postal_code) as destination_address,
+          NULL as total_weight,
+          1 as total_packages,
+          NULL as dimensions,
+          COALESCE(ofl.created_at, o.updated_at) as ship_date,
+          ofl.estimated_delivery,
+          CASE WHEN o.status = 'delivered' THEN COALESCE(ofl.updated_at, o.updated_at) ELSE NULL END as actual_delivery,
+          0 as shipping_cost,
+          ofl.fulfillment_notes as vendor_notes,
+          COALESCE(ofl.created_at, o.updated_at) as created_at,
           CONCAT(u.first_name, ' ', u.last_name) as customer_name,
-          usa.address_line_1,
-          usa.address_line_2,
-          usa.city,
-          usa.state_province,
-          usa.postal_code,
-          usa.country,
-          ful.tracking_number,
-          ful.carrier,
-          o.status as order_status,
-          o.created_at as created_date,
-          o.shipping_amount as shipping_cost,
-          ful.estimated_delivery,
-          ful.fulfillment_notes as notes,
-          ful.created_at as fulfilled_date
+          'legacy' as source
         FROM orders o
-        JOIN users u ON o.user_id = u.user_id
         JOIN order_items oi ON o.order_id = oi.order_id
+        JOIN users u ON o.user_id = u.user_id
+        LEFT JOIN order_fulfillment ofl ON o.order_id = ofl.order_id
         LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
-        LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
         WHERE oi.vendor_id = ?
-        AND o.status IN ('pending', 'processing', 'shipped', 'delivered')
+          AND o.status IN ('shipped', 'delivered')
       `;
-      
-      const params: any[] = [vendorId];
-      
+
+      const legacyParams: any[] = [vendorId];
+
+      // Exclude orders already in vendor_shipments (if table exists)
+      if (vendorShipmentsExists) {
+        legacyQuery += `
+          AND NOT EXISTS (
+            SELECT 1 FROM vendor_shipments vs2
+            WHERE vs2.order_id = o.order_id AND vs2.vendor_id = ?
+          )
+        `;
+        legacyParams.push(vendorId);
+      }
+
       if (status !== 'all') {
-        // Map shipment status to order status
-        const statusMap: Record<string, string> = {
-          'pending': 'pending',
-          'picked_up': 'processing',
-          'in_transit': 'shipped',
-          'out_for_delivery': 'shipped',
-          'delivered': 'delivered'
+        const statusMap: Record<string, string[]> = {
+          'in_transit': ['shipped'],
+          'delivered': ['delivered'],
+          'preparing': [],
+          'customs': [],
+          'delayed': [],
+          'failed': []
         };
-        if (statusMap[status]) {
-          query += ' AND o.status = ?';
-          params.push(statusMap[status]);
+        if (statusMap[status] && statusMap[status].length > 0) {
+          legacyQuery += ` AND o.status IN (${statusMap[status].map(() => '?').join(',')})`;
+          legacyParams.push(...statusMap[status]);
+        } else if (status !== 'in_transit' && status !== 'delivered') {
+          // For other statuses, no legacy orders would match
+          legacyQuery += ' AND 1=0';
         }
       }
-      
-      if (carrier !== 'all') {
-        query += ' AND ful.carrier = ?';
-        params.push(carrier);
-      }
-      
+
       if (search) {
-        query += ' AND (ful.tracking_number LIKE ? OR o.order_number LIKE ?)';
-        params.push(`%${search}%`, `%${search}%`);
+        legacyQuery += ' AND o.order_number LIKE ?';
+        legacyParams.push(`%${search}%`);
       }
-      
-      query += ' ORDER BY o.created_at DESC';
-      
-      const [orders] = await pool.execute(query, params);
-      
-      // Transform orders to shipments format
-      const shipments = await Promise.all(
-        (orders as any[]).map(async (order) => {
-          const [items] = await pool.execute(`
-            SELECT 
-              oi.order_item_id as id,
-              p.name as product_name,
-              oi.quantity,
-              p.sku
-            FROM order_items oi
-            JOIN products p ON oi.product_id = p.product_id
-            WHERE oi.order_id = ?
-          `, [order.order_id]);
-          
-          // Build full address
-          const addressParts = [
-            order.address_line_1,
-            order.address_line_2,
-            `${order.city}, ${order.state_province} ${order.postal_code}`,
-            order.country
-          ].filter(Boolean).join(', ');
-          
-          // Map order status to shipment status
-          let shipmentStatus = 'pending';
-          if (order.order_status === 'processing') {
-            shipmentStatus = order.tracking_number ? 'picked_up' : 'pending';
-          } else if (order.order_status === 'shipped') {
-            shipmentStatus = order.tracking_number ? 'in_transit' : 'out_for_delivery';
-          } else if (order.order_status === 'delivered') {
-            shipmentStatus = 'delivered';
-          } else if (order.order_status === 'cancelled' || order.order_status === 'refunded') {
-            shipmentStatus = 'failed';
-          }
-          
-          // Calculate estimated delivery if not set
-          const estimatedDelivery = order.estimated_delivery || 
-            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-          
-          return {
-            id: `ship_${order.order_id}`,
-            order_id: order.order_number,
-            customer_name: order.customer_name,
-            shipping_address: addressParts,
-            tracking_number: order.tracking_number || '',
-            carrier: order.carrier || 'ups',
-            status: shipmentStatus,
-            created_date: order.created_date,
-            shipped_date: order.fulfilled_date || null,
-            estimated_delivery: estimatedDelivery,
-            actual_delivery: order.order_status === 'delivered' ? order.fulfilled_date : null,
-            items: items || [],
-            weight: 2.5, // Default weight for now
-            dimensions: '12x8x4', // Default dimensions for now
-            shipping_cost: parseFloat(order.shipping_cost) || 0,
-            notes: order.notes || ''
-          };
-        })
-      );
-      
+
+      legacyQuery += ' GROUP BY o.order_id';
+
+      const [legacyShipments] = await pool.execute(legacyQuery, legacyParams);
+
+      // Combine and sort by created_at DESC
+      const allShipments = [...newShipments, ...(legacyShipments as any[])];
+      allShipments.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
       return {
-        shipments: shipments,
-        total: shipments.length
+        shipments: allShipments,
+        total: allShipments.length
       };
     } catch (error) {
       console.error('Error fetching shipments:', error);
@@ -1674,103 +1715,48 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async getShipment(id: string, user: any) {
-    // Extract order_id from shipment id (format: ship_123)
-    const orderId = id.replace('ship_', '');
-    if (!orderId || isNaN(Number(orderId))) {
+    const shipmentId = parseInt(id);
+    if (isNaN(shipmentId)) {
       throw new ApiError('Invalid shipment ID', 400);
     }
-    
+
     const vendorId = await this.getVendorId(user);
     const pool = await getPool();
-    
+
     try {
-      const [orders] = await pool.execute(`
-        SELECT DISTINCT
-          o.order_id,
+      const [shipments] = await pool.execute(`
+        SELECT
+          vs.shipment_id,
+          vs.shipment_number,
+          vs.order_id,
           o.order_number,
-          CONCAT(u.first_name, ' ', u.last_name) as customer_name,
-          usa.address_line_1,
-          usa.address_line_2,
-          usa.city,
-          usa.state_province,
-          usa.postal_code,
-          usa.country,
-          ful.tracking_number,
-          ful.carrier,
-          o.status as order_status,
-          o.created_at as created_date,
-          o.shipping_amount as shipping_cost,
-          ful.estimated_delivery,
-          ful.fulfillment_notes as notes,
-          ful.created_at as fulfilled_date
-        FROM orders o
+          vs.status,
+          vs.origin_country,
+          vs.origin_city,
+          vs.origin_warehouse,
+          vs.destination_country,
+          vs.destination_address,
+          vs.total_weight,
+          vs.total_packages,
+          vs.dimensions,
+          vs.ship_date,
+          vs.estimated_delivery,
+          vs.actual_delivery,
+          vs.shipping_cost,
+          vs.vendor_notes,
+          vs.created_at,
+          CONCAT(u.first_name, ' ', u.last_name) as customer_name
+        FROM vendor_shipments vs
+        JOIN orders o ON vs.order_id = o.order_id
         JOIN users u ON o.user_id = u.user_id
-        JOIN order_items oi ON o.order_id = oi.order_id
-        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
-        LEFT JOIN order_fulfillment ful ON o.order_id = ful.order_id
-        WHERE o.order_id = ? AND oi.vendor_id = ?
-      `, [orderId, vendorId]);
-      
-      if ((orders as any[]).length === 0) {
+        WHERE vs.shipment_id = ? AND vs.vendor_id = ?
+      `, [shipmentId, vendorId]);
+
+      if ((shipments as any[]).length === 0) {
         throw new ApiError('Shipment not found', 404);
       }
-      
-      const order = (orders as any[])[0];
-      
-      // Get items
-      const [items] = await pool.execute(`
-        SELECT 
-          oi.order_item_id as id,
-          p.name as product_name,
-          oi.quantity,
-          p.sku
-        FROM order_items oi
-        JOIN products p ON oi.product_id = p.product_id
-        WHERE oi.order_id = ?
-      `, [order.order_id]);
-      
-      // Build full address
-      const addressParts = [
-        order.address_line_1,
-        order.address_line_2,
-        `${order.city}, ${order.state_province} ${order.postal_code}`,
-        order.country
-      ].filter(Boolean).join(', ');
-      
-      // Map order status to shipment status
-      let shipmentStatus = 'pending';
-      if (order.order_status === 'processing') {
-        shipmentStatus = order.tracking_number ? 'picked_up' : 'pending';
-      } else if (order.order_status === 'shipped') {
-        shipmentStatus = order.tracking_number ? 'in_transit' : 'out_for_delivery';
-      } else if (order.order_status === 'delivered') {
-        shipmentStatus = 'delivered';
-      } else if (order.order_status === 'cancelled' || order.order_status === 'refunded') {
-        shipmentStatus = 'failed';
-      }
-      
-      // Calculate estimated delivery if not set
-      const estimatedDelivery = order.estimated_delivery || 
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-      
-      return {
-        id: id,
-        order_id: order.order_number,
-        customer_name: order.customer_name,
-        shipping_address: addressParts,
-        tracking_number: order.tracking_number || '',
-        carrier: order.carrier || 'ups',
-        status: shipmentStatus,
-        created_date: order.created_date,
-        shipped_date: order.fulfilled_date || null,
-        estimated_delivery: estimatedDelivery,
-        actual_delivery: order.order_status === 'delivered' ? order.fulfilled_date : null,
-        items: items || [],
-        weight: 2.5,
-        dimensions: '12x8x4',
-        shipping_cost: parseFloat(order.shipping_cost) || 0,
-        notes: order.notes || ''
-      };
+
+      return (shipments as any[])[0];
     } catch (error) {
       if (error instanceof ApiError) throw error;
       console.error('Error fetching shipment:', error);
@@ -1779,112 +1765,110 @@ export class VendorsHandler extends BaseHandler {
   }
 
   private async updateShipment(id: string, req: NextRequest, user: any) {
-    // Extract order_id from shipment id (format: ship_123)
-    const orderId = id.replace('ship_', '');
-    if (!orderId || isNaN(Number(orderId))) {
+    const shipmentId = parseInt(id);
+    if (isNaN(shipmentId)) {
       throw new ApiError('Invalid shipment ID', 400);
     }
-    
+
     const vendorId = await this.getVendorId(user);
     const body = await req.json();
     const pool = await getPool();
     const conn = await pool.getConnection();
-    
+
     try {
       await conn.beginTransaction();
-      
-      // Verify order belongs to vendor
-      const [orders] = await conn.execute(`
-        SELECT DISTINCT o.order_id, o.status
-        FROM orders o
-        JOIN order_items oi ON o.order_id = oi.order_id
-        WHERE o.order_id = ? AND oi.vendor_id = ?
-      `, [orderId, vendorId]);
-      
-      if ((orders as any[]).length === 0) {
+
+      // Verify shipment belongs to vendor
+      const [shipments] = await conn.execute(`
+        SELECT vs.shipment_id, vs.order_id, vs.status
+        FROM vendor_shipments vs
+        WHERE vs.shipment_id = ? AND vs.vendor_id = ?
+      `, [shipmentId, vendorId]);
+
+      if ((shipments as any[]).length === 0) {
         throw new ApiError('Shipment not found', 404);
       }
-      
-      const order = (orders as any[])[0];
-      
-      // Update order status if provided
+
+      const shipment = (shipments as any[])[0];
+
+      // Build update query for vendor_shipments
+      const updates: string[] = [];
+      const values: any[] = [];
+
       if (body.status) {
-        // Map shipment status to order status
-        const statusMap: Record<string, string> = {
-          'pending': 'pending',
-          'picked_up': 'processing',
+        updates.push('status = ?');
+        values.push(body.status);
+
+        // Also update order status based on shipment status
+        const orderStatusMap: Record<string, string> = {
+          'preparing': 'processing',
           'in_transit': 'shipped',
-          'out_for_delivery': 'shipped',
+          'customs': 'shipped',
           'delivered': 'delivered',
+          'delayed': 'shipped',
           'failed': 'cancelled'
         };
-        
-        if (statusMap[body.status]) {
+
+        if (orderStatusMap[body.status]) {
           await conn.execute(
             'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
-            [statusMap[body.status], orderId]
+            [orderStatusMap[body.status], shipment.order_id]
           );
         }
       }
-      
-      // Check if fulfillment record exists
-      const [fulfillment] = await conn.execute(
-        'SELECT fulfillment_id FROM order_fulfillment WHERE order_id = ?',
-        [orderId]
-      );
-      
-      if ((fulfillment as any[]).length > 0) {
-        // Update existing fulfillment record
-        const updates = [];
-        const values = [];
-        
-        if (body.tracking_number) {
-          updates.push('tracking_number = ?');
-          values.push(body.tracking_number);
-        }
-        
-        if (body.carrier) {
-          updates.push('carrier = ?');
-          values.push(body.carrier);
-        }
-        
-        if (body.notes !== undefined) {
-          updates.push('fulfillment_notes = ?');
-          values.push(body.notes);
-        }
-        
-        if (body.estimated_delivery) {
-          updates.push('estimated_delivery = ?');
-          values.push(body.estimated_delivery);
-        }
-        
-        if (updates.length > 0) {
-          updates.push('updated_at = NOW()');
-          values.push(orderId);
-          
-          await conn.execute(
-            `UPDATE order_fulfillment SET ${updates.join(', ')} WHERE order_id = ?`,
-            values
-          );
-        }
-      } else {
-        // Create new fulfillment record
+
+      if (body.origin_city) {
+        updates.push('origin_city = ?');
+        values.push(body.origin_city);
+      }
+
+      if (body.origin_warehouse) {
+        updates.push('origin_warehouse = ?');
+        values.push(body.origin_warehouse);
+      }
+
+      if (body.total_weight) {
+        updates.push('total_weight = ?');
+        values.push(body.total_weight);
+      }
+
+      if (body.total_packages) {
+        updates.push('total_packages = ?');
+        values.push(body.total_packages);
+      }
+
+      if (body.estimated_delivery) {
+        updates.push('estimated_delivery = ?');
+        values.push(body.estimated_delivery);
+      }
+
+      if (body.actual_delivery) {
+        updates.push('actual_delivery = ?');
+        values.push(body.actual_delivery);
+      }
+
+      if (body.shipping_cost !== undefined) {
+        updates.push('shipping_cost = ?');
+        values.push(body.shipping_cost);
+      }
+
+      if (body.vendor_notes !== undefined) {
+        updates.push('vendor_notes = ?');
+        values.push(body.vendor_notes);
+      }
+
+      if (updates.length > 0) {
+        updates.push('updated_at = NOW()');
+        values.push(shipmentId);
+
         await conn.execute(
-          `INSERT INTO order_fulfillment 
-           (order_id, tracking_number, carrier, estimated_delivery, fulfillment_notes, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
-          [
-            orderId,
-            body.tracking_number || null,
-            body.carrier || 'ups',
-            body.estimated_delivery || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            body.notes || null
-          ]
+          `UPDATE vendor_shipments SET ${updates.join(', ')} WHERE shipment_id = ?`,
+          values
         );
       }
-      
+
       await conn.commit();
-      
+
       return {
         success: true,
         message: 'Shipment updated successfully'
@@ -1897,6 +1881,480 @@ export class VendorsHandler extends BaseHandler {
     } finally {
       conn.release();
     }
+  }
+
+  /**
+   * Create a new shipment for an order (China → US multi-carrier support)
+   */
+  private async createShipment(req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    const pool = await getPool();
+    const conn = await pool.getConnection();
+
+    try {
+      await conn.beginTransaction();
+
+      const {
+        orderId,
+        originCity,
+        originWarehouse,
+        destinationAddress,
+        totalWeight,
+        totalPackages,
+        dimensions,
+        shipDate,
+        estimatedDelivery,
+        shippingCost,
+        vendorNotes,
+        // Initial leg info (optional - can add legs later)
+        initialLeg
+      } = body;
+
+      if (!orderId) {
+        throw new ApiError('Order ID is required', 400);
+      }
+
+      // Verify vendor has items in this order
+      const [orderCheck] = await conn.execute(`
+        SELECT DISTINCT o.order_id, o.order_number, o.status,
+          CONCAT(usa.address_line_1, ', ', usa.city, ', ', usa.state_province, ' ', usa.postal_code) as shipping_address
+        FROM orders o
+        JOIN order_items oi ON o.order_id = oi.order_id
+        LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+        WHERE o.order_id = ? AND oi.vendor_id = ?
+      `, [orderId, vendorId]) as any[];
+
+      if (orderCheck.length === 0) {
+        throw new ApiError('Order not found or you do not have access', 404);
+      }
+
+      const order = orderCheck[0];
+
+      // Check if shipment already exists for this order
+      const [existingShipment] = await conn.execute(
+        'SELECT shipment_id FROM vendor_shipments WHERE order_id = ?',
+        [orderId]
+      ) as any[];
+
+      if (existingShipment.length > 0) {
+        throw new ApiError('A shipment already exists for this order', 400);
+      }
+
+      // Generate shipment number
+      const shipmentNumber = `SHIP-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      // Create the shipment
+      const [shipmentResult] = await conn.execute(`
+        INSERT INTO vendor_shipments (
+          order_id, vendor_id, shipment_number, status,
+          origin_country, origin_city, origin_warehouse,
+          destination_country, destination_address,
+          total_weight, total_packages, dimensions,
+          ship_date, estimated_delivery, shipping_cost,
+          vendor_notes, created_at, updated_at
+        ) VALUES (?, ?, ?, 'preparing', 'China', ?, ?, 'United States', ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `, [
+        orderId,
+        vendorId,
+        shipmentNumber,
+        originCity || null,
+        originWarehouse || null,
+        destinationAddress || order.shipping_address,
+        totalWeight || null,
+        totalPackages || 1,
+        dimensions || null,
+        shipDate || null,
+        estimatedDelivery || null,
+        shippingCost || 0,
+        vendorNotes || null
+      ]) as any;
+
+      const shipmentId = shipmentResult.insertId;
+
+      // Add initial tracking event
+      await conn.execute(`
+        INSERT INTO shipment_events (shipment_id, event_type, event_description, location, created_by)
+        VALUES (?, 'created', 'Shipment created', ?, ?)
+      `, [shipmentId, originCity || 'China', user.userId]);
+
+      // Add initial leg if provided
+      if (initialLeg) {
+        await conn.execute(`
+          INSERT INTO shipment_legs (
+            shipment_id, leg_order, carrier_name, carrier_type,
+            tracking_number, origin_location, destination_location, status
+          ) VALUES (?, 1, ?, ?, ?, ?, ?, 'pending')
+        `, [
+          shipmentId,
+          initialLeg.carrierName,
+          initialLeg.carrierType || 'domestic_origin',
+          initialLeg.trackingNumber || null,
+          initialLeg.originLocation || originCity || 'China',
+          initialLeg.destinationLocation || null
+        ]);
+      }
+
+      // Update order status to processing
+      await conn.execute(
+        'UPDATE orders SET status = ?, updated_at = NOW() WHERE order_id = ?',
+        ['processing', orderId]
+      );
+
+      await conn.commit();
+
+      return {
+        success: true,
+        shipmentId,
+        shipmentNumber,
+        message: 'Shipment created successfully'
+      };
+    } catch (error) {
+      await conn.rollback();
+      if (error instanceof ApiError) throw error;
+      console.error('Error creating shipment:', error);
+      throw new ApiError('Failed to create shipment', 500);
+    } finally {
+      conn.release();
+    }
+  }
+
+  /**
+   * Add a leg to an existing shipment (for multi-carrier shipping)
+   */
+  private async addShipmentLeg(shipmentId: string, req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    const pool = await getPool();
+
+    // Verify shipment belongs to vendor
+    const [shipments] = await pool.execute(`
+      SELECT shipment_id FROM vendor_shipments WHERE shipment_id = ? AND vendor_id = ?
+    `, [shipmentId, vendorId]) as any[];
+
+    if (shipments.length === 0) {
+      throw new ApiError('Shipment not found', 404);
+    }
+
+    // Get the next leg order
+    const [maxLeg] = await pool.execute(`
+      SELECT MAX(leg_order) as max_order FROM shipment_legs WHERE shipment_id = ?
+    `, [shipmentId]) as any[];
+
+    const nextOrder = (maxLeg[0]?.max_order || 0) + 1;
+
+    const {
+      carrierName,
+      carrierType,
+      trackingNumber,
+      trackingUrl,
+      originLocation,
+      destinationLocation,
+      pickupDate,
+      estimatedArrival,
+      legCost,
+      notes
+    } = body;
+
+    if (!carrierName || !carrierType) {
+      throw new ApiError('Carrier name and type are required', 400);
+    }
+
+    const [result] = await pool.execute(`
+      INSERT INTO shipment_legs (
+        shipment_id, leg_order, carrier_name, carrier_type,
+        tracking_number, tracking_url, origin_location, destination_location,
+        pickup_date, estimated_arrival, leg_cost, notes, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+    `, [
+      shipmentId,
+      nextOrder,
+      carrierName,
+      carrierType,
+      trackingNumber || null,
+      trackingUrl || null,
+      originLocation || null,
+      destinationLocation || null,
+      pickupDate || null,
+      estimatedArrival || null,
+      legCost || 0,
+      notes || null
+    ]) as any;
+
+    return {
+      success: true,
+      legId: result.insertId,
+      legOrder: nextOrder,
+      message: 'Shipment leg added successfully'
+    };
+  }
+
+  /**
+   * Add a tracking event to a shipment
+   */
+  private async addShipmentEvent(shipmentId: string, req: NextRequest, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const body = await req.json();
+    const pool = await getPool();
+
+    // Verify shipment belongs to vendor
+    const [shipments] = await pool.execute(`
+      SELECT shipment_id, status FROM vendor_shipments WHERE shipment_id = ? AND vendor_id = ?
+    `, [shipmentId, vendorId]) as any[];
+
+    if (shipments.length === 0) {
+      throw new ApiError('Shipment not found', 404);
+    }
+
+    const {
+      eventType,
+      eventDescription,
+      location,
+      legId,
+      eventTime
+    } = body;
+
+    if (!eventType || !eventDescription) {
+      throw new ApiError('Event type and description are required', 400);
+    }
+
+    const validEventTypes = [
+      'created', 'picked_up', 'departed', 'arrived', 'in_customs',
+      'customs_cleared', 'out_for_delivery', 'delivered', 'delayed', 'exception', 'returned'
+    ];
+
+    if (!validEventTypes.includes(eventType)) {
+      throw new ApiError(`Invalid event type. Must be one of: ${validEventTypes.join(', ')}`, 400);
+    }
+
+    const [result] = await pool.execute(`
+      INSERT INTO shipment_events (
+        shipment_id, leg_id, event_type, event_description, location, event_time, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      shipmentId,
+      legId || null,
+      eventType,
+      eventDescription,
+      location || null,
+      eventTime || new Date(),
+      user.userId
+    ]) as any;
+
+    // Update shipment status based on event
+    const statusMap: Record<string, string> = {
+      'picked_up': 'in_transit',
+      'departed': 'in_transit',
+      'in_customs': 'customs',
+      'customs_cleared': 'in_transit',
+      'delivered': 'delivered',
+      'delayed': 'delayed',
+      'exception': 'delayed'
+    };
+
+    if (statusMap[eventType]) {
+      await pool.execute(
+        'UPDATE vendor_shipments SET status = ?, updated_at = NOW() WHERE shipment_id = ?',
+        [statusMap[eventType], shipmentId]
+      );
+
+      // Also update order status if delivered
+      if (eventType === 'delivered') {
+        await pool.execute(`
+          UPDATE orders SET status = 'delivered', delivered_at = NOW(), updated_at = NOW()
+          WHERE order_id = (SELECT order_id FROM vendor_shipments WHERE shipment_id = ?)
+        `, [shipmentId]);
+      }
+    }
+
+    // Update leg status if legId provided
+    if (legId) {
+      const legStatusMap: Record<string, string> = {
+        'picked_up': 'picked_up',
+        'departed': 'in_transit',
+        'arrived': 'arrived',
+        'delivered': 'delivered'
+      };
+
+      if (legStatusMap[eventType]) {
+        await pool.execute(
+          'UPDATE shipment_legs SET status = ?, updated_at = NOW() WHERE leg_id = ?',
+          [legStatusMap[eventType], legId]
+        );
+      }
+    }
+
+    return {
+      success: true,
+      eventId: result.insertId,
+      message: 'Event added successfully'
+    };
+  }
+
+  /**
+   * Get all legs for a shipment
+   */
+  private async getShipmentLegs(shipmentId: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+
+    // Verify shipment belongs to vendor
+    const [shipments] = await pool.execute(`
+      SELECT shipment_id FROM vendor_shipments WHERE shipment_id = ? AND vendor_id = ?
+    `, [shipmentId, vendorId]) as any[];
+
+    if (shipments.length === 0) {
+      throw new ApiError('Shipment not found', 404);
+    }
+
+    const [legs] = await pool.execute(`
+      SELECT
+        leg_id, leg_order, carrier_name, carrier_type,
+        tracking_number, tracking_url, status,
+        origin_location, destination_location,
+        pickup_date, estimated_arrival, actual_arrival,
+        leg_cost, notes, created_at
+      FROM shipment_legs
+      WHERE shipment_id = ?
+      ORDER BY leg_order ASC
+    `, [shipmentId]);
+
+    return {
+      legs,
+      total: (legs as any[]).length
+    };
+  }
+
+  /**
+   * Get tracking events for a shipment
+   */
+  private async getShipmentEvents(shipmentId: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+
+    // Verify shipment belongs to vendor
+    const [shipments] = await pool.execute(`
+      SELECT shipment_id FROM vendor_shipments WHERE shipment_id = ? AND vendor_id = ?
+    `, [shipmentId, vendorId]) as any[];
+
+    if (shipments.length === 0) {
+      throw new ApiError('Shipment not found', 404);
+    }
+
+    const [events] = await pool.execute(`
+      SELECT
+        se.event_id, se.event_type, se.event_description,
+        se.location, se.event_time,
+        sl.carrier_name, sl.leg_order
+      FROM shipment_events se
+      LEFT JOIN shipment_legs sl ON se.leg_id = sl.leg_id
+      WHERE se.shipment_id = ?
+      ORDER BY se.event_time DESC
+    `, [shipmentId]);
+
+    return {
+      events,
+      total: (events as any[]).length
+    };
+  }
+
+  /**
+   * Get available shipping carriers
+   */
+  private async getShippingCarriers(req: NextRequest) {
+    const pool = await getPool();
+    const searchParams = this.getSearchParams(req);
+    const carrierType = searchParams.get('type');
+
+    let query = 'SELECT * FROM shipping_carriers WHERE is_active = 1';
+    const params: any[] = [];
+
+    if (carrierType) {
+      query += ' AND carrier_type = ?';
+      params.push(carrierType);
+    }
+
+    query += ' ORDER BY carrier_type, carrier_name';
+
+    const [carriers] = await pool.execute(query, params);
+
+    // Group by type for easier frontend usage
+    const grouped: Record<string, any[]> = {
+      domestic_china: [],
+      international: [],
+      domestic_us: [],
+      multi: []
+    };
+
+    for (const carrier of carriers as any[]) {
+      if (grouped[carrier.carrier_type]) {
+        grouped[carrier.carrier_type].push(carrier);
+      }
+    }
+
+    return {
+      carriers,
+      grouped,
+      total: (carriers as any[]).length
+    };
+  }
+
+  /**
+   * Get order details for creating a shipment
+   */
+  private async getShippableOrder(orderId: string, user: any) {
+    const vendorId = await this.getVendorId(user);
+    const pool = await getPool();
+
+    const [orders] = await pool.execute(`
+      SELECT DISTINCT
+        o.order_id, o.order_number, o.status, o.created_at,
+        CONCAT(u.first_name, ' ', u.last_name) as customer_name,
+        u.email as customer_email, u.phone as customer_phone,
+        usa.address_line_1, usa.address_line_2, usa.city,
+        usa.state_province, usa.postal_code, usa.country
+      FROM orders o
+      JOIN users u ON o.user_id = u.user_id
+      JOIN order_items oi ON o.order_id = oi.order_id
+      LEFT JOIN user_shipping_addresses usa ON o.shipping_address_id = usa.address_id
+      WHERE o.order_id = ? AND oi.vendor_id = ?
+    `, [orderId, vendorId]) as any[];
+
+    if (orders.length === 0) {
+      throw new ApiError('Order not found', 404);
+    }
+
+    const order = orders[0];
+
+    // Get order items
+    const [items] = await pool.execute(`
+      SELECT
+        oi.order_item_id, oi.quantity, oi.unit_price,
+        p.name as product_name, p.sku
+      FROM order_items oi
+      JOIN products p ON oi.product_id = p.product_id
+      WHERE oi.order_id = ? AND oi.vendor_id = ?
+    `, [orderId, vendorId]);
+
+    // Check if shipment already exists
+    const [existingShipment] = await pool.execute(`
+      SELECT shipment_id, shipment_number, status FROM vendor_shipments WHERE order_id = ?
+    `, [orderId]) as any[];
+
+    return {
+      order: {
+        ...order,
+        fullAddress: [
+          order.address_line_1,
+          order.address_line_2,
+          `${order.city}, ${order.state_province} ${order.postal_code}`,
+          order.country
+        ].filter(Boolean).join(', ')
+      },
+      items,
+      existingShipment: existingShipment.length > 0 ? existingShipment[0] : null,
+      canCreateShipment: existingShipment.length === 0 && ['pending', 'processing'].includes(order.status)
+    };
   }
 
   private async getStorefront(user: any) {
