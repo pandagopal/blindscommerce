@@ -3,10 +3,8 @@
 import { Shield, Truck, Award, Clock, Headphones, Star } from 'lucide-react';
 
 const trustItems = [
-  { icon: Truck, text: 'Free Shipping Over $100' },
-  { icon: Shield, text: 'Lifetime Warranty' },
-  { icon: Clock, text: '30-Day Returns' },
-  { icon: Award, text: '50,000+ Happy Customers' },
+  { icon: Truck, text: 'Free Shipping Over on eligiable orders' },
+  { icon: Award, text: '5000+ Happy Customers' },
   { icon: Headphones, text: 'Expert Support' }
 ];
 
@@ -23,7 +21,7 @@ export default function TrustSignalsBar() {
               ))}
             </div>
             <span className="text-white text-sm font-medium">4.8/5</span>
-            <span className="text-white/60 text-sm">(2,450+ reviews)</span>
+            <span className="text-white/60 text-sm">(450+ reviews)</span>
           </div>
 
           <div className="hidden md:block w-px h-4 bg-white/30" />

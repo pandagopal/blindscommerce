@@ -240,7 +240,7 @@ export default function HomeClient({
         <EnhancedReviewsSection
           reviews={reviews}
           title="What Our Customers Say"
-          subtitle="Join 50,000+ satisfied customers"
+          subtitle="Join 5000+ satisfied customers"
         />
       )}
 
