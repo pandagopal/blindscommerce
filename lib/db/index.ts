@@ -682,9 +682,21 @@ export const db = {
     const pool = await getPool();
     return pool.execute<T[]>(query, params || []);
   },
-  
+
   query: async <T extends RowDataPacket>(query: string, params?: any[]): Promise<[T[], any]> => {
     const pool = await getPool();
     return pool.query<T[]>(query, params || []);
   }
+};
+
+// Export query and execute as named functions for convenience
+export const query = async <T = any>(queryString: string, params?: any[]): Promise<T> => {
+  const pool = await getPool();
+  const [rows] = await pool.query<RowDataPacket[]>(queryString, params || []);
+  return rows as T;
+};
+
+export const execute = async (queryString: string, params?: any[]): Promise<any> => {
+  const pool = await getPool();
+  return pool.execute(queryString, params || []);
 };
