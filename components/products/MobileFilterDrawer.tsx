@@ -137,7 +137,7 @@ export default function MobileFilterDrawer({
             <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center justify-between">
               Categories
               {selectedCategories.length > 0 && (
-                <span className="text-xs text-blue-600">{selectedCategories.length} selected</span>
+                <span className="text-xs text-red-600">{selectedCategories.length} selected</span>
               )}
             </h3>
             <div className="space-y-2">
@@ -150,12 +150,12 @@ export default function MobileFilterDrawer({
                     onClick={() => toggleCategory(catId)}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
                       isSelected
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-red-500 bg-red-50 text-red-700'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <span className="text-sm font-medium">{category.name}</span>
-                    {isSelected && <Check size={18} className="text-blue-600" />}
+                    {isSelected && <Check size={18} className="text-red-600" />}
                   </button>
                 );
               })}
@@ -173,7 +173,7 @@ export default function MobileFilterDrawer({
                   placeholder="Min"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
               <span className="text-gray-400 font-medium">to</span>
@@ -184,7 +184,7 @@ export default function MobileFilterDrawer({
                   placeholder="Max"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full pl-7 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function MobileFilterDrawer({
               <select
                 value={selectedRoom}
                 onChange={(e) => setSelectedRoom(e.target.value)}
-                className="w-full appearance-none p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                className="w-full appearance-none p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 pr-10"
               >
                 <option value="">All Rooms</option>
                 {ROOM_OPTIONS.map(room => (
@@ -241,12 +241,12 @@ export default function MobileFilterDrawer({
                       onClick={() => toggleFeature(feature.id)}
                       className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          ? 'border-red-500 bg-red-50 text-red-700'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <span className="text-sm font-medium">{feature.name}</span>
-                      {isSelected && <Check size={18} className="text-blue-600" />}
+                      {isSelected && <Check size={18} className="text-red-600" />}
                     </button>
                   );
                 })}
@@ -267,7 +267,7 @@ export default function MobileFilterDrawer({
           )}
           <button
             onClick={onClose}
-            className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
           >
             Show {productCount} Products
           </button>

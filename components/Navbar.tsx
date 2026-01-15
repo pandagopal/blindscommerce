@@ -66,9 +66,9 @@ const Navbar = () => {
 
             // Group categories dynamically based on name
             const grouped: GroupedCategories = {
-              blinds: allCategories.filter(cat => cat.name.toLowerCase().includes('blind') && !cat.name.toLowerCase().includes('motorized') && !cat.name.toLowerCase().includes('smart')),
-              shades: allCategories.filter(cat => cat.name.toLowerCase().includes('shade') && !cat.name.toLowerCase().includes('motorized')),
-              motorized: allCategories.filter(cat => cat.name.toLowerCase().includes('motorized') || cat.name.toLowerCase().includes('smart'))
+              blinds: allCategories.filter(cat => cat.name.toLowerCase().includes('blind') && !cat.name.toLowerCase().includes('motorized') && !cat.name.toLowerCase().includes('smart')).sort((a, b) => a.name.localeCompare(b.name)),
+              shades: allCategories.filter(cat => cat.name.toLowerCase().includes('shade') && !cat.name.toLowerCase().includes('motorized')).sort((a, b) => a.name.localeCompare(b.name)),
+              motorized: allCategories.filter(cat => cat.name.toLowerCase().includes('motorized') || cat.name.toLowerCase().includes('smart')).sort((a, b) => a.name.localeCompare(b.name))
             };
 
             setCategories(grouped);

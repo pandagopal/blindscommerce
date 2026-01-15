@@ -95,7 +95,8 @@ export default function EnhancedProductsClient({
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialProducts.length < (totalCount || 0));
-  const [page, setPage] = useState(1);
+  // Page starts at 2 because server loaded 50 items (50/20 = 2.5, rounded down = 2, next page is 3)
+  const [page, setPage] = useState(Math.max(1, Math.floor(initialProducts.length / 20)));
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState(initialSearch || '');
@@ -132,11 +133,44 @@ export default function EnhancedProductsClient({
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Sync URL with filter state - update URL when filters change
+  // Track if component has mounted to prevent initial navigation
+  const hasMountedRef = useRef(false);
+  const isNavigatingRef = useRef(false);
+
+  // Sync filter state with URL parameters when URL changes (e.g., from navbar clicks)
   useEffect(() => {
+    if (isNavigatingRef.current) return; // Skip if we're the ones navigating
+
+    // Update filter states from URL params
+    if (initialCategoryId && !selectedCategories.includes(initialCategoryId)) {
+      setSelectedCategories([initialCategoryId]);
+    } else if (!initialCategoryId && selectedCategories.length > 0) {
+      setSelectedCategories([]);
+    }
+
+    if (initialSearch !== searchQuery) {
+      setSearchQuery(initialSearch || '');
+    }
+
+    if ((initialMinPrice?.toString() || '') !== minPrice) {
+      setMinPrice(initialMinPrice?.toString() || '');
+    }
+
+    if ((initialMaxPrice?.toString() || '') !== maxPrice) {
+      setMaxPrice(initialMaxPrice?.toString() || '');
+    }
+  }, [initialCategoryId, initialSearch, initialMinPrice, initialMaxPrice]);
+
+  // When filters change, navigate to update server-side rendering
+  useEffect(() => {
+    // Skip navigation on first mount
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+
     const params = new URLSearchParams();
 
-    // Only add params if they have values
     if (selectedCategories.length === 1) {
       params.set('category', selectedCategories[0].toString());
     }
@@ -159,13 +193,13 @@ export default function EnhancedProductsClient({
       params.set('sort', sortBy);
     }
 
-    // Build the new URL
     const queryString = params.toString();
     const newUrl = queryString ? `${pathname}?${queryString}` : pathname;
 
-    // Use replace to update URL without adding to browser history for each filter change
-    router.replace(newUrl, { scroll: false });
-  }, [selectedCategories, debouncedSearch, minPrice, maxPrice, selectedRoom, saleOnly, sortBy, pathname, router]);
+    // Use window.location for hard reload to fetch fresh data from server
+    isNavigatingRef.current = true;
+    window.location.href = newUrl;
+  }, [selectedCategories, debouncedSearch, minPrice, maxPrice, selectedRoom, saleOnly, sortBy, pathname]);
 
   // Generate search suggestions
   useEffect(() => {
@@ -194,40 +228,10 @@ export default function EnhancedProductsClient({
     }
   }, [initialProducts, contextToggleWishlist]);
 
-  // Client-side filtering
+  // Client-side filtering - disabled, server handles filtering
   const filteredProducts = useMemo(() => {
-    let filtered = [...products];
-
-    // Search filter
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(p =>
-        p.name.toLowerCase().includes(searchLower) ||
-        p.category_name?.toLowerCase().includes(searchLower) ||
-        p.short_description?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    // Category filter
-    if (selectedCategories.length > 0) {
-      filtered = filtered.filter(p => selectedCategories.includes(p.category_id));
-    }
-
-    // Price filter
-    if (minPrice) {
-      filtered = filtered.filter(p => p.base_price >= parseFloat(minPrice));
-    }
-    if (maxPrice) {
-      filtered = filtered.filter(p => p.base_price <= parseFloat(maxPrice));
-    }
-
-    // Sale filter
-    if (saleOnly) {
-      filtered = filtered.filter(p => p.is_on_sale || p.sale_price);
-    }
-
-    return filtered;
-  }, [products, debouncedSearch, selectedCategories, minPrice, maxPrice, saleOnly]);
+    return products;
+  }, [products]);
 
   // Client-side sorting
   const sortedProducts = useMemo(() => {
@@ -389,13 +393,13 @@ export default function EnhancedProductsClient({
   };
 
   return (
-    <div className="min-h-screen">
-      {/* Search Bar - Sticky */}
-      <div className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <form onSubmit={handleSearchSubmit} className="relative max-w-2xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      {/* Search Bar - Prominent */}
+      <div className="bg-white border-b border-gray-200 shadow-md">
+        <div className="container mx-auto px-4">
+          <form onSubmit={handleSearchSubmit} className="relative max-w-3xl mx-auto">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-red-500" size={24} />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -403,16 +407,16 @@ export default function EnhancedProductsClient({
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setSearchFocused(true)}
                 onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
-                placeholder="Search blinds, shades, shutters..."
-                className="w-full pl-12 pr-10 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                placeholder="Search for blinds, shades, shutters..."
+                className="w-full pl-14 pr-12 py-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 text-lg shadow-sm"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-600"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               )}
             </div>
@@ -431,7 +435,7 @@ export default function EnhancedProductsClient({
                     <span dangerouslySetInnerHTML={{
                       __html: suggestion.replace(
                         new RegExp(`(${searchQuery})`, 'gi'),
-                        '<strong class="text-blue-600">$1</strong>'
+                        '<strong class="text-red-600">$1</strong>'
                       )
                     }} />
                   </button>
@@ -450,12 +454,12 @@ export default function EnhancedProductsClient({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="md:hidden flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="md:hidden flex items-center gap-2 px-4 py-2 border border-red-300 rounded-lg hover:bg-red-50 text-red-700"
             >
               <SlidersHorizontal size={18} />
               <span>Filters</span>
               {activeFilters.length > 0 && (
-                <span className="bg-blue-600 text-white text-xs px-1.5 py-0.5 rounded-full">
+                <span className="bg-red-600 text-white text-xs px-1.5 py-0.5 rounded-full">
                   {activeFilters.length}
                 </span>
               )}
@@ -476,7 +480,7 @@ export default function EnhancedProductsClient({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="appearance-none bg-white border border-gray-300 rounded-lg pl-3 pr-8 py-2 text-sm focus:ring-2 focus:ring-red-500 cursor-pointer"
               >
                 {SORT_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>
@@ -491,17 +495,17 @@ export default function EnhancedProductsClient({
             <div className="hidden sm:flex items-center border border-gray-300 rounded-lg overflow-hidden">
               <button
                 onClick={() => setGridView('comfortable')}
-                className={`p-2 ${gridView === 'comfortable' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                className={`p-2 ${gridView === 'comfortable' ? 'bg-red-50' : 'hover:bg-gray-50'}`}
                 title="Comfortable view"
               >
-                <LayoutGrid size={18} className={gridView === 'comfortable' ? 'text-blue-600' : 'text-gray-400'} />
+                <LayoutGrid size={18} className={gridView === 'comfortable' ? 'text-red-600' : 'text-gray-400'} />
               </button>
               <button
                 onClick={() => setGridView('compact')}
-                className={`p-2 ${gridView === 'compact' ? 'bg-gray-100' : 'hover:bg-gray-50'}`}
+                className={`p-2 ${gridView === 'compact' ? 'bg-red-50' : 'hover:bg-gray-50'}`}
                 title="Compact view"
               >
-                <Grid3X3 size={18} className={gridView === 'compact' ? 'text-blue-600' : 'text-gray-400'} />
+                <Grid3X3 size={18} className={gridView === 'compact' ? 'text-red-600' : 'text-gray-400'} />
               </button>
             </div>
           </div>
@@ -526,7 +530,7 @@ export default function EnhancedProductsClient({
                 {activeFilters.length > 0 && (
                   <button
                     onClick={clearAllFilters}
-                    className="text-xs text-blue-600 hover:text-blue-800"
+                    className="text-xs text-red-600 hover:text-red-800"
                   >
                     Clear all
                   </button>
@@ -555,9 +559,9 @@ export default function EnhancedProductsClient({
                                 : [...prev, catId]
                             );
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                         />
-                        <span className={`text-sm ${isSelected ? 'text-blue-600 font-medium' : 'text-gray-700 group-hover:text-gray-900'}`}>
+                        <span className={`text-sm ${isSelected ? 'text-red-600 font-medium' : 'text-gray-700 group-hover:text-gray-900'}`}>
                           {category.name}
                         </span>
                         {category.product_count && (
@@ -580,7 +584,7 @@ export default function EnhancedProductsClient({
                       placeholder="Min"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                     />
                   </div>
                   <span className="text-gray-400">-</span>
@@ -591,7 +595,7 @@ export default function EnhancedProductsClient({
                       placeholder="Max"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full pl-7 pr-2 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                     />
                   </div>
                 </div>
@@ -603,7 +607,7 @@ export default function EnhancedProductsClient({
                 <select
                   value={selectedRoom}
                   onChange={(e) => setSelectedRoom(e.target.value)}
-                  className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500"
                 >
                   <option value="">All Rooms</option>
                   {ROOM_OPTIONS.map(room => (
@@ -619,7 +623,7 @@ export default function EnhancedProductsClient({
                     type="checkbox"
                     checked={saleOnly}
                     onChange={(e) => setSaleOnly(e.target.checked)}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                   />
                   <span className="text-sm text-gray-700">On Sale</span>
                   <Tag size={14} className="text-red-500" />
@@ -647,7 +651,7 @@ export default function EnhancedProductsClient({
                                 : [...prev, feature.id]
                             );
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-red-600 focus:ring-red-500"
                         />
                         <span className="text-sm text-gray-700">{feature.name}</span>
                       </label>
@@ -671,7 +675,7 @@ export default function EnhancedProductsClient({
                 </p>
                 <button
                   onClick={clearAllFilters}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
                 >
                   Clear all filters
                 </button>
@@ -697,7 +701,7 @@ export default function EnhancedProductsClient({
                   {!isLoading && hasMore && (
                     <button
                       onClick={loadMore}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                     >
                       Load More Products
                     </button>

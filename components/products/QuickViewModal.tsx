@@ -146,7 +146,7 @@ export default function QuickViewModal({
             {/* Content Section */}
             <div className="p-6 md:p-8 flex flex-col">
               {/* Category */}
-              <p className="text-sm text-blue-600 font-medium uppercase tracking-wide mb-2">
+              <p className="text-sm text-red-600 font-medium uppercase tracking-wide mb-2">
                 {product.category_name}
               </p>
 
@@ -232,7 +232,7 @@ export default function QuickViewModal({
               <div className="space-y-3 mt-6">
                 <Link
                   href={`/products/configure/${product.slug}`}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 bg-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-red-700 transition-colors"
                 >
                   <ShoppingCart size={18} />
                   Configure & Add to Cart

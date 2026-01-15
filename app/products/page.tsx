@@ -251,11 +251,11 @@ export default async function ProductsPage({
       )}
 
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-800 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl">
             {/* Breadcrumb */}
-            <nav className="text-sm text-blue-200 mb-4">
+            <nav className="text-sm text-red-200 mb-4">
               <a href="/" className="hover:text-white">Home</a>
               <span className="mx-2">/</span>
               <span className="text-white">Products</span>
@@ -287,7 +287,7 @@ export default async function ProductsPage({
             </h1>
 
             {/* Subtitle */}
-            <p className="text-blue-100 text-lg">
+            <p className="text-red-100 text-lg">
               {pageContext.isRoomFiltered
                 ? `Find the perfect blinds and shades for your ${pageContext.roomName?.toLowerCase()}`
                 : pageContext.isCategoryFiltered

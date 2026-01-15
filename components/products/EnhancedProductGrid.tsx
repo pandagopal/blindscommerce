@@ -232,12 +232,12 @@ const ProductCard = ({
       <Link href={`/products/configure/${product.slug}`}>
         <div className={`p-3 ${isCompact ? 'p-2' : 'p-4'}`}>
           {/* Category */}
-          <p className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">
+          <p className="text-xs text-red-600 font-medium uppercase tracking-wide mb-1">
             {product.category_name}
           </p>
 
           {/* Product Name */}
-          <h3 className={`font-medium text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors ${
+          <h3 className={`font-medium text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors ${
             isCompact ? 'text-sm' : 'text-base'
           }`}>
             {product.name}
@@ -281,7 +281,7 @@ const ProductCard = ({
 
             {/* Configure Button (hidden in compact mode) */}
             {!isCompact && (
-              <span className="text-xs text-blue-600 font-medium group-hover:underline">
+              <span className="text-xs text-red-600 font-medium group-hover:underline">
                 Configure
               </span>
             )}

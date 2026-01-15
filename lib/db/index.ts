@@ -141,12 +141,15 @@ export const getPool = async (): Promise<mysql.Pool> => {
       password: process.env.DB_PASSWORD || '',
       database: process.env.DB_NAME || 'blindscommerce',
       waitForConnections: true,
-      connectionLimit: 25, // Increased from 10 to handle concurrent requests
+      connectionLimit: 50, // Increased from 25 to handle more concurrent requests
       queueLimit: 0,
       connectTimeout: 20000, // 20 seconds connection timeout
       multipleStatements: false,
       enableKeepAlive: true,
-      keepAliveInitialDelay: 0
+      keepAliveInitialDelay: 0,
+      // Add idle timeout to clean up stale connections
+      idleTimeout: 60000, // 60 seconds
+      maxIdle: 10 // Keep max 10 idle connections
     });
 
     const connection = await pool.getConnection();
