@@ -69,6 +69,8 @@ export class UsersHandler extends BaseHandler {
       'activity': () => this.getActivity(req, user),
       'wishlist': () => this.getWishlist(req, user),
       'loyalty': () => this.getLoyaltyInfo(user),
+      'loyalty/account': () => this.getLoyaltyInfo(user),
+      'loyalty/rewards': () => this.getLoyaltyRewards(),
       'commercial-eligibility': () => this.getCommercialEligibility(user),
       'measurements': () => this.getMeasurements(req, user),
       'configurations': () => this.getConfigurations(req, user),
@@ -538,28 +540,66 @@ export class UsersHandler extends BaseHandler {
     this.requireAuth(user);
 
     const [loyalty] = await this.userService.raw(
-      `SELECT 
-        lp.*,
-        lt.name as tier_name,
-        lt.benefits,
-        lt.min_points as tier_min_points,
-        lt.discount_percentage
+      `SELECT
+        lp.points_id,
+        lp.user_id,
+        lp.tier_id,
+        lp.points_balance,
+        lp.lifetime_points,
+        lp.last_earned_date,
+        lt.tier_name,
+        lt.tier_level,
+        lt.minimum_spending,
+        lt.points_multiplier,
+        lt.discount_percentage,
+        lt.free_shipping_threshold
       FROM loyalty_points lp
-      LEFT JOIN loyalty_tiers lt ON lp.tier_id = lt.tier_id
+      LEFT JOIN loyalty_tiers lt ON lp.tier_id = lt.id
       WHERE lp.user_id = ?`,
-      [user.user_id]
+      [user.userId]
     );
 
-    if (!loyalty) {
+    if (!loyalty || (Array.isArray(loyalty) && loyalty.length === 0)) {
       return {
         pointsBalance: 0,
         lifetimePoints: 0,
         tier: 'Bronze',
-        benefits: [],
+        tierLevel: 1,
+        discountPercentage: 0,
+        pointsMultiplier: 1,
       };
     }
 
-    return loyalty;
+    const data = Array.isArray(loyalty) ? loyalty[0] : loyalty;
+    return {
+      pointsBalance: data.points_balance || 0,
+      lifetimePoints: data.lifetime_points || 0,
+      tier: data.tier_name || 'Bronze',
+      tierLevel: data.tier_level || 1,
+      discountPercentage: data.discount_percentage || 0,
+      pointsMultiplier: data.points_multiplier || 1,
+      freeShippingThreshold: data.free_shipping_threshold,
+      minimumSpending: data.minimum_spending,
+      lastEarnedDate: data.last_earned_date,
+    };
+  }
+
+  // Get available loyalty rewards
+  private async getLoyaltyRewards() {
+    const [rewards] = await this.userService.raw(
+      `SELECT
+        id, reward_type, name, description, points_cost,
+        discount_percentage, discount_amount, gift_card_amount,
+        reward_image, is_featured, valid_from, valid_until
+       FROM loyalty_rewards
+       WHERE is_active = 1
+         AND (valid_from IS NULL OR valid_from <= NOW())
+         AND (valid_until IS NULL OR valid_until >= NOW())
+         AND (quantity_available IS NULL OR quantity_available > quantity_claimed)
+       ORDER BY is_featured DESC, points_cost ASC`
+    );
+
+    return { rewards: rewards || [] };
   }
 
   // Commercial eligibility

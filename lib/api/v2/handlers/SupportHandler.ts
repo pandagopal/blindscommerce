@@ -660,10 +660,9 @@ export class SupportHandler extends BaseHandler {
 
     const [reviews] = await pool.execute<RowDataPacket[]>(
       `SELECT
-        pr.review_id, pr.product_id, pr.rating, pr.title, pr.review_text, pr.pros, pr.cons,
-        pr.is_verified_purchase, pr.is_recommended, pr.status, pr.helpful_count, pr.not_helpful_count,
-        pr.admin_response, pr.admin_response_at, pr.created_at,
-        p.product_name, p.sku
+        pr.review_id, pr.product_id, pr.rating, pr.title, pr.review_text,
+        pr.is_verified_purchase, pr.is_approved, pr.helpful_count, pr.created_at,
+        p.name as product_name, p.sku
        FROM product_reviews pr
        JOIN products p ON pr.product_id = p.product_id
        WHERE pr.user_id = ?
@@ -695,7 +694,7 @@ export class SupportHandler extends BaseHandler {
 
     const [reviews] = await pool.execute<RowDataPacket[]>(
       `SELECT
-        pr.*, p.product_name, p.sku
+        pr.*, p.name as product_name, p.sku
        FROM product_reviews pr
        JOIN products p ON pr.product_id = p.product_id
        WHERE pr.review_id = ? AND pr.user_id = ?`,
@@ -728,7 +727,7 @@ export class SupportHandler extends BaseHandler {
       `SELECT
         oi.order_item_id, oi.order_id, oi.product_id, oi.quantity, oi.unit_price,
         o.order_number, o.created_at as order_date,
-        p.product_name, p.sku,
+        p.name as product_name, p.sku,
         (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1) as image_url
        FROM order_items oi
        JOIN orders o ON oi.order_id = o.order_id
@@ -758,13 +757,12 @@ export class SupportHandler extends BaseHandler {
 
     const [reviews] = await pool.execute<RowDataPacket[]>(
       `SELECT
-        pr.review_id, pr.rating, pr.title, pr.review_text, pr.pros, pr.cons,
-        pr.is_verified_purchase, pr.is_recommended, pr.helpful_count, pr.not_helpful_count,
-        pr.admin_response, pr.admin_response_at, pr.created_at,
+        pr.review_id, pr.rating, pr.title, pr.review_text,
+        pr.is_verified_purchase, pr.helpful_count, pr.created_at,
         u.first_name, SUBSTRING(u.last_name, 1, 1) as last_initial
        FROM product_reviews pr
        JOIN users u ON pr.user_id = u.user_id
-       WHERE pr.product_id = ? AND pr.status = 'approved'
+       WHERE pr.product_id = ? AND pr.is_approved = 1
        ORDER BY ${orderBy}
        LIMIT ${Number(limit)} OFFSET ${Number(offset)}`,
       [productId]
@@ -779,10 +777,9 @@ export class SupportHandler extends BaseHandler {
         SUM(CASE WHEN rating = 4 THEN 1 ELSE 0 END) as four_star,
         SUM(CASE WHEN rating = 3 THEN 1 ELSE 0 END) as three_star,
         SUM(CASE WHEN rating = 2 THEN 1 ELSE 0 END) as two_star,
-        SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star,
-        SUM(CASE WHEN is_recommended = true THEN 1 ELSE 0 END) as recommend_count
+        SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) as one_star
        FROM product_reviews
-       WHERE product_id = ? AND status = 'approved'`,
+       WHERE product_id = ? AND is_approved = 1`,
       [productId]
     );
 
@@ -831,13 +828,12 @@ export class SupportHandler extends BaseHandler {
     // Create review (pending approval)
     const [result] = await pool.execute<ResultSetHeader>(
       `INSERT INTO product_reviews
-       (product_id, user_id, order_id, order_item_id, rating, title, review_text, pros, cons,
-        is_verified_purchase, is_recommended, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`,
+       (product_id, user_id, rating, title, review_text, is_verified_purchase, is_approved)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
       [
-        data.productId, user.userId, data.orderId || null, data.orderItemId || null,
-        data.rating, data.title || null, data.reviewText || null, data.pros || null, data.cons || null,
-        isVerifiedPurchase, data.isRecommended
+        data.productId, user.userId,
+        data.rating, data.title || '', data.reviewText || '',
+        isVerifiedPurchase
       ]
     );
 
@@ -861,7 +857,7 @@ export class SupportHandler extends BaseHandler {
 
     // Verify ownership
     const [reviews] = await pool.execute<RowDataPacket[]>(
-      'SELECT review_id, status FROM product_reviews WHERE review_id = ? AND user_id = ?',
+      'SELECT review_id, is_approved FROM product_reviews WHERE review_id = ? AND user_id = ?',
       [reviewId, user.userId]
     );
 
@@ -876,13 +872,9 @@ export class SupportHandler extends BaseHandler {
     if (data.rating !== undefined) { updates.push('rating = ?'); params.push(data.rating); }
     if (data.title !== undefined) { updates.push('title = ?'); params.push(data.title); }
     if (data.reviewText !== undefined) { updates.push('review_text = ?'); params.push(data.reviewText); }
-    if (data.pros !== undefined) { updates.push('pros = ?'); params.push(data.pros); }
-    if (data.cons !== undefined) { updates.push('cons = ?'); params.push(data.cons); }
-    if (data.isRecommended !== undefined) { updates.push('is_recommended = ?'); params.push(data.isRecommended); }
 
     if (updates.length > 0) {
-      updates.push('status = ?');
-      params.push('pending'); // Reset to pending for re-approval
+      updates.push('is_approved = 0'); // Reset to pending for re-approval
       updates.push('updated_at = NOW()');
       params.push(reviewId);
 
@@ -934,15 +926,15 @@ export class SupportHandler extends BaseHandler {
           [data.isHelpful, existing[0].vote_id]
         );
 
-        // Update counts
+        // Update counts - only track helpful_count (increment/decrement based on vote change)
         if (data.isHelpful) {
           await pool.execute(
-            'UPDATE product_reviews SET helpful_count = helpful_count + 1, not_helpful_count = not_helpful_count - 1 WHERE review_id = ?',
+            'UPDATE product_reviews SET helpful_count = helpful_count + 1 WHERE review_id = ?',
             [reviewId]
           );
         } else {
           await pool.execute(
-            'UPDATE product_reviews SET helpful_count = helpful_count - 1, not_helpful_count = not_helpful_count + 1 WHERE review_id = ?',
+            'UPDATE product_reviews SET helpful_count = GREATEST(0, helpful_count - 1) WHERE review_id = ?',
             [reviewId]
           );
         }
@@ -954,11 +946,9 @@ export class SupportHandler extends BaseHandler {
         [reviewId, user.userId, data.isHelpful]
       );
 
-      // Update count
+      // Update count - only increment helpful_count for positive votes
       if (data.isHelpful) {
         await pool.execute('UPDATE product_reviews SET helpful_count = helpful_count + 1 WHERE review_id = ?', [reviewId]);
-      } else {
-        await pool.execute('UPDATE product_reviews SET not_helpful_count = not_helpful_count + 1 WHERE review_id = ?', [reviewId]);
       }
     }
 
@@ -977,14 +967,14 @@ export class SupportHandler extends BaseHandler {
     const unreadOnly = searchParams.get('unread') === 'true';
 
     let query = `
-      SELECT notification_id, type, title, message, link, is_read, read_at, metadata, created_at
+      SELECT notification_id, type, title, message, action_url, is_read, read_at, created_at
       FROM user_notifications
-      WHERE user_id = ? AND (expires_at IS NULL OR expires_at > NOW())
+      WHERE user_id = ?
     `;
     const params: any[] = [user.userId];
 
     if (unreadOnly) {
-      query += ' AND is_read = false';
+      query += ' AND is_read = 0';
     }
 
     query += ` ORDER BY created_at DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
@@ -993,8 +983,8 @@ export class SupportHandler extends BaseHandler {
 
     const [countResult] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as total FROM user_notifications
-       WHERE user_id = ? AND (expires_at IS NULL OR expires_at > NOW())${unreadOnly ? ' AND is_read = false' : ''}`,
-      unreadOnly ? [user.userId] : [user.userId]
+       WHERE user_id = ?${unreadOnly ? ' AND is_read = 0' : ''}`,
+      [user.userId]
     );
 
     return {
@@ -1016,7 +1006,7 @@ export class SupportHandler extends BaseHandler {
 
     const [result] = await pool.execute<RowDataPacket[]>(
       `SELECT COUNT(*) as count FROM user_notifications
-       WHERE user_id = ? AND is_read = false AND (expires_at IS NULL OR expires_at > NOW())`,
+       WHERE user_id = ? AND is_read = 0`,
       [user.userId]
     );
 
@@ -1029,7 +1019,7 @@ export class SupportHandler extends BaseHandler {
     const pool = await getPool();
 
     await pool.execute(
-      'UPDATE user_notifications SET is_read = true, read_at = NOW() WHERE notification_id = ? AND user_id = ?',
+      'UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE notification_id = ? AND user_id = ?',
       [notificationId, user.userId]
     );
 
@@ -1042,7 +1032,7 @@ export class SupportHandler extends BaseHandler {
     const pool = await getPool();
 
     await pool.execute(
-      'UPDATE user_notifications SET is_read = true, read_at = NOW() WHERE user_id = ? AND is_read = false',
+      'UPDATE user_notifications SET is_read = 1, read_at = NOW() WHERE user_id = ? AND is_read = 0',
       [user.userId]
     );
 
@@ -1064,17 +1054,17 @@ export class SupportHandler extends BaseHandler {
 
   // Helper method to create notifications
   private async createNotification(
-    pool: any, userId: number, type: string, title: string, message: string, link?: string, metadata?: any
+    pool: any, userId: number, type: string, title: string, message: string, actionUrl?: string
   ) {
     await pool.execute(
-      `INSERT INTO user_notifications (user_id, type, title, message, link, metadata)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, type, title, message, link || null, metadata ? JSON.stringify(metadata) : null]
+      `INSERT INTO user_notifications (user_id, type, title, message, action_url)
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, type, title, message, actionUrl || null]
     );
   }
 
   private async createNotificationForRole(
-    pool: any, role: string, type: string, title: string, message: string, link?: string
+    pool: any, role: string, type: string, title: string, message: string, actionUrl?: string
   ) {
     const [users] = await pool.execute<RowDataPacket[]>(
       'SELECT user_id FROM users WHERE role = ?',
@@ -1082,7 +1072,7 @@ export class SupportHandler extends BaseHandler {
     );
 
     for (const user of users) {
-      await this.createNotification(pool, user.user_id, type, title, message, link);
+      await this.createNotification(pool, user.user_id, type, title, message, actionUrl);
     }
   }
 
