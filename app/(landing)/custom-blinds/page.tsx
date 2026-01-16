@@ -19,7 +19,7 @@ export default function CustomBlindsPage() {
     {
       icon: FaTruck,
       title: "Free Shipping",
-      description: "Enjoy free delivery on all orders over $99 across the continental US"
+      description: "Enjoy free delivery on eligible orders across the continental US"
     },
     {
       icon: FaShieldAlt,

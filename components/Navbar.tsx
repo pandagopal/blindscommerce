@@ -250,7 +250,7 @@ const Navbar = () => {
       {/* Top promotional banner */}
       <div className="bg-primary-red text-white py-2 text-center text-sm">
         <div className="container mx-auto px-4">
-          <span className="font-medium">🚚 Free Shipping on Orders $100+ | 📞 {companyInfo.emergencyHotline} | 📞 {companyInfo.tagline}</span>
+          <span className="font-medium">🚚 Free Shipping on eligible orders | 📞 {companyInfo.emergencyHotline} | 📞 {companyInfo.tagline}</span>
         </div>
       </div>
       

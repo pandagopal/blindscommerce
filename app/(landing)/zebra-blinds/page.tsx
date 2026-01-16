@@ -105,7 +105,7 @@ export default function ZebraBlindsPage() {
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-green-600" />
-              <span>Free Shipping $100+</span>
+              <span>Free Shipping on eligible orders</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-5 w-5 text-green-600" />

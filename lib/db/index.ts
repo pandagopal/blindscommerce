@@ -412,17 +412,17 @@ export const getOrderById = async (orderId: number, userId?: number | null): Pro
   
   // Get order items
   const [items] = await pool.execute<RowDataPacket[]>(
-    `SELECT 
+    `SELECT
       oi.order_item_id,
       oi.product_id,
       oi.quantity,
-      oi.price,
+      oi.unit_price,
       oi.discount_amount,
       oi.tax_amount,
-      oi.total,
+      oi.total_price,
       p.name as product_name,
       p.sku,
-      p.image_url
+      p.primary_image_url as image_url
     FROM order_items oi
     LEFT JOIN products p ON oi.product_id = p.product_id
     WHERE oi.order_id = ?`,
@@ -597,8 +597,8 @@ export const getProducts = async (params: GetProductsParams): Promise<any[]> => 
   }
   
   if (search) {
-    conditions.push('(p.name LIKE ? OR p.description LIKE ?)');
-    queryParams.push(`%${search}%`, `%${search}%`);
+    conditions.push('(p.name LIKE ? OR p.short_description LIKE ? OR p.full_description LIKE ?)');
+    queryParams.push(`%${search}%`, `%${search}%`, `%${search}%`);
   }
   
   if (minPrice !== null) {

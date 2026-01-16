@@ -6,7 +6,7 @@ const trustItems = [
   {
     icon: Truck,
     title: 'Free Shipping',
-    description: 'On orders over $100',
+    description: 'On eligible orders',
     gradient: 'from-red-500 to-rose-600'
   },
   {

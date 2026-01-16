@@ -31,7 +31,7 @@ const badges = [
     id: 'shipping',
     icon: Truck,
     title: 'Free Shipping',
-    description: 'On orders over $99',
+    description: 'On eligible orders',
     color: 'text-purple-600',
     bgColor: 'bg-purple-50'
   },
@@ -175,7 +175,7 @@ export const TrustBar: React.FC<{ className?: string }> = ({ className = '' }) =
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <Truck className="h-4 w-4 text-purple-600" />
-            <span>Free Shipping $99+</span>
+            <span>Free Shipping on eligible orders</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
             <Award className="h-4 w-4 text-orange-600" />

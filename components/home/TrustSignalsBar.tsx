@@ -3,7 +3,7 @@
 import { Shield, Truck, Award, Clock, Headphones, Star } from 'lucide-react';
 
 const trustItems = [
-  { icon: Truck, text: 'Free Shipping Over on eligiable orders' },
+  { icon: Truck, text: 'Free Shipping on eligible orders' },
   { icon: Award, text: '5000+ Happy Customers' },
   { icon: Headphones, text: 'Expert Support' }
 ];

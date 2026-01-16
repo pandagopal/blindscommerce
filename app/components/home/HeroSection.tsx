@@ -40,7 +40,7 @@ export default function HeroSection() {
       image: '/images/hero/hero-1.jpg',
       title: 'Custom Window Treatments',
       subtitle: 'Made to Your Exact Specifications',
-      description: 'Free Shipping on Orders Over $100',
+      description: 'Free Shipping on eligible orders',
       cta: {
         primary: { text: 'Shop Now', href: '/products' },
         secondary: { text: 'Free Samples', href: '/customer/samples' }
@@ -71,7 +71,7 @@ export default function HeroSection() {
   ];
 
   const features = [
-    { icon: <Truck className="w-5 h-5" />, text: 'Free Shipping Over $100' },
+    { icon: <Truck className="w-5 h-5" />, text: 'Free Shipping on eligible orders' },
     { icon: <Shield className="w-5 h-5" />, text: 'Lifetime Warranty' },
     { icon: <Palette className="w-5 h-5" />, text: 'Free Design Consultation' }
   ];

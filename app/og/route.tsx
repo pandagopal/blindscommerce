@@ -121,7 +121,7 @@ export async function GET(request: Request) {
         >
           <span>smartblindshub.com</span>
           <span style={{ margin: '0 16px' }}>•</span>
-          <span>Free Shipping on Orders $100+</span>
+          <span>Free Shipping on eligible orders</span>
         </div>
       </div>
     ),

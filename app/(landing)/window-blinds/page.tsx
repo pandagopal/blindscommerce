@@ -129,7 +129,7 @@ export default function WindowBlindsPage() {
           <div className="flex flex-wrap justify-center items-center gap-8 text-gray-600">
             <div className="flex items-center gap-2">
               <FaCheck className="text-green-500" />
-              <span>Free Shipping Over $99</span>
+              <span>Free Shipping on eligible orders</span>
             </div>
             <div className="flex items-center gap-2">
               <FaCheck className="text-green-500" />

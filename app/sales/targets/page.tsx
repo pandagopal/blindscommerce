@@ -170,7 +170,7 @@ export default function SalesTargetsPage() {
       <div>
         <h1 className="text-3xl font-bold">Sales Targets</h1>
         <p className="text-gray-600 mt-2">
-          Track your progress towards sales goals
+          Track your progress toward sales goals
         </p>
       </div>
 

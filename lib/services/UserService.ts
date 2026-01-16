@@ -215,13 +215,13 @@ export class UserService extends BaseService {
         );
       }
 
-      // Create default preferences
+      // Create default preferences using key-value pattern
       await connection.execute(
-        `INSERT INTO user_preferences (
-          user_id, email_notifications, sms_notifications,
-          newsletter_subscribed, created_at
-        ) VALUES (?, ?, ?, ?, NOW())`,
-        [userId, 1, 0, 1]
+        `INSERT INTO user_preferences (user_id, preference_key, preference_value, created_at, updated_at)
+         VALUES (?, 'email_notifications', '1', NOW(), NOW()),
+                (?, 'sms_notifications', '0', NOW(), NOW()),
+                (?, 'newsletter_subscribed', '1', NOW(), NOW())`,
+        [userId, userId, userId]
       );
 
       await connection.commit();

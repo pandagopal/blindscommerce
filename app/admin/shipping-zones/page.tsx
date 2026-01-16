@@ -235,7 +235,7 @@ export default function ShippingZonesPage() {
               <span className="font-medium">Express Shipping:</span> $19.99 flat rate
             </p>
             <p className="text-sm">
-              <span className="font-medium">Free Shipping:</span> Orders over $100
+              <span className="font-medium">Free Shipping:</span> On eligible orders
             </p>
           </div>
         </CardContent>

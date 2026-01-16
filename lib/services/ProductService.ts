@@ -829,16 +829,14 @@ export class ProductService extends BaseService {
     limit: number = 20
   ): Promise<ProductWithDetails[]> {
     const query = `
-      SELECT 
+      SELECT
         p.*,
         c.name as category_name,
         c.slug as category_slug,
-        b.name as brand_name,
         MATCH(p.name, p.short_description, p.full_description) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
-      LEFT JOIN brands b ON p.brand_id = b.brand_id
-      WHERE 
+      WHERE
         p.is_active = 1
         AND (
           MATCH(p.name, p.short_description, p.full_description) AGAINST(? IN NATURAL LANGUAGE MODE)
@@ -867,16 +865,14 @@ export class ProductService extends BaseService {
         p2.*,
         c.name as category_name,
         c.slug as category_slug,
-        b.name as brand_name,
         COUNT(DISTINCT pf2.feature_id) as shared_features
       FROM products p1
       JOIN products p2 ON p1.category_id = p2.category_id AND p2.product_id != p1.product_id
       LEFT JOIN categories c ON p2.category_id = c.category_id
-      LEFT JOIN brands b ON p2.brand_id = b.brand_id
       LEFT JOIN product_features pf1 ON p1.product_id = pf1.product_id
-      LEFT JOIN product_features pf2 ON p2.product_id = pf2.product_id 
+      LEFT JOIN product_features pf2 ON p2.product_id = pf2.product_id
         AND pf1.feature_id = pf2.feature_id
-      WHERE 
+      WHERE
         p1.product_id = ?
         AND p2.is_active = 1
       GROUP BY p2.product_id
