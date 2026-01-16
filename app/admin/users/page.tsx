@@ -15,6 +15,7 @@ import {
   XCircleIcon,
   MonitorIcon
 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface User {
   user_id: number;
@@ -45,6 +46,7 @@ export default function AdminUsersPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('active');
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -73,21 +75,40 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, [currentPage, roleFilter, sortBy, sortOrder, debouncedSearchQuery]);
+  }, [currentPage, roleFilter, sortBy, sortOrder, debouncedSearchQuery, activeTab]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
       const offset = (currentPage - 1) * usersPerPage;
-      const queryParams = new URLSearchParams({
+
+      // Build query params based on active tab
+      const params: Record<string, string> = {
         limit: usersPerPage.toString(),
         offset: offset.toString(),
         sortBy,
         sortOrder,
-        ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
-        ...(roleFilter !== 'all' && { role: roleFilter })
-      });
+      };
+
+      if (debouncedSearchQuery) {
+        params.search = debouncedSearchQuery;
+      }
+
+      if (roleFilter !== 'all') {
+        params.role = roleFilter;
+      }
+
+      // Add status filter based on active tab
+      if (activeTab === 'active') {
+        params.status = 'active';
+      } else if (activeTab === 'deactivated') {
+        params.status = 'inactive';
+      } else if (activeTab === 'pending') {
+        params.is_verified = 'false';
+      }
+
+      const queryParams = new URLSearchParams(params);
 
       const response = await fetch(`/api/v2/admin/users?${queryParams}`);
       if (!response.ok) {
@@ -129,6 +150,11 @@ export default function AdminUsersPage() {
 
   const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setRoleFilter(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
     setCurrentPage(1);
   };
 
@@ -217,6 +243,40 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleVerifyUser = async (userId: number, userEmail: string) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to verify this user (${userEmail})? They will receive a verification email and gain full access to their account.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError(null);
+      const response = await fetch(`/api/v2/admin/users/${userId}/verify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to verify user');
+      }
+
+      const result = await response.json();
+      alert(result.message || 'User verified successfully');
+
+      // Refresh the users list
+      fetchUsers();
+    } catch (error) {
+      console.error('Error verifying user:', error);
+      setError(error instanceof Error ? error.message : 'Failed to verify user');
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -283,7 +343,40 @@ export default function AdminUsersPage() {
         </select>
       </div>
 
-      {/* Users Table */}
+      {/* Tabs for User Status */}
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <CheckCircleIcon size={16} />
+            Active Users
+          </TabsTrigger>
+          <TabsTrigger value="deactivated" className="flex items-center gap-2">
+            <XCircleIcon size={16} />
+            De-Activated
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <FilterIcon size={16} />
+            Pending Verification
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="active" className="mt-0">
+          {renderUsersTable()}
+        </TabsContent>
+
+        <TabsContent value="deactivated" className="mt-0">
+          {renderUsersTable()}
+        </TabsContent>
+
+        <TabsContent value="pending" className="mt-0">
+          {renderUsersTable()}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  function renderUsersTable() {
+    return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
@@ -369,15 +462,22 @@ export default function AdminUsersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          user.is_active
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            user.is_active
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                        {!user.is_verified && (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            Unverified
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(user.last_login)}
@@ -407,6 +507,14 @@ export default function AdminUsersPage() {
                           <MonitorIcon size={16} className="inline mr-1" />
                           Dashboard
                         </Link>
+                      )}
+                      {!user.is_verified && (
+                        <button
+                          onClick={() => handleVerifyUser(user.user_id, user.email)}
+                          className="text-blue-600 hover:text-blue-900 mr-3 font-semibold"
+                        >
+                          ✓ Verify
+                        </button>
                       )}
                       {currentUser?.user_id !== user.user_id && (
                         <button
@@ -502,6 +610,6 @@ export default function AdminUsersPage() {
           </div>
         )}
       </div>
-    </div>
-  );
+    );
+  }
 } 

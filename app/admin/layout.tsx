@@ -114,7 +114,6 @@ export default function AdminLayout({
     { href: '/admin/users', label: 'Users', icon: <Users size={18} /> },
     { href: '/admin/vendors', label: 'Vendors', icon: <Package size={18} /> },
     { href: '/admin/tax-rates', label: 'Tax Rates', icon: <Calculator size={18} /> },
-    { href: '/admin/database', label: 'Database', icon: <Database size={18} /> },
     { href: '/admin/analytics', label: 'Analytics', icon: <BarChart2 size={18} /> },
     { href: '/admin/logs', label: 'System Logs', icon: <AlertTriangle size={18} /> },
     { href: '/admin/settings', label: 'Settings', icon: <Settings size={18} /> },

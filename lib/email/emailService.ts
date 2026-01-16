@@ -239,6 +239,102 @@ class EmailService {
     });
   }
 
+  // Send verification email when admin verifies a user
+  async sendVerificationEmail(
+    userEmail: string,
+    userName: string,
+    userRole: string
+  ): Promise<boolean> {
+    const { getPool } = require('@/lib/db');
+
+    try {
+      const pool = await getPool();
+
+      // Get SMTP settings from database
+      const [settings] = await pool.execute(
+        `SELECT setting_key, setting_value FROM company_settings WHERE setting_key IN (
+          'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password',
+          'contact_email', 'site_name'
+        )`
+      );
+
+      const smtpConfig: any = {};
+      (settings as any[]).forEach((row: any) => {
+        smtpConfig[row.setting_key] = row.setting_value;
+      });
+
+      // Create transporter with database settings
+      const transporter = nodemailer.createTransport({
+        host: smtpConfig.smtp_server || 'localhost',
+        port: parseInt(smtpConfig.smtp_port || '587'),
+        secure: smtpConfig.smtp_port === '465',
+        auth: smtpConfig.smtp_username && smtpConfig.smtp_password ? {
+          user: smtpConfig.smtp_username,
+          pass: smtpConfig.smtp_password,
+        } : undefined,
+      });
+
+      const siteName = smtpConfig.site_name || 'Smart Blinds Hub';
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://smartblindshub.com';
+
+      // Create email HTML
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #DC2626; color: white; padding: 20px; text-align: center; }
+            .content { background-color: #f9f9f9; padding: 30px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #DC2626; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>${siteName}</h1>
+            </div>
+            <div class="content">
+              <h2>Account Verified! 🎉</h2>
+              <p>Hello ${userName},</p>
+              <p>Great news! Your account has been verified and you now have full access to our platform.</p>
+              <p><strong>Your Account Details:</strong></p>
+              <ul>
+                <li>Email: ${userEmail}</li>
+                <li>Role: ${userRole.charAt(0).toUpperCase() + userRole.slice(1)}</li>
+                <li>Status: Verified ✓</li>
+              </ul>
+              <p>You can now log in and start using all features available to your account.</p>
+              <a href="${siteUrl}/login" class="button">Log In Now</a>
+              <p>If you have any questions or need assistance, please don't hesitate to contact our support team.</p>
+              <p>Best regards,<br>The ${siteName} Team</p>
+            </div>
+            <div class="footer">
+              <p>© ${new Date().getFullYear()} ${siteName}. All rights reserved.</p>
+              <p>This is an automated message, please do not reply to this email.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      // Send email
+      await transporter.sendMail({
+        from: `"${siteName}" <${smtpConfig.contact_email || 'noreply@smartblindshub.com'}>`,
+        to: userEmail,
+        subject: `Account Verified - Welcome to ${siteName}!`,
+        html: html,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      return false;
+    }
+  }
+
   // Direct email sending method that uses database SMTP configuration
   async sendEmail(options: {
     to: string;

@@ -86,6 +86,7 @@ export class AdminHandler extends BaseHandler {
       'vendors/:id/disable': () => this.disableVendor(action[1], req),
       'vendors/:id/enable': () => this.enableVendor(action[1], req),
       'vendors/:id/delete-permanently': () => this.deleteVendorPermanently(action[1], req),
+      'users/:id/verify': () => this.verifyUser(action[1], req),
     };
 
     return this.routeAction(action, routes);
@@ -145,30 +146,50 @@ export class AdminHandler extends BaseHandler {
     const limit = parseInt(searchParams.get('limit') || '50');
     const search = searchParams.get('search') || '';
     const role = searchParams.get('role') || '';
+    const status = searchParams.get('status') || '';
+    const isVerified = searchParams.get('is_verified') || '';
     // Support both 'page' and 'offset' parameters for flexibility
     const offsetParam = searchParams.get('offset');
     const page = parseInt(searchParams.get('page') || '1');
     const offset = offsetParam !== null ? parseInt(offsetParam) : (page - 1) * limit;
-    
+
     try {
       const pool = await getPool();
-      
+
       // Build query
       let query = 'SELECT * FROM users WHERE 1=1';
       let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
       const params: any[] = [];
-      
+
       if (search) {
         const searchCondition = ' AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)';
         query += searchCondition;
         countQuery += searchCondition;
         params.push(`%${search}%`, `%${search}%`, `%${search}%`);
       }
-      
+
       if (role) {
         query += ' AND role = ?';
         countQuery += ' AND role = ?';
         params.push(role);
+      }
+
+      // Filter by status (active/inactive)
+      if (status === 'active') {
+        query += ' AND is_active = 1';
+        countQuery += ' AND is_active = 1';
+      } else if (status === 'inactive') {
+        query += ' AND is_active = 0';
+        countQuery += ' AND is_active = 0';
+      }
+
+      // Filter by verification status
+      if (isVerified === 'false') {
+        query += ' AND is_verified = 0';
+        countQuery += ' AND is_verified = 0';
+      } else if (isVerified === 'true') {
+        query += ' AND is_verified = 1';
+        countQuery += ' AND is_verified = 1';
       }
       
       // Get total count
@@ -276,6 +297,69 @@ export class AdminHandler extends BaseHandler {
       if (error instanceof ApiError) throw error;
       console.error('Error updating user:', error);
       throw new ApiError('Failed to update user', 500);
+    }
+  }
+
+  private async verifyUser(userId: string, req: NextRequest) {
+    const id = parseInt(userId);
+    if (isNaN(id)) {
+      throw new ApiError('Invalid user ID', 400);
+    }
+
+    try {
+      const pool = await getPool();
+
+      // Get user details first
+      const [rows] = await pool.execute(
+        'SELECT user_id, email, first_name, last_name, role, is_verified FROM users WHERE user_id = ?',
+        [id]
+      );
+
+      const users = rows as any[];
+      if (!users || users.length === 0) {
+        throw new ApiError('User not found', 404);
+      }
+
+      const user = users[0];
+
+      if (user.is_verified) {
+        throw new ApiError('User is already verified', 400);
+      }
+
+      // Update user verification status
+      await pool.execute(
+        'UPDATE users SET is_verified = 1, updated_at = NOW() WHERE user_id = ?',
+        [id]
+      );
+
+      // Send verification email
+      const { emailService } = await import('@/lib/email/emailService');
+      const userName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email.split('@')[0];
+
+      try {
+        await emailService.sendVerificationEmail(
+          user.email,
+          userName,
+          user.role
+        );
+      } catch (emailError) {
+        console.error('Error sending verification email:', emailError);
+        // Don't fail the verification if email fails
+      }
+
+      return {
+        success: true,
+        message: 'User verified successfully',
+        data: {
+          user_id: id,
+          email: user.email,
+          is_verified: true
+        }
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      console.error('Error verifying user:', error);
+      throw new ApiError('Failed to verify user', 500);
     }
   }
 
