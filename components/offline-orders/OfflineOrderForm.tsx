@@ -28,7 +28,7 @@ interface OrderItem {
 }
 
 interface Vendor {
-  vendor_info_id: number;
+  user_id: number; // vendor_info now uses user_id as primary key
   business_name: string;
 }
 
@@ -463,7 +463,7 @@ export default function OfflineOrderForm() {
                     <SelectContent>
                       <SelectItem value="none">No vendor assigned</SelectItem>
                       {vendors.map((vendor) => (
-                        <SelectItem key={vendor.vendor_info_id} value={vendor.vendor_info_id.toString()}>
+                        <SelectItem key={vendor.user_id} value={vendor.user_id.toString()}>
                           {vendor.business_name}
                         </SelectItem>
                       ))}

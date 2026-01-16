@@ -339,10 +339,10 @@ export class AuthHandler extends BaseHandler {
     let vendorId = null;
     if (user.role === 'vendor' || user.role === 'sales_representative') {
       const [vendorInfo] = await this.userService.raw(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+        'SELECT user_id FROM vendor_info WHERE user_id = ?',
         [id]
       );
-      vendorId = vendorInfo?.vendor_info_id || null;
+      vendorId = vendorInfo?.user_id || null;
     }
 
     return {

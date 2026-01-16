@@ -119,7 +119,7 @@ export class CartService extends BaseService {
       JOIN products p ON ci.product_id = p.product_id
       JOIN vendor_products vp ON ci.product_id = vp.product_id 
         AND vp.vendor_id = COALESCE(JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId')), p.vendor_id)
-      JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
+      JOIN vendor_info vi ON vp.vendor_id = vi.user_id
       WHERE ci.cart_id = ?
       ORDER BY ci.created_at DESC
     `;
@@ -351,7 +351,7 @@ export class CartService extends BaseService {
         JOIN products p ON ci.product_id = p.product_id
         JOIN vendor_products vp ON ci.product_id = vp.product_id 
           AND vp.vendor_id = JSON_UNQUOTE(JSON_EXTRACT(ci.configuration, '$.vendorId'))
-        JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
+        JOIN vendor_info vi ON vp.vendor_id = vi.user_id
         WHERE ci.cart_item_id = ?`,
         [cartItemId]
       );
@@ -522,7 +522,7 @@ export class CartService extends BaseService {
         vc.*,
         vi.business_name as vendor_name
       FROM vendor_coupons vc
-      JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
+      JOIN vendor_info vi ON vc.vendor_id = vi.user_id
       WHERE vc.coupon_code = ?
         AND vc.is_active = 1
         AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())

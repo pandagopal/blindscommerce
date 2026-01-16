@@ -329,7 +329,7 @@ export class SalesHandler extends BaseHandler {
         COALESCE(
           (SELECT vi.business_name
            FROM order_items oi
-           LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+           LEFT JOIN vendor_info vi ON oi.vendor_id = vi.user_id
            WHERE oi.order_id = o.order_id
            LIMIT 1),
           'Smart Blinds Hub'
@@ -1031,7 +1031,7 @@ export class SalesHandler extends BaseHandler {
           ci.coupon_code
         FROM cart_items ci
         JOIN products p ON ci.product_id = p.product_id
-        LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
+        LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
         WHERE ci.cart_id = ?`,
         [cart.cart_id]
       );
@@ -1128,7 +1128,7 @@ export class SalesHandler extends BaseHandler {
         ci.coupon_code
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON p.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON p.vendor_id = vi.user_id
       WHERE ci.cart_id = ?`,
       [cart.cart_id]
     );

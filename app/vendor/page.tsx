@@ -73,7 +73,7 @@ function VendorDashboardContent() {
               if (vendorInfoRes.ok) {
                 const vendorInfoResult = await vendorInfoRes.json();
                 const vendorInfoData = vendorInfoResult.data || vendorInfoResult;
-                setVendorInfoId(vendorInfoData.vendor_id || vendorInfoData.vendor_info_id);
+                setVendorInfoId(vendorInfoData.vendor_id); // vendor_id is the user_id from vendor_info table
               }
             } else {
               alert('Failed to fetch vendor information');

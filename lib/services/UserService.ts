@@ -24,7 +24,7 @@ interface User extends RowDataPacket {
 
 interface UserWithDetails extends User {
   vendor_info?: {
-    vendor_info_id: number;
+    user_id: number; // vendor_info now uses user_id as primary key
     business_name: string;
     commission_rate: number;
     is_approved: boolean;
@@ -65,10 +65,10 @@ export class UserService extends BaseService {
    */
   async getUserWithDetails(userId: number): Promise<UserWithDetails | null> {
     const query = `
-      SELECT 
+      SELECT
         u.*,
         -- Vendor info
-        vi.vendor_info_id,
+        vi.user_id as vendor_user_id,
         vi.business_name,
         vi.commission_rate as vendor_commission_rate,
         vi.is_approved as vendor_is_approved,
@@ -125,9 +125,9 @@ export class UserService extends BaseService {
     // Organize role-specific data
     const userWithDetails: UserWithDetails = { ...user };
 
-    if (user.role === 'vendor' && user.vendor_info_id) {
+    if (user.role === 'vendor' && user.vendor_user_id) {
       userWithDetails.vendor_info = {
-        vendor_info_id: user.vendor_info_id,
+        user_id: user.vendor_user_id,
         business_name: user.business_name,
         commission_rate: user.vendor_commission_rate,
         is_approved: user.vendor_is_approved
@@ -151,7 +151,7 @@ export class UserService extends BaseService {
     }
 
     // Clean up extra fields
-    delete userWithDetails.vendor_info_id;
+    delete userWithDetails.vendor_user_id;
     delete userWithDetails.business_name;
     delete userWithDetails.vendor_commission_rate;
     delete userWithDetails.vendor_is_approved;
@@ -335,7 +335,7 @@ export class UserService extends BaseService {
       SELECT DISTINCT
         u.*,
         vi.business_name,
-        vi.vendor_info_id,
+        vi.user_id as vendor_user_id,
         sr.sales_staff_id,
         
         CASE u.role

@@ -53,6 +53,8 @@ export class AdminHandler extends BaseHandler {
       'installer-companies': () => this.getInstallerCompanies(req),
       'installer-companies/:id': () => this.getInstallerCompany(action[1]),
       'installer-companies/:id/zip-codes': () => this.getInstallerCompanyZipCodes(action[1]),
+      'vendors/:id/security-status': () => this.getVendorSecurityStatus(action[1]),
+      'vendors/:id/audit-history': () => this.getVendorAuditHistory(action[1], req),
     };
 
     return this.routeAction(action, routes);
@@ -81,6 +83,9 @@ export class AdminHandler extends BaseHandler {
       'installer-companies': () => this.createInstallerCompany(req),
       'installer-companies/:id/zip-codes': () => this.addInstallerCompanyZipCodes(action[1], req),
       'installer-companies/import': () => this.importInstallerCompanies(req),
+      'vendors/:id/disable': () => this.disableVendor(action[1], req),
+      'vendors/:id/enable': () => this.enableVendor(action[1], req),
+      'vendors/:id/delete-permanently': () => this.deleteVendorPermanently(action[1], req),
     };
 
     return this.routeAction(action, routes);
@@ -287,14 +292,14 @@ export class AdminHandler extends BaseHandler {
       
       // Build query
       let query = `
-        SELECT 
+        SELECT
           u.user_id,
           u.email,
           u.first_name,
           u.last_name,
           u.is_active,
           u.created_at,
-          vi.vendor_info_id,
+          vi.user_id as vendor_info_id,
           vi.business_name,
           vi.business_email,
           vi.business_phone,
@@ -307,12 +312,12 @@ export class AdminHandler extends BaseHandler {
           COALESCE(SUM(CASE WHEN vp.is_active = 1 THEN 1 ELSE 0 END), 0) as active_products
         FROM users u
         INNER JOIN vendor_info vi ON u.user_id = vi.user_id
-        LEFT JOIN vendor_products vp ON vi.vendor_info_id = vp.vendor_id
+        LEFT JOIN vendor_products vp ON vi.user_id = vp.vendor_id
         WHERE u.role = 'vendor'
       `;
       
       let countQuery = `
-        SELECT COUNT(DISTINCT vi.vendor_info_id) as total
+        SELECT COUNT(DISTINCT vi.user_id) as total
         FROM users u
         INNER JOIN vendor_info vi ON u.user_id = vi.user_id
         WHERE u.role = 'vendor'
@@ -339,7 +344,7 @@ export class AdminHandler extends BaseHandler {
         countQuery += ' AND vi.is_verified = 1';
       }
       
-      query += ' GROUP BY u.user_id, vi.vendor_info_id';
+      query += ' GROUP BY u.user_id, vi.user_id';
       query += ' ORDER BY vi.created_at DESC';
       query += ` LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`;
 
@@ -1485,15 +1490,19 @@ export class AdminHandler extends BaseHandler {
         
         const userId = (userResult as any).insertId;
         
-        // Create vendor info
+        // Create vendor info with defaults if specific fields not provided
+        const defaultBusinessName = body.businessName ||
+          `${body.firstName || ''} ${body.lastName || ''}`.trim() ||
+          body.email.split('@')[0];
+
         await conn.execute(
-          `INSERT INTO vendor_info 
-          (user_id, business_name, business_email, business_phone, description, 
-          tax_id, address, city, state, zip_code, country, created_at, updated_at) 
+          `INSERT INTO vendor_info
+          (user_id, business_name, business_email, business_phone, description,
+          tax_id, address, city, state, zip_code, country, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
           [
             userId,
-            body.businessName,
+            defaultBusinessName,
             body.businessEmail || body.email,
             body.businessPhone || body.phone,
             body.description || '',
@@ -1537,22 +1546,151 @@ export class AdminHandler extends BaseHandler {
 
   private async deleteVendor(id: string) {
     try {
-      const pool = await getPool();
-      // Soft delete by deactivating
-      await pool.execute(
-        'UPDATE users SET is_active = 0 WHERE user_id = ? AND role = "vendor"',
-        [id]
-      );
-      return { success: true };
+      // Default: soft delete (disable)
+      const result = await vendorService.disableVendor(parseInt(id), {
+        reason: 'Vendor removed by admin',
+        disabledBy: 1, // TODO: Get from authenticated user
+        cascadeToSales: false, // Unlink sales, don't disable
+        cascadeToProducts: false, // Unlink products, don't disable
+        notifySales: true
+      });
+
+      return {
+        success: true,
+        message: 'Vendor disabled successfully',
+        affectedSales: result.affectedSales,
+        affectedProducts: result.affectedProducts
+      };
     } catch (error) {
+      console.error('Error deleting vendor:', error);
       throw new ApiError('Failed to delete vendor', 500);
+    }
+  }
+
+  private async disableVendor(id: string, req: NextRequest) {
+    const body = await req.json();
+
+    try {
+      const result = await vendorService.disableVendor(parseInt(id), {
+        reason: body.reason || 'No reason provided',
+        disabledBy: body.disabledBy || 1, // TODO: Get from authenticated user
+        cascadeToSales: body.cascadeToSales || false,
+        cascadeToProducts: body.cascadeToProducts || false,
+        notifySales: body.notifySales !== false
+      });
+
+      return {
+        success: true,
+        message: 'Vendor disabled successfully',
+        affectedSales: result.affectedSales,
+        affectedProducts: result.affectedProducts
+      };
+    } catch (error) {
+      console.error('Error disabling vendor:', error);
+      throw new ApiError('Failed to disable vendor', 500);
+    }
+  }
+
+  private async enableVendor(id: string, req: NextRequest) {
+    const body = await req.json();
+
+    try {
+      const result = await vendorService.enableVendor(
+        parseInt(id),
+        body.enabledBy || 1 // TODO: Get from authenticated user
+      );
+
+      return {
+        success: true,
+        message: 'Vendor enabled successfully',
+        pendingSalesReview: result.pendingSalesReview
+      };
+    } catch (error) {
+      console.error('Error enabling vendor:', error);
+      throw new ApiError('Failed to enable vendor', 500);
+    }
+  }
+
+  private async deleteVendorPermanently(id: string, req: NextRequest) {
+    const body = await req.json();
+
+    try {
+      const result = await vendorService.deleteVendorPermanently(
+        parseInt(id),
+        body.deletedBy || 1, // TODO: Get from authenticated user
+        body.reason || 'No reason provided'
+      );
+
+      return {
+        success: true,
+        message: 'Vendor permanently deleted',
+        archivedData: result.archivedData,
+        affectedSales: result.affectedSales,
+        affectedProducts: result.affectedProducts
+      };
+    } catch (error) {
+      console.error('Error permanently deleting vendor:', error);
+      throw new ApiError('Failed to permanently delete vendor', 500);
+    }
+  }
+
+  private async getVendorSecurityStatus(id: string) {
+    try {
+      const status = await vendorService.getVendorSecurityStatus(parseInt(id));
+      return {
+        success: true,
+        data: status
+      };
+    } catch (error) {
+      console.error('Error getting vendor security status:', error);
+      throw new ApiError('Failed to get vendor security status', 500);
+    }
+  }
+
+  private async getVendorAuditHistory(id: string, req: NextRequest) {
+    try {
+      const searchParams = new URL(req.url).searchParams;
+      const limit = parseInt(searchParams.get('limit') || '50');
+
+      const history = await vendorService.getVendorAuditHistory(parseInt(id), limit);
+      return {
+        success: true,
+        data: history
+      };
+    } catch (error) {
+      console.error('Error getting vendor audit history:', error);
+      throw new ApiError('Failed to get vendor audit history', 500);
     }
   }
 
   // Users
   private async createUser(req: NextRequest) {
     const body = await req.json();
-    
+
+    // Route to specialized creation methods based on role
+    switch (body.role) {
+      case 'vendor':
+        return this.createVendor(req);
+
+      case 'sales':
+      case 'sales_representative':
+        return this.createSalesUser(req);
+
+      case 'installer':
+        return this.createInstallerUser(req);
+
+      case 'shipping_agent':
+      case 'admin':
+      case 'customer':
+      default:
+        // These roles don't need additional tables
+        return this.createBasicUser(req);
+    }
+  }
+
+  private async createBasicUser(req: NextRequest) {
+    const body = await req.json();
+
     try {
       const hashedPassword = await bcrypt.hash(body.password, 10);
       const user = await userService.create({
@@ -1563,7 +1701,7 @@ export class AdminHandler extends BaseHandler {
         phone: body.phone,
         role: body.role || 'customer'
       });
-      
+
       return {
         success: true,
         user
@@ -1571,6 +1709,84 @@ export class AdminHandler extends BaseHandler {
     } catch (error) {
       console.error('Error creating user:', error);
       throw new ApiError('Failed to create user', 500);
+    }
+  }
+
+  private async createSalesUser(req: NextRequest) {
+    const body = await req.json();
+
+    try {
+      const pool = await getPool();
+      const conn = await pool.getConnection();
+
+      try {
+        await conn.beginTransaction();
+
+        // Create user account
+        const hashedPassword = await bcrypt.hash(body.password, 10);
+        const [userResult] = await conn.execute(
+          `INSERT INTO users
+          (email, password_hash, first_name, last_name, phone, role, is_active, is_verified, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, 'sales_representative', 1, 1, NOW(), NOW())`,
+          [
+            body.email,
+            hashedPassword,
+            body.firstName || '',
+            body.lastName || '',
+            body.phone || ''
+          ]
+        );
+
+        const userId = (userResult as any).insertId;
+
+        // Create sales_staff entry
+        await conn.execute(
+          `INSERT INTO sales_staff (user_id, is_active, start_date)
+          VALUES (?, 1, CURDATE())`,
+          [userId]
+        );
+
+        await conn.commit();
+
+        return {
+          success: true,
+          userId
+        };
+      } catch (error) {
+        await conn.rollback();
+        throw error;
+      } finally {
+        conn.release();
+      }
+    } catch (error) {
+      console.error('Error creating sales user:', error);
+      throw new ApiError('Failed to create sales user', 500);
+    }
+  }
+
+  private async createInstallerUser(req: NextRequest) {
+    const body = await req.json();
+
+    try {
+      // Installers are just users with role='installer'
+      // No additional table needed
+      const hashedPassword = await bcrypt.hash(body.password, 10);
+      const user = await userService.create({
+        email: body.email,
+        password: hashedPassword,
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phone: body.phone,
+        role: 'installer'
+      });
+
+      return {
+        success: true,
+        user
+      };
+    } catch (error) {
+      console.error('Error creating installer:', error);
+      throw new ApiError('Failed to create installer', 500);
     }
   }
 
@@ -1835,7 +2051,7 @@ export class AdminHandler extends BaseHandler {
           p.sku as product_sku
         FROM product_approval_requests par
         LEFT JOIN users u ON par.requested_by = u.user_id
-        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.user_id
         LEFT JOIN products p ON par.product_id = p.product_id
         WHERE par.status = ?
       `;
@@ -1874,7 +2090,7 @@ export class AdminHandler extends BaseHandler {
           p.sku as product_sku
         FROM product_approval_requests par
         LEFT JOIN users u ON par.requested_by = u.user_id
-        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.user_id
         LEFT JOIN products p ON par.product_id = p.product_id
         WHERE par.id = ?`,
         [parseInt(id)]

@@ -42,7 +42,7 @@ export class VendorFileManager {
   private authToken?: string;
 
   constructor(vendorId: number, vendorName: string, authToken?: string) {
-    this.vendorId = vendorId; // This is vendor_info_id from database
+    this.vendorId = vendorId; // This is user_id from vendor_info table (used as vendor_id in related tables)
     this.vendorName = this.sanitizeVendorName(vendorName);
     this.uploadsRoot = path.join(process.cwd(), 'public', 'uploads');
     this.basePath = path.join(this.uploadsRoot, `vendor_${vendorId}_${this.vendorName}`);

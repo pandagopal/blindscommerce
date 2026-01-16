@@ -135,10 +135,10 @@ export async function getCurrentUser(): Promise<User | null> {
       let vendorId = null;
       if (userData.role === 'vendor' || userData.role === 'sales_representative') {
         const [vendorInfo] = await userService.raw(
-          'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+          'SELECT user_id FROM vendor_info WHERE user_id = ?',
           [decoded.userId]
         );
-        vendorId = vendorInfo?.vendor_info_id || null;
+        vendorId = vendorInfo?.user_id || null;
       }
 
       // Transform to expected format

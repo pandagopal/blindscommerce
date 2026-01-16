@@ -56,11 +56,11 @@ export async function getProducts(filters: ProductFilters, userId?: number, role
     let vendorId: number | null = null;
     if (role === 'vendor' && userId) {
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? LIMIT 1',
+        'SELECT user_id FROM vendor_info WHERE user_id = ? LIMIT 1',
         [userId]
       );
       if (vendorInfo.length > 0) {
-        vendorId = vendorInfo[0].vendor_info_id;
+        vendorId = vendorInfo[0].user_id;
       } else {
       }
     }
@@ -342,10 +342,10 @@ export async function createProduct(data: ProductData, userId: number, role: str
     } else if (role === 'vendor') {
       // Vendor creating their own product
       const [vendorInfo] = await pool.execute<RowDataPacket[]>(
-        'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+        'SELECT user_id FROM vendor_info WHERE user_id = ?',
         [userId]
       );
-      
+
       if (vendorInfo.length > 0) {
         await pool.execute(
           `INSERT INTO vendor_products (
@@ -360,7 +360,7 @@ export async function createProduct(data: ProductData, userId: number, role: str
             vendor_description
           ) VALUES (?, ?, ?, ?, 100, 1, 7, 1, ?)`,
           [
-            vendorInfo[0].vendor_info_id,
+            vendorInfo[0].user_id,
             productId,
             sku,
             basePrice,

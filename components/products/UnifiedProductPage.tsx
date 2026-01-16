@@ -820,7 +820,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <option value="all">All Vendors</option>
                 <option value="none">Not Associated</option>
                 {vendors.map((vendor) => (
-                  <option key={vendor.vendor_info_id} value={vendor.vendor_info_id}>
+                  <option key={vendor.user_id} value={vendor.user_id}>
                     {vendor.business_name || `${vendor.first_name} ${vendor.last_name}`}
                   </option>
                 ))}

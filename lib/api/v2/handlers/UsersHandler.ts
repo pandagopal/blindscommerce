@@ -862,7 +862,7 @@ export class UsersHandler extends BaseHandler {
         vi.business_name as vendor_name
       FROM saved_configurations sc
       LEFT JOIN products p ON sc.product_id = p.product_id
-      LEFT JOIN vendor_info vi ON sc.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON sc.vendor_id = vi.user_id
       WHERE sc.user_id = ?
       ORDER BY sc.created_at DESC
       LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,

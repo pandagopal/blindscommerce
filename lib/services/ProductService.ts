@@ -698,7 +698,7 @@ export class ProductService extends BaseService {
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN vendor_products vp ON p.product_id = vp.product_id
-      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON vp.vendor_id = vi.user_id
       LEFT JOIN vendor_discounts vd ON vp.vendor_id = vd.vendor_id
         AND vd.is_active = 1
         AND (vd.valid_from IS NULL OR vd.valid_from <= NOW())

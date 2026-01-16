@@ -685,11 +685,11 @@ export class OfflineOrderHandler extends BaseHandler {
 
     // Get order items
     const [items] = await connection.execute(`
-      SELECT 
+      SELECT
         oi.*,
         vi.business_name as vendor_name
       FROM offline_order_items oi
-      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.vendor_info_id
+      LEFT JOIN vendor_info vi ON oi.vendor_id = vi.user_id
       WHERE oi.order_id = ?
       ORDER BY oi.item_id
     `, [orderId]);

@@ -205,6 +205,20 @@ export class ProductManager {
     }
 
     // Insert basic product info
+    const finalVendorId = vendorId || data.vendor_id;
+
+    // Validate vendor exists if vendor_id is provided
+    if (finalVendorId) {
+      const [vendorCheck] = await conn.execute(
+        'SELECT user_id FROM vendor_info WHERE user_id = ?',
+        [finalVendorId]
+      ) as any[];
+
+      if (!vendorCheck || vendorCheck.length === 0) {
+        throw new Error(`Vendor with user_id=${finalVendorId} does not exist. Please ensure the vendor exists in the system.`);
+      }
+    }
+
     const [result] = await conn.execute(
       `INSERT INTO products (
         name, slug, sku, short_description, full_description, base_price,
@@ -219,7 +233,7 @@ export class ProductManager {
         data.short_description,
         data.full_description || data.short_description,
         data.base_price,
-        vendorId || data.vendor_id,
+        finalVendorId,
         data.is_active ? 1 : 0,
         data.is_featured ? 1 : 0,
         categoryId,

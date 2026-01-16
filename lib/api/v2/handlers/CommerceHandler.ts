@@ -1442,11 +1442,11 @@ export class CommerceHandler extends BaseHandler {
     if (body.coupon_code) {
       // Validate coupon directly here since we already have the cart
       const [coupon] = await pool.execute(
-        `SELECT 
+        `SELECT
           vc.*,
           vi.business_name as vendor_name
         FROM vendor_coupons vc
-        JOIN vendor_info vi ON vc.vendor_id = vi.vendor_info_id
+        JOIN vendor_info vi ON vc.vendor_id = vi.user_id
         WHERE vc.coupon_code = ?
           AND vc.is_active = 1
           AND (vc.valid_from IS NULL OR vc.valid_from <= NOW())

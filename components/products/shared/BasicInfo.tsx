@@ -51,7 +51,7 @@ const createFormSchema = (isAdmin: boolean) => z.object({
 });
 
 interface Vendor {
-  user_id: number;
+  user_id: number; // vendor_info now uses user_id as primary key
   business_name: string;
   business_email: string;
   approval_status: string;
@@ -255,8 +255,8 @@ export default function BasicInfo({ data, categories: propCategories, onChange, 
                               <User className="h-4 w-4" />
                               <span>{vendor.business_name}</span>
                             </div>
-                            <Badge 
-                              variant={vendor.is_active && vendor.approval_status === 'approved' ? 'default' : 'secondary'} 
+                            <Badge
+                              variant={vendor.is_active && vendor.approval_status === 'approved' ? 'default' : 'secondary'}
                               className="ml-2"
                             >
                               {vendor.is_active && vendor.approval_status === 'approved' ? 'active' : vendor.approval_status}

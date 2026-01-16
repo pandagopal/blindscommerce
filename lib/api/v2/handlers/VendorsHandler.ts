@@ -208,9 +208,9 @@ export class VendorsHandler extends BaseHandler {
   // Helper to get vendor ID
   private async getVendorId(user: any): Promise<number> {
     this.requireRole(user, 'VENDOR');
-    
+
     const [vendor] = await this.vendorService.raw(
-      'SELECT vendor_info_id FROM vendor_info WHERE user_id = ? AND is_active = 1 ORDER BY vendor_info_id ASC LIMIT 1',
+      'SELECT user_id FROM vendor_info WHERE user_id = ? AND is_active = 1 LIMIT 1',
       [user.userId]
     );
 
@@ -218,7 +218,7 @@ export class VendorsHandler extends BaseHandler {
       throw new ApiError('Vendor profile not found', 404);
     }
 
-    return vendor.vendor_info_id;
+    return vendor.user_id;
   }
 
   // Dashboard and profile
@@ -243,7 +243,7 @@ export class VendorsHandler extends BaseHandler {
     // Admin can check any vendor info
     if (user.role === 'admin') {
       const [vendorInfo] = await this.vendorService.raw(
-        'SELECT vendor_info_id, user_id, business_name FROM vendor_info WHERE user_id = ?',
+        'SELECT user_id, business_name FROM vendor_info WHERE user_id = ?',
         [parseInt(userId)]
       );
       
@@ -2375,7 +2375,7 @@ export class VendorsHandler extends BaseHandler {
 
     return {
       vendor: {
-        vendor_id: vendor.vendor_info_id,
+        vendor_id: vendor.user_id,
         business_name: vendor.business_name,
         description: vendor.business_description,
         logo_url: vendor.logo_url,
@@ -2403,15 +2403,15 @@ export class VendorsHandler extends BaseHandler {
     
     // Get vendor ID from vendor_info table
     const [vendor] = await this.vendorService.raw(
-      'SELECT vendor_info_id FROM vendor_info WHERE user_id = ?',
+      'SELECT user_id FROM vendor_info WHERE user_id = ?',
       [user.userId]
     );
-    
+
     if (!vendor) {
       throw new ApiError('Vendor account not found', 404);
     }
-    
-    return vendor.vendor_info_id;
+
+    return vendor.user_id;
   }
 
   /**
@@ -2461,8 +2461,8 @@ export class VendorsHandler extends BaseHandler {
     }
 
     const [rows] = await this.vendorService.raw(
-      `SELECT vendor_info_id, approval_status, is_approved, is_verified 
-       FROM vendor_info 
+      `SELECT user_id, approval_status, is_approved, is_verified
+       FROM vendor_info
        WHERE user_id = ?`,
       [id]
     );
@@ -2492,7 +2492,7 @@ export class VendorsHandler extends BaseHandler {
 
     return {
       isValid: true,
-      vendorId: vendor.vendor_info_id
+      vendorId: vendor.user_id
     };
   }
 
@@ -2515,7 +2515,7 @@ export class VendorsHandler extends BaseHandler {
     // Store file metadata
     await this.vendorService.raw(
       `INSERT INTO vendor_files (
-        vendor_info_id, file_id, original_name, category, upload_type,
+        vendor_id, file_id, original_name, category, upload_type,
         file_size, file_format, file_hash, file_path,
         width, height, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
@@ -2554,7 +2554,7 @@ export class VendorsHandler extends BaseHandler {
              vf.file_size, vf.width, vf.height, vf.created_at,
              vf.upload_type, vf.file_format
       FROM vendor_files vf
-      WHERE vf.vendor_info_id = ? AND vf.deleted_at IS NULL
+      WHERE vf.vendor_id = ? AND vf.deleted_at IS NULL
     `;
     const params = [vendorId];
 
@@ -2603,8 +2603,8 @@ export class VendorsHandler extends BaseHandler {
     
     const [rows] = await this.vendorService.raw(`
       SELECT category, upload_type, COUNT(*) as file_count, SUM(file_size) as total_size
-      FROM vendor_files 
-      WHERE vendor_info_id = ? AND deleted_at IS NULL
+      FROM vendor_files
+      WHERE vendor_id = ? AND deleted_at IS NULL
       GROUP BY category, upload_type
     `, [vendorId]);
 
@@ -2658,7 +2658,7 @@ export class VendorsHandler extends BaseHandler {
              file_size, width, height, created_at,
              upload_type, file_format
       FROM vendor_files
-      WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
+      WHERE vendor_id = ? AND file_id = ? AND deleted_at IS NULL
     `, [vendorId, fileId]);
 
     if (rows.length === 0) {
@@ -2696,7 +2696,7 @@ export class VendorsHandler extends BaseHandler {
     const [rows] = await this.vendorService.raw(`
       SELECT file_id, original_name 
       FROM vendor_files 
-      WHERE vendor_info_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
+      WHERE vendor_id = ? AND category = ? AND file_hash = ? AND deleted_at IS NULL
       LIMIT 1
     `, [vendorId, data.category, data.fileHash]);
 
@@ -2727,7 +2727,7 @@ export class VendorsHandler extends BaseHandler {
     // Get file info
     const [rows] = await pool.execute(`
       SELECT file_path, category FROM vendor_files 
-      WHERE vendor_info_id = ? AND file_id = ? AND deleted_at IS NULL
+      WHERE vendor_id = ? AND file_id = ? AND deleted_at IS NULL
     `, [vendorId, fileId]);
 
     const files = rows as any[];
@@ -2777,7 +2777,7 @@ export class VendorsHandler extends BaseHandler {
           p.sku as product_sku
         FROM product_approval_requests par
         LEFT JOIN users u ON par.requested_by = u.user_id
-        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.user_id
         LEFT JOIN products p ON par.product_id = p.product_id
         WHERE par.status = ? AND par.vendor_id = ?
         ORDER BY par.created_at DESC
@@ -2811,7 +2811,7 @@ export class VendorsHandler extends BaseHandler {
           p.sku as product_sku
         FROM product_approval_requests par
         LEFT JOIN users u ON par.requested_by = u.user_id
-        LEFT JOIN vendor_info v ON par.vendor_id = v.vendor_info_id
+        LEFT JOIN vendor_info v ON par.vendor_id = v.user_id
         LEFT JOIN products p ON par.product_id = p.product_id
         WHERE par.id = ? AND par.vendor_id = ?`,
         [parseInt(id), vendorId]
