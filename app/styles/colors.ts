@@ -10,6 +10,13 @@ export const colors = {
     dark: 'var(--primary-dark)',
   },
 
+  // Accent Colors - Yellow (for CTAs and highlights)
+  accent: {
+    yellow: 'var(--accent-yellow)',
+    yellowHover: 'var(--accent-yellow-hover)',
+    gold: 'var(--accent-gold)',
+  },
+
   // Text Colors
   text: {
     primary: 'var(--text-primary)',

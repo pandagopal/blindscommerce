@@ -488,10 +488,8 @@ export class SalesHandler extends BaseHandler {
       updates.push('notes = ?');
       params.push(notes);
     }
-    if (tracking_number !== undefined) {
-      updates.push('tracking_number = ?');
-      params.push(tracking_number);
-    }
+    // Note: tracking_number is stored in shipping_labels table, not orders
+    // If tracking_number is provided, we should update or insert into shipping_labels
 
     if (updates.length === 0) {
       throw new ApiError('No fields to update', 400);

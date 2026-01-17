@@ -132,14 +132,14 @@ export default function HeroSection() {
                         
                         {/* CTA Buttons */}
                         <div className="flex flex-wrap gap-4">
-                          <Link 
+                          <Link
                             href={slide.cta.primary.href}
-                            className="inline-flex items-center gap-2 bg-primary-red hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
+                            className="inline-flex items-center gap-2 bg-accent-yellow hover:bg-yellow-400 text-gray-900 px-8 py-4 rounded-lg font-bold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
                           >
                             {slide.cta.primary.text}
                             <ChevronRight className="w-5 h-5" />
                           </Link>
-                          <Link 
+                          <Link
                             href={slide.cta.secondary.href}
                             className="inline-flex items-center gap-2 bg-white/90 backdrop-blur hover:bg-white text-gray-900 px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-xl hover:shadow-2xl transform hover:-translate-y-0.5"
                           >
@@ -159,12 +159,12 @@ export default function HeroSection() {
       </div>
 
       {/* Features Bar */}
-      <div className="bg-gray-900 text-white py-4">
+      <div className="bg-primary-red text-white py-4">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-8 text-sm md:text-base">
             {features.map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
-                {feature.icon}
+                <span className="text-accent-yellow">{feature.icon}</span>
                 <span>{feature.text}</span>
               </div>
             ))}
@@ -184,7 +184,7 @@ export default function HeroSection() {
         
         .hero-swiper .swiper-pagination-bullet-active {
           opacity: 1;
-          background: var(--primary-red);
+          background: var(--accent-yellow);
           transform: scale(1.2);
         }
         

@@ -4,9 +4,9 @@ import SocialMediaLinks from "./social/SocialMediaLinks";
 
 const Footer = () => {
   return (
-    <footer className="bg-footer-bg text-white" role="contentinfo">
-      {/* Top accent bar with brand color */}
-      <div className="h-1 bg-gradient-to-r from-primary-red via-primary-red-dark to-primary-red" />
+    <footer className="bg-primary-red text-white" role="contentinfo">
+      {/* Top accent bar with yellow accent */}
+      <div className="h-1 bg-accent-yellow" />
 
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
@@ -21,14 +21,14 @@ const Footer = () => {
                 className="drop-shadow-[0_0_1px_rgba(255,255,255,0.8)]"
               />
             </div>
-            <p className="text-gray-300 leading-relaxed">
+            <p className="text-white/80 leading-relaxed">
               The best destination for all your window treatment needs. Quality
               custom blinds, shades, and shutters at great prices.
             </p>
             <SocialMediaLinks
               position="footer"
               size="medium"
-              className="text-gray-300 mt-4"
+              className="text-white/80 mt-4"
             />
           </div>
 
@@ -36,13 +36,13 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-5 text-white relative inline-block">
               Products
-              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-primary-red rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-yellow rounded-full" />
             </h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   href="/products?category=faux-wood-blinds"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Faux Wood Blinds
                 </Link>
@@ -50,7 +50,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=wood-blinds"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Wood Blinds
                 </Link>
@@ -58,7 +58,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=cellular-shades"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Cellular Shades
                 </Link>
@@ -66,7 +66,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=roller-shades"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Roller Shades
                 </Link>
@@ -74,7 +74,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/products?category=roman-shades"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Roman Shades
                 </Link>
@@ -86,13 +86,13 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-5 text-white relative inline-block">
               Customer Service
-              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-primary-red rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-yellow rounded-full" />
             </h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   href="/help"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Help Center
                 </Link>
@@ -100,7 +100,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/measure-install"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Measurement & Installation
                 </Link>
@@ -108,7 +108,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/returns"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Returns & Warranty
                 </Link>
@@ -116,7 +116,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/contact"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Contact Us
                 </Link>
@@ -124,7 +124,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/guides"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Guides & Tutorials
                 </Link>
@@ -136,13 +136,13 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-5 text-white relative inline-block">
               About
-              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-primary-red rounded-full" />
+              <span className="absolute -bottom-1 left-0 w-8 h-0.5 bg-accent-yellow rounded-full" />
             </h3>
             <ul className="space-y-3">
               <li>
                 <Link
                   href="/about"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   About Us
                 </Link>
@@ -150,7 +150,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/vendors"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   For Vendors
                 </Link>
@@ -158,7 +158,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/careers"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Careers
                 </Link>
@@ -166,7 +166,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/wiki"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Wiki
                 </Link>
@@ -174,7 +174,7 @@ const Footer = () => {
               <li>
                 <Link
                   href="/privacy"
-                  className="text-gray-300 hover:text-primary-red transition-colors duration-200 focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                  className="text-white/80 hover:text-accent-yellow transition-colors duration-200 focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
                 >
                   Privacy Policy
                 </Link>
@@ -184,27 +184,27 @@ const Footer = () => {
         </div>
 
         {/* Bottom section with copyright and additional links */}
-        <div className="mt-12 pt-8 border-t border-white/10">
+        <div className="mt-12 pt-8 border-t border-white/20">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-400 text-sm">
+            <p className="text-white/60 text-sm">
               &copy; {new Date().getFullYear()} Smart Blinds™. All rights reserved.
             </p>
             <div className="flex items-center gap-6 text-sm">
               <Link
                 href="/privacy"
-                className="text-gray-400 hover:text-primary-red transition-colors focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                className="text-white/60 hover:text-accent-yellow transition-colors focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
               >
                 Privacy Policy
               </Link>
               <Link
                 href="/terms"
-                className="text-gray-400 hover:text-primary-red transition-colors focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                className="text-white/60 hover:text-accent-yellow transition-colors focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
               >
                 Terms of Service
               </Link>
               <Link
                 href="/accessibility"
-                className="text-gray-400 hover:text-primary-red transition-colors focus:outline-none focus-visible:text-primary-red focus-visible:underline"
+                className="text-white/60 hover:text-accent-yellow transition-colors focus:outline-none focus-visible:text-accent-yellow focus-visible:underline"
               >
                 Accessibility
               </Link>

@@ -592,22 +592,22 @@ const Navbar = () => {
     </header>
     
     {/* Secondary navigation bar */}
-    <div className="bg-gray-50 border-b border-gray-200 hidden lg:block">
+    <div className="bg-primary-red hidden lg:block">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-center space-x-8 py-3 text-sm">
-          <Link href="/products" className="text-black hover:text-primary-red font-medium">
+          <Link href="/products" className="text-white hover:text-accent-yellow font-medium transition-colors">
             Shop by Room
           </Link>
-          <Link href="/products?sale=true" className="text-red-600 hover:text-red-700 font-bold">
+          <Link href="/products?sale=true" className="bg-accent-yellow text-gray-900 px-3 py-1 rounded-full font-bold hover:bg-yellow-300 transition-colors">
             Sale - Up to 50% Off
           </Link>
-          <Link href="/samples" className="text-black hover:text-primary-red font-medium">
+          <Link href="/samples" className="text-white hover:text-accent-yellow font-medium transition-colors">
             Free Samples
           </Link>
-          <Link href="/inspiration" className="text-black hover:text-primary-red font-medium">
+          <Link href="/inspiration" className="text-white hover:text-accent-yellow font-medium transition-colors">
             Design Ideas
           </Link>
-          <Link href="/commercial" className="text-black hover:text-primary-red font-medium">
+          <Link href="/commercial" className="text-white hover:text-accent-yellow font-medium transition-colors">
             Commercial
           </Link>
         </div>

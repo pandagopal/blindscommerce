@@ -17,35 +17,40 @@
 
 @layer base {
   :root {
-    /* Smart Blinds Hub Color Palette */
+    /* Smart Blinds Hub Color Palette - RED THEME with YELLOW ACCENTS */
     /* Base colors */
     --bg-default: #FFFFFF;
     --text-default: #2e2f32;
 
-    /* Primary colors - Brand Red */
+    /* Primary colors - Brand Red (single consistent shade) */
     --primary-red: #da0530;
-    --primary-dark: #a00424;
+    --primary-dark: #b8042a;
 
-    /* Accent color - Yellow */
+    /* Accent color - Yellow (prominent for CTAs and highlights) */
     --accent-yellow: #ffc220;
+    --accent-yellow-hover: #e6af1d;
+    --accent-gold: #d4a017;
 
     /* Text colors - WCAG AA compliant (4.5:1 contrast ratio minimum) */
     --text-primary: #1a1b1e;        /* Darker for better contrast - 12.6:1 on white */
-    --text-secondary: #4a4b4f;      /* Darker gray - 7.2:1 on white (was #6c6e73) */
+    --text-secondary: #4a4b4f;      /* Darker gray - 7.2:1 on white */
     --text-muted: #636466;          /* For less important text - 5.1:1 on white */
     --text-on-primary: #ffffff;     /* White text on primary red */
     --text-on-dark: #f5f5f5;        /* Light text on dark backgrounds */
+    --text-on-yellow: #1a1b1e;      /* Dark text on yellow buttons */
 
-    /* Background colors */
+    /* Background colors - Red theme */
     --bg-main: #FFFFFF;
     --bg-white: #FFFFFF;
-    --bg-light-gray: #f2f2f2;
-    --bg-footer: #030c16;
-    --bg-header: #f5d5d5;
+    --bg-light: #fff8f8;            /* Very light red tint */
+    --bg-light-gray: #f8f8f8;
+    --bg-footer: #da0530;           /* Red footer */
+    --bg-header: #da0530;           /* Red header */
+    --bg-header-top: #b8042a;       /* Darker red for top bar */
 
     /* Border colors */
     --border-light: #e6e6e6;
-    --border-main: #c4c4c4;
+    --border-main: #d4d4d4;
 
     /* Status colors */
     --status-success: #46b450;
@@ -54,18 +59,18 @@
     --status-info: #da0530;
 
     /* Hover states */
-    --hover-primary: #a00424;
-    --hover-gray: #f7f7f7;
+    --hover-primary: #b8042a;
+    --hover-gray: #f5f5f5;
 
     /* Component radius */
     --radius: 0.5rem;
 
     /* Chart colors - Brand theme */
     --chart-1: 347 97% 43%;   /* Brand red #da0530 */
-    --chart-2: 48 100% 56%;   /* Yellow */
+    --chart-2: 45 100% 56%;   /* Yellow */
     --chart-3: 347 97% 38%;   /* Dark red */
-    --chart-4: 0 0% 18%;      /* Dark gray */
-    --chart-5: 0 0% 95%;      /* Light gray */
+    --chart-4: 347 97% 25%;   /* Darker red */
+    --chart-5: 45 100% 65%;   /* Light yellow */
 
     /* Shadcn UI Variables - Light Mode */
     --background: 0 0% 100%;
@@ -76,12 +81,12 @@
     --popover-foreground: 0 0% 18%;
     --primary: 347 97% 43%;   /* Brand red #da0530 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 95%;
+    --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 18%;
-    --muted: 0 0% 95%;
+    --muted: 0 0% 96%;
     --muted-foreground: 0 0% 42%;
-    --accent: 48 100% 56%;    /* Yellow #ffc220 */
-    --accent-foreground: 0 0% 18%;
+    --accent: 45 100% 56%;    /* Yellow #ffc220 */
+    --accent-foreground: 0 0% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 90%;
@@ -206,6 +211,22 @@
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  /* Yellow Accent CTA - Prominent yellow button for important actions */
+  .btn-accent {
+    @apply font-semibold px-6 py-3 rounded-lg;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply transition-all duration-200;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    background-color: var(--accent-yellow);
+    color: var(--text-on-yellow);
+  }
+  .btn-accent:hover {
+    background-color: var(--accent-yellow-hover);
+  }
+  .btn-accent:focus-visible {
+    --tw-ring-color: var(--accent-yellow);
+  }
+
   /* Secondary CTA - Outlined with brand red */
   .btn-secondary {
     @apply bg-white text-primary-red font-semibold px-6 py-3 rounded-lg;
@@ -230,6 +251,17 @@
     @apply hover:underline hover:text-primary-dark;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-red focus-visible:ring-offset-2;
     @apply transition-colors duration-200;
+  }
+
+  /* Yellow accent utilities */
+  .bg-accent-yellow {
+    background-color: var(--accent-yellow);
+  }
+  .text-accent-yellow {
+    color: var(--accent-yellow);
+  }
+  .border-accent-yellow {
+    border-color: var(--accent-yellow);
   }
 
   /* Swiper customization */

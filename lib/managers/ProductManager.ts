@@ -255,7 +255,7 @@ export class ProductManager {
     }
 
     // Insert all related data
-    await this.insertProductRelations(conn, productId, data);
+    await this.insertProductRelations(conn, productId, data, vendorId);
 
     return productId;
   }
@@ -310,7 +310,7 @@ export class ProductManager {
 
     // Delete and re-insert all related data
     await this.deleteProductRelations(conn, productId);
-    await this.insertProductRelations(conn, productId, data);
+    await this.insertProductRelations(conn, productId, data, vendorId);
   }
 
   /**
@@ -333,7 +333,8 @@ export class ProductManager {
   private async insertProductRelations(
     conn: PoolConnection,
     productId: number,
-    data: ProductData
+    data: ProductData,
+    vendorId?: string
   ): Promise<void> {
     // Insert categories
     if (data.categories && Array.isArray(data.categories)) {
@@ -380,21 +381,55 @@ export class ProductManager {
       await this.insertProductOptions(conn, productId, data.options);
     }
 
-    // Insert images
+    // Handle images - use upsert logic to avoid duplicates and handle removals
     if (data.images && Array.isArray(data.images)) {
+      // Get all current image URLs from incoming data
+      const incomingImageUrls = data.images
+        .map((img: any) => img.url || img.image_url)
+        .filter((url: string) => url);
+
+      // Delete images that are no longer in the incoming data
+      if (incomingImageUrls.length > 0) {
+        const placeholders = incomingImageUrls.map(() => '?').join(',');
+        await conn.execute(
+          `DELETE FROM product_images WHERE product_id = ? AND image_url NOT IN (${placeholders})`,
+          [productId, ...incomingImageUrls]
+        );
+      }
+
+      // Upsert each image
       for (let i = 0; i < data.images.length; i++) {
         const image = data.images[i];
-        await conn.execute(
-          `INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
-           VALUES (?, ?, ?, ?, ?)`,
-          [productId, image.url, image.alt || '', image.isPrimary ? 1 : 0, i]
-        );
+        const imageUrl = image.url || image.image_url;
+
+        if (!imageUrl) continue;
+
+        // Check if this image already exists for this product
+        const [existing] = await conn.execute(
+          'SELECT image_id FROM product_images WHERE product_id = ? AND image_url = ?',
+          [productId, imageUrl]
+        ) as any[];
+
+        if (existing && existing.length > 0) {
+          // Image exists, just update the display order and primary flag if needed
+          await conn.execute(
+            `UPDATE product_images SET is_primary = ?, display_order = ?, alt_text = ? WHERE image_id = ?`,
+            [image.isPrimary || image.is_primary ? 1 : 0, i, image.alt || image.alt_text || '', existing[0].image_id]
+          );
+        } else {
+          // New image, insert it
+          await conn.execute(
+            `INSERT INTO product_images (product_id, image_url, alt_text, is_primary, display_order)
+             VALUES (?, ?, ?, ?, ?)`,
+            [productId, imageUrl, image.alt || image.alt_text || '', image.isPrimary || image.is_primary ? 1 : 0, i]
+          );
+        }
       }
     }
 
     // Insert fabric
     if (data.fabric?.fabrics && Array.isArray(data.fabric.fabrics)) {
-      await this.insertProductFabric(conn, productId, data.fabric);
+      await this.insertProductFabric(conn, productId, data.fabric, vendorId);
     }
 
     // Insert features
@@ -410,6 +445,7 @@ export class ProductManager {
 
   /**
    * Delete all product relations
+   * Note: product_images are NOT deleted here - they are handled via upsert in insertProductRelations
    */
   private async deleteProductRelations(
     conn: PoolConnection,
@@ -419,7 +455,7 @@ export class ProductManager {
     await conn.execute('DELETE FROM product_pricing_matrix WHERE product_id = ?', [productId]);
     await conn.execute('DELETE FROM product_dimensions WHERE product_id = ?', [productId]);
     await conn.execute('DELETE FROM product_specifications WHERE product_id = ?', [productId]);
-    await conn.execute('DELETE FROM product_images WHERE product_id = ?', [productId]);
+    // Note: product_images are handled via upsert, not delete/re-insert
     await conn.execute('DELETE FROM product_fabric_options WHERE product_id = ?', [productId]);
     await conn.execute('DELETE FROM product_features WHERE product_id = ?', [productId]);
     await conn.execute('DELETE FROM product_rooms WHERE product_id = ?', [productId]);
@@ -513,23 +549,65 @@ export class ProductManager {
   private async insertProductFabric(
     conn: PoolConnection,
     productId: number,
-    fabric: any
+    fabric: any,
+    defaultVendorId?: string
   ): Promise<void> {
     for (const f of fabric.fabrics) {
+      // Get vendor_id from fabric data, or use the default vendorId passed in
+      // If no vendor ID is available, try to get it from the product itself
+      let vendorId = f.vendorId || f.vendor_id || defaultVendorId;
+
+      if (!vendorId) {
+        // Try to get vendor_id from vendor_products table
+        const [vendorProduct] = await conn.execute(
+          'SELECT vendor_id FROM vendor_products WHERE product_id = ? LIMIT 1',
+          [productId]
+        ) as any[];
+        if (vendorProduct && vendorProduct[0]) {
+          vendorId = vendorProduct[0].vendor_id;
+        }
+      }
+
+      // If still no vendor_id, try to get from products table
+      if (!vendorId) {
+        const [product] = await conn.execute(
+          'SELECT vendor_id FROM products WHERE product_id = ?',
+          [productId]
+        ) as any[];
+        if (product && product[0] && product[0].vendor_id) {
+          vendorId = product[0].vendor_id;
+        }
+      }
+
+      // If we still don't have a valid vendor_id, skip this fabric
+      if (!vendorId) {
+        console.warn(`Skipping fabric "${f.name || f.fabric_name}" - no valid vendor_id found`);
+        continue;
+      }
+
       const [result] = await conn.execute(
-        `INSERT INTO product_fabric_options (product_id, fabric_name, fabric_code, material_type,
-         price_adjustment, is_available) VALUES (?, ?, ?, ?, ?, ?)`,
-        [productId, f.name, f.id, f.material || 'fabric', f.price || 0, 1]
+        `INSERT INTO product_fabric_options (product_id, vendor_id, fabric_name, fabric_type,
+         is_enabled, description, texture_url, opacity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          productId,
+          vendorId,
+          f.name || f.fabric_name || '',
+          f.fabricType || f.fabric_type || 'colored',
+          1,
+          f.description || '',
+          f.image?.url || f.texture_url || null,
+          f.opacity || 1.0
+        ]
       ) as any;
 
       const fabricOptionId = result.insertId;
 
-      // Insert fabric image if exists
+      // Insert fabric image if exists (for separate image table)
       if (f.image?.url) {
         await conn.execute(
-          `INSERT INTO product_fabric_images (fabric_option_id, image_url, image_type, display_order)
-           VALUES (?, ?, ?, ?)`,
-          [fabricOptionId, f.image.url, f.image.type || 'image/jpeg', 1]
+          `INSERT INTO product_fabric_images (fabric_option_id, product_id, image_url, image_type, display_order)
+           VALUES (?, ?, ?, ?, ?)`,
+          [fabricOptionId, productId, f.image.url, f.image.type || 'image/jpeg', 1]
         );
       }
     }
