@@ -21,9 +21,9 @@ export default function CordlessBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-teal-700 to-teal-900 text-white py-20">
+      <section className="bg-gradient-to-br from-teal-700 to-teal-900 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-3xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Safety First
             </span>

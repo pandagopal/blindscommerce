@@ -69,7 +69,7 @@ export default function FauxWoodBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 text-white py-20 lg:py-28">
+      <section className="relative bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 text-white py-10 lg:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">

@@ -312,7 +312,7 @@ const PaymentMethodsContent: React.FC = () => {
                   name="nickname"
                   type="text"
                   placeholder="e.g., Personal Card, Business Account"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
               <div className="flex items-center">
@@ -320,7 +320,7 @@ const PaymentMethodsContent: React.FC = () => {
                   name="isDefault"
                   type="checkbox"
                   id="isDefault"
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isDefault" className="ml-2 block text-sm text-gray-700">
                   Set as default payment method
@@ -362,7 +362,7 @@ const PaymentMethodsContent: React.FC = () => {
                     name="billingName"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div>
@@ -372,7 +372,7 @@ const PaymentMethodsContent: React.FC = () => {
                   <input
                     name="billingEmail"
                     type="email"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -383,7 +383,7 @@ const PaymentMethodsContent: React.FC = () => {
                     name="billingLine1"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -393,7 +393,7 @@ const PaymentMethodsContent: React.FC = () => {
                   <input
                     name="billingLine2"
                     type="text"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div>
@@ -404,7 +404,7 @@ const PaymentMethodsContent: React.FC = () => {
                     name="billingCity"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div>
@@ -415,7 +415,7 @@ const PaymentMethodsContent: React.FC = () => {
                     name="billingState"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
                 <div>
@@ -426,7 +426,7 @@ const PaymentMethodsContent: React.FC = () => {
                     name="billingPostalCode"
                     type="text"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
               </div>
@@ -469,7 +469,7 @@ const PaymentMethodsContent: React.FC = () => {
             <div
               key={method.id}
               className={`bg-white border rounded-lg p-6 ${
-                method.isDefault ? 'ring-2 ring-blue-500 border-blue-200' : ''
+                method.isDefault ? 'ring-2 ring-red-500 border-red-200' : ''
               }`}
             >
               <div className="flex justify-between items-start">
@@ -489,7 +489,7 @@ const PaymentMethodsContent: React.FC = () => {
                       </>
                     )}
                     {method.isDefault && (
-                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded">
+                      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-1 rounded">
                         Default
                       </span>
                     )}
@@ -516,7 +516,7 @@ const PaymentMethodsContent: React.FC = () => {
                     <button
                       onClick={() => handleSetDefault(method.id)}
                       disabled={processingAction === `default-${method.id}`}
-                      className="text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50"
+                      className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50"
                     >
                       {processingAction === `default-${method.id}` ? 'Setting...' : 'Set Default'}
                     </button>

@@ -85,8 +85,8 @@ export default function AppliedDiscountsList({
             className="flex items-center justify-between p-3 bg-white rounded-lg border border-green-200"
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-full">
-                <Tag className="w-4 h-4 text-blue-600" />
+              <div className="p-2 bg-red-100 rounded-full">
+                <Tag className="w-4 h-4 text-red-600" />
               </div>
               <div>
                 <div className="font-medium text-gray-900">{coupon.name}</div>

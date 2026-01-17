@@ -188,7 +188,7 @@ export default function VendorBulkProductsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'text-green-600 bg-green-50';
-      case 'processing': return 'text-blue-600 bg-blue-50';
+      case 'processing': return 'text-red-600 bg-red-50';
       case 'failed': return 'text-red-600 bg-red-50';
       default: return 'text-yellow-600 bg-yellow-50';
     }
@@ -237,7 +237,7 @@ export default function VendorBulkProductsPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Products</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalProducts}</p>
@@ -315,18 +315,18 @@ export default function VendorBulkProductsPage() {
           </div>
 
           {/* Template Download */}
-          <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
             <div className="flex items-start">
-              <FileText className="h-5 w-5 text-blue-600 mt-0.5 mr-3" />
+              <FileText className="h-5 w-5 text-red-600 mt-0.5 mr-3" />
               <div className="flex-1">
-                <h3 className="font-medium text-blue-900">Download Template</h3>
-                <p className="text-sm text-blue-700 mt-1">
+                <h3 className="font-medium text-red-900">Download Template</h3>
+                <p className="text-sm text-red-700 mt-1">
                   Start with our CSV template to ensure proper formatting
                 </p>
                 <button
                   onClick={downloadTemplate}
                   disabled={loading}
-                  className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="mt-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 disabled:opacity-50"
                 >
                   {loading ? 'Downloading...' : 'Download Template'}
                 </button>
@@ -561,7 +561,7 @@ export default function VendorBulkProductsPage() {
                           <div className="mt-3">
                             <div className="bg-gray-200 rounded-full h-2">
                               <div
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                className="bg-red-600 h-2 rounded-full transition-all duration-300"
                                 style={{
                                   width: `${job.total_records > 0 ? (job.processed_records / job.total_records) * 100 : 0}%`,
                                 }}

@@ -7,16 +7,16 @@ export default function MeasuringArchedWindowsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-700 to-purple-900 text-white py-16">
+      <section className="bg-gradient-to-br from-red-700 to-red-900 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <Link href="/guides" className="text-purple-200 hover:text-white mb-4 inline-block">
+            <Link href="/guides" className="text-red-200 hover:text-white mb-4 inline-block">
               ← Back to Guides
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               How to Measure Arched Windows for Blinds
             </h1>
-            <p className="text-xl text-purple-100">
+            <p className="text-xl text-red-100">
               Arched and specialty shaped windows add architectural beauty but require careful
               measuring. This guide covers all arch types and shapes.
             </p>
@@ -31,22 +31,22 @@ export default function MeasuringArchedWindowsPage() {
             <h2 className="text-2xl font-bold mb-8">Types of Arched Windows</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="w-24 h-24 mx-auto mb-4 bg-white border-2 border-purple-500 rounded-t-full"></div>
+                <div className="w-24 h-24 mx-auto mb-4 bg-white border-2 border-red-500 rounded-t-full"></div>
                 <h3 className="font-bold">Perfect Half-Circle</h3>
                 <p className="text-sm text-gray-600">Height = half of width</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="w-24 h-16 mx-auto mb-4 bg-white border-2 border-purple-500 rounded-t-full"></div>
+                <div className="w-24 h-16 mx-auto mb-4 bg-white border-2 border-red-500 rounded-t-full"></div>
                 <h3 className="font-bold">Eyebrow Arch</h3>
                 <p className="text-sm text-gray-600">Shallower curve</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="w-16 h-24 mx-auto mb-4 bg-white border-2 border-purple-500" style={{ borderTopLeftRadius: '100%' }}></div>
+                <div className="w-16 h-24 mx-auto mb-4 bg-white border-2 border-red-500" style={{ borderTopLeftRadius: '100%' }}></div>
                 <h3 className="font-bold">Quarter Circle</h3>
                 <p className="text-sm text-gray-600">Corner windows</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="w-20 h-28 mx-auto mb-4 bg-white border-2 border-purple-500" style={{ borderRadius: '50% 50% 0 0 / 80% 80% 0 0' }}></div>
+                <div className="w-20 h-28 mx-auto mb-4 bg-white border-2 border-red-500" style={{ borderRadius: '50% 50% 0 0 / 80% 80% 0 0' }}></div>
                 <h3 className="font-bold">Gothic/Pointed</h3>
                 <p className="text-sm text-gray-600">Peaked top</p>
               </div>
@@ -69,36 +69,36 @@ export default function MeasuringArchedWindowsPage() {
                   </p>
                   <div className="space-y-4">
                     <div className="flex items-start gap-3">
-                      <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                      <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">1</div>
                       <p>Measure the <strong>width</strong> at the widest point (base of the arch)</p>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                      <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
                       <p>Verify it&apos;s a perfect half-circle: height should equal half the width</p>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                      <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
                       <p>Order using just the width - manufacturer calculates the rest</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-center">
                   <div className="relative">
-                    <div className="w-40 h-20 bg-purple-100 border-2 border-purple-500 rounded-t-full"></div>
+                    <div className="w-40 h-20 bg-red-100 border-2 border-red-500 rounded-t-full"></div>
                     <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-sm font-medium">
                       <span>|</span>
-                      <span className="text-purple-700">Width</span>
+                      <span className="text-red-700">Width</span>
                       <span>|</span>
                     </div>
                     <div className="absolute top-0 -right-12 h-full flex flex-col justify-between text-sm">
                       <span>_</span>
-                      <span className="text-purple-700 -rotate-90 transform origin-center">Height</span>
+                      <span className="text-red-700 -rotate-90 transform origin-center">Height</span>
                       <span>_</span>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="mt-6 bg-purple-50 rounded-lg p-4">
+              <div className="mt-6 bg-red-50 rounded-lg p-4">
                 <p className="text-sm"><strong>Example:</strong> If your arch is 48&quot; wide, a perfect half-circle would be 24&quot; tall. Measure the actual height to confirm.</p>
               </div>
             </div>
@@ -118,28 +118,28 @@ export default function MeasuringArchedWindowsPage() {
               </p>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">1</div>
+                  <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">1</div>
                   <div>
                     <p className="font-medium">Measure the width</p>
                     <p className="text-gray-600 text-sm">At the widest point (base of arch)</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
+                  <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">2</div>
                   <div>
                     <p className="font-medium">Measure the height</p>
                     <p className="text-gray-600 text-sm">From base to highest point of curve</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
+                  <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">3</div>
                   <div>
                     <p className="font-medium">Create a template</p>
                     <p className="text-gray-600 text-sm">Trace the exact curve onto cardboard or paper</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <div className="bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">4</div>
+                  <div className="bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center font-bold text-sm shrink-0">4</div>
                   <div>
                     <p className="font-medium">Contact us with your template</p>
                     <p className="text-gray-600 text-sm">We&apos;ll help ensure a perfect custom fit</p>
@@ -167,16 +167,16 @@ export default function MeasuringArchedWindowsPage() {
                       <h4 className="font-bold text-green-700">Option 1: Treat Separately</h4>
                       <p className="text-sm text-gray-700">Cover the rectangular portion with blinds and leave the arch open or with a stationary shade. Most affordable option.</p>
                     </div>
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                      <h4 className="font-bold text-blue-700">Option 2: Full Coverage</h4>
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4">
+                      <h4 className="font-bold text-red-700">Option 2: Full Coverage</h4>
                       <p className="text-sm text-gray-700">Order matching arch shade + rectangular blind. Measure each portion separately.</p>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-center items-center">
                   <div>
-                    <div className="w-32 h-16 bg-purple-100 border-2 border-purple-500 rounded-t-full"></div>
-                    <div className="w-32 h-40 bg-blue-100 border-2 border-blue-500 border-t-0 flex items-center justify-center text-sm text-gray-600">
+                    <div className="w-32 h-16 bg-red-100 border-2 border-red-500 rounded-t-full"></div>
+                    <div className="w-32 h-40 bg-red-100 border-2 border-red-500 border-t-0 flex items-center justify-center text-sm text-gray-600">
                       Rectangle
                     </div>
                   </div>
@@ -214,12 +214,12 @@ export default function MeasuringArchedWindowsPage() {
               <div className="bg-white border rounded-xl p-6">
                 <h3 className="font-bold text-lg mb-3">Plantation Shutters</h3>
                 <p className="text-gray-600 text-sm mb-3">Elegant sunburst design for arches. Operable or stationary. Premium look.</p>
-                <span className="text-purple-600 font-medium text-sm">Premium Option</span>
+                <span className="text-red-600 font-medium text-sm">Premium Option</span>
               </div>
               <div className="bg-white border rounded-xl p-6">
                 <h3 className="font-bold text-lg mb-3">Leave Arch Open</h3>
                 <p className="text-gray-600 text-sm mb-3">Cover only the rectangular portion. Showcases architectural detail. Most affordable.</p>
-                <span className="text-blue-600 font-medium text-sm">Budget Friendly</span>
+                <span className="text-red-600 font-medium text-sm">Budget Friendly</span>
               </div>
             </div>
           </div>
@@ -278,16 +278,16 @@ export default function MeasuringArchedWindowsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 bg-purple-800 text-white">
+      <section className="py-12 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Need Help With Your Arched Windows?</h2>
-          <p className="text-purple-200 mb-6 max-w-xl mx-auto">
+          <p className="text-red-200 mb-6 max-w-xl mx-auto">
             Our experts specialize in custom solutions for specialty shaped windows. Get free advice!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-purple-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+              className="bg-white text-red-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
             >
               Free Consultation <FaArrowRight className="ml-2" />
             </Link>

@@ -298,7 +298,7 @@ export default function DeliveryScheduler({
                   }}
                   className={`p-4 border rounded-lg text-left transition-all ${
                     selectedDate === dateInfo.date
-                      ? 'border-red-500 bg-purple-50'
+                      ? 'border-red-500 bg-red-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -333,7 +333,7 @@ export default function DeliveryScheduler({
                       disabled={!slot.isAvailable}
                       className={`p-4 border rounded-lg text-left transition-all ${
                         selectedSlot === slot.slotId
-                          ? 'border-red-500 bg-purple-50'
+                          ? 'border-red-500 bg-red-50'
                           : slot.isAvailable
                           ? 'border-gray-200 hover:border-gray-300'
                           : 'border-gray-100 bg-gray-50 cursor-not-allowed'
@@ -361,7 +361,7 @@ export default function DeliveryScheduler({
                         </div>
                       </div>
                       {slot.requiresSignature && (
-                        <div className="text-xs text-blue-600 mt-2">
+                        <div className="text-xs text-red-600 mt-2">
                           Signature required
                         </div>
                       )}

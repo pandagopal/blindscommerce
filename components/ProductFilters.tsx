@@ -390,10 +390,10 @@ export default function ProductFilters({
             const sortedGroups = groupOrder.filter(g => grouped[g] && grouped[g].length > 0);
 
             return sortedGroups.map(groupName => {
-              // Determine if this group should have blue color
-              const isBlueGroup = ['Controls', 'Blinds', 'Shades'].includes(groupName);
-              const headerClass = isBlueGroup
-                ? "text-xs font-medium text-blue-600 uppercase tracking-wider mb-1"
+              // Determine if this group should have red color
+              const isRedGroup = ['Controls', 'Blinds', 'Shades'].includes(groupName);
+              const headerClass = isRedGroup
+                ? "text-xs font-medium text-red-600 uppercase tracking-wider mb-1"
                 : "text-xs font-medium text-gray-500 uppercase tracking-wider mb-1";
 
               return (

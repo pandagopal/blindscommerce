@@ -7,16 +7,16 @@ export default function MeasuringSkylightsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-sky-600 to-sky-800 text-white py-16">
+      <section className="bg-gradient-to-br from-red-600 to-red-800 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <Link href="/guides" className="text-sky-200 hover:text-white mb-4 inline-block">
+            <Link href="/guides" className="text-red-200 hover:text-white mb-4 inline-block">
               ← Back to Guides
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               How to Measure Skylights for Blinds
             </h1>
-            <p className="text-xl text-sky-100">
+            <p className="text-xl text-red-100">
               Skylights let in beautiful natural light but can also bring heat and glare.
               Learn how to measure for the perfect skylight shade.
             </p>
@@ -25,7 +25,7 @@ export default function MeasuringSkylightsPage() {
       </section>
 
       {/* Before You Start */}
-      <section className="py-12 bg-sky-50">
+      <section className="py-12 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-6">Before You Start</h2>
@@ -41,7 +41,7 @@ export default function MeasuringSkylightsPage() {
                   <li>• <strong>Andersen</strong> - Check model number</li>
                   <li>• <strong>Marvin</strong> - Custom solutions available</li>
                 </ul>
-                <p className="text-sm text-sky-700 mt-3">
+                <p className="text-sm text-red-700 mt-3">
                   If you have a model number, brand-matched blinds are often the easiest option.
                 </p>
               </div>
@@ -95,7 +95,7 @@ export default function MeasuringSkylightsPage() {
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-sky-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure the Width</h3>
                     <p className="text-gray-600 mb-3">
@@ -112,7 +112,7 @@ export default function MeasuringSkylightsPage() {
 
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-sky-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure the Height</h3>
                     <p className="text-gray-600 mb-3">
@@ -129,7 +129,7 @@ export default function MeasuringSkylightsPage() {
 
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-sky-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure Frame Depth</h3>
                     <p className="text-gray-600 mb-3">
@@ -145,7 +145,7 @@ export default function MeasuringSkylightsPage() {
 
               <div className="bg-gray-50 rounded-xl p-6">
                 <div className="flex items-start gap-4">
-                  <div className="bg-sky-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Note the Height from Floor</h3>
                     <p className="text-gray-600 mb-3">
@@ -174,19 +174,19 @@ export default function MeasuringSkylightsPage() {
                 <FaBolt className="text-4xl text-yellow-500 mx-auto mb-4" />
                 <h3 className="font-bold text-lg mb-2">Motorized</h3>
                 <p className="text-gray-600 text-sm mb-3">Remote, app, or voice controlled. Best for high skylights. Can be wired or battery powered.</p>
-                <span className="text-sky-600 font-medium text-sm">Recommended for 10ft+</span>
+                <span className="text-red-600 font-medium text-sm">Recommended for 10ft+</span>
               </div>
               <div className="bg-white rounded-xl p-6 shadow-sm text-center">
                 <FaSun className="text-4xl text-orange-500 mx-auto mb-4" />
                 <h3 className="font-bold text-lg mb-2">Solar Powered</h3>
                 <p className="text-gray-600 text-sm mb-3">No wiring needed. Built-in solar panel charges the motor. Works with most skylights.</p>
-                <span className="text-sky-600 font-medium text-sm">Easy Installation</span>
+                <span className="text-red-600 font-medium text-sm">Easy Installation</span>
               </div>
               <div className="bg-white rounded-xl p-6 shadow-sm text-center">
                 <FaRuler className="text-4xl text-gray-500 mx-auto mb-4" />
                 <h3 className="font-bold text-lg mb-2">Extension Pole</h3>
                 <p className="text-gray-600 text-sm mb-3">Manual blinds operated with a telescoping pole. Most affordable option.</p>
-                <span className="text-sky-600 font-medium text-sm">Budget Friendly</span>
+                <span className="text-red-600 font-medium text-sm">Budget Friendly</span>
               </div>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function MeasuringSkylightsPage() {
                 VELUX is the most common skylight brand. If you have a VELUX skylight, you can often
                 order blinds using just the model number - no measuring required!
               </p>
-              <div className="bg-sky-50 rounded-lg p-4 mb-4">
+              <div className="bg-red-50 rounded-lg p-4 mb-4">
                 <h4 className="font-bold mb-2">Find Your VELUX Model Number</h4>
                 <ol className="list-decimal list-inside space-y-1 text-gray-700">
                   <li>Look at the top of your skylight frame</li>
@@ -291,16 +291,16 @@ export default function MeasuringSkylightsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 bg-sky-800 text-white">
+      <section className="py-12 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to Cover Your Skylights?</h2>
-          <p className="text-sky-200 mb-6 max-w-xl mx-auto">
+          <p className="text-red-200 mb-6 max-w-xl mx-auto">
             Shop skylight blinds and shades or get expert help choosing the right solution.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?type=skylight"
-              className="bg-white text-sky-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+              className="bg-white text-red-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
             >
               Shop Skylight Blinds <FaArrowRight className="ml-2" />
             </Link>

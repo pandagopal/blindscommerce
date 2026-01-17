@@ -922,7 +922,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                           </Link>
                           <Link
                             href={`${basePath}/${product.product_id}/edit`}
-                            className="text-blue-600 hover:text-blue-900 p-1.5 hover:bg-blue-50 rounded-md transition-colors inline-flex"
+                            className="text-red-600 hover:text-red-900 p-1.5 hover:bg-red-50 rounded-md transition-colors inline-flex"
                             title="Edit Product"
                           >
                             <EditIcon className="h-6 w-6" />
@@ -1115,7 +1115,7 @@ export default function UnifiedProductPage({ userRole }: UnifiedProductPageProps
                 <h1 className="text-2xl font-bold text-gray-900">
                   {isViewMode ? 'View Product' : isEditMode ? 'Edit Product' : 'Create New Product'}
                 </h1>
-                <p className="text-blue-600">
+                <p className="text-red-600">
                   {isViewMode || isEditMode
                     ? productData.basicInfo.name
                     : 'Add a new product to your catalog'

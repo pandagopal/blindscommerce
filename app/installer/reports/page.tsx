@@ -121,7 +121,7 @@ export default function InstallerReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading reports...</p>
@@ -131,7 +131,7 @@ export default function InstallerReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -168,7 +168,7 @@ export default function InstallerReportsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <Package className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <Package className="h-8 w-8 mx-auto text-red-600 mb-2" />
               <div className="text-2xl font-bold">{reportData?.performance.completed_jobs || 0}</div>
               <div className="text-sm text-gray-600">Jobs Completed</div>
               <div className="text-xs text-green-600 mt-1">
@@ -263,7 +263,7 @@ export default function InstallerReportsPage() {
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
                       <span className="text-sm font-medium">Repeat Customers</span>
-                      <span className="font-bold text-blue-600">{reportData?.performance.repeat_customers || 0}</span>
+                      <span className="font-bold text-red-600">{reportData?.performance.repeat_customers || 0}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -363,7 +363,7 @@ export default function InstallerReportsPage() {
                     </div>
                     <div className="flex justify-between items-center p-3 bg-gray-50 rounded">
                       <span className="text-sm font-medium">Most Productive Day</span>
-                      <span className="font-bold text-blue-600">{reportData?.productivity.most_productive_day || 'N/A'}</span>
+                      <span className="font-bold text-red-600">{reportData?.productivity.most_productive_day || 'N/A'}</span>
                     </div>
                   </div>
                 </CardContent>

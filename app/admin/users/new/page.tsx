@@ -282,8 +282,8 @@ export default function NewUserPage() {
                 ))}
               </select>
               {formData.role && ROLE_HIERARCHY[formData.role as UserRole] && (
-                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-800">
                     <strong>{ROLE_HIERARCHY[formData.role as UserRole].displayName}:</strong>{' '}
                     {ROLE_HIERARCHY[formData.role as UserRole].description}
                   </p>

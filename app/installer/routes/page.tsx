@@ -125,7 +125,7 @@ export default function InstallerRoutesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading routes...</p>
@@ -135,7 +135,7 @@ export default function InstallerRoutesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -174,8 +174,8 @@ export default function InstallerRoutesPage() {
                         key={route.id}
                         className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                           selectedRoute?.id === route.id
-                            ? 'border-red-300 bg-purple-50'
-                            : 'border-gray-200 hover:border-red-200 hover:bg-primary-red-25'
+                            ? 'border-red-300 bg-red-50'
+                            : 'border-gray-200 hover:border-red-200 hover:bg-red-25'
                         }`}
                         onClick={() => setSelectedRoute(route)}
                       >
@@ -234,7 +234,7 @@ export default function InstallerRoutesPage() {
                     {selectedRoute.stops.map((stop, index) => (
                       <div key={stop.id} className="flex items-start gap-4 p-4 border rounded-lg">
                         <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-primary-red font-medium">
+                          <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-primary-red font-medium">
                             {index + 1}
                           </div>
                         </div>

@@ -72,7 +72,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
               {/* Badges container */}
               <div className="absolute top-3 left-3 flex flex-col gap-2">
                 {product.is_new && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-blue-600 text-white shadow-sm">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold bg-red-600 text-white shadow-sm">
                     New
                   </span>
                 )}

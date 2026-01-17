@@ -43,15 +43,15 @@ interface Pagination {
 }
 
 const typeConfig: Record<string, { icon: React.ReactNode; color: string }> = {
-  order_update: { icon: <Package className="w-5 h-5" />, color: 'bg-blue-100 text-blue-600' },
-  shipping: { icon: <Truck className="w-5 h-5" />, color: 'bg-purple-100 text-purple-600' },
+  order_update: { icon: <Package className="w-5 h-5" />, color: 'bg-red-100 text-red-600' },
+  shipping: { icon: <Truck className="w-5 h-5" />, color: 'bg-red-100 text-red-600' },
   delivery: { icon: <CheckCircle className="w-5 h-5" />, color: 'bg-green-100 text-green-600' },
-  promotion: { icon: <Tag className="w-5 h-5" />, color: 'bg-pink-100 text-pink-600' },
+  promotion: { icon: <Tag className="w-5 h-5" />, color: 'bg-red-100 text-red-600' },
   review_response: { icon: <Star className="w-5 h-5" />, color: 'bg-yellow-100 text-yellow-600' },
   support_update: { icon: <MessageSquare className="w-5 h-5" />, color: 'bg-orange-100 text-orange-600' },
   return_update: { icon: <RotateCcw className="w-5 h-5" />, color: 'bg-red-100 text-red-600' },
   system: { icon: <Settings className="w-5 h-5" />, color: 'bg-gray-100 text-gray-600' },
-  reminder: { icon: <Bell className="w-5 h-5" />, color: 'bg-indigo-100 text-indigo-600' },
+  reminder: { icon: <Bell className="w-5 h-5" />, color: 'bg-red-100 text-red-600' },
 };
 
 export default function NotificationsPage() {
@@ -238,7 +238,7 @@ export default function NotificationsPage() {
                 const NotificationContent = (
                   <div
                     className={`p-4 flex items-start gap-4 hover:bg-gray-50 transition-colors cursor-pointer ${
-                      !notification.is_read ? 'bg-blue-50' : ''
+                      !notification.is_read ? 'bg-red-50' : ''
                     }`}
                     onClick={() => handleNotificationClick(notification)}
                   >
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
                           {notification.title}
                         </h4>
                         {!notification.is_read && (
-                          <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+                          <div className="w-2 h-2 rounded-full bg-red-600"></div>
                         )}
                       </div>
                       <p className="text-sm text-gray-600 line-clamp-2">{notification.message}</p>

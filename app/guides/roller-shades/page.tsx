@@ -18,15 +18,15 @@ export default function RollerShadesBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-700 to-blue-900 text-white rounded-lg p-8 mb-10">
-        <div className="max-w-3xl">
+      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
+        <div className="container mx-auto">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
           </span>
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Roller Shades Buying Guide
           </h1>
-          <p className="text-lg text-blue-100 mb-4">
+          <p className="text-lg text-red-100 mb-4">
             The ultimate guide to roller shades - clean lines, modern style, and endless options.
             From solar shades to blackout, find the perfect roller shade for any room.
           </p>

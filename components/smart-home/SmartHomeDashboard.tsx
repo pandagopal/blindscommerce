@@ -233,7 +233,7 @@ const SmartHomeDashboard: React.FC = () => {
                     {overview.deviceStats?.online_devices || 0}/{overview.deviceStats?.total_devices || 0}
                   </p>
                 </div>
-                <Wifi className="h-8 w-8 text-blue-500" />
+                <Wifi className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
@@ -247,7 +247,7 @@ const SmartHomeDashboard: React.FC = () => {
                     {overview.automationStats?.active_rules || 0}
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-green-500" />
+                <Clock className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
@@ -262,7 +262,7 @@ const SmartHomeDashboard: React.FC = () => {
                   </p>
                   <p className="text-xs text-gray-500">This month</p>
                 </div>
-                <TrendingDown className="h-8 w-8 text-emerald-500" />
+                <TrendingDown className="h-8 w-8 text-red-500" />
               </div>
             </CardContent>
           </Card>
@@ -464,7 +464,7 @@ const SmartHomeDashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Projected Savings</span>
-                      <span className="text-xl font-semibold text-blue-600">
+                      <span className="text-xl font-semibold text-red-600">
                         ${energyData.projectedSavings}
                       </span>
                     </div>
@@ -491,7 +491,7 @@ const SmartHomeDashboard: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    <div className="p-3 bg-blue-50 rounded-lg">
+                    <div className="p-3 bg-red-50 rounded-lg">
                       <h4 className="font-medium text-sm">Peak Hour Automation</h4>
                       <p className="text-xs text-gray-600 mt-1">
                         Close blinds during 12-4 PM to reduce cooling costs
@@ -500,7 +500,7 @@ const SmartHomeDashboard: React.FC = () => {
                         Est. $45/month savings
                       </Badge>
                     </div>
-                    <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="p-3 bg-red-50 rounded-lg">
                       <h4 className="font-medium text-sm">Sunrise/Sunset Schedule</h4>
                       <p className="text-xs text-gray-600 mt-1">
                         Automatic adjustment based on daylight hours
@@ -529,7 +529,7 @@ const SmartHomeDashboard: React.FC = () => {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="text-center p-4 border rounded-lg">
-                    <Voice className="h-8 w-8 mx-auto mb-2 text-blue-500" />
+                    <Voice className="h-8 w-8 mx-auto mb-2 text-red-500" />
                     <h4 className="font-medium">Amazon Alexa</h4>
                     <p className="text-sm text-gray-600 mt-1">
                       "Alexa, close the living room blinds"
@@ -540,7 +540,7 @@ const SmartHomeDashboard: React.FC = () => {
                   </div>
                   
                   <div className="text-center p-4 border rounded-lg">
-                    <Mic className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                    <Mic className="h-8 w-8 mx-auto mb-2 text-red-500" />
                     <h4 className="font-medium">Google Assistant</h4>
                     <p className="text-sm text-gray-600 mt-1">
                       "Hey Google, open the bedroom blinds"

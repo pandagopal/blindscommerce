@@ -248,7 +248,7 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-gray-800 to-gray-900 text-white py-16">
+      <section className="bg-gradient-to-br from-gray-800 to-gray-900 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -275,7 +275,7 @@ export default function FAQPage() {
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   openCategory === category.id
-                    ? "bg-blue-600 text-white"
+                    ? "bg-red-600 text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -303,8 +303,8 @@ export default function FAQPage() {
                   className="w-full flex items-center justify-between p-6 text-left hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <category.icon className="text-xl text-blue-600" />
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                      <category.icon className="text-xl text-red-600" />
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-gray-900">{category.name}</h2>
@@ -355,17 +355,17 @@ export default function FAQPage() {
       </section>
 
       {/* Still Have Questions */}
-      <section className="py-16 bg-blue-900 text-white">
+      <section className="py-16 bg-red-900 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Still Have Questions?</h2>
-          <p className="text-xl text-blue-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">
             Our window treatment experts are here to help. Get personalized advice
             for your specific needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-blue-900 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              className="bg-white text-red-900 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
               Free Consultation
             </Link>
@@ -388,7 +388,7 @@ export default function FAQPage() {
               href="/guides/measuring"
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center"
             >
-              <FaRuler className="text-3xl text-blue-600 mx-auto mb-3" />
+              <FaRuler className="text-3xl text-red-600 mx-auto mb-3" />
               <h3 className="font-semibold mb-1">Measuring Guide</h3>
               <p className="text-sm text-gray-500">Step-by-step instructions</p>
             </Link>
@@ -396,7 +396,7 @@ export default function FAQPage() {
               href="/guides/installation"
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center"
             >
-              <FaTools className="text-3xl text-blue-600 mx-auto mb-3" />
+              <FaTools className="text-3xl text-red-600 mx-auto mb-3" />
               <h3 className="font-semibold mb-1">Installation Guide</h3>
               <p className="text-sm text-gray-500">DIY installation tips</p>
             </Link>
@@ -404,7 +404,7 @@ export default function FAQPage() {
               href="/guides/choosing-blinds"
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center"
             >
-              <FaHome className="text-3xl text-blue-600 mx-auto mb-3" />
+              <FaHome className="text-3xl text-red-600 mx-auto mb-3" />
               <h3 className="font-semibold mb-1">Buyer's Guide</h3>
               <p className="text-sm text-gray-500">Find the right blinds</p>
             </Link>
@@ -412,7 +412,7 @@ export default function FAQPage() {
               href="/samples"
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow text-center"
             >
-              <FaShoppingCart className="text-3xl text-blue-600 mx-auto mb-3" />
+              <FaShoppingCart className="text-3xl text-red-600 mx-auto mb-3" />
               <h3 className="font-semibold mb-1">Free Samples</h3>
               <p className="text-sm text-gray-500">Order up to 10 free</p>
             </Link>

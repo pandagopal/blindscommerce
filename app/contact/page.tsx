@@ -117,7 +117,7 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Contact Smart Blinds
@@ -126,7 +126,7 @@ export default function ContactPage() {
               We're here to help with all your window treatment needs. Get in touch with our expert team 
               for consultations, support, or any questions about our products and services.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
                 <Headphones className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Expert Support</h3>

@@ -18,13 +18,13 @@ export default function CommercialPage() {
 
   const commercialServices = [
     {
-      icon: <Building className="h-8 w-8 text-blue-600" />,
+      icon: <Building className="h-8 w-8 text-red-600" />,
       title: 'Office Buildings',
       description: 'Professional window treatments for corporate environments',
       features: ['Energy efficiency', 'Professional appearance', 'Easy maintenance', 'Motorized options']
     },
     {
-      icon: <Users className="h-8 w-8 text-green-600" />,
+      icon: <Users className="h-8 w-8 text-red-600" />,
       title: 'Healthcare Facilities',
       description: 'Specialized treatments for hospitals and medical offices',
       features: ['Antimicrobial materials', 'Easy to sanitize', 'Privacy control', 'Light management']
@@ -71,12 +71,12 @@ export default function CommercialPage() {
 
   const benefits = [
     {
-      icon: <Calculator className="h-8 w-8 text-blue-600" />,
+      icon: <Calculator className="h-8 w-8 text-red-600" />,
       title: 'Volume Pricing',
       description: 'Competitive rates for large projects and bulk orders'
     },
     {
-      icon: <Clock className="h-8 w-8 text-green-600" />,
+      icon: <Clock className="h-8 w-8 text-red-600" />,
       title: 'Project Management',
       description: 'Dedicated team to manage timelines and installation'
     },
@@ -107,32 +107,32 @@ export default function CommercialPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-16">
+      <div className="bg-gradient-to-r from-gray-900 to-red-900 text-white">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Commercial Window Solutions
             </h1>
-            <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
+            <p className="text-xl mb-8 text-red-100 max-w-2xl mx-auto">
               Transform your commercial space with professional-grade window treatments. 
               From office buildings to healthcare facilities, we deliver quality solutions 
               that enhance productivity, comfort, and energy efficiency.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
-                <Building className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Building className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Professional Installation</h3>
-                <p className="text-blue-100">Certified commercial installers and project managers</p>
+                <p className="text-red-100">Certified commercial installers and project managers</p>
               </div>
               <div className="text-center">
-                <Clock className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Clock className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">On-Time Delivery</h3>
-                <p className="text-blue-100">Meeting deadlines with efficient project management</p>
+                <p className="text-red-100">Meeting deadlines with efficient project management</p>
               </div>
               <div className="text-center">
-                <Shield className="h-12 w-12 text-blue-300 mx-auto mb-4" />
+                <Shield className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Commercial Grade</h3>
-                <p className="text-blue-100">Durable materials designed for heavy commercial use</p>
+                <p className="text-red-100">Durable materials designed for heavy commercial use</p>
               </div>
             </div>
           </div>
@@ -201,7 +201,7 @@ export default function CommercialPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
-                <span className="text-blue-800 font-medium">Motorized Solar Shades</span>
+                <span className="text-red-800 font-medium">Motorized Solar Shades</span>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Solar Shades</h3>
@@ -218,8 +218,8 @@ export default function CommercialPage() {
             </div>
 
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="h-48 bg-gradient-to-br from-green-200 to-teal-300 flex items-center justify-center">
-                <span className="text-green-800 font-medium">Cellular Shades</span>
+              <div className="h-48 bg-gradient-to-br from-red-100 to-red-200 flex items-center justify-center">
+                <span className="text-red-800 font-medium">Cellular Shades</span>
               </div>
               <div className="p-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Cellular Shades</h3>
@@ -260,7 +260,7 @@ export default function CommercialPage() {
       <div className="bg-white py-16">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-800 to-blue-800 text-white p-6">
+            <div className="bg-gradient-to-r from-gray-800 to-red-800 text-white p-6">
               <h2 className="text-2xl font-bold mb-2">Request Commercial Quote</h2>
               <p className="text-gray-200">Tell us about your project and we'll provide a detailed proposal.</p>
             </div>
@@ -278,7 +278,7 @@ export default function CommercialPage() {
                       required
                       value={formData.companyName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -289,7 +289,7 @@ export default function CommercialPage() {
                       required
                       value={formData.contactName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -300,7 +300,7 @@ export default function CommercialPage() {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -311,7 +311,7 @@ export default function CommercialPage() {
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -327,7 +327,7 @@ export default function CommercialPage() {
                       name="projectType"
                       value={formData.projectType}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     >
                       <option value="">Select project type</option>
                       {projectTypes.map(type => (
@@ -341,7 +341,7 @@ export default function CommercialPage() {
                       name="timeline"
                       value={formData.timeline}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     >
                       <option value="">Select timeline</option>
                       {timelines.map(timeline => (
@@ -355,7 +355,7 @@ export default function CommercialPage() {
                       name="budget"
                       value={formData.budget}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     >
                       <option value="">Select budget range</option>
                       {budgetRanges.map(range => (
@@ -375,7 +375,7 @@ export default function CommercialPage() {
                   value={formData.description}
                   onChange={handleInputChange}
                   placeholder="Please describe your project requirements, number of windows, specific needs, etc."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 />
               </div>
 
@@ -383,14 +383,14 @@ export default function CommercialPage() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+                  className="flex-1 bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
                 >
                   <FileText className="h-5 w-5 mr-2" />
                   Request Quote
                 </button>
                 <a
                   href="tel:+1-316-530-2635"
-                  className="flex items-center justify-center border border-blue-600 text-blue-600 py-3 px-6 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                  className="flex items-center justify-center border border-red-600 text-red-600 py-3 px-6 rounded-lg font-semibold hover:bg-red-50 transition-colors"
                 >
                   <Phone className="h-5 w-5 mr-2" />
                   Call (316) 530-2635
@@ -409,22 +409,22 @@ export default function CommercialPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+              <div className="bg-red-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Consultation</h3>
               <p className="text-gray-600">Site visit and needs assessment</p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+              <div className="bg-red-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Proposal</h3>
               <p className="text-gray-600">Detailed quote and specifications</p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+              <div className="bg-red-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Manufacturing</h3>
               <p className="text-gray-600">Custom production and quality control</p>
             </div>
             <div className="text-center">
-              <div className="bg-blue-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
+              <div className="bg-red-600 text-white rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">Installation</h3>
               <p className="text-gray-600">Professional installation and testing</p>
             </div>
@@ -433,7 +433,7 @@ export default function CommercialPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-gray-800 to-blue-800 text-white py-16">
+      <div className="bg-gradient-to-r from-gray-800 to-red-800 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Enhance Your Commercial Space?

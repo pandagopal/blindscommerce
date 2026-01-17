@@ -213,9 +213,9 @@ export default function Options({ data, onChange, isReadOnly = false }: OptionsP
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-medium text-blue-800 mb-2">📏 Measurement Precision</h4>
-              <p className="text-sm text-blue-700">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <h4 className="font-medium text-red-800 mb-2">📏 Measurement Precision</h4>
+              <p className="text-sm text-red-700">
                 All measurements use industry-standard <strong>1/8" (0.125") increments</strong> for precise fitting.
                 Customers will select measurements in eighths: 24", 24 1/8", 24 1/4", 24 3/8", 24 1/2", etc.
               </p>

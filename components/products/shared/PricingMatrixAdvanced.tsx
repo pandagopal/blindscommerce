@@ -378,7 +378,7 @@ export default function PricingMatrixAdvanced({
                               type="text"
                               value={currentPrice}
                               onChange={(e) => handleSystemPriceChange(systemIndex, widthRange.label, heightRange.label, e.target.value)}
-                              className="w-full text-center h-8 px-1 text-xs border-0 outline-none focus:ring-1 focus:ring-blue-400"
+                              className="w-full text-center h-8 px-1 text-xs border-0 outline-none focus:ring-1 focus:ring-red-400"
                               disabled={isReadOnly}
                               placeholder="0.00"
                               pattern="[0-9]*\.?[0-9]{0,2}"
@@ -478,11 +478,11 @@ export default function PricingMatrixAdvanced({
           </div>
         </div>
         
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm text-blue-800">
+        <div className="p-4 bg-red-50 rounded-lg">
+          <p className="text-sm text-red-800">
             <strong>Formula:</strong> Price = Rate × Area (minimum {minSquares} {squareUnit})
           </p>
-          <p className="text-sm text-blue-800 mt-1">
+          <p className="text-sm text-red-800 mt-1">
             Example: 48" × 60" = 20 sqft × ${perSquarePrice}/{squareUnit} = ${(20 * perSquarePrice).toFixed(2)}
           </p>
         </div>

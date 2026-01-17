@@ -78,23 +78,23 @@ export default function CellularShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-green-800 via-green-700 to-green-900 text-white py-20 lg:py-28">
+      <section className="relative bg-gradient-to-br from-red-800 via-red-700 to-red-900 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Most Energy Efficient
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Cellular Shades
             </h1>
-            <p className="text-xl md:text-2xl text-green-100 mb-8">
+            <p className="text-xl md:text-2xl text-red-100 mb-8">
               Honeycomb design provides superior insulation. Save up to 25% on energy
               bills while adding style to your windows.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products?category=cellular-shades"
-                className="bg-white text-green-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop Cellular Shades <FaArrowRight className="ml-2" />
               </Link>
@@ -123,15 +123,15 @@ export default function CellularShadesPage() {
             <div className="bg-white rounded-xl p-8 shadow-lg">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div>
-                  <div className="text-5xl font-bold text-green-600 mb-2">25%</div>
+                  <div className="text-5xl font-bold text-red-600 mb-2">25%</div>
                   <div className="text-gray-600">Energy Savings</div>
                 </div>
                 <div>
-                  <div className="text-5xl font-bold text-green-600 mb-2">R-5</div>
+                  <div className="text-5xl font-bold text-red-600 mb-2">R-5</div>
                   <div className="text-gray-600">Insulation Value</div>
                 </div>
                 <div>
-                  <div className="text-5xl font-bold text-green-600 mb-2">50%</div>
+                  <div className="text-5xl font-bold text-red-600 mb-2">50%</div>
                   <div className="text-gray-600">Noise Reduction</div>
                 </div>
               </div>
@@ -149,7 +149,7 @@ export default function CellularShadesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {benefits.map((benefit, index) => (
               <div key={index} className="text-center p-6">
-                <benefit.icon className="text-5xl text-green-600 mx-auto mb-4" />
+                <benefit.icon className="text-5xl text-red-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
                 <p className="text-gray-600">{benefit.description}</p>
               </div>
@@ -172,11 +172,11 @@ export default function CellularShadesPage() {
               <div
                 key={index}
                 className={`rounded-xl p-6 border-2 bg-white ${
-                  index === 1 ? "border-green-500 shadow-lg" : "border-gray-200"
+                  index === 1 ? "border-red-500 shadow-lg" : "border-gray-200"
                 }`}
               >
                 {index === 1 && (
-                  <span className="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium mb-3">
+                  <span className="inline-block bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium mb-3">
                     Best Value
                   </span>
                 )}
@@ -185,12 +185,12 @@ export default function CellularShadesPage() {
                 <div className="text-sm text-gray-500 mb-4">
                   <strong>Best for:</strong> {cell.bestFor}
                 </div>
-                <div className="text-2xl font-bold text-green-600 mb-4">
+                <div className="text-2xl font-bold text-red-600 mb-4">
                   From {cell.priceFrom}
                 </div>
                 <Link
                   href={`/products?category=cellular-shades&type=${cell.name.toLowerCase().replace(' ', '-')}`}
-                  className="block text-center bg-green-600 hover:bg-green-700 text-white py-3 rounded-lg font-semibold transition-colors"
+                  className="block text-center bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-semibold transition-colors"
                 >
                   Shop {cell.name}
                 </Link>
@@ -232,7 +232,7 @@ export default function CellularShadesPage() {
       </section>
 
       {/* Features */}
-      <section className="py-16 bg-green-900 text-white">
+      <section className="py-16 bg-red-900 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
@@ -250,7 +250,7 @@ export default function CellularShadesPage() {
                 "Lifetime warranty"
               ].map((feature, index) => (
                 <div key={index} className="flex items-center gap-3">
-                  <FaCheck className="text-green-400 flex-shrink-0" />
+                  <FaCheck className="text-red-400 flex-shrink-0" />
                   <span>{feature}</span>
                 </div>
               ))}
@@ -287,7 +287,7 @@ export default function CellularShadesPage() {
                 <h3 className="text-2xl font-bold mb-3">{item.room}</h3>
                 <p className="text-gray-600 mb-4">{item.desc}</p>
                 <div className="text-sm">
-                  <span className="font-semibold text-green-600">Recommended: </span>
+                  <span className="font-semibold text-red-600">Recommended: </span>
                   {item.recommendation}
                 </div>
               </div>
@@ -397,18 +397,18 @@ export default function CellularShadesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-gradient-to-r from-green-600 to-green-700 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Start Saving Energy Today
           </h2>
-          <p className="text-xl text-green-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
             Shop cellular shades and enjoy better comfort, lower energy bills, and beautiful windows.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?category=cellular-shades"
-              className="bg-white text-green-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
+              className="bg-white text-red-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
             >
               Shop Cellular Shades
             </Link>

@@ -50,9 +50,9 @@ export default function WoodVsFauxWoodBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 text-white py-16 lg:py-24">
+      <section className="bg-gradient-to-br from-amber-800 via-amber-700 to-amber-900 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Buying Guide
             </span>
@@ -248,7 +248,7 @@ export default function WoodVsFauxWoodBlindsPage() {
                       ? "bg-gray-200 text-gray-800"
                       : item.winner === "Real Wood"
                       ? "bg-amber-100 text-amber-800"
-                      : "bg-blue-100 text-blue-800"
+                      : "bg-red-100 text-red-800"
                   }`}>
                     {item.winner}
                   </span>

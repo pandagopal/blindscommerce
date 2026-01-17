@@ -12,17 +12,17 @@ export default function ZebraBlindsPage() {
       description: 'Transition seamlessly from full light to complete privacy by simply adjusting the alignment of the stripes.'
     },
     {
-      icon: <Moon className="h-8 w-8 text-blue-600" />,
+      icon: <Moon className="h-8 w-8 text-red-600" />,
       title: 'Day & Night Privacy',
       description: 'Solid stripes provide complete privacy when aligned, sheer stripes allow filtered light when open.'
     },
     {
-      icon: <Sparkles className="h-8 w-8 text-purple-600" />,
+      icon: <Sparkles className="h-8 w-8 text-red-600" />,
       title: 'Modern Aesthetic',
       description: 'Sleek, contemporary design that complements modern interiors. Available in 50+ colors and patterns.'
     },
     {
-      icon: <Ruler className="h-8 w-8 text-green-600" />,
+      icon: <Ruler className="h-8 w-8 text-red-600" />,
       title: 'Custom Fit',
       description: 'Made-to-measure for your exact window dimensions. Perfect fit guaranteed or we remake free.'
     }
@@ -66,8 +66,8 @@ export default function ZebraBlindsPage() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center bg-white/10 rounded-full px-4 py-2 mb-6">
               <Star className="h-4 w-4 text-yellow-400 mr-2" />
               <span className="text-sm">Most Popular Modern Blind Style</span>

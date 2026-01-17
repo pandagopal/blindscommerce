@@ -184,7 +184,7 @@ export default function AdminVendorsPage() {
           </Link>
           <Link
             href="/admin/vendors/new"
-            className="flex items-center p-2 text-white bg-purple-600 border border-primary-red rounded-md hover:bg-primary-dark"
+            className="flex items-center p-2 text-white bg-red-600 border border-primary-red rounded-md hover:bg-primary-dark"
           >
             <PlusIcon size={16} className="mr-1" />
             <span className="text-sm">Add Vendor</span>
@@ -348,7 +348,7 @@ export default function AdminVendorsPage() {
                       </Link>
                       <Link
                         href={`/admin/vendors/${vendor.id}/edit`}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className="text-red-600 hover:text-red-900 mr-3"
                       >
                         Edit
                       </Link>

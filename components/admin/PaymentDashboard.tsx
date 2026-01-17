@@ -102,11 +102,11 @@ const PaymentDashboard = () => {
 
   const getProviderColor = (provider: string) => {
     const colors = {
-      stripe: 'bg-blue-100 text-blue-800',
+      stripe: 'bg-red-100 text-red-800',
       paypal: 'bg-yellow-100 text-yellow-800',
       klarna: 'bg-pink-100 text-primary-dark',
-      afterpay: 'bg-green-100 text-green-800',
-      affirm: 'bg-purple-100 text-primary-dark'
+      afterpay: 'bg-red-100 text-red-800',
+      affirm: 'bg-red-100 text-primary-dark'
     };
     return colors[provider as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
@@ -160,8 +160,8 @@ const PaymentDashboard = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-red-100 rounded-lg">
+                <DollarSign className="w-6 h-6 text-red-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Revenue</p>
@@ -174,8 +174,8 @@ const PaymentDashboard = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Activity className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Activity className="w-6 h-6 text-red-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Total Transactions</p>
@@ -188,8 +188,8 @@ const PaymentDashboard = () => {
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-emerald-600" />
+              <div className="p-2 bg-red-100 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-red-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Success Rate</p>

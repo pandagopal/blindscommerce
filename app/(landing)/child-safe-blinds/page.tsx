@@ -7,23 +7,23 @@ export default function ChildSafeBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-pink-600 to-purple-700 text-white py-20">
+      <section className="bg-gradient-to-br from-red-600 to-red-700 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Family Safety
             </span>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Child-Safe Window Treatments
             </h1>
-            <p className="text-xl text-pink-100 mb-8">
+            <p className="text-xl text-red-100 mb-8">
               Protect your little ones with cordless and motorized blinds that eliminate
               dangerous cord hazards. Safe, stylish options for every room in your home.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products?lift=cordless"
-                className="bg-white text-purple-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop Child-Safe Blinds <FaArrowRight className="ml-2" />
               </Link>
@@ -54,9 +54,9 @@ export default function ChildSafeBlindsPage() {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Your Safe Options</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-teal-500">
-              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
-                <FaChild className="text-3xl text-teal-600" />
+            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-red-500">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <FaChild className="text-3xl text-red-600" />
               </div>
               <h3 className="text-2xl font-bold mb-3">Cordless Blinds</h3>
               <p className="text-gray-600 mb-4">
@@ -79,14 +79,14 @@ export default function ChildSafeBlindsPage() {
               </ul>
               <Link
                 href="/products?lift=cordless"
-                className="block w-full bg-teal-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-teal-700 transition-colors"
+                className="block w-full bg-red-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
               >
                 Shop Cordless
               </Link>
             </div>
-            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-purple-500">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-4">
-                <FaShieldAlt className="text-3xl text-purple-600" />
+            <div className="bg-white rounded-xl p-8 shadow-lg border-2 border-red-500">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <FaShieldAlt className="text-3xl text-red-600" />
               </div>
               <h3 className="text-2xl font-bold mb-3">Motorized Blinds</h3>
               <p className="text-gray-600 mb-4">
@@ -109,7 +109,7 @@ export default function ChildSafeBlindsPage() {
               </ul>
               <Link
                 href="/products?category=motorized"
-                className="block w-full bg-purple-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                className="block w-full bg-red-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
               >
                 Shop Motorized
               </Link>
@@ -127,38 +127,38 @@ export default function ChildSafeBlindsPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <span className="inline-block bg-pink-100 text-pink-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
+              <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
                 #1 for Nurseries
               </span>
               <h3 className="text-xl font-bold mb-2">Blackout Cellular Shades</h3>
               <p className="text-gray-600 mb-4">
                 Cordless operation + complete darkness for better sleep. Energy efficient too.
               </p>
-              <Link href="/products?category=cellular-shades&opacity=blackout&lift=cordless" className="text-pink-600 font-semibold inline-flex items-center">
+              <Link href="/products?category=cellular-shades&opacity=blackout&lift=cordless" className="text-red-600 font-semibold inline-flex items-center">
                 Shop Now <FaArrowRight className="ml-2" />
               </Link>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
+              <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
                 Easy Clean
               </span>
               <h3 className="text-xl font-bold mb-2">Cordless Faux Wood Blinds</h3>
               <p className="text-gray-600 mb-4">
                 Durable, wipeable slats. Great for messy fingers and easy maintenance.
               </p>
-              <Link href="/products?category=faux-wood-blinds&lift=cordless" className="text-blue-600 font-semibold inline-flex items-center">
+              <Link href="/products?category=faux-wood-blinds&lift=cordless" className="text-red-600 font-semibold inline-flex items-center">
                 Shop Now <FaArrowRight className="ml-2" />
               </Link>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm">
-              <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
+              <span className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium mb-3">
                 Smart Choice
               </span>
               <h3 className="text-xl font-bold mb-2">Motorized Roller Shades</h3>
               <p className="text-gray-600 mb-4">
                 Schedule to close at naptime. Control from anywhere. No reachable parts.
               </p>
-              <Link href="/products?category=roller-shades&lift=motorized" className="text-purple-600 font-semibold inline-flex items-center">
+              <Link href="/products?category=roller-shades&lift=motorized" className="text-red-600 font-semibold inline-flex items-center">
                 Shop Now <FaArrowRight className="ml-2" />
               </Link>
             </div>
@@ -169,9 +169,9 @@ export default function ChildSafeBlindsPage() {
       {/* WCMA Certification */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto bg-blue-50 rounded-xl p-8">
+          <div className="max-w-4xl mx-auto bg-red-50 rounded-xl p-8">
             <div className="flex items-start gap-6">
-              <FaCertificate className="text-5xl text-blue-600 flex-shrink-0" />
+              <FaCertificate className="text-5xl text-red-600 flex-shrink-0" />
               <div>
                 <h2 className="text-2xl font-bold mb-3">Look for WCMA "Best for Kids" Certification</h2>
                 <p className="text-gray-700 mb-4">
@@ -235,16 +235,16 @@ export default function ChildSafeBlindsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-purple-900 text-white">
+      <section className="py-16 bg-red-900 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Protect Your Family Today</h2>
-          <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">
             Every window in your home can be made safe. Free shipping on orders over $99.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?lift=cordless"
-              className="bg-white text-purple-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
+              className="bg-white text-red-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors"
             >
               Shop Cordless Blinds
             </Link>

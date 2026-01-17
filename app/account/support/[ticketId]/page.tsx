@@ -63,16 +63,16 @@ const categoryLabels: Record<string, string> = {
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   open: { label: 'Open', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="w-4 h-4" /> },
-  in_progress: { label: 'In Progress', color: 'bg-blue-100 text-blue-800', icon: <Clock className="w-4 h-4" /> },
+  in_progress: { label: 'In Progress', color: 'bg-red-100 text-red-800', icon: <Clock className="w-4 h-4" /> },
   waiting_customer: { label: 'Awaiting Your Reply', color: 'bg-orange-100 text-orange-800', icon: <HelpCircle className="w-4 h-4" /> },
-  waiting_support: { label: 'Awaiting Support', color: 'bg-purple-100 text-purple-800', icon: <Clock className="w-4 h-4" /> },
+  waiting_support: { label: 'Awaiting Support', color: 'bg-red-100 text-red-800', icon: <Clock className="w-4 h-4" /> },
   resolved: { label: 'Resolved', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-4 h-4" /> },
   closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: <CheckCircle className="w-4 h-4" /> },
 };
 
 const priorityColors: Record<string, string> = {
   low: 'bg-gray-100 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
+  medium: 'bg-red-100 text-red-700',
   high: 'bg-orange-100 text-orange-700',
   urgent: 'bg-red-100 text-red-700',
 };
@@ -366,7 +366,7 @@ export default function TicketDetailPage() {
                       className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
                         msg.is_own_message
                           ? 'bg-red-500 text-white'
-                          : 'bg-blue-500 text-white'
+                          : 'bg-red-400 text-white'
                       }`}
                     >
                       {msg.first_name?.charAt(0) || 'S'}

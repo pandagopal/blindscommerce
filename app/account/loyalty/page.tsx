@@ -296,7 +296,7 @@ const LoyaltyPage: React.FC = () => {
               onClick={() => setActiveTab(id as any)}
               className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === id
-                  ? 'border-blue-500 text-blue-600'
+                  ? 'border-red-500 text-red-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -326,7 +326,7 @@ const LoyaltyPage: React.FC = () => {
               )}
               {account.currentTier.freeShippingThreshold > 0 && (
                 <div className="flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                  <TrendingUp className="w-5 h-5 text-red-500" />
                   <span>Free shipping on orders over ${account.currentTier.freeShippingThreshold}</span>
                 </div>
               )}
@@ -356,7 +356,7 @@ const LoyaltyPage: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Available:</span>
-                  <span className="font-medium text-blue-600">{account.availablePoints.toLocaleString()}</span>
+                  <span className="font-medium text-red-600">{account.availablePoints.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Redeemed:</span>
@@ -439,7 +439,7 @@ const LoyaltyPage: React.FC = () => {
                     <p className="text-gray-600 text-sm mb-3">{reward.description}</p>
                     
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-lg font-bold text-blue-600">
+                      <span className="text-lg font-bold text-red-600">
                         {reward.pointsCost.toLocaleString()} points
                       </span>
                       <span className="text-sm text-gray-500">
@@ -458,7 +458,7 @@ const LoyaltyPage: React.FC = () => {
                       disabled={!reward.canRedeem || redeemingReward === reward.id}
                       className={`w-full py-2 px-4 rounded font-medium transition-colors ${
                         reward.canRedeem
-                          ? 'bg-blue-600 text-white hover:bg-blue-700'
+                          ? 'bg-red-600 text-white hover:bg-red-700'
                           : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }`}
                     >

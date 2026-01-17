@@ -157,11 +157,11 @@ export default function OrdersPage() {
                       order.status === 'Delivered'
                         ? 'bg-green-100 text-green-800'
                         : order.status === 'Shipped'
-                        ? 'bg-blue-100 text-blue-800'
+                        ? 'bg-red-100 text-red-800'
                         : order.status === 'Cancelled'
                         ? 'bg-red-100 text-red-800'
                         : order.status === 'Processing'
-                        ? 'bg-purple-100 text-primary-dark'
+                        ? 'bg-red-100 text-red-800'
                         : 'bg-amber-100 text-amber-800'
                     }`}>
                       {order.status}

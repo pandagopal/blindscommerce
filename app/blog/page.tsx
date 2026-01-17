@@ -43,7 +43,7 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-primary-600 text-white py-16">
+      <div className="bg-primary-600 text-white py-10">
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold mb-4">Smart Blinds Hub Blog</h1>
           <p className="text-xl text-primary-100">Tips, guides, and inspiration for your window treatments</p>

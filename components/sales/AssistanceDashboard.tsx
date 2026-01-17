@@ -252,8 +252,8 @@ export default function AssistanceDashboard() {
 
   const getSessionTypeBadge = (type: string) => {
     switch (type) {
-      case 'cart_assistance': return <Badge className="bg-blue-100 text-blue-800">Cart Help</Badge>;
-      case 'consultation': return <Badge className="bg-green-100 text-green-800">Consultation</Badge>;
+      case 'cart_assistance': return <Badge className="bg-red-100 text-red-800">Cart Help</Badge>;
+      case 'consultation': return <Badge className="bg-red-100 text-red-800">Consultation</Badge>;
       default: return <Badge className="bg-gray-100 text-gray-800">Support</Badge>;
     }
   };
@@ -349,10 +349,10 @@ export default function AssistanceDashboard() {
               maxLength={8}
               className="font-mono text-lg"
             />
-            <Button 
+            <Button
               onClick={acceptAssistanceRequest}
               disabled={isLoading || !pinInput.trim() || !status.isAvailableForAssistance}
-              className="bg-purple-600 hover:bg-primary-dark"
+              className="bg-red-600 hover:bg-primary-dark"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -97,7 +97,7 @@ export default function AIProductRecommendations({
       case 'trending':
         return <TrendingUp className="h-5 w-5 text-green-500" />;
       case 'similar':
-        return <Eye className="h-5 w-5 text-blue-500" />;
+        return <Eye className="h-5 w-5 text-red-500" />;
       case 'ai-visual':
         return <Camera className="h-5 w-5 text-orange-500" />;
       default:

@@ -194,7 +194,7 @@ export default function TaxRatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading tax rates...</p>
@@ -204,7 +204,7 @@ export default function TaxRatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -245,7 +245,7 @@ export default function TaxRatesPage() {
           <CardContent className="space-y-6">
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <div className="space-y-4">
-                <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <div className="mx-auto w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <FileText className="h-6 w-6 text-primary-red" />
                 </div>
                 <div>

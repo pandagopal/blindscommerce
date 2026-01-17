@@ -240,8 +240,8 @@ export default function AdminCategoriesPage() {
       return <ArrowUpDown className="h-4 w-4 ml-1 inline opacity-30" />;
     }
     return sortOrder === 'asc'
-      ? <ArrowUp className="h-4 w-4 ml-1 inline text-blue-600" />
-      : <ArrowDown className="h-4 w-4 ml-1 inline text-blue-600" />;
+      ? <ArrowUp className="h-4 w-4 ml-1 inline text-red-600" />
+      : <ArrowDown className="h-4 w-4 ml-1 inline text-red-600" />;
   };
 
   return (
@@ -379,7 +379,7 @@ export default function AdminCategoriesPage() {
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(category)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-red-600 hover:text-red-900"
                           title="Edit Category"
                         >
                           <Edit className="h-5 w-5" />
@@ -436,7 +436,7 @@ export default function AdminCategoriesPage() {
                       slug: generateSlug(e.target.value)
                     });
                   }}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 />
               </div>
@@ -447,7 +447,7 @@ export default function AdminCategoriesPage() {
                   type="text"
                   value={formData.slug}
                   onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   required
                 />
               </div>
@@ -457,7 +457,7 @@ export default function AdminCategoriesPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                 />
               </div>
@@ -479,7 +479,7 @@ export default function AdminCategoriesPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                     disabled={uploadingImage}
                   />
                   {uploadingImage && <p className="text-sm text-gray-500">Uploading...</p>}
@@ -495,7 +495,7 @@ export default function AdminCategoriesPage() {
                   type="number"
                   value={formData.display_order}
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
 
@@ -514,7 +514,7 @@ export default function AdminCategoriesPage() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                  className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
                 >
                   {editingCategory ? 'Update' : 'Create'} Category
                 </button>

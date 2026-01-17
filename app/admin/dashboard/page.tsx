@@ -192,12 +192,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Cache Management Section - Prominently at top */}
-      <Card className="mb-6 border-2 border-blue-200 bg-blue-50/50">
+      <Card className="mb-6 border-2 border-red-200 bg-red-50/50">
         <CardHeader>
           <div className="flex justify-between items-center">
             <div>
               <CardTitle className="flex items-center gap-2 text-xl">
-                <Database className="h-6 w-6 text-blue-600" />
+                <Database className="h-6 w-6 text-red-600" />
                 Cache Management System
               </CardTitle>
               <CardDescription className="text-base mt-1">
@@ -207,7 +207,7 @@ export default function AdminDashboard() {
             <Button
               onClick={handleRefreshCache}
               disabled={refreshingCache}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700"
               size="lg"
               variant={refreshingCache ? "secondary" : "default"}
             >
@@ -221,19 +221,19 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-sm text-gray-600">Homepage Cache</p>
-                <p className="text-lg font-semibold text-blue-600">{cacheStats.homepage?.totalEntries || 0} entries</p>
+                <p className="text-lg font-semibold text-red-600">{cacheStats.homepage?.totalEntries || 0} entries</p>
               </div>
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-sm text-gray-600">Products Cache</p>
-                <p className="text-lg font-semibold text-blue-600">{cacheStats.products?.totalEntries || 0} entries</p>
+                <p className="text-lg font-semibold text-red-600">{cacheStats.products?.totalEntries || 0} entries</p>
               </div>
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-sm text-gray-600">Pricing Cache</p>
-                <p className="text-lg font-semibold text-blue-600">{cacheStats.pricing?.totalEntries || 0} entries</p>
+                <p className="text-lg font-semibold text-red-600">{cacheStats.pricing?.totalEntries || 0} entries</p>
               </div>
               <div className="bg-white p-3 rounded-lg">
                 <p className="text-sm text-gray-600">Discounts Cache</p>
-                <p className="text-lg font-semibold text-blue-600">{cacheStats.discounts?.totalEntries || 0} entries</p>
+                <p className="text-lg font-semibold text-red-600">{cacheStats.discounts?.totalEntries || 0} entries</p>
               </div>
             </div>
           )}
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
 
         <Card>
           <CardContent className="flex items-center p-6">
-            <ShoppingBag className="h-8 w-8 text-blue-500 mr-4" />
+            <ShoppingBag className="h-8 w-8 text-red-500 mr-4" />
             <div>
               <p className="text-sm text-gray-600">Total Orders</p>
               <p className="text-2xl font-bold">{stats?.totalOrders || 0}</p>
@@ -345,8 +345,8 @@ export default function AdminDashboard() {
                   <AreaChart data={stats.recentSales}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
                   <XAxis dataKey="date" />
@@ -356,7 +356,7 @@ export default function AdminDashboard() {
                   <Area
                     type="monotone"
                     dataKey="amount"
-                    stroke="#3b82f6"
+                    stroke="#ef4444"
                     fillOpacity={1}
                     fill="url(#colorRevenue)"
                   />
@@ -391,7 +391,7 @@ export default function AdminDashboard() {
                   <Line
                     type="monotone"
                     dataKey="total"
-                    stroke="#8b5cf6"
+                    stroke="#ef4444"
                     strokeWidth={2}
                   />
                   </LineChart>

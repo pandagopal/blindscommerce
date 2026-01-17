@@ -302,7 +302,7 @@ export default function ShippingAddressManager() {
               )}
 
               {address.deliveryInstructions && (
-                <div className="mb-3 p-2 bg-blue-50 rounded text-sm text-blue-700">
+                <div className="mb-3 p-2 bg-red-50 rounded text-sm text-red-700">
                   <Truck className="w-4 h-4 inline mr-1" />
                   {address.deliveryInstructions}
                 </div>

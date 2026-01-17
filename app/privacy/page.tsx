@@ -76,7 +76,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Privacy Policy
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
               Smart Blinds is committed to protecting your privacy and personal information. 
               This policy explains how we collect, use, and safeguard your data.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
                 <Shield className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Data Protection</h3>

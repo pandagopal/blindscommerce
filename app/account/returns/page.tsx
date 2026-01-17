@@ -47,8 +47,8 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   pending: { label: 'Pending Review', color: 'bg-yellow-100 text-yellow-800', icon: <Clock className="w-3 h-3" /> },
   approved: { label: 'Approved', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3" /> },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-800', icon: <XCircle className="w-3 h-3" /> },
-  shipped: { label: 'Return Shipped', color: 'bg-blue-100 text-blue-800', icon: <Truck className="w-3 h-3" /> },
-  received: { label: 'Received', color: 'bg-purple-100 text-purple-800', icon: <Package className="w-3 h-3" /> },
+  shipped: { label: 'Return Shipped', color: 'bg-red-100 text-red-800', icon: <Truck className="w-3 h-3" /> },
+  received: { label: 'Received', color: 'bg-red-100 text-red-800', icon: <Package className="w-3 h-3" /> },
   refunded: { label: 'Refunded', color: 'bg-green-100 text-green-800', icon: <DollarSign className="w-3 h-3" /> },
   cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-800', icon: <XCircle className="w-3 h-3" /> },
 };
@@ -122,10 +122,10 @@ export default function ReturnsPage() {
       </div>
 
       {/* Return Policy Info */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-red-50 border-red-200">
         <CardContent className="p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Return Policy</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
+          <h3 className="font-medium text-red-900 mb-2">Return Policy</h3>
+          <ul className="text-sm text-red-700 space-y-1">
             <li>• Returns accepted within 30 days of delivery</li>
             <li>• Items must be in original condition and packaging</li>
             <li>• Custom-made products may have different return policies</li>
@@ -193,7 +193,7 @@ export default function ReturnsPage() {
                             )}
                           </div>
                           {ret.tracking_number && (
-                            <div className="mt-2 text-sm text-blue-600">
+                            <div className="mt-2 text-sm text-red-600">
                               Tracking: {ret.tracking_number} ({ret.carrier})
                             </div>
                           )}

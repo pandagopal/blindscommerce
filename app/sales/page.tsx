@@ -241,9 +241,9 @@ function SalesDashboardContent() {
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'new':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-red-100 text-red-800';
       case 'contacted':
-        return 'bg-purple-100 text-primary-dark';
+        return 'bg-red-100 text-primary-dark';
       case 'qualified':
         return 'bg-amber-100 text-amber-800';
       case 'proposal':
@@ -253,9 +253,9 @@ function SalesDashboardContent() {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'processing':
-        return 'bg-purple-100 text-primary-dark';
+        return 'bg-red-100 text-primary-dark';
       case 'shipped':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -333,7 +333,7 @@ function SalesDashboardContent() {
                 <span className="font-medium w-48">{a.customer}</span>
                 <span>{a.date} {a.time}</span>
                 <span className="text-xs text-gray-500">{a.status}</span>
-                <button onClick={() => handleApptEdit(a.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleApptEdit(a.id)} className="text-red-600 hover:underline ml-2">Edit</button>
                 <button onClick={() => handleApptDelete(a.id)} className="text-red-600 hover:underline ml-2">Delete</button>
               </li>
             ))}
@@ -357,7 +357,7 @@ function SalesDashboardContent() {
                 <span className="font-medium w-48">{c.name}</span>
                 <span>{c.email}</span>
                 <span>{c.phone}</span>
-                <button onClick={() => handleCustEdit(c.id)} className="text-blue-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleCustEdit(c.id)} className="text-red-600 hover:underline ml-2">Edit</button>
                 <button onClick={() => handleCustDelete(c.id)} className="text-red-600 hover:underline ml-2">Delete</button>
               </li>
             ))}

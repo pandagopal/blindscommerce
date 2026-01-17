@@ -28,13 +28,13 @@ export default function FloatingActionButtons() {
       icon: Package,
       label: 'Free Samples',
       href: '/samples',
-      color: 'bg-blue-500 hover:bg-blue-600'
+      color: 'bg-red-500 hover:bg-red-600'
     },
     {
       icon: Phone,
       label: 'Call Us',
       href: 'tel:1-800-BLINDS',
-      color: 'bg-green-500 hover:bg-green-600'
+      color: 'bg-red-600 hover:bg-red-700'
     },
     {
       icon: MessageCircle,
@@ -47,7 +47,7 @@ export default function FloatingActionButtons() {
           window.location.href = '/contact';
         }
       },
-      color: 'bg-purple-500 hover:bg-purple-600'
+      color: 'bg-red-700 hover:bg-red-800'
     }
   ];
 
@@ -125,7 +125,7 @@ export default function FloatingActionButtons() {
 
       {/* Free Samples Banner (shows after scroll) */}
       <div
-        className={`fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-4 transition-transform duration-500 md:hidden ${
+        className={`fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-r from-red-600 to-red-700 text-white py-3 px-4 transition-transform duration-500 md:hidden ${
           hasScrolled && !isOpen ? 'translate-y-0' : 'translate-y-full'
         }`}
       >
@@ -136,7 +136,7 @@ export default function FloatingActionButtons() {
           </div>
           <Link
             href="/samples"
-            className="bg-white text-blue-600 font-semibold px-4 py-1.5 rounded-full text-sm hover:bg-gray-100 transition-colors"
+            className="bg-white text-red-600 font-semibold px-4 py-1.5 rounded-full text-sm hover:bg-gray-100 transition-colors"
           >
             Order Now
           </Link>

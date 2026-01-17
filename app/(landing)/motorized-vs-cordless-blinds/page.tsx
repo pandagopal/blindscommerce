@@ -50,16 +50,16 @@ export default function MotorizedVsCordlessPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white py-16 lg:py-24">
+      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Buying Guide
             </span>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Motorized vs Cordless Blinds
             </h1>
-            <p className="text-xl md:text-2xl text-purple-200 mb-8">
+            <p className="text-xl md:text-2xl text-red-200 mb-8">
               Both offer child safety without cords. Compare convenience, cost,
               and features to choose the right lift system for your home.
             </p>
@@ -68,10 +68,10 @@ export default function MotorizedVsCordlessPage() {
       </section>
 
       {/* Quick Answer */}
-      <section className="py-12 bg-purple-50">
+      <section className="py-12 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-xl p-8 shadow-lg border-l-4 border-purple-600">
+            <div className="bg-white rounded-xl p-8 shadow-lg border-l-4 border-red-600">
               <h2 className="text-2xl font-bold mb-4">Quick Answer</h2>
               <p className="text-lg text-gray-700 mb-4">
                 <strong>Choose Motorized Blinds</strong> if you have hard-to-reach windows,
@@ -93,14 +93,14 @@ export default function MotorizedVsCordlessPage() {
         <div className="container mx-auto px-4">
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
             {/* Motorized */}
-            <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl p-8">
+            <div className="bg-gradient-to-br from-red-100 to-red-100 rounded-2xl p-8">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center">
                   <FaWifi className="text-3xl text-white" />
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold">Motorized</h3>
-                  <p className="text-purple-700">Smart & Automated</p>
+                  <p className="text-red-700">Smart & Automated</p>
                 </div>
               </div>
               <ul className="space-y-3">
@@ -112,7 +112,7 @@ export default function MotorizedVsCordlessPage() {
                   "One-touch control for whole house",
                 ].map((item, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <FaCheck className="text-purple-600 mt-1 flex-shrink-0" />
+                    <FaCheck className="text-red-600 mt-1 flex-shrink-0" />
                     <span>{item}</span>
                   </li>
                 ))}
@@ -160,7 +160,7 @@ export default function MotorizedVsCordlessPage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="text-left p-4 font-semibold">Feature</th>
-                  <th className="text-left p-4 font-semibold text-purple-700">
+                  <th className="text-left p-4 font-semibold text-red-700">
                     Motorized
                   </th>
                   <th className="text-left p-4 font-semibold text-gray-700">
@@ -189,7 +189,7 @@ export default function MotorizedVsCordlessPage() {
             Smart Home Integration
           </h2>
           <div className="max-w-4xl mx-auto">
-            <div className="bg-purple-900 text-white rounded-2xl p-8">
+            <div className="bg-red-900 text-white rounded-2xl p-8">
               <h3 className="text-2xl font-bold mb-6 text-center">
                 Motorized Blinds Work With:
               </h3>
@@ -202,16 +202,16 @@ export default function MotorizedVsCordlessPage() {
                 ].map((platform, i) => (
                   <div key={i} className="bg-white/10 rounded-lg p-4">
                     <div className="font-semibold">{platform.name}</div>
-                    <div className="text-purple-200 text-sm">{platform.desc}</div>
+                    <div className="text-red-200 text-sm">{platform.desc}</div>
                   </div>
                 ))}
               </div>
               <div className="text-center">
-                <p className="text-purple-200 mb-4">
+                <p className="text-red-200 mb-4">
                   Set schedules to open with sunrise, close at sunset, or sync with
                   your thermostat for energy savings.
                 </p>
-                <p className="text-sm text-purple-300">
+                <p className="text-sm text-red-300">
                   Note: Cordless blinds do not support smart home integration.
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function MotorizedVsCordlessPage() {
                   <h3 className="text-xl font-bold">{item.situation}</h3>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     item.winner === "Motorized"
-                      ? "bg-purple-100 text-purple-800"
+                      ? "bg-red-100 text-red-800"
                       : "bg-gray-200 text-gray-800"
                   }`}>
                     {item.winner}
@@ -267,8 +267,8 @@ export default function MotorizedVsCordlessPage() {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl p-8 shadow-lg">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="bg-purple-50 p-6 rounded-lg">
-                  <h3 className="font-bold text-purple-800 text-xl mb-4">Motorized (per window)</h3>
+                <div className="bg-red-50 p-6 rounded-lg">
+                  <h3 className="font-bold text-red-800 text-xl mb-4">Motorized (per window)</h3>
                   <ul className="space-y-2 text-gray-700">
                     <li>Base shade/blind: $50 - $150</li>
                     <li>Motor upgrade: +$100 - $250</li>
@@ -337,25 +337,25 @@ export default function MotorizedVsCordlessPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-purple-900 text-white">
+      <section className="py-16 bg-red-900 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Upgrade Your Windows
           </h2>
-          <p className="text-xl text-purple-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">
             Both motorized and cordless options provide cord-free safety and style.
             Free shipping on all orders over $99.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?feature=motorized"
-              className="bg-white hover:bg-gray-100 text-purple-900 px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
+              className="bg-white hover:bg-gray-100 text-red-900 px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
             >
               Shop Motorized <FaArrowRight className="ml-2" />
             </Link>
             <Link
               href="/products?feature=cordless"
-              className="bg-purple-700 hover:bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
+              className="bg-red-700 hover:bg-red-600 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
             >
               Shop Cordless <FaArrowRight className="ml-2" />
             </Link>

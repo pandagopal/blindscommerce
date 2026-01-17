@@ -18,7 +18,7 @@ export default function MotorizedBlindsBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-indigo-700 to-indigo-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
@@ -26,7 +26,7 @@ export default function MotorizedBlindsBuyingGuidePage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Motorized & Smart Blinds Buying Guide
           </h1>
-          <p className="text-lg text-indigo-100 mb-4">
+          <p className="text-lg text-red-100 mb-4">
             The future of window treatments is here. Control your blinds with your voice,
             phone, or automated schedules. Perfect for hard-to-reach windows and smart homes.
           </p>

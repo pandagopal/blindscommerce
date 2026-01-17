@@ -375,13 +375,13 @@ export default function InstallerPendingOrdersPage() {
                           </div>
                           <div className="flex items-center gap-2 text-gray-600">
                             <Mail className="h-4 w-4" />
-                            <a href={`mailto:${order.customer.email}`} className="hover:text-blue-600">
+                            <a href={`mailto:${order.customer.email}`} className="hover:text-red-600">
                               {order.customer.email}
                             </a>
                           </div>
                           <div className="flex items-center gap-2 text-gray-600">
                             <Phone className="h-4 w-4" />
-                            <a href={`tel:${order.customer.phone}`} className="hover:text-blue-600">
+                            <a href={`tel:${order.customer.phone}`} className="hover:text-red-600">
                               {order.customer.phone}
                             </a>
                           </div>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 export default function MotorizedBlindsHighWindowsPage() {
   const benefits = [
     {
-      icon: <Zap className="h-8 w-8 text-blue-600" />,
+      icon: <Zap className="h-8 w-8 text-red-600" />,
       title: 'Easy Remote Control',
       description: 'Control hard-to-reach windows with a remote, smartphone app, or voice commands through Alexa or Google Home.'
     },
@@ -23,7 +23,7 @@ export default function MotorizedBlindsHighWindowsPage() {
       description: 'Program blinds to adjust automatically based on time of day, saving on heating and cooling costs.'
     },
     {
-      icon: <Smartphone className="h-8 w-8 text-purple-600" />,
+      icon: <Smartphone className="h-8 w-8 text-red-600" />,
       title: 'Smart Home Ready',
       description: 'Integrates seamlessly with your existing smart home ecosystem for automated control.'
     }
@@ -51,17 +51,17 @@ export default function MotorizedBlindsHighWindowsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center bg-blue-700/50 rounded-full px-4 py-2 mb-6">
+      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="inline-flex items-center bg-red-700/50 rounded-full px-4 py-2 mb-6">
               <Star className="h-4 w-4 text-yellow-400 mr-2" />
               <span className="text-sm">Rated 4.9/5 by 2,500+ customers</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               Motorized Blinds for High Windows
             </h1>
-            <p className="text-xl md:text-2xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-red-100 mb-8 max-w-3xl mx-auto">
               Control hard-to-reach windows effortlessly. Smart motorized blinds with remote, app,
               and voice control. Free shipping on orders over $100.
             </p>
@@ -71,7 +71,7 @@ export default function MotorizedBlindsHighWindowsPage() {
                   Shop Motorized Blinds <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-blue-900" asChild>
+              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-red-900" asChild>
                 <Link href="/consultation">
                   Get Free Quote
                 </Link>

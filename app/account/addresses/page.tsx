@@ -105,7 +105,7 @@ export default function AddressesPage() {
               <div className="text-sm text-gray-700">{addr.country}</div>
               {addr.phone && <div className="text-sm text-gray-700">Phone: {addr.phone}</div>}
               <div className="mt-2 flex gap-2">
-                <button onClick={() => handleEdit(addr.id)} className="text-blue-600 hover:underline">Edit</button>
+                <button onClick={() => handleEdit(addr.id)} className="text-red-600 hover:underline">Edit</button>
                 <button onClick={() => handleDelete(addr.id)} className="text-red-600 hover:underline">Delete</button>
               </div>
             </div>

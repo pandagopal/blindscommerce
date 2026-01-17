@@ -78,13 +78,13 @@ const statusConfig: Record<string, { label: string; color: string; icon: React.R
   },
   shipped: {
     label: 'Return Shipped',
-    color: 'bg-blue-100 text-blue-800',
+    color: 'bg-red-100 text-red-800',
     icon: <Truck className="w-4 h-4" />,
     description: 'Your return is on its way to us.'
   },
   received: {
     label: 'Received',
-    color: 'bg-purple-100 text-purple-800',
+    color: 'bg-red-100 text-red-800',
     icon: <Package className="w-4 h-4" />,
     description: 'We have received your return. Processing refund shortly.'
   },
@@ -370,9 +370,9 @@ export default function ReturnDetailPage() {
               <p className="font-medium">{returnTypeLabels[returnData.return_type]}</p>
             </div>
             {returnData.admin_notes && (
-              <div className="bg-blue-50 rounded-lg p-3">
-                <p className="text-sm text-blue-900 font-medium">Note from Support:</p>
-                <p className="text-sm text-blue-700">{returnData.admin_notes}</p>
+              <div className="bg-red-50 rounded-lg p-3">
+                <p className="text-sm text-red-900 font-medium">Note from Support:</p>
+                <p className="text-sm text-red-700">{returnData.admin_notes}</p>
               </div>
             )}
           </CardContent>
@@ -391,7 +391,7 @@ export default function ReturnDetailPage() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Tracking Number</p>
-                <p className="font-medium text-blue-600">{returnData.tracking_number}</p>
+                <p className="font-medium text-red-600">{returnData.tracking_number}</p>
               </div>
             </CardContent>
           </Card>
@@ -480,10 +480,10 @@ export default function ReturnDetailPage() {
       </Card>
 
       {/* Help */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-red-50 border-red-200">
         <CardContent className="p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Need Help?</h3>
-          <p className="text-sm text-blue-700">
+          <h3 className="font-medium text-red-900 mb-2">Need Help?</h3>
+          <p className="text-sm text-red-700">
             If you have questions about your return, please{' '}
             <Link href={`/account/support/new?category=returns&orderId=${returnData.order_id}`} className="underline">
               create a support ticket

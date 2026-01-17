@@ -163,7 +163,7 @@ export default function VendorNotificationsPage() {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case 'order':
-        return 'text-blue-600 bg-blue-100';
+        return 'text-red-600 bg-red-100';
       case 'payment':
         return 'text-green-600 bg-green-100';
       case 'product':
@@ -171,7 +171,7 @@ export default function VendorNotificationsPage() {
       case 'system':
         return 'text-gray-600 bg-gray-100';
       default:
-        return 'text-primary-red bg-purple-100';
+        return 'text-primary-red bg-red-100';
     }
   };
 

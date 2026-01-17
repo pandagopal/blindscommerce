@@ -212,14 +212,14 @@ const BNPLPayment = ({
           name: 'Afterpay',
           logo: '/images/afterpay-logo.png',
           description: 'Buy now, pay in 4 installments',
-          color: 'bg-green-100 text-green-800'
+          color: 'bg-red-100 text-red-800'
         };
       case 'affirm':
         return {
           name: 'Affirm',
           logo: '/images/affirm-logo.png',
           description: 'Pay over time with flexible monthly payments',
-          color: 'bg-blue-100 text-blue-800'
+          color: 'bg-red-100 text-red-800'
         };
     }
   };
@@ -304,7 +304,7 @@ const BNPLPayment = ({
 
             <div className="mt-3 pt-3 border-t">
               <div className="flex items-start space-x-2">
-                <Info className="w-4 h-4 text-blue-500 mt-0.5" />
+                <Info className="w-4 h-4 text-red-500 mt-0.5" />
                 <div className="text-sm text-gray-600">
                   {installmentInfo.fees}
                 </div>

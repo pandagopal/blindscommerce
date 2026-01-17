@@ -88,7 +88,7 @@ function InstallerLayoutContent({
                   {isAdminView && (
                     <Link
                       href="/admin/users"
-                      className="flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                      className="flex items-center px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
                     >
                       <Shield size={14} className="mr-1" />
                       ADMIN
@@ -128,13 +128,13 @@ function InstallerLayoutContent({
                       pathname === item.href
                         ? 'bg-red-50 text-red-600 border-l-4 border-red-600'
                         : item.highlight
-                        ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                        ? 'bg-red-50 text-red-600 hover:bg-red-100'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     <span className="mr-3">{item.icon}</span>
                     <span className={item.highlight ? 'font-semibold' : ''}>{item.label}</span>
-                    {item.highlight && <span className="ml-auto text-xs bg-blue-600 text-white px-2 py-0.5 rounded">NEW</span>}
+                    {item.highlight && <span className="ml-auto text-xs bg-red-600 text-white px-2 py-0.5 rounded">NEW</span>}
                     {pathname === item.href && !item.highlight && (
                       <ChevronRight size={16} className="ml-auto" />
                     )}

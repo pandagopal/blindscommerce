@@ -210,9 +210,9 @@ export default function PricingMatrix({ initialData, onChange, isReadOnly = fals
                               e.target.select();
                             }
                           }}
-                          className={`w-full text-center h-8 px-1 text-xs border-0 outline-none focus:ring-1 focus:ring-blue-400 ${
-                            isPositiveValue 
-                              ? 'text-blue-600 font-medium bg-blue-50' 
+                          className={`w-full text-center h-8 px-1 text-xs border-0 outline-none focus:ring-1 focus:ring-red-400 ${
+                            isPositiveValue
+                              ? 'text-red-600 font-medium bg-red-50'
                               : 'bg-white hover:bg-gray-50'
                           } ${isReadOnly ? 'cursor-not-allowed opacity-60' : 'cursor-text'}`}
                           disabled={isReadOnly}

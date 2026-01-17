@@ -73,7 +73,7 @@ export default function SampleManagementPage() {
 
   const statusColors = {
     pending: 'bg-yellow-100 text-yellow-800',
-    processing: 'bg-blue-100 text-blue-800',
+    processing: 'bg-red-100 text-red-800',
     shipped: 'bg-green-100 text-green-800',
     delivered: 'bg-green-100 text-green-800',
     cancelled: 'bg-red-100 text-red-800',
@@ -194,7 +194,7 @@ export default function SampleManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600" />
+              <Package className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Orders</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
@@ -374,7 +374,7 @@ export default function SampleManagementPage() {
                           setSelectedOrder(order);
                           setShowModal(true);
                         }}
-                        className="text-blue-600 hover:text-blue-800 mr-2"
+                        className="text-red-600 hover:text-red-800 mr-2"
                       >
                         <Eye className="h-4 w-4" />
                       </button>

@@ -276,11 +276,11 @@ export default function VendorOrderDetailsPage() {
   const getStatusBadgeColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
-      preparing: 'bg-blue-100 text-blue-800',
-      in_transit: 'bg-purple-100 text-purple-800',
+      processing: 'bg-red-100 text-red-800',
+      preparing: 'bg-red-100 text-red-800',
+      in_transit: 'bg-red-100 text-red-800',
       customs: 'bg-orange-100 text-orange-800',
-      shipped: 'bg-purple-100 text-purple-800',
+      shipped: 'bg-red-100 text-red-800',
       delivered: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
     };
@@ -437,7 +437,7 @@ export default function VendorOrderDetailsPage() {
                 </TabsContent>
 
                 <TabsContent value="carrier" className="space-y-4">
-                  <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-800">
+                  <div className="bg-red-50 p-3 rounded-lg text-sm text-red-800">
                     <Plane className="inline-block h-4 w-4 mr-2" />
                     Optional: Add the first carrier leg. You can add more legs later as the shipment progresses.
                   </div>
@@ -577,11 +577,11 @@ export default function VendorOrderDetailsPage() {
 
         {/* Shipment Info (if exists) */}
         {shipment && (
-          <Card className="mb-6 border-blue-200 bg-blue-50">
+          <Card className="mb-6 border-red-200 bg-red-50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Ship className="h-5 w-5 text-blue-600" />
+                  <Ship className="h-5 w-5 text-red-600" />
                   <CardTitle className="text-lg">Shipment {shipment.shipment_number}</CardTitle>
                   <Badge className={getStatusBadgeColor(shipment.status)}>
                     {shipment.status?.replace('_', ' ')}
@@ -700,7 +700,7 @@ export default function VendorOrderDetailsPage() {
                 <div className="space-y-3">
                   {shipment.legs.map((leg, idx) => (
                     <div key={leg.leg_id || idx} className="flex items-center gap-4 p-3 bg-white rounded-lg">
-                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                      <div className="flex-shrink-0 w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold">
                         {leg.leg_order}
                       </div>
                       <div className="flex-1">
@@ -717,7 +717,7 @@ export default function VendorOrderDetailsPage() {
                           <div className="text-sm text-gray-600 mt-1">
                             Tracking: {leg.tracking_number}
                             {leg.tracking_url && (
-                              <a href={leg.tracking_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
+                              <a href={leg.tracking_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-red-600 hover:underline">
                                 <ExternalLink className="inline h-3 w-3" />
                               </a>
                             )}

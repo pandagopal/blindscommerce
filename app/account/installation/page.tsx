@@ -474,7 +474,7 @@ export default function InstallationPage() {
                       </div>
                       <div className="text-right">
                         <span className={`inline-block px-2 py-1 text-xs rounded ${
-                          apt.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+                          apt.status === 'scheduled' ? 'bg-red-100 text-red-800' :
                           apt.status === 'completed' ? 'bg-green-100 text-green-800' :
                           apt.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
@@ -489,7 +489,7 @@ export default function InstallationPage() {
                           <div className="mt-3 flex flex-col gap-2">
                             <button
                               onClick={() => openRescheduleModal(apt)}
-                              className="flex items-center justify-center px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                              className="flex items-center justify-center px-3 py-1.5 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
                             >
                               <Edit3 size={12} className="mr-1" />
                               Reschedule
@@ -997,7 +997,7 @@ export default function InstallationPage() {
               <button
                 onClick={handleReschedule}
                 disabled={!rescheduleDate || !rescheduleTimeSlot || processing}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 {processing ? 'Rescheduling...' : 'Confirm Reschedule'}
               </button>

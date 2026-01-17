@@ -7,23 +7,23 @@ export default function EnergyEfficientBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-green-700 to-emerald-800 text-white py-20">
+      <section className="bg-gradient-to-br from-red-700 to-red-800 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Save Money
             </span>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Energy Efficient Blinds & Shades
             </h1>
-            <p className="text-xl text-green-100 mb-8">
+            <p className="text-xl text-red-100 mb-8">
               Cut your energy bills by up to 25% with insulating window treatments.
               Cellular shades trap air to keep your home comfortable year-round while saving money.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products?category=cellular-shades"
-                className="bg-white text-green-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop Cellular Shades <FaArrowRight className="ml-2" />
               </Link>
@@ -39,19 +39,19 @@ export default function EnergyEfficientBlindsPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-green-50">
+      <section className="py-12 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
             <div>
-              <p className="text-4xl font-bold text-green-700">Up to 25%</p>
+              <p className="text-4xl font-bold text-red-700">Up to 25%</p>
               <p className="text-gray-600">Reduction in energy bills</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-green-700">Up to 40%</p>
+              <p className="text-4xl font-bold text-red-700">Up to 40%</p>
               <p className="text-gray-600">Less heat loss through windows</p>
             </div>
             <div>
-              <p className="text-4xl font-bold text-green-700">R-4 to R-5</p>
+              <p className="text-4xl font-bold text-red-700">R-4 to R-5</p>
               <p className="text-gray-600">Insulation value (double cell)</p>
             </div>
           </div>
@@ -88,15 +88,15 @@ export default function EnergyEfficientBlindsPage() {
                 </div>
                 <div className="bg-white p-6 rounded-lg">
                   <div className="space-y-4">
-                    <div className="border-2 border-green-500 rounded-lg p-4">
-                      <h4 className="font-bold text-green-700 mb-2">Double Cell (Most Efficient)</h4>
+                    <div className="border-2 border-red-500 rounded-lg p-4">
+                      <h4 className="font-bold text-red-700 mb-2">Double Cell (Most Efficient)</h4>
                       <div className="flex justify-center">
                         <div className="grid grid-cols-4 gap-1">
                           {[...Array(8)].map((_, i) => (
-                            <div key={i} className="w-8 h-4 bg-green-200 rounded"></div>
+                            <div key={i} className="w-8 h-4 bg-red-200 rounded"></div>
                           ))}
                           {[...Array(8)].map((_, i) => (
-                            <div key={i} className="w-8 h-4 bg-green-300 rounded"></div>
+                            <div key={i} className="w-8 h-4 bg-red-300 rounded"></div>
                           ))}
                         </div>
                       </div>
@@ -127,17 +127,17 @@ export default function EnergyEfficientBlindsPage() {
           <h2 className="text-3xl font-bold text-center mb-12">Benefits of Energy Efficient Blinds</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-              <FaDollarSign className="text-5xl text-green-600 mx-auto mb-4" />
+              <FaDollarSign className="text-5xl text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Lower Bills</h3>
               <p className="text-gray-600">Save up to 25% on heating and cooling costs year-round.</p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-              <FaThermometerHalf className="text-5xl text-blue-600 mx-auto mb-4" />
+              <FaThermometerHalf className="text-5xl text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Year-Round Comfort</h3>
               <p className="text-gray-600">Stay warmer in winter, cooler in summer without cranking the thermostat.</p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-              <FaLeaf className="text-5xl text-emerald-600 mx-auto mb-4" />
+              <FaLeaf className="text-5xl text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Eco-Friendly</h3>
               <p className="text-gray-600">Reduce your carbon footprint by using less energy.</p>
             </div>
@@ -166,15 +166,15 @@ export default function EnergyEfficientBlindsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  <tr className="bg-green-50">
+                  <tr className="bg-red-50">
                     <td className="p-4 font-medium">Double Cell Cellular Shades</td>
-                    <td className="p-4 text-center"><span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm">Best</span></td>
+                    <td className="p-4 text-center"><span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm">Best</span></td>
                     <td className="p-4 text-center">Up to 25%</td>
                     <td className="p-4 text-center">$$$</td>
                   </tr>
                   <tr>
                     <td className="p-4 font-medium">Single Cell Cellular Shades</td>
-                    <td className="p-4 text-center"><span className="bg-green-400 text-white px-3 py-1 rounded-full text-sm">Excellent</span></td>
+                    <td className="p-4 text-center"><span className="bg-red-400 text-white px-3 py-1 rounded-full text-sm">Excellent</span></td>
                     <td className="p-4 text-center">Up to 20%</td>
                     <td className="p-4 text-center">$$</td>
                   </tr>
@@ -230,15 +230,15 @@ export default function EnergyEfficientBlindsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-green-800 text-white">
+      <section className="py-16 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Start Saving Energy Today</h2>
-          <p className="text-xl text-green-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">
             Shop cellular shades and start cutting your energy bills. Free shipping on orders over $99.
           </p>
           <Link
             href="/products?category=cellular-shades"
-            className="bg-white text-green-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center"
+            className="bg-white text-red-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center"
           >
             Shop Cellular Shades <FaArrowRight className="ml-2" />
           </Link>

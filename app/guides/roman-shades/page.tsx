@@ -18,7 +18,7 @@ export default function RomanShadesBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-purple-700 to-purple-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
@@ -26,7 +26,7 @@ export default function RomanShadesBuyingGuidePage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Roman Shades Buying Guide
           </h1>
-          <p className="text-lg text-purple-100 mb-4">
+          <p className="text-lg text-red-100 mb-4">
             Elegant fabric folds that add warmth and sophistication to any room.
             Discover fold styles, fabrics, and find the perfect roman shades for your home.
           </p>

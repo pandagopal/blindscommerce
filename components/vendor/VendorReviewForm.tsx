@@ -263,10 +263,10 @@ export default function VendorReviewForm({
             )}
 
             {/* Info Message */}
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <div className="flex">
-                <AlertCircle className="h-5 w-5 text-blue-400 mt-0.5 mr-2" />
-                <div className="text-sm text-blue-800">
+                <AlertCircle className="h-5 w-5 text-red-400 mt-0.5 mr-2" />
+                <div className="text-sm text-red-800">
                   <p className="font-medium">Review Guidelines</p>
                   <ul className="mt-1 list-disc list-inside space-y-1">
                     <li>Reviews will be moderated before publication</li>

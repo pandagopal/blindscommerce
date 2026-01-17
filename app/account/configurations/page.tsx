@@ -264,7 +264,7 @@ export default function SavedConfigurationsPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => reconfigure(config)}
-                      className="flex-1 flex items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-md border border-blue-200 transition-colors"
+                      className="flex-1 flex items-center justify-center bg-red-50 hover:bg-red-100 text-red-700 py-2 px-4 rounded-md border border-red-200 transition-colors"
                     >
                       <EyeIcon className="h-4 w-4 mr-2" />
                       View

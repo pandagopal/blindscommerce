@@ -213,15 +213,15 @@ export default function CacheManagementPage() {
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500" />
+                <AlertCircle className="h-4 w-4 text-red-500" />
                 <span>API response times may be slower</span>
               </div>
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500" />
+                <AlertCircle className="h-4 w-4 text-red-500" />
                 <span>Database queries are executed on each request</span>
               </div>
               <div className="flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-blue-500" />
+                <AlertCircle className="h-4 w-4 text-red-500" />
                 <span>No risk of stale or outdated data</span>
               </div>
             </div>

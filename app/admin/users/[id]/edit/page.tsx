@@ -226,7 +226,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
           <button
             type="submit"
             disabled={saving}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

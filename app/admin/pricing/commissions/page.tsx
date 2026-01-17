@@ -480,7 +480,7 @@ export default function CommissionManagementPage() {
                         >
                           {rule.is_active ? 'Deactivate' : 'Activate'}
                         </Button>
-                        <Button variant="ghost" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                        <Button variant="ghost" size="sm" className="p-1.5 hover:bg-red-50 rounded-md transition-colors">
                           <Edit className="h-6 w-6" />
                         </Button>
                         <Button 

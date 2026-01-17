@@ -65,7 +65,7 @@ export default function LivingRoomBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-800 via-blue-700 to-indigo-800 text-white py-20 lg:py-28">
+      <section className="bg-gradient-to-br from-blue-800 via-blue-700 to-indigo-800 text-white py-10 lg:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">

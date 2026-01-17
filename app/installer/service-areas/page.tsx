@@ -329,7 +329,7 @@ export default function ServiceAreasPage() {
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingArea(area)}
-                        className="p-1.5 hover:bg-blue-50 rounded-md transition-colors"
+                        className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
                       >
                         <Edit className="h-6 w-6" />
                       </Button>

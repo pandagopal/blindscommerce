@@ -182,7 +182,7 @@ export default function CommercialTemplatesPage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
         </div>
       </div>
     );
@@ -239,7 +239,7 @@ export default function CommercialTemplatesPage() {
         <h2 className="text-2xl font-semibold">Available Templates</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {templates.map((template) => (
-            <Card key={template.templateId} className={selectedTemplate === template.templateId ? 'ring-2 ring-blue-500' : ''}>
+            <Card key={template.templateId} className={selectedTemplate === template.templateId ? 'ring-2 ring-red-500' : ''}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   {template.templateName}
@@ -326,9 +326,9 @@ export default function CommercialTemplatesPage() {
               </div>
 
               {uploading && (
-                <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                  <span className="text-blue-700">Processing bulk order...</span>
+                <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mr-3"></div>
+                  <span className="text-red-700">Processing bulk order...</span>
                 </div>
               )}
             </div>
@@ -364,7 +364,7 @@ export default function CommercialTemplatesPage() {
               </div>
               {uploadResult.estimatedPricing && (
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-red-600">
                     ${uploadResult.estimatedPricing.estimatedTotal.toLocaleString()}
                   </p>
                   <p className="text-sm text-gray-600">Estimated Total</p>

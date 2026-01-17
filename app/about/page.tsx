@@ -74,7 +74,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               About Smart Blinds

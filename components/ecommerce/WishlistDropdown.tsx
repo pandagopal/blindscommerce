@@ -123,7 +123,7 @@ const WishlistDropdown: React.FC<WishlistDropdownProps> = ({ className = '' }) =
                         <Link
                           href={`/products/configure/${item.slug}`}
                           onClick={() => setIsOpen(false)}
-                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
                           title="Configure & Add to Cart"
                         >
                           <ShoppingCart className="h-4 w-4" />

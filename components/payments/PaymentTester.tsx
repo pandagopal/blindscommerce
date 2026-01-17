@@ -37,7 +37,7 @@ const PaymentTester = () => {
       provider: 'stripe',
       methods: ['card', 'apple_pay', 'google_pay', 'ach'],
       displayName: 'Stripe',
-      color: 'bg-blue-100 text-blue-800'
+      color: 'bg-red-100 text-red-800'
     },
     {
       provider: 'paypal',
@@ -55,13 +55,13 @@ const PaymentTester = () => {
       provider: 'afterpay',
       methods: ['afterpay'],
       displayName: 'Afterpay',
-      color: 'bg-green-100 text-green-800'
+      color: 'bg-red-100 text-red-800'
     },
     {
       provider: 'affirm',
       methods: ['affirm'],
       displayName: 'Affirm',
-      color: 'bg-purple-100 text-primary-dark'
+      color: 'bg-red-100 text-primary-dark'
     }
   ];
 

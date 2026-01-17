@@ -118,7 +118,7 @@ export default function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading analytics...</p>
@@ -128,7 +128,7 @@ export default function AdminAnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -185,7 +185,7 @@ export default function AdminAnalyticsPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-blue-600" />
+                <ShoppingCart className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -312,13 +312,13 @@ export default function AdminAnalyticsPage() {
                         {formatCurrency((analyticsData?.overview?.total_revenue || 0) / 30)}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-200">
-                      <div className="text-sm text-blue-600 font-medium">Weekly Average</div>
-                      <div className="text-2xl font-bold text-blue-700">
+                    <div className="bg-gradient-to-r from-red-50 to-orange-50 p-4 rounded-lg border border-red-200">
+                      <div className="text-sm text-red-600 font-medium">Weekly Average</div>
+                      <div className="text-2xl font-bold text-red-700">
                         {formatCurrency((analyticsData?.overview?.total_revenue || 0) / 4)}
                       </div>
                     </div>
-                    <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-red-200">
+                    <div className="bg-gradient-to-r from-red-50 to-pink-50 p-4 rounded-lg border border-red-200">
                       <div className="text-sm text-primary-red font-medium">Monthly Total</div>
                       <div className="text-2xl font-bold text-primary-dark">
                         {formatCurrency(analyticsData?.overview?.total_revenue || 0)}
@@ -359,7 +359,7 @@ export default function AdminAnalyticsPage() {
                       <div className="text-sm text-gray-600">Retention Rate</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-2xl font-bold text-red-600">
                         {formatCurrency(analyticsData?.overview?.avg_order_value || 0)}
                       </div>
                       <div className="text-sm text-gray-600">Avg. Lifetime Value</div>
@@ -447,7 +447,7 @@ export default function AdminAnalyticsPage() {
                       <div className="text-sm text-gray-600">Total Commissions</div>
                     </div>
                     <div className="text-center p-4 bg-gray-50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">4.8</div>
+                      <div className="text-2xl font-bold text-red-600">4.8</div>
                       <div className="text-sm text-gray-600">Avg. Rating</div>
                     </div>
                   </div>

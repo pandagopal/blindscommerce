@@ -180,7 +180,7 @@ const StripePaymentRequest = forwardRef<StripePaymentRequestHandle, StripePaymen
 
       {isProcessing ? (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600 mr-2" />
+          <Loader2 className="h-6 w-6 animate-spin text-red-600 mr-2" />
           <span className="text-sm text-gray-600">Processing payment...</span>
         </div>
       ) : (

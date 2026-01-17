@@ -226,14 +226,14 @@ export default function SalesAnalyticsPage() {
                 <Line
                   type="monotone"
                   dataKey="sales"
-                  stroke="#3B82F6"
+                  stroke="#DC2626"
                   strokeWidth={2}
                   name="Actual Sales"
                 />
                 <Line
                   type="monotone"
                   dataKey="target"
-                  stroke="#EF4444"
+                  stroke="#991B1B"
                   strokeWidth={2}
                   strokeDasharray="5 5"
                   name="Target"

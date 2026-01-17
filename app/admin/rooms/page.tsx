@@ -337,7 +337,7 @@ export default function AdminRoomsPage() {
                         </button>
                         <button
                           onClick={() => handleEdit(room)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-red-600 hover:text-red-900"
                           title="Edit Room"
                         >
                           <Edit className="h-5 w-5" />
@@ -390,7 +390,7 @@ export default function AdminRoomsPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                     required
                   />
                 </div>
@@ -413,7 +413,7 @@ export default function AdminRoomsPage() {
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={3}
                 />
               </div>
@@ -436,7 +436,7 @@ export default function AdminRoomsPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                     disabled={uploadingImage}
                   />
                   {uploadingImage && <p className="text-sm text-gray-500">Uploading...</p>}
@@ -450,7 +450,7 @@ export default function AdminRoomsPage() {
                   <select
                     value={formData.typical_humidity}
                     onChange={(e) => setFormData({ ...formData, typical_humidity: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   >
                     <option value="">Select humidity level</option>
                     <option value="Low">Low</option>
@@ -464,7 +464,7 @@ export default function AdminRoomsPage() {
                   <select
                     value={formData.light_exposure}
                     onChange={(e) => setFormData({ ...formData, light_exposure: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   >
                     <option value="">Select light level</option>
                     <option value="Low">Low</option>
@@ -478,7 +478,7 @@ export default function AdminRoomsPage() {
                   <select
                     value={formData.privacy_requirements}
                     onChange={(e) => setFormData({ ...formData, privacy_requirements: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   >
                     <option value="">Select privacy level</option>
                     <option value="Low">Low</option>
@@ -493,7 +493,7 @@ export default function AdminRoomsPage() {
                 <textarea
                   value={formData.recommended_products}
                   onChange={(e) => setFormData({ ...formData, recommended_products: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   rows={2}
                   placeholder="Brief description of recommended products for this room"
                 />
@@ -502,7 +502,7 @@ export default function AdminRoomsPage() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold"
+                  className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold"
                 >
                   {editingRoom ? 'Update' : 'Create'} Room
                 </button>

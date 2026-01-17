@@ -66,12 +66,12 @@ interface OfflineOrder {
 const statusConfig: Record<string, { label: string; color: string; icon: React.ComponentType<any> }> = {
   'quote_requested': { label: 'Quote Requested', color: 'bg-gray-100 text-gray-700', icon: AlertCircle },
   'order_paid': { label: 'Order Paid', color: 'bg-green-100 text-green-700', icon: DollarSign },
-  'order_placed': { label: 'Order Placed', color: 'bg-blue-100 text-blue-700', icon: Package },
+  'order_placed': { label: 'Order Placed', color: 'bg-red-100 text-red-700', icon: Package },
   'order_in_production': { label: 'In Production', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-  'order_finished': { label: 'Order Finished', color: 'bg-purple-100 text-primary-dark', icon: CheckCircle },
-  'sent_to_shipping': { label: 'Sent to Shipping', color: 'bg-indigo-100 text-primary-dark', icon: Truck },
+  'order_finished': { label: 'Order Finished', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+  'sent_to_shipping': { label: 'Sent to Shipping', color: 'bg-red-100 text-red-700', icon: Truck },
   'shipping_paid': { label: 'Shipping Paid', color: 'bg-green-100 text-green-700', icon: DollarSign },
-  'sent_to_customer': { label: 'Sent to Customer', color: 'bg-blue-100 text-blue-700', icon: Truck },
+  'sent_to_customer': { label: 'Sent to Customer', color: 'bg-red-100 text-red-700', icon: Truck },
   'order_received': { label: 'Order Received', color: 'bg-green-100 text-green-700', icon: CheckCircle },
   'order_damaged': { label: 'Order Damaged', color: 'bg-red-100 text-red-700', icon: AlertCircle },
   'missing_blind': { label: 'Missing Blind', color: 'bg-orange-100 text-orange-700', icon: AlertCircle }
@@ -344,7 +344,7 @@ export default function OfflineOrdersDashboard() {
                           </Button>
                         </Link>
                         <Link href={`/admin/offline-orders/${order.order_id}/edit`}>
-                          <Button variant="ghost" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                          <Button variant="ghost" size="sm" className="p-1.5 hover:bg-red-50 rounded-md transition-colors">
                             <Edit className="h-6 w-6" />
                           </Button>
                         </Link>

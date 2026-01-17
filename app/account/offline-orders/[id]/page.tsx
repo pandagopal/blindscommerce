@@ -87,12 +87,12 @@ interface OrderDetails {
 const statusConfig: Record<string, { label: string; color: string }> = {
   'quote_requested': { label: 'Quote Requested', color: 'bg-gray-100 text-gray-700' },
   'order_paid': { label: 'Order Paid', color: 'bg-green-100 text-green-700' },
-  'order_placed': { label: 'Order Placed', color: 'bg-blue-100 text-blue-700' },
+  'order_placed': { label: 'Order Placed', color: 'bg-red-100 text-red-700' },
   'order_in_production': { label: 'In Production', color: 'bg-yellow-100 text-yellow-700' },
-  'order_finished': { label: 'Order Finished', color: 'bg-purple-100 text-primary-dark' },
-  'sent_to_shipping': { label: 'Sent to Shipping', color: 'bg-indigo-100 text-primary-dark' },
+  'order_finished': { label: 'Order Finished', color: 'bg-red-100 text-primary-dark' },
+  'sent_to_shipping': { label: 'Sent to Shipping', color: 'bg-red-100 text-primary-dark' },
   'shipping_paid': { label: 'Shipping Paid', color: 'bg-green-100 text-green-700' },
-  'sent_to_customer': { label: 'Sent to Customer', color: 'bg-blue-100 text-blue-700' },
+  'sent_to_customer': { label: 'Sent to Customer', color: 'bg-red-100 text-red-700' },
   'order_received': { label: 'Order Received', color: 'bg-green-100 text-green-700' },
   'order_damaged': { label: 'Order Damaged', color: 'bg-red-100 text-red-700' },
   'missing_blind': { label: 'Missing Blind', color: 'bg-orange-100 text-orange-700' }

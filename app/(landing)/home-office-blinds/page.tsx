@@ -7,9 +7,9 @@ export default function HomeOfficeBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-slate-700 to-slate-900 text-white py-20">
+      <section className="bg-gradient-to-br from-slate-700 to-slate-900 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-3xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Work From Home
             </span>
@@ -85,8 +85,8 @@ export default function HomeOfficeBlindsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-4 mb-4">
-                <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center">
-                  <FaSun className="text-xl text-blue-600" />
+                <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                  <FaSun className="text-xl text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold">Solar Shades</h3>
               </div>
@@ -108,15 +108,15 @@ export default function HomeOfficeBlindsPage() {
                   <span>Blocks heat from direct sun</span>
                 </li>
               </ul>
-              <Link href="/products?category=solar-shades" className="text-blue-600 font-medium hover:underline">
+              <Link href="/products?category=solar-shades" className="text-red-600 font-medium hover:underline">
                 Shop Solar Shades →
               </Link>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-4 mb-4">
-                <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center">
-                  <FaLightbulb className="text-xl text-purple-600" />
+                <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                  <FaLightbulb className="text-xl text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold">Light Filtering Cellular Shades</h3>
               </div>
@@ -138,15 +138,15 @@ export default function HomeOfficeBlindsPage() {
                   <span>Cordless and motorized options</span>
                 </li>
               </ul>
-              <Link href="/products?category=cellular-shades&opacity=light-filtering" className="text-purple-600 font-medium hover:underline">
+              <Link href="/products?category=cellular-shades&opacity=light-filtering" className="text-red-600 font-medium hover:underline">
                 Shop Light Filtering →
               </Link>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-4 mb-4">
-                <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center">
-                  <FaCog className="text-xl text-green-600" />
+                <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                  <FaCog className="text-xl text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold">Motorized Blinds</h3>
               </div>
@@ -168,15 +168,15 @@ export default function HomeOfficeBlindsPage() {
                   <span>Works with Alexa, Google, HomeKit</span>
                 </li>
               </ul>
-              <Link href="/guides/motorized-blinds" className="text-green-600 font-medium hover:underline">
+              <Link href="/guides/motorized-blinds" className="text-red-600 font-medium hover:underline">
                 Learn About Motorized →
               </Link>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center gap-4 mb-4">
-                <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center">
-                  <FaVideo className="text-xl text-indigo-600" />
+                <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center">
+                  <FaVideo className="text-xl text-red-600" />
                 </div>
                 <h3 className="text-xl font-bold">Top-Down Bottom-Up</h3>
               </div>
@@ -198,7 +198,7 @@ export default function HomeOfficeBlindsPage() {
                   <span>Privacy from street level</span>
                 </li>
               </ul>
-              <Link href="/top-down-bottom-up-shades" className="text-indigo-600 font-medium hover:underline">
+              <Link href="/top-down-bottom-up-shades" className="text-red-600 font-medium hover:underline">
                 Learn About TDBU →
               </Link>
             </div>
@@ -268,40 +268,40 @@ export default function HomeOfficeBlindsPage() {
           <h2 className="text-3xl font-bold text-center mb-12">Top Picks for Home Offices</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <div className="bg-gradient-to-br from-blue-400 to-blue-600 h-40 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-400 to-red-600 h-40 flex items-center justify-center">
                 <span className="text-white text-6xl">☀️</span>
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold text-blue-600 uppercase">Best for Glare</span>
+                <span className="text-xs font-semibold text-red-600 uppercase">Best for Glare</span>
                 <h3 className="text-lg font-bold mt-1 mb-2">Solar Roller Shades</h3>
                 <p className="text-gray-600 text-sm mb-4">3-5% openness blocks glare while maintaining view</p>
-                <Link href="/products?category=solar-shades" className="text-blue-600 font-medium text-sm hover:underline">
+                <Link href="/products?category=solar-shades" className="text-red-600 font-medium text-sm hover:underline">
                   Shop Now →
                 </Link>
               </div>
             </div>
             <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <div className="bg-gradient-to-br from-purple-400 to-purple-600 h-40 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-400 to-red-600 h-40 flex items-center justify-center">
                 <span className="text-white text-6xl">🎥</span>
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold text-purple-600 uppercase">Best for Video</span>
+                <span className="text-xs font-semibold text-red-600 uppercase">Best for Video</span>
                 <h3 className="text-lg font-bold mt-1 mb-2">Light Filtering Cellular</h3>
                 <p className="text-gray-600 text-sm mb-4">Soft, diffused light perfect for video calls</p>
-                <Link href="/products?category=cellular-shades&opacity=light-filtering" className="text-purple-600 font-medium text-sm hover:underline">
+                <Link href="/products?category=cellular-shades&opacity=light-filtering" className="text-red-600 font-medium text-sm hover:underline">
                   Shop Now →
                 </Link>
               </div>
             </div>
             <div className="bg-white rounded-xl overflow-hidden shadow-sm">
-              <div className="bg-gradient-to-br from-green-400 to-green-600 h-40 flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-400 to-red-600 h-40 flex items-center justify-center">
                 <span className="text-white text-6xl">🔋</span>
               </div>
               <div className="p-6">
-                <span className="text-xs font-semibold text-green-600 uppercase">Best Convenience</span>
+                <span className="text-xs font-semibold text-red-600 uppercase">Best Convenience</span>
                 <h3 className="text-lg font-bold mt-1 mb-2">Motorized Shades</h3>
                 <p className="text-gray-600 text-sm mb-4">Adjust without leaving your desk or interrupting work</p>
-                <Link href="/products?feature=motorized" className="text-green-600 font-medium text-sm hover:underline">
+                <Link href="/products?feature=motorized" className="text-red-600 font-medium text-sm hover:underline">
                   Shop Now →
                 </Link>
               </div>

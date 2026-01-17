@@ -89,10 +89,10 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
 
   const getPlatformColor = (platform: string) => {
     const colors = {
-      facebook: 'hover:text-blue-600',
+      facebook: 'hover:text-red-600',
       instagram: 'hover:text-primary-red',
-      twitter: 'hover:text-blue-400',
-      linkedin: 'hover:text-blue-700',
+      twitter: 'hover:text-red-400',
+      linkedin: 'hover:text-red-700',
       youtube: 'hover:text-red-600',
       pinterest: 'hover:text-red-500',
       tiktok: 'hover:text-black'

@@ -160,15 +160,15 @@ export default function VendorShipmentsPage() {
 
   const getStatusBadgeColor = (status: string) => {
     const colors: Record<string, string> = {
-      preparing: 'bg-blue-100 text-blue-800',
-      in_transit: 'bg-purple-100 text-purple-800',
+      preparing: 'bg-red-100 text-red-800',
+      in_transit: 'bg-red-100 text-red-800',
       customs: 'bg-orange-100 text-orange-800',
       delivered: 'bg-green-100 text-green-800',
       delayed: 'bg-yellow-100 text-yellow-800',
       failed: 'bg-red-100 text-red-800',
       pending: 'bg-gray-100 text-gray-800',
-      picked_up: 'bg-indigo-100 text-indigo-800',
-      arrived: 'bg-teal-100 text-teal-800'
+      picked_up: 'bg-red-100 text-red-800',
+      arrived: 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -219,8 +219,8 @@ export default function VendorShipmentsPage() {
         <h1 className="text-2xl font-bold">Shipments</h1>
         <div className="flex items-center gap-4 text-sm">
           <span className="flex items-center gap-1"><Package className="h-4 w-4" /> {stats.total}</span>
-          <span className="flex items-center gap-1 text-blue-600"><Clock className="h-4 w-4" /> {stats.preparing}</span>
-          <span className="flex items-center gap-1 text-purple-600"><Plane className="h-4 w-4" /> {stats.inTransit}</span>
+          <span className="flex items-center gap-1 text-red-600"><Clock className="h-4 w-4" /> {stats.preparing}</span>
+          <span className="flex items-center gap-1 text-red-600"><Plane className="h-4 w-4" /> {stats.inTransit}</span>
           <span className="flex items-center gap-1 text-green-600"><CheckCircle className="h-4 w-4" /> {stats.delivered}</span>
           {stats.delayed > 0 && <span className="flex items-center gap-1 text-yellow-600"><AlertCircle className="h-4 w-4" /> {stats.delayed}</span>}
         </div>
@@ -288,7 +288,7 @@ export default function VendorShipmentsPage() {
                     )}
                   </td>
                   <td className="py-2 px-3">
-                    <Link href={`/vendor/orders/${shipment.order_id}`} className="text-blue-600 hover:underline">
+                    <Link href={`/vendor/orders/${shipment.order_id}`} className="text-red-600 hover:underline">
                       #{shipment.order_number}
                     </Link>
                   </td>
@@ -356,7 +356,7 @@ export default function VendorShipmentsPage() {
                                 <div className="space-y-2">
                                   {selectedShipment.legs.map((leg) => (
                                     <div key={leg.leg_id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-                                      <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 text-xs flex items-center justify-center font-medium">
+                                      <span className="w-5 h-5 rounded-full bg-red-100 text-red-600 text-xs flex items-center justify-center font-medium">
                                         {leg.leg_order}
                                       </span>
                                       <span className="font-medium">{leg.carrier_name}</span>
@@ -369,11 +369,11 @@ export default function VendorShipmentsPage() {
                                       {leg.tracking_number && (
                                         <div className="ml-auto flex items-center gap-1 text-gray-500">
                                           <span className="text-xs">{leg.tracking_number}</span>
-                                          <button onClick={() => copyTrackingNumber(leg.tracking_number!)} className="hover:text-blue-600">
+                                          <button onClick={() => copyTrackingNumber(leg.tracking_number!)} className="hover:text-red-600">
                                             <Copy className="h-3 w-3" />
                                           </button>
                                           {leg.tracking_url && (
-                                            <a href={leg.tracking_url} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
+                                            <a href={leg.tracking_url} target="_blank" rel="noopener noreferrer" className="hover:text-red-600">
                                               <ExternalLink className="h-3 w-3" />
                                             </a>
                                           )}
@@ -391,7 +391,7 @@ export default function VendorShipmentsPage() {
                                 <div className="text-xs text-gray-500 mb-2">History</div>
                                 <div className="space-y-1 max-h-40 overflow-y-auto">
                                   {shipmentEvents.map((event) => (
-                                    <div key={event.event_id} className="flex gap-2 p-1.5 border-l-2 border-blue-200 pl-3 text-xs">
+                                    <div key={event.event_id} className="flex gap-2 p-1.5 border-l-2 border-red-200 pl-3 text-xs">
                                       <div className="flex-1">
                                         <div className="font-medium">{event.event_description}</div>
                                         <div className="text-gray-500">
@@ -426,7 +426,7 @@ export default function VendorShipmentsPage() {
 
       {/* Compact Info */}
       <p className="text-xs text-gray-500">
-        Create shipments from <Link href="/vendor/orders" className="text-blue-600 hover:underline">Orders</Link> page.
+        Create shipments from <Link href="/vendor/orders" className="text-red-600 hover:underline">Orders</Link> page.
       </p>
     </div>
   );

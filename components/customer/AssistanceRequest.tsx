@@ -204,7 +204,7 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
                     key={type.value}
                     className={`border rounded-lg p-3 cursor-pointer transition-colors ${
                       sessionType === type.value
-                        ? 'border-red-500 bg-purple-50'
+                        ? 'border-red-500 bg-red-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setSessionType(type.value)}
@@ -217,7 +217,7 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
                       </div>
                       <div className={`w-4 h-4 rounded-full border-2 ${
                         sessionType === type.value
-                          ? 'border-red-500 bg-purple-500'
+                          ? 'border-red-500 bg-red-500'
                           : 'border-gray-300'
                       }`}>
                         {sessionType === type.value && (
@@ -253,7 +253,7 @@ export default function AssistanceRequest({ onRequestSubmitted }: AssistanceRequ
 
           <Button
             type="submit"
-            className="w-full bg-purple-600 hover:bg-primary-dark"
+            className="w-full bg-red-600 hover:bg-primary-dark"
             disabled={isLoading}
           >
             {isLoading ? (

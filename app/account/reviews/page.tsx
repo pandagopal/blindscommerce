@@ -266,10 +266,10 @@ export default function ReviewsPage() {
 
                         {/* Admin Response */}
                         {review.admin_response && (
-                          <div className="mt-3 bg-blue-50 rounded-lg p-3">
-                            <p className="text-sm text-blue-900 font-medium">Response from Support:</p>
-                            <p className="text-sm text-blue-700">{review.admin_response}</p>
-                            <p className="text-xs text-blue-500 mt-1">
+                          <div className="mt-3 bg-red-50 rounded-lg p-3">
+                            <p className="text-sm text-red-900 font-medium">Response from Support:</p>
+                            <p className="text-sm text-red-700">{review.admin_response}</p>
+                            <p className="text-xs text-red-500 mt-1">
                               {review.admin_response_at && formatDate(review.admin_response_at)}
                             </p>
                           </div>

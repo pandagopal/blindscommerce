@@ -18,11 +18,11 @@ export default function NoDrillHighlight({
 
   if (variant === 'banner') {
     return (
-      <div className={`bg-gradient-to-r from-purple-50 to-indigo-50 border border-red-200 rounded-lg p-4 ${className}`}>
+      <div className={`bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-lg p-4 ${className}`}>
         <div className="flex items-center justify-center space-x-3">
           <Wrench className="h-6 w-6 text-primary-red" />
           <div className="text-center">
-            <Badge variant="outline" className="bg-purple-100 text-primary-dark border-red-300 mb-2">
+            <Badge variant="outline" className="bg-red-100 text-primary-dark border-red-300 mb-2">
               No-Drill Installation
             </Badge>
             <p className="text-sm font-medium text-gray-900">
@@ -39,7 +39,7 @@ export default function NoDrillHighlight({
       <div className={`flex items-center space-x-2 text-sm ${className}`}>
         <Wrench className="h-4 w-4 text-primary-red" />
         <span className="text-primary-dark font-medium">No-Drill Options Available</span>
-        <Badge variant="outline" className="text-xs bg-purple-50 text-primary-dark border-red-300">
+        <Badge variant="outline" className="text-xs bg-red-50 text-primary-dark border-red-300">
           Damage-Free
         </Badge>
       </div>
@@ -47,11 +47,11 @@ export default function NoDrillHighlight({
   }
 
   return (
-    <Card className={`border-red-200 bg-purple-50 ${className}`}>
+    <Card className={`border-red-200 bg-red-50 ${className}`}>
       <CardContent className="p-6">
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-purple-100 rounded-full">
+            <div className="p-3 bg-red-100 rounded-full">
               <Wrench className="h-8 w-8 text-primary-red" />
             </div>
           </div>

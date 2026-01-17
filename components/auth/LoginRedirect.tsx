@@ -37,7 +37,7 @@ export default function LoginRedirect({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-rose-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg border border-gray-200 p-8 text-center">
         <div className="mb-6">
           <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">

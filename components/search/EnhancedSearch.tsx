@@ -275,7 +275,7 @@ export default function EnhancedSearch({
                   key={index}
                   onClick={() => handleRecentSearchClick(recentQuery)}
                   className={`w-full text-left p-2 rounded hover:bg-gray-50 ${
-                    selectedIndex === index ? 'bg-blue-50' : ''
+                    selectedIndex === index ? 'bg-red-50' : ''
                   }`}
                 >
                   <div className="text-sm font-medium">{recentQuery}</div>
@@ -300,7 +300,7 @@ export default function EnhancedSearch({
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
                     className={`w-full text-left p-2 rounded hover:bg-gray-50 flex items-start space-x-3 ${
-                      selectedIndex === adjustedIndex ? 'bg-blue-50' : ''
+                      selectedIndex === adjustedIndex ? 'bg-red-50' : ''
                     }`}
                   >
                     {suggestion.image ? (

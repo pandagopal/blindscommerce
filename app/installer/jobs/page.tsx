@@ -253,7 +253,7 @@ export default function InstallerJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading jobs...</p>
@@ -263,7 +263,7 @@ export default function InstallerJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -280,7 +280,7 @@ export default function InstallerJobsPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Jobs</CardTitle>
-                <Wrench className="h-4 w-4 text-blue-600" />
+                <Wrench className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -328,7 +328,7 @@ export default function InstallerJobsPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Avg Time</CardTitle>
-                <Clock className="h-4 w-4 text-blue-600" />
+                <Clock className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -439,7 +439,7 @@ export default function InstallerJobsPage() {
                       </div>
                     </div>
                     {job.special_instructions && (
-                      <div className="text-sm text-blue-600">
+                      <div className="text-sm text-red-600">
                         Special: {job.special_instructions}
                       </div>
                     )}

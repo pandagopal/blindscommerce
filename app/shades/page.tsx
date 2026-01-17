@@ -125,7 +125,7 @@ export default function ShadesPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">

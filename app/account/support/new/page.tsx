@@ -304,10 +304,10 @@ export default function NewTicketPage() {
       </form>
 
       {/* Tips */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-red-50 border-red-200">
         <CardContent className="p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Tips for faster resolution</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
+          <h3 className="font-medium text-red-900 mb-2">Tips for faster resolution</h3>
+          <ul className="text-sm text-red-700 space-y-1">
             <li>• Be specific about your issue and include relevant details</li>
             <li>• Include order numbers or product names when applicable</li>
             <li>• Attach screenshots if they help explain the issue</li>

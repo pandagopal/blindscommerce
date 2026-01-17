@@ -251,7 +251,7 @@ export default function SalesQuotesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading quotes...</p>
@@ -261,7 +261,7 @@ export default function SalesQuotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -290,7 +290,7 @@ export default function SalesQuotesPage() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <FileText className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <FileText className="h-8 w-8 mx-auto text-red-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.total_quotes || 0}</div>
               <div className="text-sm text-gray-600">Total Quotes</div>
             </CardContent>
@@ -419,7 +419,7 @@ export default function SalesQuotesPage() {
                       </div>
                     </div>
                     {quote.notes && (
-                      <div className="text-sm text-blue-600 bg-blue-50 p-2 rounded">
+                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
                         <strong>Notes:</strong> {quote.notes}
                       </div>
                     )}
@@ -464,7 +464,7 @@ export default function SalesQuotesPage() {
                                       <div className="font-medium">{item.product_name}</div>
                                       <div className="text-sm text-gray-600">{item.description}</div>
                                       {item.room && (
-                                        <div className="text-xs text-blue-600">Room: {item.room}</div>
+                                        <div className="text-xs text-red-600">Room: {item.room}</div>
                                       )}
                                     </div>
                                     <div className="text-right">

@@ -89,9 +89,9 @@ export default function BlackoutBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-indigo-900 to-gray-900 text-white py-20 lg:py-28">
+      <section className="relative bg-gradient-to-br from-gray-900 via-red-900 to-gray-900 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               100% Light Blocking
             </span>
@@ -129,7 +129,7 @@ export default function BlackoutBlindsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {benefits.map((benefit, index) => (
               <div key={index} className="bg-white rounded-xl p-6 shadow-lg text-center">
-                <benefit.icon className="text-5xl text-indigo-600 mx-auto mb-4" />
+                <benefit.icon className="text-5xl text-red-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
                 <p className="text-gray-600">{benefit.description}</p>
               </div>
@@ -139,22 +139,22 @@ export default function BlackoutBlindsPage() {
       </section>
 
       {/* Sleep Stats */}
-      <section className="py-16 bg-indigo-900 text-white">
+      <section className="py-16 bg-red-900 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             The Science of Better Sleep
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-center">
             <div>
-              <div className="text-5xl font-bold text-indigo-300 mb-2">73%</div>
+              <div className="text-5xl font-bold text-red-300 mb-2">73%</div>
               <div className="text-gray-300">of people sleep better in complete darkness</div>
             </div>
             <div>
-              <div className="text-5xl font-bold text-indigo-300 mb-2">45 min</div>
+              <div className="text-5xl font-bold text-red-300 mb-2">45 min</div>
               <div className="text-gray-300">extra sleep per night on average</div>
             </div>
             <div>
-              <div className="text-5xl font-bold text-indigo-300 mb-2">30%</div>
+              <div className="text-5xl font-bold text-red-300 mb-2">30%</div>
               <div className="text-gray-300">improvement in sleep quality reported</div>
             </div>
           </div>
@@ -177,7 +177,7 @@ export default function BlackoutBlindsPage() {
                 href={type.href}
                 className="bg-gray-50 rounded-xl p-6 hover:shadow-lg transition-shadow group"
               >
-                <h3 className="text-2xl font-bold mb-2 group-hover:text-indigo-600 transition-colors">
+                <h3 className="text-2xl font-bold mb-2 group-hover:text-red-600 transition-colors">
                   {type.name}
                 </h3>
                 <p className="text-gray-600 mb-4">{type.description}</p>
@@ -190,8 +190,8 @@ export default function BlackoutBlindsPage() {
                   ))}
                 </ul>
                 <div className="flex justify-between items-center">
-                  <span className="text-xl font-bold text-indigo-600">From {type.priceFrom}</span>
-                  <span className="text-indigo-600 group-hover:translate-x-1 transition-transform inline-flex items-center">
+                  <span className="text-xl font-bold text-red-600">From {type.priceFrom}</span>
+                  <span className="text-red-600 group-hover:translate-x-1 transition-transform inline-flex items-center">
                     Shop <FaArrowRight className="ml-2" />
                   </span>
                 </div>
@@ -217,7 +217,7 @@ export default function BlackoutBlindsPage() {
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                     <div>
                       <h3 className="text-xl font-bold text-gray-900">{item.room}</h3>
-                      <p className="text-indigo-600 font-medium">{item.recommendation}</p>
+                      <p className="text-red-600 font-medium">{item.recommendation}</p>
                     </div>
                     <p className="text-gray-600 mt-2 md:mt-0 md:max-w-md md:text-right">{item.why}</p>
                   </div>
@@ -368,7 +368,7 @@ export default function BlackoutBlindsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?opacity=blackout"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
             >
               Shop Blackout Blinds
             </Link>

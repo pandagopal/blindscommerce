@@ -189,26 +189,26 @@ export default function SampleRequestWidget({
     <div className="space-y-6">
       {/* Limits Information */}
       {showLimitsInfo && userLimits && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-red-200 bg-red-50">
           <CardContent className="p-4">
             <div className="flex items-start">
-              <Info className="h-5 w-5 text-blue-600 mr-2 mt-0.5" />
+              <Info className="h-5 w-5 text-red-600 mr-2 mt-0.5" />
               <div className="flex-1">
-                <h3 className="font-medium text-blue-900 mb-3">Sample Request Limits</h3>
+                <h3 className="font-medium text-red-900 mb-3">Sample Request Limits</h3>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm text-blue-700">Remaining this period:</span>
-                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                    <span className="text-sm text-red-700">Remaining this period:</span>
+                    <Badge variant="outline" className="text-red-700 border-red-300">
                       {userLimits.remainingPeriod} samples
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm text-blue-700">Lifetime remaining:</span>
-                    <Badge variant="outline" className="text-blue-700 border-blue-300">
+                    <span className="text-sm text-red-700">Lifetime remaining:</span>
+                    <Badge variant="outline" className="text-red-700 border-red-300">
                       {userLimits.remainingLifetime} samples
                     </Badge>
                   </div>
-                  <div className="text-xs text-blue-600 mt-2">
+                  <div className="text-xs text-red-600 mt-2">
                     Period resets: {new Date(userLimits.periodEnd).toLocaleDateString()}
                   </div>
                 </div>

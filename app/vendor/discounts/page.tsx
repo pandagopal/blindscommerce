@@ -378,13 +378,13 @@ export default function VendorDiscountsPage() {
                         {discount.valid_until ? formatDate(discount.valid_until) : 'No expiry'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           onClick={() => handleEdit(discount)}
                           title="Edit discount"
-                          className="p-2 hover:bg-blue-50 rounded-md transition-colors"
+                          className="p-2 hover:bg-red-50 rounded-md transition-colors"
                         >
-                          <Edit className="h-6 w-6 text-blue-600" />
+                          <Edit className="h-6 w-6 text-red-600" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -482,13 +482,13 @@ export default function VendorDiscountsPage() {
                       </td>
                       <td className="px-3 py-3 text-right text-sm font-medium">
                         <div className="flex justify-end space-x-1">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             onClick={() => handleEdit(coupon)}
                             title="Edit coupon"
-                            className="p-2 hover:bg-blue-50 rounded-md transition-colors"
+                            className="p-2 hover:bg-red-50 rounded-md transition-colors"
                           >
-                            <Edit className="h-6 w-6 text-blue-600" />
+                            <Edit className="h-6 w-6 text-red-600" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -785,7 +785,7 @@ function EditForm({ item, type, onSave, onCancel }: EditFormProps) {
       </div>
 
       {type === 'coupons' && formData.show_on_homepage_popup && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           This coupon will be displayed in the exit-intent popup on the homepage. Only the top active coupon with this option enabled will be shown to visitors.
         </div>
       )}
@@ -1085,7 +1085,7 @@ function CreateForm({ type, onSave, onCancel }: CreateFormProps) {
       </div>
 
       {type === 'coupons' && formData.show_on_homepage_popup && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
           This coupon will be displayed in the exit-intent popup on the homepage. Only the top active coupon with this option enabled will be shown to visitors.
         </div>
       )}

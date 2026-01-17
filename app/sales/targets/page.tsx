@@ -148,7 +148,7 @@ export default function SalesTargetsPage() {
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 100) return 'bg-green-500';
-    if (percentage >= 80) return 'bg-blue-500';
+    if (percentage >= 80) return 'bg-red-500';
     if (percentage >= 60) return 'bg-yellow-500';
     return 'bg-red-500';
   };
@@ -308,13 +308,13 @@ export default function SalesTargetsPage() {
                     <span className="text-xl font-bold">5%</span>
                   </div>
                 </div>
-                <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <div className="p-4 bg-red-50 rounded-lg border-2 border-red-200">
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="font-semibold">Performance Bonus</p>
                       <p className="text-sm text-gray-600">100-120% of target</p>
                     </div>
-                    <span className="text-xl font-bold text-blue-600">7.5%</span>
+                    <span className="text-xl font-bold text-red-600">7.5%</span>
                   </div>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">

@@ -24,16 +24,16 @@ const badges = [
     icon: Shield,
     title: 'Satisfaction Guarantee',
     description: '30-day money back',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-50'
+    color: 'text-red-600',
+    bgColor: 'bg-red-50'
   },
   {
     id: 'shipping',
     icon: Truck,
     title: 'Free Shipping',
     description: 'On eligible orders',
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-50'
+    color: 'text-red-600',
+    bgColor: 'bg-red-50'
   },
   {
     id: 'warranty',
@@ -48,16 +48,16 @@ const badges = [
     icon: RotateCcw,
     title: 'Easy Returns',
     description: 'Hassle-free process',
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-50'
+    color: 'text-red-600',
+    bgColor: 'bg-red-50'
   },
   {
     id: 'payment',
     icon: CreditCard,
     title: 'Secure Payment',
     description: 'All major cards accepted',
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-50'
+    color: 'text-red-600',
+    bgColor: 'bg-red-50'
   }
 ];
 
@@ -170,11 +170,11 @@ export const TrustBar: React.FC<{ className?: string }> = ({ className = '' }) =
             <span>Secure Checkout</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <Shield className="h-4 w-4 text-blue-600" />
+            <Shield className="h-4 w-4 text-red-600" />
             <span>30-Day Guarantee</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
-            <Truck className="h-4 w-4 text-purple-600" />
+            <Truck className="h-4 w-4 text-red-600" />
             <span>Free Shipping on eligible orders</span>
           </div>
           <div className="flex items-center gap-2 text-gray-600">
@@ -195,7 +195,7 @@ export const PaymentIcons: React.FC<{ className?: string }> = ({ className = '' 
       <div className="flex items-center gap-2">
         {/* Visa */}
         <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center">
-          <span className="text-xs font-bold text-blue-600">VISA</span>
+          <span className="text-xs font-bold text-red-600">VISA</span>
         </div>
         {/* Mastercard */}
         <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center">
@@ -203,11 +203,11 @@ export const PaymentIcons: React.FC<{ className?: string }> = ({ className = '' 
         </div>
         {/* Amex */}
         <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center">
-          <span className="text-xs font-bold text-blue-500">AMEX</span>
+          <span className="text-xs font-bold text-red-500">AMEX</span>
         </div>
         {/* PayPal */}
         <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center">
-          <span className="text-xs font-bold text-blue-700">PP</span>
+          <span className="text-xs font-bold text-red-700">PP</span>
         </div>
       </div>
     </div>

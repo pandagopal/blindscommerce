@@ -160,7 +160,7 @@ export default function InstallerCompletedJobsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading completed jobs...</p>
@@ -170,7 +170,7 @@ export default function InstallerCompletedJobsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -255,7 +255,7 @@ export default function InstallerCompletedJobsPage() {
           
           <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <Clock className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <Clock className="h-8 w-8 mx-auto text-red-600 mb-2" />
               <div className="text-2xl font-bold">
                 {filteredJobs.length > 0 
                   ? formatDuration(filteredJobs.reduce((sum, job) => sum + job.duration, 0) / filteredJobs.length)
@@ -403,9 +403,9 @@ export default function InstallerCompletedJobsPage() {
                           
                           {/* Warranty */}
                           {selectedJob.warranty_period > 0 && (
-                            <div className="p-4 bg-blue-50 rounded-lg">
-                              <h3 className="font-medium text-blue-800">Warranty Information</h3>
-                              <p className="text-blue-600 text-sm">
+                            <div className="p-4 bg-red-50 rounded-lg">
+                              <h3 className="font-medium text-red-800">Warranty Information</h3>
+                              <p className="text-red-600 text-sm">
                                 {selectedJob.warranty_period} months warranty from completion date
                               </p>
                             </div>

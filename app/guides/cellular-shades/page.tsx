@@ -18,7 +18,7 @@ export default function CellularShadesBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-green-700 to-green-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
@@ -26,7 +26,7 @@ export default function CellularShadesBuyingGuidePage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Cellular Shades Buying Guide
           </h1>
-          <p className="text-lg text-green-100 mb-4">
+          <p className="text-lg text-red-100 mb-4">
             Everything you need to know about honeycomb shades - the most energy-efficient
             window treatment for your home. Learn about cell sizes, opacity levels, and features.
           </p>

@@ -26,9 +26,9 @@ export default function ActiveFilterPills({
       case 'category':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'price':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'room':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
+        return 'bg-red-100 text-red-800 border-red-200';
       case 'sale':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'search':

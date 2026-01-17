@@ -228,7 +228,7 @@ export default function SalesLeadsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading leads...</p>
@@ -238,7 +238,7 @@ export default function SalesLeadsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -339,7 +339,7 @@ export default function SalesLeadsPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Leads</CardTitle>
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -492,7 +492,7 @@ export default function SalesLeadsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingLead(lead)}
-                            className="p-1.5 hover:bg-blue-50 rounded-md transition-colors"
+                            className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
                           >
                             <Edit className="h-6 w-6" />
                           </Button>

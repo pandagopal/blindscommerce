@@ -95,9 +95,9 @@ export default function WindowBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 text-white py-20 lg:py-28">
+      <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
               Window Blinds for Every Home
             </h1>

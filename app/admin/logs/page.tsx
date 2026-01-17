@@ -240,7 +240,7 @@ export default function AdminLogsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading system logs...</p>
@@ -250,7 +250,7 @@ export default function AdminLogsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -292,7 +292,7 @@ export default function AdminLogsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card className="border-red-100 shadow-lg">
             <CardContent className="p-6 text-center">
-              <FileText className="h-8 w-8 mx-auto text-blue-600 mb-2" />
+              <FileText className="h-8 w-8 mx-auto text-red-600 mb-2" />
               <div className="text-2xl font-bold">{stats?.total_entries.toLocaleString() || 0}</div>
               <div className="text-sm text-gray-600">Total Entries</div>
             </CardContent>

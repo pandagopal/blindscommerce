@@ -161,7 +161,7 @@ export default function SuperAdminDashboard() {
   const getHealthColor = (health: string) => {
     switch (health) {
       case 'excellent': return 'text-green-600 bg-green-100';
-      case 'good': return 'text-blue-600 bg-blue-100';
+      case 'good': return 'text-red-600 bg-red-100';
       case 'warning': return 'text-yellow-600 bg-yellow-100';
       case 'critical': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
@@ -170,7 +170,7 @@ export default function SuperAdminDashboard() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'low': return 'text-blue-600 bg-blue-100';
+      case 'low': return 'text-red-600 bg-red-100';
       case 'medium': return 'text-yellow-600 bg-yellow-100';
       case 'high': return 'text-orange-600 bg-orange-100';
       case 'critical': return 'text-red-600 bg-red-100';
@@ -184,7 +184,7 @@ export default function SuperAdminDashboard() {
       href: '/admin/users',
       icon: Users,
       description: 'Manage all users and permissions',
-      color: 'bg-blue-500'
+      color: 'bg-red-500'
     },
     {
       name: 'System Settings',
@@ -198,7 +198,7 @@ export default function SuperAdminDashboard() {
       href: '/super-admin/database',
       icon: Database,
       description: 'Database management and backups',
-      color: 'bg-green-500'
+      color: 'bg-red-500'
     },
     {
       name: 'Security Center',
@@ -212,7 +212,7 @@ export default function SuperAdminDashboard() {
       href: '/super-admin/financials',
       icon: DollarSign,
       description: 'Revenue, commissions, and payments',
-      color: 'bg-purple-500'
+      color: 'bg-red-500'
     },
     {
       name: 'System Analytics',
@@ -279,7 +279,7 @@ export default function SuperAdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <Users className="h-8 w-8 text-blue-600" />
+            <Users className="h-8 w-8 text-red-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Users</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalUsers.toLocaleString()}</p>
@@ -289,7 +289,7 @@ export default function SuperAdminDashboard() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <Building className="h-8 w-8 text-green-600" />
+            <Building className="h-8 w-8 text-red-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Active Vendors</p>
               <p className="text-2xl font-bold text-gray-900">{stats.totalVendors}</p>
@@ -309,7 +309,7 @@ export default function SuperAdminDashboard() {
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
-            <DollarSign className="h-8 w-8 text-green-600" />
+            <DollarSign className="h-8 w-8 text-red-600" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500">Total Revenue</p>
               <p className="text-2xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>

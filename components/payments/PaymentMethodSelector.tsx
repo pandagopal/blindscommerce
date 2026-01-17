@@ -105,16 +105,16 @@ const PaymentMethodSelector = ({
     
     if (method.recommended) {
       badges.push(
-        <Badge key="recommended" variant="default" className="bg-blue-100 text-blue-800">
+        <Badge key="recommended" variant="default" className="bg-red-100 text-red-800">
           <Star className="w-3 h-3 mr-1" />
           Recommended
         </Badge>
       );
     }
-    
+
     if (method.popular) {
       badges.push(
-        <Badge key="popular" variant="secondary" className="bg-green-100 text-green-800">
+        <Badge key="popular" variant="secondary" className="bg-red-100 text-red-800">
           Popular
         </Badge>
       );
@@ -225,8 +225,8 @@ const PaymentMethodSelector = ({
               <Card 
                 key={method.id}
                 className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                  selectedMethod === method.id 
-                    ? 'ring-2 ring-blue-500 border-blue-200' 
+                  selectedMethod === method.id
+                    ? 'ring-2 ring-red-500 border-red-200'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
                 onClick={() => onMethodSelect(method)}
@@ -234,7 +234,7 @@ const PaymentMethodSelector = ({
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
-                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center">
                         {getMethodIcon(method.icon, method.type)}
                       </div>
                       

@@ -12,7 +12,7 @@ export default function BlackoutBlindsNurseryPage() {
       description: 'No dangerous cords or chains. Meets all CPSC child safety standards for complete peace of mind.'
     },
     {
-      icon: <Moon className="h-8 w-8 text-blue-600" />,
+      icon: <Moon className="h-8 w-8 text-red-600" />,
       title: '99.9% Light Blocking',
       description: 'Create the perfect dark environment for naps and bedtime. Helps regulate baby\'s sleep cycle.'
     },
@@ -77,17 +77,17 @@ export default function BlackoutBlindsNurseryPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center bg-purple-700/50 rounded-full px-4 py-2 mb-6">
+      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="inline-flex items-center bg-red-700/50 rounded-full px-4 py-2 mb-6">
               <Heart className="h-4 w-4 text-pink-400 mr-2" />
               <span className="text-sm">Designed for Baby's Safety & Sleep</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               Blackout Blinds for Nursery
             </h1>
-            <p className="text-xl md:text-2xl text-purple-100 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-red-100 mb-8 max-w-3xl mx-auto">
               Help your baby sleep better with 100% cordless, child-safe blackout blinds.
               Block 99.9% of light for perfect naps and peaceful nights.
             </p>
@@ -97,7 +97,7 @@ export default function BlackoutBlindsNurseryPage() {
                   Shop Nursery Blinds <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-purple-900" asChild>
+              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-red-900" asChild>
                 <Link href="/samples">
                   Order Free Samples
                 </Link>
@@ -108,7 +108,7 @@ export default function BlackoutBlindsNurseryPage() {
       </section>
 
       {/* Trust Bar */}
-      <div className="bg-purple-50 py-4">
+      <div className="bg-red-50 py-4">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-600">
             <div className="flex items-center gap-2">
@@ -148,7 +148,7 @@ export default function BlackoutBlindsNurseryPage() {
                   Our blackout blinds create the perfect dark environment that pediatric sleep
                   experts recommend—helping your baby (and you!) get the rest you need.
                 </p>
-                <div className="bg-purple-50 rounded-lg p-6 mb-8">
+                <div className="bg-red-50 rounded-lg p-6 mb-8">
                   <div className="flex items-start gap-4">
                     <Star className="h-8 w-8 text-yellow-500 flex-shrink-0" />
                     <div>
@@ -162,7 +162,7 @@ export default function BlackoutBlindsNurseryPage() {
                   </div>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 aspect-square flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-100 to-red-100 rounded-2xl p-8 aspect-square flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-8xl mb-4">👶</div>
                   <p className="text-gray-500">Sleeping Baby</p>
@@ -209,19 +209,19 @@ export default function BlackoutBlindsNurseryPage() {
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {productOptions.map((product, index) => (
-              <div key={index} className={`border rounded-xl overflow-hidden hover:shadow-lg transition-shadow ${product.recommended ? 'ring-2 ring-purple-500' : ''}`}>
+              <div key={index} className={`border rounded-xl overflow-hidden hover:shadow-lg transition-shadow ${product.recommended ? 'ring-2 ring-red-500' : ''}`}>
                 {product.recommended && (
-                  <div className="bg-purple-500 text-white text-center py-2 text-sm font-medium">
+                  <div className="bg-red-500 text-white text-center py-2 text-sm font-medium">
                     ⭐ Most Popular for Nurseries
                   </div>
                 )}
-                <div className="bg-purple-50 h-48 flex items-center justify-center">
+                <div className="bg-red-50 h-48 flex items-center justify-center">
                   <div className="text-4xl">🪟</div>
                 </div>
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{product.name}</h3>
                   <p className="text-gray-600 mb-4">{product.description}</p>
-                  <p className="text-2xl font-bold text-purple-600 mb-4">{product.price}</p>
+                  <p className="text-2xl font-bold text-red-600 mb-4">{product.price}</p>
                   <ul className="space-y-2 mb-6">
                     {product.features.map((feature, idx) => (
                       <li key={idx} className="flex items-center gap-2 text-sm text-gray-600">
@@ -243,7 +243,7 @@ export default function BlackoutBlindsNurseryPage() {
       </section>
 
       {/* Nursery Color Ideas */}
-      <section className="py-16 bg-purple-50">
+      <section className="py-16 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -303,17 +303,17 @@ export default function BlackoutBlindsNurseryPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Give Your Baby the Gift of Better Sleep
           </h2>
-          <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
             Custom blackout blinds, made safely for your nursery.
             Free shipping on orders over $100.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="xl" variant="outline" className="bg-white text-purple-600 hover:bg-purple-50 border-white" asChild>
+            <Button size="xl" variant="outline" className="bg-white text-red-600 hover:bg-red-50 border-white" asChild>
               <Link href="/products?category=7">
                 Shop Nursery Blinds
               </Link>

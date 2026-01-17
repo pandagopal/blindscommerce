@@ -133,7 +133,7 @@ export default function ProductReviews({
               key={rating}
               onClick={() => setFilterRating(filterRating === rating ? null : rating)}
               className={`flex items-center w-full text-sm hover:bg-gray-50 p-2 rounded ${
-                filterRating === rating ? 'bg-blue-50 border border-blue-200' : ''
+                filterRating === rating ? 'bg-red-50 border border-red-200' : ''
               }`}
             >
               <span className="w-8">{rating}</span>

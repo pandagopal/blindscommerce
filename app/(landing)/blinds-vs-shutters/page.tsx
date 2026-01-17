@@ -50,9 +50,9 @@ export default function BlindsVsShuttersPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white py-16 lg:py-24">
+      <section className="bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Buying Guide
             </span>
@@ -99,7 +99,7 @@ export default function BlindsVsShuttersPage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="text-left p-4 font-semibold">Feature</th>
-                  <th className="text-left p-4 font-semibold text-blue-700">
+                  <th className="text-left p-4 font-semibold text-red-700">
                     Blinds
                   </th>
                   <th className="text-left p-4 font-semibold text-slate-700">
@@ -130,7 +130,7 @@ export default function BlindsVsShuttersPage() {
           <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
             {/* Blinds */}
             <div className="bg-white rounded-xl p-8 shadow">
-              <h3 className="text-2xl font-bold mb-6 text-blue-700">Blinds</h3>
+              <h3 className="text-2xl font-bold mb-6 text-red-700">Blinds</h3>
               <div className="space-y-6">
                 <div>
                   <h4 className="font-semibold text-green-700 mb-3">Advantages</h4>
@@ -222,8 +222,8 @@ export default function BlindsVsShuttersPage() {
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl p-8 shadow-lg">
               <div className="grid md:grid-cols-2 gap-8 mb-8">
-                <div className="bg-blue-50 p-6 rounded-lg">
-                  <h3 className="font-bold text-blue-800 text-xl mb-4">Blinds (10 Windows)</h3>
+                <div className="bg-red-50 p-6 rounded-lg">
+                  <h3 className="font-bold text-red-800 text-xl mb-4">Blinds (10 Windows)</h3>
                   <ul className="space-y-2 text-gray-700">
                     <li>Aluminum Mini Blinds: $200 - $400</li>
                     <li>Faux Wood Blinds: $400 - $800</li>
@@ -275,10 +275,10 @@ export default function BlindsVsShuttersPage() {
                   <h3 className="text-xl font-bold">{item.situation}</h3>
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                     item.winner === "Blinds" || item.winner === "Cordless Blinds"
-                      ? "bg-blue-100 text-blue-800"
+                      ? "bg-red-100 text-red-800"
                       : item.winner === "Shutters"
                       ? "bg-slate-200 text-slate-800"
-                      : "bg-purple-100 text-purple-800"
+                      : "bg-red-100 text-red-800"
                   }`}>
                     {item.winner}
                   </span>
@@ -344,7 +344,7 @@ export default function BlindsVsShuttersPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
             >
               Shop Blinds <FaArrowRight className="ml-2" />
             </Link>

@@ -7,16 +7,16 @@ export default function MeasuringSlidingDoorsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-teal-600 to-teal-800 text-white py-16">
+      <section className="bg-gradient-to-br from-red-600 to-red-800 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <Link href="/guides" className="text-teal-200 hover:text-white mb-4 inline-block">
+            <Link href="/guides" className="text-red-200 hover:text-white mb-4 inline-block">
               ← Back to Guides
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               How to Measure Sliding Glass Doors for Blinds
             </h1>
-            <p className="text-xl text-teal-100">
+            <p className="text-xl text-red-100">
               Sliding doors and patio doors need special consideration for window treatments.
               This guide covers measuring for vertical blinds, panel tracks, and more.
             </p>
@@ -25,7 +25,7 @@ export default function MeasuringSlidingDoorsPage() {
       </section>
 
       {/* Best Options */}
-      <section className="py-12 bg-teal-50">
+      <section className="py-12 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-6">Best Blind Options for Sliding Doors</h2>
@@ -34,7 +34,7 @@ export default function MeasuringSlidingDoorsPage() {
                 <h3 className="font-bold text-lg mb-2">Vertical Blinds</h3>
                 <p className="text-gray-600 text-sm mb-3">Classic choice for sliding doors. Individual vanes rotate for light control and slide open for door access.</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded text-xs">Most Affordable</span>
+                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Most Affordable</span>
                   <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Easy to Operate</span>
                 </div>
               </div>
@@ -42,7 +42,7 @@ export default function MeasuringSlidingDoorsPage() {
                 <h3 className="font-bold text-lg mb-2">Panel Track Blinds</h3>
                 <p className="text-gray-600 text-sm mb-3">Modern alternative to verticals. Wide fabric panels slide on a track. Clean, contemporary look.</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded text-xs">Modern Look</span>
+                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Modern Look</span>
                   <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Many Fabrics</span>
                 </div>
               </div>
@@ -50,7 +50,7 @@ export default function MeasuringSlidingDoorsPage() {
                 <h3 className="font-bold text-lg mb-2">Cellular Vertical Shades</h3>
                 <p className="text-gray-600 text-sm mb-3">Vertical orientation of honeycomb shades. Energy efficient with a soft, fabric look.</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded text-xs">Energy Efficient</span>
+                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Energy Efficient</span>
                   <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Soft Look</span>
                 </div>
               </div>
@@ -58,7 +58,7 @@ export default function MeasuringSlidingDoorsPage() {
                 <h3 className="font-bold text-lg mb-2">Sheer Vertical Shades</h3>
                 <p className="text-gray-600 text-sm mb-3">Fabric vanes between sheer layers. Elegant, diffused light with privacy and view-through options.</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-teal-100 text-teal-800 px-2 py-1 rounded text-xs">Elegant</span>
+                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Elegant</span>
                   <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">Light Filtering</span>
                 </div>
               </div>
@@ -135,13 +135,13 @@ export default function MeasuringSlidingDoorsPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-teal-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure the Width</h3>
                     <p className="text-gray-600 mb-3">
                       Measure the width of the door frame, then add overlap:
                     </p>
-                    <div className="bg-teal-50 rounded-lg p-4">
+                    <div className="bg-red-50 rounded-lg p-4">
                       <p className="font-mono text-lg">
                         <strong>Width</strong> = Door frame width + 6-8 inches
                       </p>
@@ -156,13 +156,13 @@ export default function MeasuringSlidingDoorsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-teal-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure the Height</h3>
                     <p className="text-gray-600 mb-3">
                       Measure from where blinds will mount to just above the floor:
                     </p>
-                    <div className="bg-teal-50 rounded-lg p-4">
+                    <div className="bg-red-50 rounded-lg p-4">
                       <p className="font-mono text-lg">
                         <strong>Height</strong> = Top of headrail to 1/2&quot; above floor
                       </p>
@@ -177,7 +177,7 @@ export default function MeasuringSlidingDoorsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-teal-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Check Headrail Clearance</h3>
                     <p className="text-gray-600 mb-3">
@@ -194,7 +194,7 @@ export default function MeasuringSlidingDoorsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-teal-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Determine Stack Direction</h3>
                     <p className="text-gray-600 mb-3">
@@ -203,7 +203,7 @@ export default function MeasuringSlidingDoorsPage() {
                     <div className="grid grid-cols-3 gap-4 mt-4">
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
                         <div className="flex justify-start mb-2">
-                          <div className="w-8 h-12 bg-teal-300 rounded"></div>
+                          <div className="w-8 h-12 bg-red-300 rounded"></div>
                           <div className="flex-1 h-12 border-2 border-dashed border-gray-300 rounded ml-1"></div>
                         </div>
                         <p className="text-sm font-medium">Stack Left</p>
@@ -211,15 +211,15 @@ export default function MeasuringSlidingDoorsPage() {
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
                         <div className="flex justify-end mb-2">
                           <div className="flex-1 h-12 border-2 border-dashed border-gray-300 rounded mr-1"></div>
-                          <div className="w-8 h-12 bg-teal-300 rounded"></div>
+                          <div className="w-8 h-12 bg-red-300 rounded"></div>
                         </div>
                         <p className="text-sm font-medium">Stack Right</p>
                       </div>
                       <div className="text-center p-3 bg-gray-50 rounded-lg">
                         <div className="flex justify-center mb-2">
-                          <div className="w-6 h-12 bg-teal-300 rounded"></div>
+                          <div className="w-6 h-12 bg-red-300 rounded"></div>
                           <div className="flex-1 h-12 border-2 border-dashed border-gray-300 rounded mx-1"></div>
-                          <div className="w-6 h-12 bg-teal-300 rounded"></div>
+                          <div className="w-6 h-12 bg-red-300 rounded"></div>
                         </div>
                         <p className="text-sm font-medium">Split Center</p>
                       </div>
@@ -296,16 +296,16 @@ export default function MeasuringSlidingDoorsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 bg-teal-800 text-white">
+      <section className="py-12 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to Cover Your Sliding Doors?</h2>
-          <p className="text-teal-200 mb-6 max-w-xl mx-auto">
+          <p className="text-red-200 mb-6 max-w-xl mx-auto">
             Shop vertical blinds, panel tracks, and more for your sliding doors.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?type=vertical"
-              className="bg-white text-teal-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+              className="bg-white text-red-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
             >
               Shop Vertical Blinds <FaArrowRight className="ml-2" />
             </Link>

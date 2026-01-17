@@ -54,16 +54,16 @@ const categoryLabels: Record<string, string> = {
 
 const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   open: { label: 'Open', color: 'bg-yellow-100 text-yellow-800', icon: <AlertCircle className="w-3 h-3" /> },
-  in_progress: { label: 'In Progress', color: 'bg-blue-100 text-blue-800', icon: <Clock className="w-3 h-3" /> },
+  in_progress: { label: 'In Progress', color: 'bg-red-100 text-red-800', icon: <Clock className="w-3 h-3" /> },
   waiting_customer: { label: 'Awaiting Your Reply', color: 'bg-orange-100 text-orange-800', icon: <HelpCircle className="w-3 h-3" /> },
-  waiting_support: { label: 'Awaiting Support', color: 'bg-purple-100 text-purple-800', icon: <Clock className="w-3 h-3" /> },
+  waiting_support: { label: 'Awaiting Support', color: 'bg-red-100 text-red-800', icon: <Clock className="w-3 h-3" /> },
   resolved: { label: 'Resolved', color: 'bg-green-100 text-green-800', icon: <CheckCircle className="w-3 h-3" /> },
   closed: { label: 'Closed', color: 'bg-gray-100 text-gray-800', icon: <CheckCircle className="w-3 h-3" /> },
 };
 
 const priorityColors: Record<string, string> = {
   low: 'bg-gray-100 text-gray-700',
-  medium: 'bg-blue-100 text-blue-700',
+  medium: 'bg-red-100 text-red-700',
   high: 'bg-orange-100 text-orange-700',
   urgent: 'bg-red-100 text-red-700',
 };
@@ -323,17 +323,17 @@ export default function SupportPage() {
       </Card>
 
       {/* Help Section */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-red-50 border-red-200">
         <CardContent className="p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Need immediate help?</h3>
-          <p className="text-sm text-blue-700 mb-3">
+          <h3 className="font-medium text-red-900 mb-2">Need immediate help?</h3>
+          <p className="text-sm text-red-700 mb-3">
             For urgent matters, you can reach our support team directly.
           </p>
           <div className="flex flex-wrap gap-4 text-sm">
-            <a href="tel:1-800-BLINDS" className="text-blue-600 hover:text-blue-800 font-medium">
+            <a href="tel:1-800-BLINDS" className="text-red-600 hover:text-red-800 font-medium">
               Call: 1-800-BLINDS
             </a>
-            <a href="mailto:support@blindscommerce.com" className="text-blue-600 hover:text-blue-800 font-medium">
+            <a href="mailto:support@blindscommerce.com" className="text-red-600 hover:text-red-800 font-medium">
               Email: support@blindscommerce.com
             </a>
           </div>

@@ -359,7 +359,7 @@ export default function VendorSalesTeamPage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                       <Users className="w-6 h-6 text-primary-red" />
                     </div>
                     <div>
@@ -385,7 +385,7 @@ export default function VendorSalesTeamPage() {
                     <div className="text-right">
                       <div className="flex items-center space-x-4 text-sm">
                         <span className="flex items-center">
-                          <Target className="w-4 h-4 mr-1 text-blue-600" />
+                          <Target className="w-4 h-4 mr-1 text-red-600" />
                           Target: ${person.targetSales.toLocaleString()}
                         </span>
                         <span className="flex items-center">

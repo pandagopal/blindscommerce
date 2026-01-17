@@ -255,7 +255,7 @@ export default function MeasurementsPage() {
         </div>
         <button
           onClick={handleAddNew}
-          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+          className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
         >
           <PlusIcon className="h-4 w-4 mr-2" />
           Add New Measurement
@@ -280,7 +280,7 @@ export default function MeasurementsPage() {
               type="submit"
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
             >
-              <span className="text-sm text-blue-600">Search</span>
+              <span className="text-sm text-red-600">Search</span>
             </button>
           </form>
 
@@ -484,7 +484,7 @@ export default function MeasurementsPage() {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center"
               >
                 <SaveIcon className="h-4 w-4 mr-1" />
                 {isEditing ? 'Update' : 'Save'} Measurement
@@ -544,7 +544,7 @@ export default function MeasurementsPage() {
               <div className="mt-4 md:mt-0 md:ml-4 flex flex-row md:flex-col justify-end space-x-2 md:space-x-0 md:space-y-2">
                 <Link
                   href={`/products?width=${measurement.width}&height=${measurement.height}`}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center justify-center"
+                  className="px-3 py-1 bg-red-100 text-red-800 rounded text-sm hover:bg-red-200 flex items-center justify-center"
                 >
                   Shop Now
                 </Link>
@@ -568,8 +568,8 @@ export default function MeasurementsPage() {
         </div>
       ) : (
         <div className="text-center bg-white p-8 rounded-lg border border-gray-200 shadow-sm">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <RulerIcon className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+            <RulerIcon className="w-8 h-8 text-red-600" />
           </div>
           <h3 className="mt-4 text-lg font-medium text-gray-900">No Measurements Found</h3>
           <p className="mt-2 text-gray-500 mb-6 max-w-md mx-auto">
@@ -579,7 +579,7 @@ export default function MeasurementsPage() {
           </p>
           <button
             onClick={handleAddNew}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
           >
             <PlusIcon className="h-4 w-4 inline mr-1" />
             Add Your First Measurement

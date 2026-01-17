@@ -243,9 +243,9 @@ export default function SalesSettingsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">Target Sales</p>
-                    <p className="text-2xl font-bold text-blue-600">${profile.targetSales.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-red-600">${profile.targetSales.toLocaleString()}</p>
                   </div>
-                  <Target className="w-8 h-8 text-blue-600" />
+                  <Target className="w-8 h-8 text-red-600" />
                 </div>
               </CardContent>
             </Card>
@@ -335,9 +335,9 @@ export default function SalesSettingsPage() {
                     <span className="text-gray-900">{profile.vendorInfo.contactPhone}</span>
                   </div>
                 </div>
-                <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> For changes to your commission rate, territory, or target sales, 
+                <div className="mt-6 p-4 bg-red-50 rounded-lg">
+                  <p className="text-sm text-red-800">
+                    <strong>Note:</strong> For changes to your commission rate, territory, or target sales,
                     please contact your vendor administrator directly.
                   </p>
                 </div>

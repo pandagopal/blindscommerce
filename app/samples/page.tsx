@@ -121,7 +121,7 @@ export default function SamplesPage() {
           <div className="space-y-3">
             <Link 
               href="/consultation"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors block"
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors block"
             >
               Schedule Consultation
             </Link>
@@ -140,31 +140,31 @@ export default function SamplesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-green-900 to-teal-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-16">
+      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Free Sample Program
             </h1>
-            <p className="text-xl mb-8 text-green-100 max-w-3xl mx-auto">
+            <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
               Experience the quality of Smart Blinds materials before you buy. Order up to 8 free samples 
               and see how our window treatments will look and feel in your home.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
-                <Package className="h-12 w-12 text-green-300 mx-auto mb-4" />
+                <Package className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">100% Free</h3>
-                <p className="text-green-100">No cost, no shipping fees, no obligations</p>
+                <p className="text-red-100">No cost, no shipping fees, no obligations</p>
               </div>
               <div className="text-center">
-                <Truck className="h-12 w-12 text-green-300 mx-auto mb-4" />
+                <Truck className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Fast Delivery</h3>
-                <p className="text-green-100">Delivered to your door in 3-5 business days</p>
+                <p className="text-red-100">Delivered to your door in 3-5 business days</p>
               </div>
               <div className="text-center">
-                <Star className="h-12 w-12 text-green-300 mx-auto mb-4" />
+                <Star className="h-12 w-12 text-red-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Premium Quality</h3>
-                <p className="text-green-100">Real materials from our actual product lines</p>
+                <p className="text-red-100">Real materials from our actual product lines</p>
               </div>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function SamplesPage() {
                       key={sample.id}
                       className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
                         selectedSamples.includes(sample.id)
-                          ? 'border-green-500 bg-green-50'
+                          ? 'border-red-500 bg-red-50'
                           : 'border-gray-200 hover:border-gray-300'
                       } ${selectedSamples.length >= 8 && !selectedSamples.includes(sample.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       onClick={() => {
@@ -216,7 +216,7 @@ export default function SamplesPage() {
                       <h4 className="font-medium text-gray-900 text-sm">{sample.name}</h4>
                       {selectedSamples.includes(sample.id) && (
                         <div className="absolute top-2 right-2">
-                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <CheckCircle className="h-5 w-5 text-red-500" />
                         </div>
                       )}
                     </div>
@@ -233,9 +233,9 @@ export default function SamplesPage() {
         <div className="bg-white py-16">
           <div className="max-w-2xl mx-auto px-4">
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white p-6">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6">
                 <h2 className="text-2xl font-bold mb-2">Shipping Information</h2>
-                <p className="text-green-100">Enter your details to receive your free samples.</p>
+                <p className="text-red-100">Enter your details to receive your free samples.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -248,7 +248,7 @@ export default function SamplesPage() {
                       required
                       value={formData.firstName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -259,7 +259,7 @@ export default function SamplesPage() {
                       required
                       value={formData.lastName}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -270,7 +270,7 @@ export default function SamplesPage() {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -280,7 +280,7 @@ export default function SamplesPage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -293,7 +293,7 @@ export default function SamplesPage() {
                     required
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
 
@@ -306,7 +306,7 @@ export default function SamplesPage() {
                       required
                       value={formData.city}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -317,7 +317,7 @@ export default function SamplesPage() {
                       required
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -328,7 +328,7 @@ export default function SamplesPage() {
                       required
                       value={formData.zipCode}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -341,13 +341,13 @@ export default function SamplesPage() {
                     value={formData.notes}
                     onChange={handleInputChange}
                     placeholder="Any specific questions or requests about your samples..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-colors flex items-center justify-center"
+                  className="w-full bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
                 >
                   <Package className="h-5 w-5 mr-2" />
                   Order {selectedSamples.length} Free Sample{selectedSamples.length !== 1 ? 's' : ''}
@@ -366,14 +366,14 @@ export default function SamplesPage() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <Clock className="h-12 w-12 text-green-600 mx-auto mb-4" />
+              <Clock className="h-12 w-12 text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">See Before You Buy</h3>
               <p className="text-gray-600">
                 Touch, feel, and see exactly how our materials will look in your home's lighting.
               </p>
             </div>
             <div className="text-center">
-              <Home className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <Home className="h-12 w-12 text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Match Your Decor</h3>
               <p className="text-gray-600">
                 Compare colors and textures against your walls, furniture, and existing decor.
@@ -418,24 +418,24 @@ export default function SamplesPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 text-white py-16">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Get Started?
           </h2>
-          <p className="text-xl mb-8 text-green-100">
+          <p className="text-xl mb-8 text-red-100">
             Order your free samples today and take the first step toward beautiful new window treatments.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/consultation"
-              className="bg-white text-green-600 px-8 py-3 rounded-lg font-semibold hover:bg-green-50 transition-colors"
+              className="bg-white text-red-600 px-8 py-3 rounded-lg font-semibold hover:bg-red-50 transition-colors"
             >
               Schedule Free Consultation
             </Link>
             <Link
               href="/products"
-              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-green-600 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-red-600 transition-colors"
             >
               Browse Products
             </Link>

@@ -56,16 +56,16 @@ export default function CellularVsRollerShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 text-white py-16 lg:py-20">
+      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Buying Guide
             </span>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Cellular Shades vs Roller Shades: Which is Right for You?
             </h1>
-            <p className="text-xl text-blue-100 mb-8">
+            <p className="text-xl text-red-100 mb-8">
               Compare features, benefits, and costs to make the best choice for your home.
               Our expert guide helps you decide between these two popular window treatments.
             </p>
@@ -101,23 +101,23 @@ export default function CellularVsRollerShadesPage() {
                     </li>
                   </ul>
                 </div>
-                <div className="border-l-4 border-blue-500 pl-4">
+                <div className="border-l-4 border-red-500 pl-4">
                   <h3 className="font-semibold text-lg mb-2">Choose Roller Shades If:</h3>
                   <ul className="space-y-2 text-gray-600">
                     <li className="flex items-start gap-2">
-                      <FaCheck className="text-blue-500 mt-1 flex-shrink-0" />
+                      <FaCheck className="text-red-500 mt-1 flex-shrink-0" />
                       <span>You want a modern, minimalist look</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <FaCheck className="text-blue-500 mt-1 flex-shrink-0" />
+                      <FaCheck className="text-red-500 mt-1 flex-shrink-0" />
                       <span>Budget is a primary concern</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <FaCheck className="text-blue-500 mt-1 flex-shrink-0" />
+                      <FaCheck className="text-red-500 mt-1 flex-shrink-0" />
                       <span>Easy maintenance is important</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <FaCheck className="text-blue-500 mt-1 flex-shrink-0" />
+                      <FaCheck className="text-red-500 mt-1 flex-shrink-0" />
                       <span>You want smart home integration</span>
                     </li>
                   </ul>
@@ -142,8 +142,8 @@ export default function CellularVsRollerShadesPage() {
                   <th className="text-center py-4 px-4 font-semibold bg-green-50 rounded-tl-lg">
                     <span className="text-green-700">Cellular Shades</span>
                   </th>
-                  <th className="text-center py-4 px-4 font-semibold bg-blue-50 rounded-tr-lg">
-                    <span className="text-blue-700">Roller Shades</span>
+                  <th className="text-center py-4 px-4 font-semibold bg-red-50 rounded-tr-lg">
+                    <span className="text-red-700">Roller Shades</span>
                   </th>
                 </tr>
               </thead>
@@ -158,9 +158,9 @@ export default function CellularVsRollerShadesPage() {
                         <div className="text-xs text-gray-500">{row.cellular.note}</div>
                       </div>
                     </td>
-                    <td className="py-4 px-4 bg-blue-50/50">
+                    <td className="py-4 px-4 bg-red-50/50">
                       <div className="text-center">
-                        <div className="font-semibold text-blue-700">{row.roller.value}</div>
+                        <div className="font-semibold text-red-700">{row.roller.value}</div>
                         <div className="flex justify-center my-1">{renderStars(row.roller.score)}</div>
                         <div className="text-xs text-gray-500">{row.roller.note}</div>
                       </div>
@@ -293,7 +293,7 @@ export default function CellularVsRollerShadesPage() {
                 <h3 className="text-xl font-bold mb-2">{item.room}</h3>
                 <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium mb-3 ${
                   item.winner === "Cellular" ? "bg-green-100 text-green-700" :
-                  item.winner === "Roller" ? "bg-blue-100 text-blue-700" :
+                  item.winner === "Roller" ? "bg-red-100 text-red-700" :
                   "bg-gray-200 text-gray-700"
                 }`}>
                   Best: {item.winner}
@@ -344,12 +344,12 @@ export default function CellularVsRollerShadesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Ready to Choose Your Perfect Window Treatment?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
             Shop our collection of cellular and roller shades. Free samples available to see the quality firsthand.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -361,12 +361,12 @@ export default function CellularVsRollerShadesPage() {
             </Link>
             <Link
               href="/products?category=roller-shades"
-              className="bg-white text-blue-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+              className="bg-white text-red-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
             >
               Shop Roller Shades <FaArrowRight className="ml-2" />
             </Link>
           </div>
-          <p className="mt-6 text-blue-200">
+          <p className="mt-6 text-red-200">
             <Link href="/customer/samples" className="underline hover:text-white">
               Order free samples
             </Link> to compare both styles at home

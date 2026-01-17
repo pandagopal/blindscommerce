@@ -211,7 +211,7 @@ export default function MeasurementCalculator() {
                 max={12}
               />
             </div>
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm">
               <Info className="h-4 w-4 inline mr-1" />
               Measure depth at all four corners to ensure your window is square
             </div>

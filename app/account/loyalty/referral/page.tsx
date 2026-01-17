@@ -60,7 +60,7 @@ interface Pagination {
 
 const statusConfig: Record<string, { label: string; color: string }> = {
   pending: { label: 'Pending', color: 'bg-yellow-100 text-yellow-800' },
-  completed: { label: 'Completed', color: 'bg-blue-100 text-blue-800' },
+  completed: { label: 'Completed', color: 'bg-red-100 text-red-800' },
   rewarded: { label: 'Rewarded', color: 'bg-green-100 text-green-800' },
   cancelled: { label: 'Cancelled', color: 'bg-gray-100 text-gray-800' },
 };
@@ -174,35 +174,35 @@ export default function ReferralPage() {
       </div>
 
       {/* How It Works */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+      <Card className="bg-gradient-to-r from-red-50 to-red-100 border-red-200">
         <CardContent className="p-6">
-          <h2 className="text-xl font-bold text-purple-900 mb-4">How It Works</h2>
+          <h2 className="text-xl font-bold text-red-900 mb-4">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">
                 1
               </div>
               <div>
-                <h3 className="font-medium text-purple-900">Share Your Code</h3>
-                <p className="text-sm text-purple-700">Send your unique referral code to friends</p>
+                <h3 className="font-medium text-red-900">Share Your Code</h3>
+                <p className="text-sm text-red-700">Send your unique referral code to friends</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">
                 2
               </div>
               <div>
-                <h3 className="font-medium text-purple-900">They Sign Up & Shop</h3>
-                <p className="text-sm text-purple-700">They get {referralInfo?.discountValue || 10}% off their first order</p>
+                <h3 className="font-medium text-red-900">They Sign Up & Shop</h3>
+                <p className="text-sm text-red-700">They get {referralInfo?.discountValue || 10}% off their first order</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+              <div className="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold">
                 3
               </div>
               <div>
-                <h3 className="font-medium text-purple-900">You Earn Points</h3>
-                <p className="text-sm text-purple-700">Get 500 loyalty points for each referral</p>
+                <h3 className="font-medium text-red-900">You Earn Points</h3>
+                <p className="text-sm text-red-700">Get 500 loyalty points for each referral</p>
               </div>
             </div>
           </div>
@@ -219,7 +219,7 @@ export default function ReferralPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="flex-1 bg-gray-100 rounded-lg p-4 text-center">
-                <span className="text-3xl font-bold tracking-wider text-purple-600">
+                <span className="text-3xl font-bold tracking-wider text-red-600">
                   {referralInfo.code}
                 </span>
               </div>
@@ -279,8 +279,8 @@ export default function ReferralPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Users className="w-5 h-5 text-blue-600" />
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Total Referrals</p>
@@ -305,8 +305,8 @@ export default function ReferralPage() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                  <Star className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                  <Star className="w-5 h-5 text-red-600" />
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Points Earned</p>

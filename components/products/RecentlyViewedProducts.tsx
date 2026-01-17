@@ -108,7 +108,7 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({
 
               {/* Product Info */}
               <div className="space-y-1">
-                <h3 className="font-medium text-sm text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                <h3 className="font-medium text-sm text-gray-900 line-clamp-2 group-hover:text-red-600 transition-colors">
                   {product.name}
                 </h3>
                 
@@ -159,7 +159,7 @@ const RecentlyViewedProducts: React.FC<RecentlyViewedProductsProps> = ({
         <div className="mt-4 text-center">
           <Link
             href="/account/recently-viewed"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-red-600 hover:text-red-800 text-sm font-medium"
           >
             View All {products.length} Recently Viewed Products →
           </Link>

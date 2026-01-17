@@ -377,7 +377,7 @@ export default function AdminHeroBannersPage() {
                         </button>
                         <button
                           onClick={() => handleEdit(banner)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-red-600 hover:text-red-900"
                           title="Edit Banner"
                         >
                           <Edit className="h-5 w-5" />
@@ -430,7 +430,7 @@ export default function AdminHeroBannersPage() {
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                     required
                   />
                 </div>
@@ -441,7 +441,7 @@ export default function AdminHeroBannersPage() {
                     type="text"
                     value={formData.subtitle}
                     onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                   />
                 </div>
 
@@ -475,7 +475,7 @@ export default function AdminHeroBannersPage() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageUpload(e, 'background')}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                       disabled={uploadingBackground}
                     />
                     {uploadingBackground && <p className="text-sm text-gray-500">Uploading...</p>}
@@ -499,7 +499,7 @@ export default function AdminHeroBannersPage() {
                       type="file"
                       accept="image/*"
                       onChange={(e) => handleImageUpload(e, 'right_side')}
-                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
                       disabled={uploadingRightSide}
                     />
                     {uploadingRightSide && <p className="text-sm text-gray-500">Uploading...</p>}
@@ -591,7 +591,7 @@ export default function AdminHeroBannersPage() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 font-semibold"
+                  className="flex-1 bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 font-semibold"
                 >
                   {editingBanner ? 'Update' : 'Create'} Banner
                 </button>

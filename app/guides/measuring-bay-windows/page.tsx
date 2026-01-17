@@ -7,16 +7,16 @@ export default function MeasuringBayWindowsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-700 to-blue-900 text-white py-16">
+      <section className="bg-gradient-to-br from-red-700 to-red-900 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
-            <Link href="/guides" className="text-blue-200 hover:text-white mb-4 inline-block">
+            <Link href="/guides" className="text-red-200 hover:text-white mb-4 inline-block">
               ← Back to Guides
             </Link>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               How to Measure Bay Windows for Blinds
             </h1>
-            <p className="text-xl text-blue-100">
+            <p className="text-xl text-red-100">
               Bay windows require special attention when measuring. This guide walks you through
               measuring each section correctly for a perfect fit.
             </p>
@@ -25,13 +25,13 @@ export default function MeasuringBayWindowsPage() {
       </section>
 
       {/* What You'll Need */}
-      <section className="py-12 bg-blue-50">
+      <section className="py-12 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-6">What You&apos;ll Need</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
-                <FaRuler className="text-blue-600 text-xl" />
+                <FaRuler className="text-red-600 text-xl" />
                 <span>Steel tape measure (25ft+)</span>
               </div>
               <div className="bg-white rounded-lg p-4 flex items-center gap-3">
@@ -75,9 +75,9 @@ export default function MeasuringBayWindowsPage() {
                 </div>
                 <div className="w-64 h-48 bg-white border-2 border-gray-300 rounded-lg flex items-end justify-center p-4">
                   <div className="flex">
-                    <div className="w-12 h-32 border-2 border-blue-500 bg-blue-100 transform -skew-y-12"></div>
-                    <div className="w-20 h-36 border-2 border-blue-500 bg-blue-100"></div>
-                    <div className="w-12 h-32 border-2 border-blue-500 bg-blue-100 transform skew-y-12"></div>
+                    <div className="w-12 h-32 border-2 border-red-500 bg-red-100 transform -skew-y-12"></div>
+                    <div className="w-20 h-36 border-2 border-red-500 bg-red-100"></div>
+                    <div className="w-12 h-32 border-2 border-red-500 bg-red-100 transform skew-y-12"></div>
                   </div>
                 </div>
               </div>
@@ -105,7 +105,7 @@ export default function MeasuringBayWindowsPage() {
             <div className="space-y-6">
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">1</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Choose Your Mount Type</h3>
                     <p className="text-gray-600 mb-4">
@@ -121,7 +121,7 @@ export default function MeasuringBayWindowsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">2</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Label Each Section</h3>
                     <p className="text-gray-600 mb-4">
@@ -140,7 +140,7 @@ export default function MeasuringBayWindowsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">3</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure Width (Each Section)</h3>
                     <p className="text-gray-600 mb-4">
@@ -155,7 +155,7 @@ export default function MeasuringBayWindowsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">4</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Measure Height (Each Section)</h3>
                     <p className="text-gray-600 mb-4">
@@ -170,7 +170,7 @@ export default function MeasuringBayWindowsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">5</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">5</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Check for Obstructions</h3>
                     <p className="text-gray-600 mb-4">
@@ -189,7 +189,7 @@ export default function MeasuringBayWindowsPage() {
 
               <div className="bg-white rounded-xl p-6 shadow-sm">
                 <div className="flex items-start gap-4">
-                  <div className="bg-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">6</div>
+                  <div className="bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shrink-0">6</div>
                   <div>
                     <h3 className="font-bold text-lg mb-2">Double-Check Everything</h3>
                     <p className="text-gray-600">
@@ -297,16 +297,16 @@ export default function MeasuringBayWindowsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-12 bg-blue-800 text-white">
+      <section className="py-12 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to Order?</h2>
-          <p className="text-blue-200 mb-6 max-w-xl mx-auto">
+          <p className="text-red-200 mb-6 max-w-xl mx-auto">
             Shop blinds perfect for bay windows or get free samples to see colors in your space.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products"
-              className="bg-white text-blue-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+              className="bg-white text-red-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
             >
               Shop Now <FaArrowRight className="ml-2" />
             </Link>

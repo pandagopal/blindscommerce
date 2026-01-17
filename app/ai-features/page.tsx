@@ -82,7 +82,7 @@ export default function AIFeaturesPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-primary-red via-primary-dark to-black">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative container mx-auto px-4 py-20 text-center">
+        <div className="relative container mx-auto px-4 py-10 text-center">
           <div className="max-w-4xl mx-auto">
 
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">

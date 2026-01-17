@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 export default function NoDrillBlindsApartmentsPage() {
   const benefits = [
     {
-      icon: <Home className="h-8 w-8 text-blue-600" />,
+      icon: <Home className="h-8 w-8 text-red-600" />,
       title: 'Renter Friendly',
       description: 'No holes, no damage, no problem with your landlord. Perfect for apartments, dorms, and rentals.'
     },
     {
-      icon: <Clock className="h-8 w-8 text-green-600" />,
+      icon: <Clock className="h-8 w-8 text-red-600" />,
       title: '5-Minute Install',
       description: 'Simply tension-mount or use adhesive strips. No tools required. Install and remove in minutes.'
     },
@@ -22,7 +22,7 @@ export default function NoDrillBlindsApartmentsPage() {
       description: 'Remove blinds when you move out with zero wall damage. Keep your security deposit intact.'
     },
     {
-      icon: <Shield className="h-8 w-8 text-purple-600" />,
+      icon: <Shield className="h-8 w-8 text-red-600" />,
       title: 'Strong & Secure',
       description: 'Industrial-strength mounting options hold up to daily use. Won\'t fall or sag over time.'
     }
@@ -71,17 +71,17 @@ export default function NoDrillBlindsApartmentsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-teal-900 via-teal-800 to-cyan-900 text-white">
-        <div className="container mx-auto px-4 py-16 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center bg-teal-700/50 rounded-full px-4 py-2 mb-6">
+      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white">
+        <div className="container mx-auto px-4 py-10">
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="inline-flex items-center bg-red-700/50 rounded-full px-4 py-2 mb-6">
               <Star className="h-4 w-4 text-yellow-400 mr-2" />
               <span className="text-sm">#1 Choice for Renters</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
               No-Drill Blinds for Apartments
             </h1>
-            <p className="text-xl md:text-2xl text-teal-100 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-red-100 mb-8 max-w-3xl mx-auto">
               Custom window blinds that install without drilling or damaging walls.
               Perfect for renters, dorms, and anyone who wants an easy installation.
             </p>
@@ -91,7 +91,7 @@ export default function NoDrillBlindsApartmentsPage() {
                   Shop No-Drill Blinds <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-teal-900" asChild>
+              <Button size="xl" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-red-900" asChild>
                 <Link href="/consultation">
                   Get Free Quote
                 </Link>
@@ -102,7 +102,7 @@ export default function NoDrillBlindsApartmentsPage() {
       </section>
 
       {/* Trust Bar */}
-      <div className="bg-teal-50 py-4">
+      <div className="bg-red-50 py-4">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-600">
             <div className="flex items-center gap-2">
@@ -152,7 +152,7 @@ export default function NoDrillBlindsApartmentsPage() {
                   ))}
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl p-8 aspect-square flex items-center justify-center">
+              <div className="bg-gradient-to-br from-red-100 to-red-100 rounded-2xl p-8 aspect-square flex items-center justify-center">
                 <div className="text-center">
                   <div className="text-8xl mb-4">🏢</div>
                   <p className="text-gray-500">Apartment Living Made Easy</p>
@@ -215,7 +215,7 @@ export default function NoDrillBlindsApartmentsPage() {
       </section>
 
       {/* Product Types */}
-      <section className="py-16 bg-teal-50">
+      <section className="py-16 bg-red-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -258,7 +258,7 @@ export default function NoDrillBlindsApartmentsPage() {
                 { step: '3', title: 'Hang', description: 'Snap in your blinds and you\'re done! The whole process takes about 5 minutes.' },
               ].map((item, index) => (
                 <div key={index} className="text-center">
-                  <div className="w-12 h-12 bg-teal-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
+                  <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
                     {item.step}
                   </div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
@@ -290,17 +290,17 @@ export default function NoDrillBlindsApartmentsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Upgrade Your Apartment Windows?
           </h2>
-          <p className="text-xl text-teal-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-100 mb-8 max-w-2xl mx-auto">
             Get custom no-drill blinds delivered to your door.
             Free shipping on orders over $100.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="xl" variant="outline" className="bg-white text-teal-600 hover:bg-teal-50 border-white" asChild>
+            <Button size="xl" variant="outline" className="bg-white text-red-600 hover:bg-red-50 border-white" asChild>
               <Link href="/products?features=no-drill">
                 Shop No-Drill Blinds
               </Link>

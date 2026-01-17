@@ -229,7 +229,7 @@ export default function SalesOrdersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading orders...</p>
@@ -239,7 +239,7 @@ export default function SalesOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -265,7 +265,7 @@ export default function SalesOrdersPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Total Orders</CardTitle>
-                <ShoppingCart className="h-4 w-4 text-blue-600" />
+                <ShoppingCart className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -313,7 +313,7 @@ export default function SalesOrdersPage() {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-gray-600">Avg Order Value</CardTitle>
-                <Package className="h-4 w-4 text-blue-600" />
+                <Package className="h-4 w-4 text-red-600" />
               </div>
             </CardHeader>
             <CardContent>
@@ -414,7 +414,7 @@ export default function SalesOrdersPage() {
                       <div>Items: {order.items.length}</div>
                     </div>
                     {order.tracking_number && (
-                      <div className="text-sm text-blue-600">
+                      <div className="text-sm text-red-600">
                         Tracking: {order.tracking_number}
                       </div>
                     )}
@@ -470,7 +470,7 @@ export default function SalesOrdersPage() {
                                           SKU: {item.sku} • Qty: {item.quantity}
                                         </div>
                                         {item.customizations && (
-                                          <div className="text-sm text-blue-600">{item.customizations}</div>
+                                          <div className="text-sm text-red-600">{item.customizations}</div>
                                         )}
                                       </div>
                                       <div className="text-right">

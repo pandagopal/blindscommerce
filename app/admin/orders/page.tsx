@@ -156,11 +156,11 @@ export default function AdminOrdersPage() {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-red-100 text-red-800';
       case 'shipped':
         return 'bg-green-100 text-green-800';
       case 'delivered':
-        return 'bg-purple-100 text-primary-dark';
+        return 'bg-green-100 text-green-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -196,7 +196,7 @@ export default function AdminOrdersPage() {
           {canCreateOrder && (
             <Link
               href="/admin/orders/new"
-              className="flex items-center p-2 text-white bg-purple-600 border border-primary-red rounded-md hover:bg-primary-dark"
+              className="flex items-center p-2 text-white bg-red-600 border border-primary-red rounded-md hover:bg-primary-dark"
             >
               <PlusIcon size={16} className="mr-1" />
               <span className="text-sm">Create Order</span>
@@ -350,7 +350,7 @@ export default function AdminOrdersPage() {
                       </Link>
                       <Link
                         href={`/admin/orders/${order.order_id}/edit`}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className="text-red-600 hover:text-red-900 mr-3"
                       >
                         Edit
                       </Link>

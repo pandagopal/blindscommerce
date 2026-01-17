@@ -94,7 +94,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
     return (
       <Link
         href="/account/loyalty"
-        className={`block bg-gradient-to-r from-primary-red to-primary-dark text-white rounded-lg p-4 hover:from-purple-700 hover:to-blue-700 transition-all ${className}`}
+        className={`block bg-gradient-to-r from-primary-red to-primary-dark text-white rounded-lg p-4 hover:from-red-700 hover:to-red-800 transition-all ${className}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -125,14 +125,14 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
           <h2 className="text-xl font-semibold">Loyalty Program</h2>
           <Link
             href="/account/loyalty"
-            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+            className="text-red-600 hover:text-red-800 text-sm font-medium"
           >
             View Details →
           </Link>
         </div>
 
         {/* Current Tier Status */}
-        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4 mb-4">
+        <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Crown className="w-8 h-8" style={{ color: loyaltyStatus.currentTier.color }} />
@@ -146,7 +146,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-red-600">
                 {loyaltyStatus.availablePoints.toLocaleString()}
               </p>
               <p className="text-sm text-gray-600">Available Points</p>
@@ -208,7 +208,7 @@ const LoyaltyStatus: React.FC<LoyaltyStatusProps> = ({
         <div className="flex space-x-2 mt-4">
           <Link
             href="/account/loyalty?tab=rewards"
-            className="flex-1 bg-blue-600 text-white text-center py-2 rounded text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="flex-1 bg-red-600 text-white text-center py-2 rounded text-sm font-medium hover:bg-red-700 transition-colors"
           >
             Browse Rewards
           </Link>

@@ -109,7 +109,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
               Terms of Service
@@ -118,7 +118,7 @@ export default function TermsPage() {
               These terms and conditions govern your use of Smart Blinds services and products. 
               Please read them carefully before using our website or making any purchases.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
               <div className="text-center">
                 <FileText className="h-12 w-12 text-blue-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Clear Terms</h3>

@@ -339,7 +339,7 @@ export default function AdminSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading settings...</p>
@@ -358,7 +358,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -643,8 +643,8 @@ export default function AdminSettingsPage() {
                 <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-blue-600" />
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-red-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Stripe</h3>
@@ -869,8 +869,8 @@ export default function AdminSettingsPage() {
                 <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-teal-600" />
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-red-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Afterpay</h3>
@@ -921,8 +921,8 @@ export default function AdminSettingsPage() {
                 <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-primary-red" />
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-red-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Affirm</h3>
@@ -973,8 +973,8 @@ export default function AdminSettingsPage() {
                 <div className="border border-gray-200 rounded-lg p-6 space-y-4 bg-white">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <CreditCard className="h-6 w-6 text-primary-red" />
+                      <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                        <CreditCard className="h-6 w-6 text-red-600" />
                       </div>
                       <div>
                         <h3 className="text-lg font-semibold">Braintree</h3>
@@ -1052,7 +1052,7 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                   
-                  <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                  <div className="text-xs text-gray-500 bg-red-50 p-3 rounded">
                     <p><strong>Note:</strong> Google Pay uses your Stripe configuration. Make sure Stripe is enabled and configured above.</p>
                   </div>
                 </div>
@@ -1075,7 +1075,7 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                   
-                  <div className="text-xs text-gray-500 bg-blue-50 p-3 rounded">
+                  <div className="text-xs text-gray-500 bg-red-50 p-3 rounded">
                     <p><strong>Note:</strong> Apple Pay uses your Stripe configuration. Make sure Stripe is enabled and configured above.</p>
                   </div>
                 </div>
@@ -1377,12 +1377,12 @@ export default function AdminSettingsPage() {
 
                   <div>
                     <h4 className="font-medium mb-4">Tax Calculation Service</h4>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                       <div className="flex items-start">
-                        <Key className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                        <Key className="h-5 w-5 text-red-600 mt-0.5 mr-2" />
                         <div>
-                          <h4 className="font-medium text-blue-800">TaxJar Integration</h4>
-                          <p className="text-sm text-blue-700 mt-1">
+                          <h4 className="font-medium text-red-800">TaxJar Integration</h4>
+                          <p className="text-sm text-red-700 mt-1">
                             Enable TaxJar API for accurate, real-time tax calculations based on ZIP code and product type.
                           </p>
                         </div>
@@ -1467,12 +1467,12 @@ export default function AdminSettingsPage() {
 
                   <div>
                     <h4 className="font-medium mb-4">Shipping Providers</h4>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
                       <div className="flex items-start">
-                        <Truck className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                        <Truck className="h-5 w-5 text-red-600 mt-0.5 mr-2" />
                         <div>
-                          <h4 className="font-medium text-blue-800">Shipping Integration</h4>
-                          <p className="text-sm text-blue-700 mt-1">
+                          <h4 className="font-medium text-red-800">Shipping Integration</h4>
+                          <p className="text-sm text-red-700 mt-1">
                             Connect with UPS and DHL for real-time shipping rates and label generation.
                           </p>
                         </div>

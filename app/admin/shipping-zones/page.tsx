@@ -169,7 +169,7 @@ export default function ShippingZonesPage() {
                     <Badge variant={zone.is_active ? 'default' : 'secondary'}>
                       {zone.is_active ? 'Active' : 'Inactive'}
                     </Badge>
-                    <Button variant="outline" size="sm" className="p-1.5 hover:bg-blue-50 rounded-md transition-colors">
+                    <Button variant="outline" size="sm" className="p-1.5 hover:bg-red-50 rounded-md transition-colors">
                       <Edit className="h-6 w-6" />
                     </Button>
                     <Button

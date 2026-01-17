@@ -7,23 +7,23 @@ export default function TopDownBottomUpShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-indigo-700 to-purple-800 text-white py-20">
+      <section className="bg-gradient-to-br from-red-700 to-red-800 text-white py-10">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl">
+          <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
               Ultimate Versatility
             </span>
             <h1 className="text-4xl md:text-5xl font-bold mb-6">
               Top Down Bottom Up Shades
             </h1>
-            <p className="text-xl text-indigo-100 mb-8">
+            <p className="text-xl text-red-100 mb-8">
               The best of both worlds. Lower from the top for natural light while maintaining privacy,
               or raise from the bottom like traditional shades. You control every inch.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products?feature=top-down-bottom-up"
-                className="bg-white text-indigo-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop TDBU Shades <FaArrowRight className="ml-2" />
               </Link>
@@ -45,24 +45,24 @@ export default function TopDownBottomUpShadesPage() {
           <div className="max-w-5xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="bg-indigo-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
-                  <div className="absolute inset-x-2 top-2 bottom-1/2 bg-white border-2 border-indigo-300 rounded"></div>
-                  <div className="absolute inset-x-2 top-1/2 bottom-2 bg-indigo-300 rounded"></div>
+                <div className="bg-red-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
+                  <div className="absolute inset-x-2 top-2 bottom-1/2 bg-white border-2 border-red-300 rounded"></div>
+                  <div className="absolute inset-x-2 top-1/2 bottom-2 bg-red-300 rounded"></div>
                 </div>
                 <h3 className="font-bold text-lg mb-2">Top Down Position</h3>
                 <p className="text-gray-600 text-sm">Lower from the top to let light in while maintaining privacy at eye level</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="bg-indigo-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
-                  <div className="absolute inset-x-2 top-2 bottom-2 bg-indigo-300 rounded"></div>
+                <div className="bg-red-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
+                  <div className="absolute inset-x-2 top-2 bottom-2 bg-red-300 rounded"></div>
                 </div>
                 <h3 className="font-bold text-lg mb-2">Fully Closed</h3>
                 <p className="text-gray-600 text-sm">Complete coverage for maximum privacy and light blocking</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-6 text-center">
-                <div className="bg-indigo-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
-                  <div className="absolute inset-x-2 top-2 h-1/3 bg-indigo-300 rounded"></div>
-                  <div className="absolute inset-x-2 bottom-2 top-1/2 bg-white border-2 border-indigo-300 rounded"></div>
+                <div className="bg-red-100 w-32 h-48 mx-auto mb-4 rounded-lg relative">
+                  <div className="absolute inset-x-2 top-2 h-1/3 bg-red-300 rounded"></div>
+                  <div className="absolute inset-x-2 bottom-2 top-1/2 bg-white border-2 border-red-300 rounded"></div>
                 </div>
                 <h3 className="font-bold text-lg mb-2">Bottom Up Position</h3>
                 <p className="text-gray-600 text-sm">Raise from the bottom like traditional shades for full light</p>
@@ -78,7 +78,7 @@ export default function TopDownBottomUpShadesPage() {
           <h2 className="text-3xl font-bold text-center mb-12">Why Choose Top Down Bottom Up?</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-              <FaEyeSlash className="text-5xl text-indigo-600 mx-auto mb-4" />
+              <FaEyeSlash className="text-5xl text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Privacy Control</h3>
               <p className="text-gray-600">Block views at eye level while letting light in from above</p>
             </div>
@@ -93,7 +93,7 @@ export default function TopDownBottomUpShadesPage() {
               <p className="text-gray-600">Block harmful rays while maintaining an open feel</p>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm text-center">
-              <FaStar className="text-5xl text-purple-600 mx-auto mb-4" />
+              <FaStar className="text-5xl text-red-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold mb-2">Versatility</h3>
               <p className="text-gray-600">Infinite positions for any time of day or situation</p>
             </div>
@@ -108,7 +108,7 @@ export default function TopDownBottomUpShadesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <div className="bg-white border rounded-xl p-6">
               <div className="flex items-center gap-4 mb-4">
-                <FaBath className="text-4xl text-blue-500" />
+                <FaBath className="text-4xl text-red-500" />
                 <h3 className="text-xl font-bold">Bathrooms</h3>
               </div>
               <p className="text-gray-600 mb-4">
@@ -132,7 +132,7 @@ export default function TopDownBottomUpShadesPage() {
             </div>
             <div className="bg-white border rounded-xl p-6">
               <div className="flex items-center gap-4 mb-4">
-                <FaBed className="text-4xl text-purple-500" />
+                <FaBed className="text-4xl text-red-500" />
                 <h3 className="text-xl font-bold">Bedrooms</h3>
               </div>
               <p className="text-gray-600 mb-4">
@@ -214,21 +214,21 @@ export default function TopDownBottomUpShadesPage() {
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-bold mb-3">Cellular Shades</h3>
               <p className="text-gray-600 mb-4">Most popular for TDBU. Energy-efficient honeycomb design with smooth operation.</p>
-              <Link href="/products?category=cellular-shades&feature=top-down-bottom-up" className="text-indigo-600 font-medium hover:underline">
+              <Link href="/products?category=cellular-shades&feature=top-down-bottom-up" className="text-red-600 font-medium hover:underline">
                 Shop Cellular TDBU →
               </Link>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-bold mb-3">Pleated Shades</h3>
               <p className="text-gray-600 mb-4">Affordable option with crisp pleats. Great for bathrooms and utility rooms.</p>
-              <Link href="/products?category=pleated-shades&feature=top-down-bottom-up" className="text-indigo-600 font-medium hover:underline">
+              <Link href="/products?category=pleated-shades&feature=top-down-bottom-up" className="text-red-600 font-medium hover:underline">
                 Shop Pleated TDBU →
               </Link>
             </div>
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <h3 className="text-xl font-bold mb-3">Roman Shades</h3>
               <p className="text-gray-600 mb-4">Elegant fabric folds with TDBU functionality for a sophisticated look.</p>
-              <Link href="/products?category=roman-shades&feature=top-down-bottom-up" className="text-indigo-600 font-medium hover:underline">
+              <Link href="/products?category=roman-shades&feature=top-down-bottom-up" className="text-red-600 font-medium hover:underline">
                 Shop Roman TDBU →
               </Link>
             </div>
@@ -258,15 +258,15 @@ export default function TopDownBottomUpShadesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-indigo-800 text-white">
+      <section className="py-16 bg-red-800 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Get the Best of Both Worlds</h2>
-          <p className="text-xl text-indigo-200 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">
             Shop top down bottom up shades and take control of your light and privacy. Free shipping on orders over $99.
           </p>
           <Link
             href="/products?feature=top-down-bottom-up"
-            className="bg-white text-indigo-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center"
+            className="bg-white text-red-800 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center"
           >
             Shop TDBU Shades <FaArrowRight className="ml-2" />
           </Link>
