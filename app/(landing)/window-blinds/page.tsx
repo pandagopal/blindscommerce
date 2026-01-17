@@ -95,7 +95,7 @@ export default function WindowBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-r from-blue-900 to-blue-700 text-white py-10 lg:py-14">
+      <section className="relative bg-gradient-to-r from-red-600 to-red-700 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -108,7 +108,7 @@ export default function WindowBlindsPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products"
-                className="bg-white text-blue-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop All Blinds <FaArrowRight className="ml-2" />
               </Link>
@@ -253,7 +253,7 @@ export default function WindowBlindsPage() {
           <div className="text-center mt-10">
             <Link
               href="/products"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center"
             >
               View All Products <FaArrowRight className="ml-2" />
             </Link>
@@ -262,7 +262,7 @@ export default function WindowBlindsPage() {
       </section>
 
       {/* Use Cases */}
-      <section className="py-16 bg-blue-900 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             Window Blinds for Every Space
@@ -295,7 +295,7 @@ export default function WindowBlindsPage() {
       {/* CTA Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-2xl p-8 md:p-12 text-white text-center">
+          <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-2xl p-8 md:p-12 text-white text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               Ready to Find Your Perfect Blinds?
             </h2>

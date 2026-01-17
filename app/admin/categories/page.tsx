@@ -379,7 +379,7 @@ export default function AdminCategoriesPage() {
                       <div className="flex justify-end space-x-2">
                         <button
                           onClick={() => handleEdit(category)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-green-600 hover:text-green-900"
                           title="Edit Category"
                         >
                           <Edit className="h-5 w-5" />

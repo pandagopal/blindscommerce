@@ -56,7 +56,7 @@ export default function CellularVsRollerShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white py-10 lg:py-14">
+      <section className="bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">

@@ -320,7 +320,7 @@ export default function WoodVsFauxWoodBlindsPage() {
             </Link>
             <Link
               href="/products?category=faux-wood-blinds"
-              className="bg-gray-700 hover:bg-gray-800 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors inline-flex items-center justify-center"
             >
               Shop Faux Wood Blinds <FaArrowRight className="ml-2" />
             </Link>

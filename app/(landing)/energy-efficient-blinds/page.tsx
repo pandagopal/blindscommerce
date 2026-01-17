@@ -7,7 +7,7 @@ export default function EnergyEfficientBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-red-700 to-red-800 text-white py-10">
+      <section className="bg-gradient-to-br from-red-600 to-red-700 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -230,7 +230,7 @@ export default function EnergyEfficientBlindsPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-red-800 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-4">Start Saving Energy Today</h2>
           <p className="text-xl text-red-200 mb-8 max-w-2xl mx-auto">

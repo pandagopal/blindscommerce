@@ -80,7 +80,7 @@ export default function RollerShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 text-white py-10 lg:py-16">
+      <section className="relative bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white py-10 lg:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -155,7 +155,7 @@ export default function RollerShadesPage() {
       </section>
 
       {/* Lift Options */}
-      <section className="py-16 bg-slate-900 text-white">
+      <section className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Lift System Options
@@ -165,7 +165,7 @@ export default function RollerShadesPage() {
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {liftOptions.map((option, index) => (
-              <div key={index} className="bg-slate-800 rounded-xl p-6">
+              <div key={index} className="bg-red-600 rounded-xl p-6">
                 <h3 className="text-xl font-bold mb-2">{option.name}</h3>
                 <p className="text-slate-300 mb-4 text-sm">{option.description}</p>
                 <div className="text-slate-400 text-sm">{option.priceFrom}</div>
@@ -362,7 +362,7 @@ export default function RollerShadesPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 bg-gradient-to-r from-slate-700 to-slate-800 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Modern Shades for Modern Homes

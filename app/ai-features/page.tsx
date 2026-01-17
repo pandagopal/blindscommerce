@@ -80,8 +80,8 @@ export default function AIFeaturesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-primary-red via-primary-dark to-black">
-        <div className="absolute inset-0 bg-black/20"></div>
+      <section className="relative overflow-hidden bg-gradient-to-r from-red-600 via-red-600 to-red-700">
+        <div className="absolute inset-0 bg-red-700/20"></div>
         <div className="relative container mx-auto px-4 py-10 text-center">
           <div className="max-w-4xl mx-auto">
 
@@ -368,7 +368,7 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+      <section className="py-20 bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-4xl font-bold mb-4">
             Ready to Experience the Future?

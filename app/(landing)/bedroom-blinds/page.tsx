@@ -65,7 +65,7 @@ export default function BedroomBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900 text-white py-10 lg:py-16">
+      <section className="bg-gradient-to-br from-red-600 via-red-700 to-red-600 text-white py-10 lg:py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -81,7 +81,7 @@ export default function BedroomBlindsPage() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
                 href="/products?room=bedroom"
-                className="bg-white text-indigo-900 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+                className="bg-white text-red-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
               >
                 Shop Bedroom Blinds <FaArrowRight className="ml-2" />
               </Link>
@@ -118,7 +118,7 @@ export default function BedroomBlindsPage() {
       </section>
 
       {/* Sleep Science */}
-      <section className="py-16 bg-indigo-900 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             The Science of Better Sleep
@@ -304,7 +304,7 @@ export default function BedroomBlindsPage() {
       </section>
 
       {/* Reviews */}
-      <section className="py-16 bg-indigo-900 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             What Our Customers Say
@@ -335,7 +335,7 @@ export default function BedroomBlindsPage() {
                 room: "Nursery"
               }
             ].map((review, index) => (
-              <div key={index} className="bg-indigo-800 rounded-xl p-6">
+              <div key={index} className="bg-red-600 rounded-xl p-6">
                 <div className="flex mb-3">
                   {[...Array(5)].map((_, i) => (
                     <FaStar key={i} className="text-yellow-400" />
@@ -364,7 +364,7 @@ export default function BedroomBlindsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/products?room=bedroom&opacity=blackout"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
+              className="bg-red-600 hover:bg-red-700 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-colors"
             >
               Shop Blackout Blinds
             </Link>

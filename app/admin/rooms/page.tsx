@@ -337,7 +337,7 @@ export default function AdminRoomsPage() {
                         </button>
                         <button
                           onClick={() => handleEdit(room)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-green-600 hover:text-green-900"
                           title="Edit Room"
                         >
                           <Edit className="h-5 w-5" />

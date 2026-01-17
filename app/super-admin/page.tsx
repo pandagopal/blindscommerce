@@ -238,7 +238,7 @@ export default function SuperAdminDashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-800 rounded-lg shadow-sm text-white p-6">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg shadow-sm text-white p-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">

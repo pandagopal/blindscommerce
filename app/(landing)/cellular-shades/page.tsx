@@ -78,7 +78,7 @@ export default function CellularShadesPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-red-800 via-red-700 to-red-900 text-white py-10">
+      <section className="relative bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -232,7 +232,7 @@ export default function CellularShadesPage() {
       </section>
 
       {/* Features */}
-      <section className="py-16 bg-red-900 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">

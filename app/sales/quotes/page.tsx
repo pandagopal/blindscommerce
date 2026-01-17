@@ -279,7 +279,7 @@ export default function SalesQuotesPage() {
               <Download className="h-4 w-4 mr-2" />
               Export
             </Button>
-            <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
+            <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700">
               <Plus className="h-4 w-4 mr-2" />
               New Quote
             </Button>

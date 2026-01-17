@@ -197,7 +197,7 @@ export default function InstallerSettingsPage() {
           <Button
             onClick={() => handleSave()}
             disabled={saving}
-            className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving ? 'Saving...' : 'Save All'}
@@ -313,7 +313,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('profile')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Profile
@@ -376,7 +376,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('notifications')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Notifications
@@ -464,7 +464,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('schedule')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Schedule
@@ -548,7 +548,7 @@ export default function InstallerSettingsPage() {
                 <Button
                   onClick={() => handleSave('preferences')}
                   disabled={saving}
-                  className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Preferences

@@ -77,7 +77,7 @@ export default function BlackoutBlindsNurseryPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white">
+      <section className="bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 py-10">
           <div className="max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center bg-red-700/50 rounded-full px-4 py-2 mb-6">

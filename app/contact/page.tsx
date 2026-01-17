@@ -95,9 +95,9 @@ export default function ContactPage() {
             Thank you for contacting Smart Blinds. We'll respond to your inquiry within 24 hours.
           </p>
           <div className="space-y-3">
-            <Link 
+            <Link
               href="/consultation"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors block"
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors block"
             >
               Schedule Consultation
             </Link>
@@ -116,7 +116,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -172,7 +172,7 @@ export default function ContactPage() {
               </div>
               <a
                 href={method.action}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
+                className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors inline-block"
               >
                 {method.actionText}
               </a>
@@ -284,7 +284,7 @@ export default function ContactPage() {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+                className="w-full bg-red-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center"
               >
                 <MessageSquare className="h-5 w-5 mr-2" />
                 Send Message

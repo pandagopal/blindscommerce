@@ -128,7 +128,7 @@ export default function WarrantyRegisterPage() {
             <div className="flex gap-3 justify-center">
               <Button
                 onClick={() => router.push('/account/warranty')}
-                className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
               >
                 View Warranties
               </Button>

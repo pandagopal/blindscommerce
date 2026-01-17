@@ -121,7 +121,7 @@ export default function InspirationPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">

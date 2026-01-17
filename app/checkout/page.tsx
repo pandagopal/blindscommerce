@@ -1406,7 +1406,7 @@ export default function CheckoutPage() {
                   <button
                     type="submit"
                     disabled={loading || !selectedPaymentMethod || paymentMethods.length === 0 || !isPaymentDetailsValid() || !formData.acceptTerms}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
+                    className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center"
                   >
                     {loading ? (
                       <>

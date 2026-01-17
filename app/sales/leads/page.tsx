@@ -250,7 +250,7 @@ export default function SalesLeadsPage() {
           
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900">
+              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Add New Lead
               </Button>
@@ -530,7 +530,7 @@ export default function SalesLeadsPage() {
                             />
                             <Button
                               onClick={() => editingLead && handleUpdateLead(editingLead.id, editingLead)}
-                              className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                             >
                               Update Lead
                             </Button>

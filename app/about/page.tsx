@@ -73,7 +73,7 @@ export default function AboutPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
@@ -147,7 +147,7 @@ export default function AboutPage() {
               <div className="space-y-4">
                 {milestones.map((milestone, index) => (
                   <div key={index} className="flex items-start">
-                    <div className="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0">
+                    <div className="bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold mr-4 flex-shrink-0">
                       {milestone.year.slice(-2)}
                     </div>
                     <div>

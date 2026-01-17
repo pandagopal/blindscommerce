@@ -18,7 +18,7 @@ export default function CellularShadesBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide

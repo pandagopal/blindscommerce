@@ -384,7 +384,7 @@ export default function VendorDiscountsPage() {
                           title="Edit discount"
                           className="p-2 hover:bg-red-50 rounded-md transition-colors"
                         >
-                          <Edit className="h-6 w-6 text-red-600" />
+                          <Edit className="h-6 w-6 text-green-600" />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -488,7 +488,7 @@ export default function VendorDiscountsPage() {
                             title="Edit coupon"
                             className="p-2 hover:bg-red-50 rounded-md transition-colors"
                           >
-                            <Edit className="h-6 w-6 text-red-600" />
+                            <Edit className="h-6 w-6 text-green-600" />
                           </Button>
                           <Button 
                             variant="ghost" 

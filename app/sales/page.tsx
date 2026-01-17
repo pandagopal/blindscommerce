@@ -333,7 +333,7 @@ function SalesDashboardContent() {
                 <span className="font-medium w-48">{a.customer}</span>
                 <span>{a.date} {a.time}</span>
                 <span className="text-xs text-gray-500">{a.status}</span>
-                <button onClick={() => handleApptEdit(a.id)} className="text-red-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleApptEdit(a.id)} className="text-green-600 hover:underline ml-2">Edit</button>
                 <button onClick={() => handleApptDelete(a.id)} className="text-red-600 hover:underline ml-2">Delete</button>
               </li>
             ))}
@@ -357,7 +357,7 @@ function SalesDashboardContent() {
                 <span className="font-medium w-48">{c.name}</span>
                 <span>{c.email}</span>
                 <span>{c.phone}</span>
-                <button onClick={() => handleCustEdit(c.id)} className="text-red-600 hover:underline ml-2">Edit</button>
+                <button onClick={() => handleCustEdit(c.id)} className="text-green-600 hover:underline ml-2">Edit</button>
                 <button onClick={() => handleCustDelete(c.id)} className="text-red-600 hover:underline ml-2">Delete</button>
               </li>
             ))}

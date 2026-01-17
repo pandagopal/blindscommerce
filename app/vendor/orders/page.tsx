@@ -203,7 +203,7 @@ export default function VendorOrdersPage() {
                   <button
                     key={i}
                     onClick={() => setCurrentPage(i + 1)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === i + 1 ? 'bg-blue-600 text-white' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}`}
+                    className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === i + 1 ? 'bg-red-600 text-white' : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'}`}
                   >
                     {i + 1}
                   </button>

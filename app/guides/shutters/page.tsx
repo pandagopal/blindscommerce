@@ -18,7 +18,7 @@ export default function ShuttersBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-slate-700 to-slate-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
@@ -336,7 +336,7 @@ export default function ShuttersBuyingGuidePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-slate-900 text-white rounded-lg p-8 text-center">
+      <section className="bg-red-600 text-white rounded-lg p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Ready to Invest in Shutters?</h2>
         <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
           Browse our collection of premium plantation shutters in wood and composite materials.

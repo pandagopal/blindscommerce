@@ -112,7 +112,7 @@ function CheckoutConfirmContent() {
             <p className="text-gray-600 mb-6">{error}</p>
             <button
               onClick={() => router.push('/checkout')}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg"
             >
               Return to Checkout
             </button>

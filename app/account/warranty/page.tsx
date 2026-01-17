@@ -161,7 +161,7 @@ export default function WarrantyPage() {
           <div className="flex gap-4">
             <Button
               onClick={() => router.push('/account/warranty/register')}
-              className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Register Product
@@ -199,7 +199,7 @@ export default function WarrantyPage() {
                     </p>
                     <Button
                       onClick={() => router.push('/account/warranty/register')}
-                      className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Register Your First Product

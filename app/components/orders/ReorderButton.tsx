@@ -194,7 +194,7 @@ export default function ReorderButton({
             <div className="flex gap-3 pt-4">
               <Button 
                 onClick={() => window.location.href = '/cart'}
-                className="flex-1 bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
               >
                 <ShoppingCart className="h-4 w-4 mr-2" />
                 View Cart
@@ -340,7 +340,7 @@ export default function ReorderButton({
               <Button 
                 onClick={handleReorder}
                 disabled={isLoading || preview.summary.available_count === 0}
-                className="flex-1 bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
+                className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
               >
                 {isLoading ? 'Adding to Cart...' : `Add ${preview.summary.available_count} Items to Cart`}
               </Button>

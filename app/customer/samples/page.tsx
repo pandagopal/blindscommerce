@@ -43,7 +43,7 @@ export default function CustomerSamplesPage() {
 
   const statusIcons = {
     pending: { icon: Clock, color: 'text-yellow-600' },
-    processing: { icon: Package, color: 'text-red-600' },
+    processing: { icon: Package, color: 'text-blue-600' },
     shipped: { icon: Truck, color: 'text-green-600' },
     delivered: { icon: CheckCircle, color: 'text-green-700' },
     cancelled: { icon: AlertCircle, color: 'text-red-600' },
@@ -51,7 +51,7 @@ export default function CustomerSamplesPage() {
 
   const statusColors = {
     pending: 'bg-yellow-50 text-yellow-800 border-yellow-200',
-    processing: 'bg-red-50 text-red-800 border-red-200',
+    processing: 'bg-blue-50 text-blue-800 border-blue-200',
     shipped: 'bg-green-50 text-green-800 border-green-200',
     delivered: 'bg-green-50 text-green-800 border-green-200',
     cancelled: 'bg-red-50 text-red-800 border-red-200',

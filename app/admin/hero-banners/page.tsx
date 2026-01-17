@@ -377,7 +377,7 @@ export default function AdminHeroBannersPage() {
                         </button>
                         <button
                           onClick={() => handleEdit(banner)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-green-600 hover:text-green-900"
                           title="Edit Banner"
                         >
                           <Edit className="h-5 w-5" />

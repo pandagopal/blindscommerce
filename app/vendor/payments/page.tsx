@@ -172,7 +172,7 @@ export default function VendorPaymentsPage() {
           <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Failed to Load Payment Data</h2>
           <p className="text-gray-600 mb-4">Please check your connection and try again.</p>
-          <Button onClick={() => refetch()} className="bg-purple-600 hover:bg-primary-dark">
+          <Button onClick={() => refetch()} className="bg-red-600 hover:bg-red-700">
             Retry
           </Button>
         </div>

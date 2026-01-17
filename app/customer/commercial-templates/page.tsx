@@ -326,9 +326,9 @@ export default function CommercialTemplatesPage() {
               </div>
 
               {uploading && (
-                <div className="flex items-center justify-center p-4 bg-red-50 rounded-lg">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mr-3"></div>
-                  <span className="text-red-700">Processing bulk order...</span>
+                <div className="flex items-center justify-center p-4 bg-blue-50 rounded-lg">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
+                  <span className="text-blue-700">Processing bulk order...</span>
                 </div>
               )}
             </div>

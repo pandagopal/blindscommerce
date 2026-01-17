@@ -98,7 +98,7 @@ function ConsultationContent() {
           <div className="space-y-3">
             <Link 
               href="/products"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-700 transition-colors block"
+              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-red-700 transition-colors block"
             >
               Browse Products
             </Link>
@@ -117,40 +117,34 @@ function ConsultationContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-red-900 to-red-950 text-white">
-        <div className="container mx-auto px-4 py-20">
+      <section className="bg-gradient-to-r from-red-600 to-red-700 text-white">
+        <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
               Book Your Service
             </h1>
-            <p className="text-xl md:text-2xl mb-2 text-white/90">
+            <p className="text-lg md:text-xl mb-2 text-white/90">
               Professional Window Treatment Services
             </p>
-            <p className="text-lg mb-8 text-white/80 max-w-3xl mx-auto">
-              Schedule professional measurement, design consultation, installation support, or commercial services. 
+            <p className="text-base mb-6 text-white/80 max-w-2xl mx-auto">
+              Schedule professional measurement, design consultation, installation support, or commercial services.
               Our experts will help you find the perfect window treatment solution.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-4 mx-auto w-20 h-20 flex items-center justify-center">
-                  <Home className="h-12 w-12 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">In-Home Service</h3>
-                <p className="text-white/80">We come to you for accurate measurements and personalized recommendations</p>
+                <Home className="h-10 w-10 text-red-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold mb-1">In-Home Service</h3>
+                <p className="text-red-100 text-sm">We come to you for accurate measurements and personalized recommendations</p>
               </div>
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-4 mx-auto w-20 h-20 flex items-center justify-center">
-                  <Clock className="h-12 w-12 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">No Obligation</h3>
-                <p className="text-white/80">Free consultation with no pressure to purchase</p>
+                <Clock className="h-10 w-10 text-red-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold mb-1">No Obligation</h3>
+                <p className="text-red-100 text-sm">Free consultation with no pressure to purchase</p>
               </div>
               <div className="text-center">
-                <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-4 mx-auto w-20 h-20 flex items-center justify-center">
-                  <CheckCircle className="h-12 w-12 text-white" />
-                </div>
-                <h3 className="text-xl font-bold mb-2">Expert Advice</h3>
-                <p className="text-white/80">Professional design guidance tailored to your needs</p>
+                <CheckCircle className="h-10 w-10 text-red-300 mx-auto mb-3" />
+                <h3 className="text-lg font-semibold mb-1">Expert Advice</h3>
+                <p className="text-red-100 text-sm">Professional design guidance tailored to your needs</p>
               </div>
             </div>
           </div>
@@ -164,7 +158,7 @@ function ConsultationContent() {
             <div className="bg-white rounded-lg shadow-xl overflow-hidden">
               <div className="bg-gradient-to-r from-primary-red to-primary-dark text-white p-8">
                 <h2 className="text-3xl font-bold mb-4">Schedule Your Service</h2>
-                <p className="text-blue-100 text-lg">Fill out the form below and we'll contact you to confirm your appointment.</p>
+                <p className="text-red-100 text-lg">Fill out the form below and we'll contact you to confirm your appointment.</p>
               </div>
 
               <form onSubmit={handleSubmit} className="p-8 space-y-8">
@@ -180,7 +174,7 @@ function ConsultationContent() {
                     required
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -191,7 +185,7 @@ function ConsultationContent() {
                     required
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -202,7 +196,7 @@ function ConsultationContent() {
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -213,7 +207,7 @@ function ConsultationContent() {
                     required
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -231,7 +225,7 @@ function ConsultationContent() {
                     required
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -243,7 +237,7 @@ function ConsultationContent() {
                       required
                       value={formData.city}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -254,7 +248,7 @@ function ConsultationContent() {
                       required
                       value={formData.state}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                   <div>
@@ -265,7 +259,7 @@ function ConsultationContent() {
                       required
                       value={formData.zipCode}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                     />
                   </div>
                 </div>
@@ -284,7 +278,7 @@ function ConsultationContent() {
                     value={formData.preferredDate}
                     onChange={handleInputChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div>
@@ -293,7 +287,7 @@ function ConsultationContent() {
                     name="preferredTime"
                     value={formData.preferredTime}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Select a time</option>
                     {timeSlots.map(time => (
@@ -314,7 +308,7 @@ function ConsultationContent() {
                   required
                   value={formData.serviceType}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                 >
                   <option value="">Select a service</option>
                   {serviceTypes.map(service => (
@@ -339,7 +333,7 @@ function ConsultationContent() {
                     name="roomType"
                     value={formData.roomType}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Select a room</option>
                     {roomTypes.map(room => (
@@ -355,7 +349,7 @@ function ConsultationContent() {
                     min="1"
                     value={formData.windowCount}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -364,7 +358,7 @@ function ConsultationContent() {
                     name="budget"
                     value={formData.budget}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   >
                     <option value="">Select a budget range</option>
                     {budgetRanges.map(range => (
@@ -384,7 +378,7 @@ function ConsultationContent() {
                 value={formData.notes}
                 onChange={handleInputChange}
                 placeholder="Tell us about your specific needs, style preferences, or any questions you have..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
             </div>
 
@@ -422,7 +416,7 @@ function ConsultationContent() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-6 mb-6 mx-auto w-20 h-20 flex items-center justify-center">
-                <MapPin className="h-12 w-12 text-blue-600" />
+                <MapPin className="h-12 w-12 text-red-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Professional Measurement</h3>
               <p className="text-gray-600 text-lg">
@@ -457,7 +451,7 @@ function ConsultationContent() {
           <h2 className="text-4xl font-bold mb-6">
             Ready to Transform Your Windows?
           </h2>
-          <p className="text-xl mb-8 text-blue-100 max-w-3xl mx-auto">
+          <p className="text-xl mb-8 text-red-100 max-w-3xl mx-auto">
             Join thousands of satisfied customers who chose Smart Blinds for their window treatment needs.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">

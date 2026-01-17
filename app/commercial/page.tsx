@@ -107,7 +107,7 @@ export default function CommercialPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-red-900 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -260,7 +260,7 @@ export default function CommercialPage() {
       <div className="bg-white py-16">
         <div className="max-w-4xl mx-auto px-4">
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-800 to-red-800 text-white p-6">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6">
               <h2 className="text-2xl font-bold mb-2">Request Commercial Quote</h2>
               <p className="text-gray-200">Tell us about your project and we'll provide a detailed proposal.</p>
             </div>
@@ -433,7 +433,7 @@ export default function CommercialPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gradient-to-r from-gray-800 to-red-800 text-white py-16">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold mb-4">
             Ready to Enhance Your Commercial Space?

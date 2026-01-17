@@ -50,7 +50,7 @@ export default function MotorizedVsCordlessPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-red-900 via-red-800 to-red-900 text-white py-10 lg:py-14">
+      <section className="bg-gradient-to-br from-red-600 via-red-600 to-red-700 text-white py-10 lg:py-14">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -189,7 +189,7 @@ export default function MotorizedVsCordlessPage() {
             Smart Home Integration
           </h2>
           <div className="max-w-4xl mx-auto">
-            <div className="bg-red-900 text-white rounded-2xl p-8">
+            <div className="bg-red-700 text-white rounded-2xl p-8">
               <h3 className="text-2xl font-bold mb-6 text-center">
                 Motorized Blinds Work With:
               </h3>
@@ -337,7 +337,7 @@ export default function MotorizedVsCordlessPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-red-900 text-white">
+      <section className="py-16 bg-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             Upgrade Your Windows

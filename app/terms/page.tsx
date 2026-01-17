@@ -108,7 +108,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -303,13 +303,13 @@ export default function TermsPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/privacy"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="bg-red-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors"
             >
               Privacy Policy
             </Link>
             <Link
               href="/warranty"
-              className="border border-blue-600 text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-blue-50 transition-colors"
+              className="border border-red-600 text-red-600 px-6 py-3 rounded-lg font-medium hover:bg-red-50 transition-colors"
             >
               Warranty Information
             </Link>

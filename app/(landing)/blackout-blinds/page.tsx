@@ -89,7 +89,7 @@ export default function BlackoutBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-red-900 to-gray-900 text-white py-10">
+      <section className="relative bg-gradient-to-br from-red-600 via-red-900 to-red-700 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-5xl">
             <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
@@ -257,7 +257,7 @@ export default function BlackoutBlindsPage() {
       </section>
 
       {/* Reviews */}
-      <section className="py-16 bg-gray-900 text-white">
+      <section className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Customers Love Our Blackout Blinds
@@ -289,7 +289,7 @@ export default function BlackoutBlindsPage() {
                 rating: 5
               }
             ].map((review, index) => (
-              <div key={index} className="bg-gray-800 rounded-xl p-6">
+              <div key={index} className="bg-red-700 rounded-xl p-6">
                 <div className="flex mb-3">
                   {[...Array(review.rating)].map((_, i) => (
                     <FaStar key={i} className="text-yellow-400" />

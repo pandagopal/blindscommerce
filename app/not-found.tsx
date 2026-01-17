@@ -20,7 +20,7 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/"
-            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl"
+            className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700 text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl"
           >
             <Home className="w-5 h-5 mr-2" />
             Go Home

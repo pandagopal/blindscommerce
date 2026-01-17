@@ -7,7 +7,7 @@ export default function MeasuringSkylightsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-red-600 to-red-800 text-white py-10">
+      <section className="bg-gradient-to-br from-red-600 to-red-700 text-white py-10">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl">
             <Link href="/guides" className="text-red-200 hover:text-white mb-4 inline-block">

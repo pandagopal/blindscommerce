@@ -251,7 +251,7 @@ export default async function ProductsPage({
       )}
 
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-red-600 to-red-800 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-3xl">
             {/* Breadcrumb */}

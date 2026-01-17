@@ -18,7 +18,7 @@ export default function RomanShadesBuyingGuidePage() {
       </nav>
 
       {/* Hero Section */}
-      <div className="bg-gradient-to-br from-red-700 to-red-900 text-white rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-br from-red-600 to-red-700 text-white rounded-lg p-8 mb-10">
         <div className="max-w-3xl">
           <span className="inline-block bg-white/20 text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
             Buying Guide
@@ -327,16 +327,16 @@ export default function RomanShadesBuyingGuidePage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-purple-900 text-white rounded-lg p-8 text-center">
+      <section className="bg-red-700 text-white rounded-lg p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Ready to Shop Roman Shades?</h2>
-        <p className="text-purple-200 mb-6 max-w-2xl mx-auto">
+        <p className="text-red-200 mb-6 max-w-2xl mx-auto">
           Browse our collection of elegant roman shades in various fold styles, fabrics, and colors.
           Free shipping on orders over $99.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
             href="/products?category=roman-shades"
-            className="bg-white text-purple-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
+            className="bg-white text-red-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-flex items-center justify-center"
           >
             Shop Roman Shades <FaArrowRight className="ml-2" />
           </Link>

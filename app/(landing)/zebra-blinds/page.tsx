@@ -65,7 +65,7 @@ export default function ZebraBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+      <section className="bg-gradient-to-br from-red-600 via-red-700 to-red-600 text-white">
         <div className="container mx-auto px-4 py-10">
           <div className="max-w-5xl mx-auto text-center">
             <div className="inline-flex items-center bg-white/10 rounded-full px-4 py-2 mb-6">
@@ -299,7 +299,7 @@ export default function ZebraBlindsPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-gray-900 to-gray-800 text-white">
+      <section className="py-16 bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Transform Your Windows?

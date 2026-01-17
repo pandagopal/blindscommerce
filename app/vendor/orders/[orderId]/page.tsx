@@ -276,11 +276,11 @@ export default function VendorOrderDetailsPage() {
   const getStatusBadgeColor = (status: string) => {
     const colors: Record<string, string> = {
       pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-red-100 text-red-800',
-      preparing: 'bg-red-100 text-red-800',
-      in_transit: 'bg-red-100 text-red-800',
+      processing: 'bg-blue-100 text-blue-800',
+      preparing: 'bg-blue-100 text-blue-800',
+      in_transit: 'bg-blue-100 text-blue-800',
       customs: 'bg-orange-100 text-orange-800',
-      shipped: 'bg-red-100 text-red-800',
+      shipped: 'bg-green-100 text-green-800',
       delivered: 'bg-green-100 text-green-800',
       cancelled: 'bg-red-100 text-red-800',
     };
@@ -336,7 +336,7 @@ export default function VendorOrderDetailsPage() {
           {/* Ship Order Button */}
           {canShip && !showShipDialog && (
             <Button
-              className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800"
+              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
               onClick={() => setShowShipDialog(true)}
             >
               <Truck className="h-4 w-4 mr-2" />

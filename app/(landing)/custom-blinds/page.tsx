@@ -97,7 +97,7 @@ export default function CustomBlindsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-10 lg:py-14">
+      <section className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-600 text-white py-10 lg:py-14">
         <div className="absolute inset-0 bg-black/20" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
@@ -187,7 +187,7 @@ export default function CustomBlindsPage() {
       </section>
 
       {/* How It Works */}
-      <section className="py-16 bg-gray-900 text-white">
+      <section className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             How Custom Blinds Work

@@ -93,7 +93,7 @@ export default function ViewProductPage() {
           <p className="text-gray-600 mb-6">{error || 'Product not found'}</p>
           <button
             onClick={() => router.back()}
-            className="bg-purple-600 hover:bg-primary-dark text-white font-medium py-2 px-6 rounded-lg transition-colors"
+            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
           >
             Go Back
           </button>

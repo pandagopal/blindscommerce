@@ -156,7 +156,7 @@ export default function AdminOrdersPage() {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
       case 'processing':
-        return 'bg-red-100 text-red-800';
+        return 'bg-blue-100 text-blue-800';
       case 'shipped':
         return 'bg-green-100 text-green-800';
       case 'delivered':
@@ -344,13 +344,13 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
                         href={`/admin/orders/${order.order_id}`}
-                        className="text-primary-red hover:text-red-900 mr-3"
+                        className="text-blue-600 hover:text-blue-900 mr-3"
                       >
                         View
                       </Link>
                       <Link
                         href={`/admin/orders/${order.order_id}/edit`}
-                        className="text-red-600 hover:text-red-900 mr-3"
+                        className="text-green-600 hover:text-green-900 mr-3"
                       >
                         Edit
                       </Link>

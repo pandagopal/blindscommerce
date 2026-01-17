@@ -106,7 +106,7 @@ export default function HelpPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-950 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-10">
           <div className="text-center">
             <h1 className="text-5xl font-bold mb-6">
@@ -142,9 +142,9 @@ export default function HelpPage() {
               <Phone className="h-12 w-12 text-blue-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Call Support</h3>
               <p className="text-gray-600 mb-4">Speak with our experts</p>
-              <a 
+              <a
                 href="tel:+1-316-530-2635"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
+                className="bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors inline-block"
               >
                 (316) 530-2635
               </a>

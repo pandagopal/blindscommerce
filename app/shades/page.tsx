@@ -124,7 +124,7 @@ export default function ShadesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-red-900 to-red-800 text-white">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -199,7 +199,7 @@ export default function ShadesPage() {
             onClick={() => setSelectedCategory('all')}
             className={`px-6 py-2 rounded-full font-medium transition-colors ${
               selectedCategory === 'all'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-red-600 text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
             }`}
           >
@@ -215,7 +215,7 @@ export default function ShadesPage() {
                 onClick={() => setSelectedCategory(category.slug)}
                 className={`px-6 py-2 rounded-full font-medium transition-colors ${
                   selectedCategory === category.slug
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-red-600 text-white'
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >

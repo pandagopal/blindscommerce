@@ -118,7 +118,7 @@ export default function CartPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">Shopping Cart</h1>
-          <HelpButton className="bg-purple-600 hover:bg-primary-dark text-white" />
+          <HelpButton className="bg-red-600 hover:bg-red-700 text-white" />
         </div>
 
         {/* Free Shipping Progress Bar */}
