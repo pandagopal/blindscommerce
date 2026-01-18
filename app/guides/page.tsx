@@ -60,12 +60,12 @@ export default function GuidesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Hero Section */}
-      <div className="bg-gray-100 rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-8 md:p-10 mb-10 shadow-lg">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white leading-tight">
             Help & Guides
           </h1>
-          <p className="text-lg text-gray-600">
+          <p className="text-base md:text-lg text-white/90 leading-relaxed">
             Everything you need to know about measuring, installing, and caring for your window treatments.
             Our comprehensive guides will help you every step of the way.
           </p>
@@ -73,22 +73,22 @@ export default function GuidesPage() {
       </div>
 
       {/* Guides Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-6xl mx-auto mb-12">
         {guides.map((guide) => (
           <Link
             key={guide.href}
             href={guide.href}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-primary-red transition-all group"
+            className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-xl hover:border-primary-red/30 transition-all duration-300 group"
           >
-            <div className="flex items-start">
-              <div className="flex-shrink-0 w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center text-primary-red group-hover:bg-primary-red group-hover:text-white transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-14 h-14 bg-red-50 rounded-lg flex items-center justify-center text-primary-red group-hover:bg-primary-red group-hover:text-white transition-all duration-300 shadow-sm">
                 {guide.icon}
               </div>
-              <div className="ml-4">
-                <h2 className="text-xl font-bold mb-2 group-hover:text-primary-red transition-colors">
+              <div className="flex-1">
+                <h2 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary-red transition-colors leading-tight">
                   {guide.title}
                 </h2>
-                <p className="text-gray-600">{guide.description}</p>
+                <p className="text-sm md:text-base text-gray-600 leading-relaxed">{guide.description}</p>
               </div>
             </div>
           </Link>
@@ -96,9 +96,9 @@ export default function GuidesPage() {
       </div>
 
       {/* Professional Services CTA */}
-      <div className="bg-gray-100 rounded-lg p-8 text-center">
-        <h2 className="text-2xl font-bold mb-4">Prefer Professional Help?</h2>
-        <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-8 md:p-10 text-center shadow-md border border-gray-200">
+        <h2 className="text-2xl md:text-3xl font-bold mb-3 text-gray-900">Prefer Professional Help?</h2>
+        <p className="text-base md:text-lg text-gray-600 mb-6 max-w-2xl mx-auto leading-relaxed">
           Our expert team offers professional measuring and installation services
           to ensure your window treatments fit perfectly.
         </p>

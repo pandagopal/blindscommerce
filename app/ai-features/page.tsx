@@ -79,35 +79,34 @@ export default function AIFeaturesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Hero Section */}
+      {/* Hero Section - Reduced Height */}
       <section className="relative overflow-hidden bg-gradient-to-r from-red-600 via-red-600 to-red-700">
-        <div className="absolute inset-0 bg-red-700/20"></div>
-        <div className="relative container mx-auto px-4 py-10 text-center">
+        <div className="absolute inset-0 bg-red-700/10"></div>
+        <div className="relative container mx-auto px-4 py-12 md:py-16 text-center">
           <div className="max-w-4xl mx-auto">
-
-            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight">
               The Future of
               <span className="bg-gradient-to-r from-accent-yellow to-white bg-clip-text text-transparent">
                 {' '}Window Shopping
               </span>
             </h1>
-            
-            <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Experience the power of AI with smart recommendations, visual search, 
+
+            <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl mx-auto leading-relaxed">
+              Experience the power of AI with smart recommendations, visual search,
               and augmented reality visualization. Your perfect blinds are just one click away.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <VisualSearch
                 trigger={
-                  <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100 hover:text-primary-dark">
+                  <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100 hover:text-primary-dark shadow-lg">
                     <Camera className="h-5 w-5 mr-2" />
                     Try Visual Search
                   </Button>
                 }
               />
               <Link href="/products">
-                <Button size="lg" variant="outline" className="bg-white text-primary-red hover:bg-gray-100 hover:text-primary-dark">
+                <Button size="lg" variant="outline" className="bg-white/95 text-primary-red hover:bg-white hover:text-primary-dark border-0 shadow-lg">
                   Browse Products
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </Button>
@@ -118,16 +117,16 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white">
+      <section className="py-12 md:py-14 bg-white border-b border-gray-100">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 max-w-5xl mx-auto">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-r from-primary-red to-primary-dark text-white mb-4">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-primary-red to-primary-dark text-white mb-3 shadow-md">
                   <stat.icon className="h-6 w-6" />
                 </div>
-                <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
+                <div className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                <div className="text-sm md:text-base text-gray-600">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -135,40 +134,40 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20">
+      <section className="py-16 md:py-20">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12 md:mb-14">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
               AI-Powered Features
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Cutting-edge artificial intelligence makes finding and visualizing 
+            <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Cutting-edge artificial intelligence makes finding and visualizing
               your perfect window treatments effortless.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto mb-12">
             {features.map((feature, index) => (
-              <Card key={feature.id} className="group hover:shadow-xl transition-all duration-300 border-0 shadow-lg">
-                <CardHeader>
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r ${feature.gradient} text-white mb-4`}>
-                    <feature.icon className="h-6 w-6" />
+              <Card key={feature.id} className="group hover:shadow-2xl transition-all duration-300 border border-gray-200 shadow-md hover:border-primary-red/20">
+                <CardHeader className="pb-4">
+                  <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} text-white mb-4 shadow-md`}>
+                    <feature.icon className="h-7 w-7" />
                   </div>
-                  <CardTitle className="text-2xl mb-2">{feature.title}</CardTitle>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <CardTitle className="text-xl md:text-2xl mb-2 leading-tight">{feature.title}</CardTitle>
+                  <p className="text-sm md:text-base text-gray-600 leading-relaxed">{feature.description}</p>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2 mb-6">
+                <CardContent className="pt-2">
+                  <div className="space-y-2.5 mb-6">
                     {feature.benefits.map((benefit, idx) => (
-                      <div key={idx} className="flex items-center text-sm text-gray-600">
-                        <div className="w-2 h-2 rounded-full bg-green-500 mr-3"></div>
-                        {benefit}
+                      <div key={idx} className="flex items-start gap-2.5 text-sm md:text-base text-gray-700">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0"></div>
+                        <span className="leading-relaxed">{benefit}</span>
                       </div>
                     ))}
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full group-hover:bg-gray-900 group-hover:text-white transition-colors cursor-pointer"
+                  <Button
+                    variant="outline"
+                    className="w-full group-hover:bg-primary-red group-hover:text-white group-hover:border-primary-red transition-colors cursor-pointer font-semibold"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
@@ -178,16 +177,16 @@ export default function AIFeaturesPage() {
                       setTimeout(() => {
                         const demoSection = document.getElementById('demo-section');
                         if (demoSection) {
-                          demoSection.scrollIntoView({ 
-                            behavior: 'smooth', 
-                            block: 'start' 
+                          demoSection.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
                           });
                         }
                       }, 100);
                     }}
                   >
                     Try Demo
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                    <ChevronRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </Button>
                 </CardContent>
               </Card>
@@ -197,13 +196,13 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* Interactive Demo Section */}
-      <section id="demo-section" className="py-20 bg-gray-50">
+      <section id="demo-section" className="py-16 md:py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-10 md:mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
               Experience AI in Action
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
               Try our AI features with live demos
             </p>
           </div>
@@ -368,23 +367,23 @@ export default function AIFeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-red-600 to-red-700 text-white">
+      <section className="py-16 md:py-20 bg-gradient-to-r from-red-600 to-red-700 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
             Ready to Experience the Future?
           </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
             Join thousands of customers who are already using AI to find their perfect window treatments.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link href="/products">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
+              <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100 shadow-lg font-semibold">
                 Start Shopping
                 <ChevronRight className="h-5 w-5 ml-2" />
               </Button>
             </Link>
             <Link href="/measure-install">
-              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
+              <Button size="lg" variant="outline" className="bg-white/10 text-white hover:bg-white/20 border-white/30 shadow-lg font-semibold">
                 Schedule Consultation
               </Button>
             </Link>

@@ -248,15 +248,27 @@ const Navbar = () => {
   return (
     <>
       {/* Top promotional banner */}
-      <div className="bg-primary-red text-white py-2 text-center text-sm">
+      <div className="bg-primary-red text-white py-2.5 text-center text-sm">
         <div className="container mx-auto px-4">
-          <span className="font-medium">🚚 Free Shipping on eligible orders | 📞 {companyInfo.emergencyHotline} | 📞 {companyInfo.tagline}</span>
+          <div className="flex items-center justify-center gap-4 md:gap-6 flex-wrap">
+            <span className="flex items-center gap-1.5 font-medium">
+              🚚 Free Shipping on eligible orders
+            </span>
+            <span className="hidden md:inline text-white/50">|</span>
+            <span className="flex items-center gap-1.5 font-medium">
+              📞 {companyInfo.emergencyHotline}
+            </span>
+            <span className="hidden md:inline text-white/50">|</span>
+            <span className="flex items-center gap-1.5 font-medium">
+              ✨ {companyInfo.tagline}
+            </span>
+          </div>
         </div>
       </div>
-      
-      <header className="bg-white shadow-md sticky top-0 z-50 border-b border-gray-100">
+
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-200">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-16 md:h-18">
           {/* Mobile menu button */}
           <div className="flex md:hidden">
             <button
@@ -271,15 +283,16 @@ const Navbar = () => {
           </div>
 
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center">
               <Image
                 src="/images/logo/SmartBlindsLogo.png"
                 alt="Smart Blinds Hub"
-                width={150}
-                height={50}
-                style={{ height: "auto" }}
+                width={140}
+                height={45}
+                style={{ height: "auto", maxHeight: "45px" }}
                 priority
+                className="object-contain"
               />
             </Link>
           </div>

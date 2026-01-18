@@ -123,18 +123,18 @@ export default function MeasureInstallPage() {
         </div>
       )}
       {/* Hero Section */}
-      <div className="bg-gray-100 rounded-lg p-8 mb-10">
+      <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-lg p-8 md:p-10 mb-10 shadow-lg">
         <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3 text-white leading-tight">
             Professional Measuring & Installation Services
           </h1>
-          <p className="text-lg text-gray-600 mb-6">
+          <p className="text-base md:text-lg text-white/90 mb-6 leading-relaxed">
             Get the perfect fit and finish with our expert measuring and
             installation services. Let the pros handle it so you don't have to.
           </p>
           <a
             href="#book-service"
-            className="bg-primary-red hover:bg-primary-red-dark text-white font-medium py-3 px-6 rounded-lg transition-colors inline-block"
+            className="bg-white text-primary-red hover:bg-gray-100 font-semibold py-3 px-8 rounded-lg transition-all shadow-md hover:shadow-lg inline-block hover:-translate-y-0.5"
           >
             Book a Service
           </a>
@@ -143,13 +143,13 @@ export default function MeasureInstallPage() {
 
       {/* Services Section */}
       <div className="mb-16">
-        <h2 className="text-2xl font-bold mb-8 text-center">Our Services</h2>
+        <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center text-gray-900">Our Services</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-6xl mx-auto">
           {/* Measuring Service */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="h-48 bg-gray-200">
-              {/* Image placeholder */}
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300">
+            <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+              <span className="text-gray-400 text-sm">Measuring Service</span>
             </div>
             <div className="p-6">
               <h3 className="text-xl font-bold mb-2">Measuring Service</h3>

@@ -27,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     : parseFloat(product.base_price || '0');
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow group relative">
+    <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden hover:shadow-xl hover:border-primary-red/20 transition-all duration-300 group relative flex flex-col h-full">
       {/* Wishlist Button */}
       <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
         <WishlistButton
@@ -45,7 +45,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       {/* Product Image */}
       <Link href={`/products/configure/${product.slug}`}>
-        <div className="aspect-square bg-gray-200 relative overflow-hidden">
+        <div className="aspect-square bg-gray-100 relative overflow-hidden">
           {product.images && product.images.length > 0 ? (
             <img
               src={product.images[0].image_url}
@@ -54,47 +54,47 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <span className="text-gray-500">No image</span>
+              <span className="text-gray-400 text-sm">No image</span>
             </div>
           )}
         </div>
       </Link>
 
       {/* Product Info */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
         <Link href={`/products/configure/${product.slug}`}>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary-red transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2 hover:text-primary-red transition-colors line-clamp-2 min-h-[3.5rem]">
             {product.name}
           </h3>
         </Link>
         {product.short_description && (
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2 leading-relaxed">
             {product.short_description}
           </p>
         )}
 
-        <div className="flex items-center justify-between">
-          <span className="text-xl font-bold text-primary-red">
-            ${price.toFixed(2)}
-          </span>
-          <Link
-            href={`/products/configure/${product.slug}`}
-            className="bg-primary-red text-white px-4 py-2 rounded-md hover:bg-primary-red-dark transition-colors"
-          >
-            Configure
-          </Link>
-        </div>
-
         {/* Rating */}
         {product.rating && product.rating > 0 && (
-          <div className="flex items-center mt-2">
-            <span className="text-yellow-500">★</span>
-            <span className="ml-1 text-sm text-gray-600">{product.rating}</span>
+          <div className="flex items-center mb-3">
+            <span className="text-accent-yellow text-lg">★</span>
+            <span className="ml-1 text-sm font-semibold text-gray-700">{product.rating}</span>
             {product.review_count && product.review_count > 0 && (
               <span className="ml-1 text-sm text-gray-500">({product.review_count})</span>
             )}
           </div>
         )}
+
+        <div className="mt-auto flex items-center justify-between gap-3">
+          <span className="text-xl font-bold text-primary-red whitespace-nowrap">
+            ${price.toFixed(2)}
+          </span>
+          <Link
+            href={`/products/configure/${product.slug}`}
+            className="bg-primary-red text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition-colors font-semibold text-sm shadow-sm"
+          >
+            Configure
+          </Link>
+        </div>
       </div>
     </div>
   );
