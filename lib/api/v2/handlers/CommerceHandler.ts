@@ -863,6 +863,42 @@ export class CommerceHandler extends BaseHandler {
     // Clear cart after successful order
     await this.cartService.clearCart(user.user_id);
 
+    // Send order confirmation email
+    try {
+      const { emailService } = require('@/lib/email/emailService');
+      const { formatPrice } = require('@/lib/utils/priceUtils');
+
+      // Format shipping address
+      const shippingAddr = data.shippingAddress;
+      const shippingAddress = `${shippingAddr.firstName || ''} ${shippingAddr.lastName || ''}
+${shippingAddr.street || shippingAddr.address || ''}${shippingAddr.apt || shippingAddr.apartment ? ', ' + (shippingAddr.apt || shippingAddr.apartment) : ''}
+${shippingAddr.city}, ${shippingAddr.state} ${shippingAddr.zipCode || shippingAddr.postal_code}
+${shippingAddr.country || 'US'}`;
+
+      await emailService.sendOrderConfirmation({
+        orderNumber: order.order_number,
+        customerName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Customer',
+        customerEmail: user.email,
+        orderDate: new Date(order.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        }),
+        totalAmount: formatPrice(order.total_amount),
+        items: order.items.map(item => ({
+          name: item.product_name || 'Product',
+          quantity: item.quantity,
+          price: formatPrice(item.total_price || (item.unit_price * item.quantity))
+        })),
+        shippingAddress: shippingAddress.trim()
+      });
+
+      console.log(`Order confirmation email sent successfully for order #${order.order_number}`);
+    } catch (emailError) {
+      // Log error but don't fail the order creation
+      console.error('Failed to send order confirmation email:', emailError);
+    }
+
     return order;
   }
 

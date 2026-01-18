@@ -233,7 +233,7 @@ export default function CustomerOrderDetailPage() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Reorder
             </Button>
-            <Button variant="outline" size="sm" onClick={() => window.print()}>
+            <Button variant="outline" size="sm" onClick={() => router.push(`/account/orders/${orderId}/invoice`)}>
               <FileText className="w-4 h-4 mr-2" />
               Invoice
             </Button>

@@ -343,10 +343,10 @@ class EmailService {
     from?: string;
   }): Promise<boolean> {
     const { getPool } = require('@/lib/db');
-    
+
     try {
       const pool = await getPool();
-      
+
       // Get SMTP settings from database
       const [settings] = await pool.execute(
         `SELECT setting_key, setting_value FROM company_settings WHERE setting_key IN (
@@ -384,6 +384,128 @@ class EmailService {
       console.error('Error sending email:', error);
       return false;
     }
+  }
+
+  // Send order confirmation email
+  async sendOrderConfirmation(orderData: {
+    orderNumber: string;
+    customerName: string;
+    customerEmail: string;
+    orderDate: string;
+    totalAmount: string;
+    items: Array<{ name: string; quantity: number; price: string }>;
+    shippingAddress: string;
+  }): Promise<boolean> {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    const itemsHtml = orderData.items.map(item => `
+      <tr>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+          <strong>${item.name}</strong>
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">
+          ${item.quantity}
+        </td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">
+          ${item.price}
+        </td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #DC2626; color: white; padding: 30px 20px; text-align: center; }
+          .content { background-color: #f9f9f9; padding: 30px; }
+          .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
+          .button { display: inline-block; padding: 12px 30px; background-color: #DC2626; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+          .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; border-top: 1px solid #ddd; margin-top: 30px; }
+          table { width: 100%; border-collapse: collapse; }
+          .info-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1 style="margin: 0;">Order Confirmation</h1>
+            <p style="margin: 10px 0 0 0; font-size: 18px;">Thank you for your order!</p>
+          </div>
+          <div class="content">
+            <p>Hi ${orderData.customerName},</p>
+            <p>We've received your order and we're getting it ready! You'll receive regular email updates as your order progresses.</p>
+
+            <div class="order-details">
+              <h2 style="margin-top: 0; color: #DC2626;">Order #${orderData.orderNumber}</h2>
+              <p><strong>Order Date:</strong> ${orderData.orderDate}</p>
+              <p><strong>Total Amount:</strong> ${orderData.totalAmount}</p>
+
+              <h3 style="margin-top: 20px;">Items Ordered:</h3>
+              <table>
+                <thead>
+                  <tr style="background-color: #f5f5f5;">
+                    <th style="padding: 12px; text-align: left;">Product</th>
+                    <th style="padding: 12px; text-align: center;">Quantity</th>
+                    <th style="padding: 12px; text-align: right;">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${itemsHtml}
+                </tbody>
+              </table>
+
+              <h3 style="margin-top: 20px;">Shipping Address:</h3>
+              <p style="white-space: pre-line;">${orderData.shippingAddress}</p>
+            </div>
+
+            <div class="info-box">
+              <p style="margin: 0;"><strong>📧 Regular Updates:</strong> You'll receive email notifications at every stage - from processing to shipping and delivery.</p>
+            </div>
+
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${siteUrl}/account/orders" class="button">View Order Status</a>
+            </div>
+
+            <h3>What Happens Next?</h3>
+            <ul>
+              <li><strong>Processing:</strong> We're preparing your custom window treatments (typically 5-7 business days)</li>
+              <li><strong>Shipping:</strong> You'll receive tracking information as soon as your order ships</li>
+              <li><strong>Delivery:</strong> Your beautiful new blinds will arrive at your doorstep!</li>
+            </ul>
+
+            <h3>Need Help?</h3>
+            <p>Contact us anytime:</p>
+            <ul>
+              <li><strong>Email:</strong> sales@smartblindshub.com</li>
+              <li><strong>Phone:</strong> (316) 530-2635</li>
+              <li><strong>Hours:</strong> Monday-Friday, 9AM-5PM EST</li>
+            </ul>
+
+            <p style="margin-top: 30px;">Thank you for choosing Smart Blinds Hub!</p>
+            <p>Best regards,<br><strong>The Smart Blinds Hub Team</strong></p>
+          </div>
+          <div class="footer">
+            <p>© ${new Date().getFullYear()} Smart Blinds Hub. All rights reserved.</p>
+            <p>This email was sent to ${orderData.customerEmail}</p>
+            <p style="margin-top: 10px;">
+              <a href="${siteUrl}/warranty" style="color: #DC2626; text-decoration: none;">Warranty Info</a> |
+              <a href="${siteUrl}/account/returns" style="color: #DC2626; text-decoration: none;">Return Policy</a> |
+              <a href="${siteUrl}/contact" style="color: #DC2626; text-decoration: none;">Contact Support</a>
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    return this.sendEmail({
+      to: orderData.customerEmail,
+      subject: `Order Confirmation #${orderData.orderNumber} - Smart Blinds Hub`,
+      html: html
+    });
   }
 }
 

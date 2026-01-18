@@ -19,16 +19,16 @@ const StripePaymentRequest = dynamic(
 
 // Payment Method Icons and Logos
 const PaymentIcon = ({ id, type, provider }: { id: string; type: string; provider: string }) => {
-  const iconClass = "h-6";
-  
+  const iconClass = "h-8 w-auto object-contain";
+
   // Handle by payment method ID first for more specific matching
   switch (id) {
     case 'stripe_card':
       return (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <img src="/images/payment/visa.svg" alt="Visa" className={iconClass} />
           <img src="/images/payment/mastercard.svg" alt="Mastercard" className={iconClass} />
-          <img src="/images/payment/amex.svg" alt="Amex" className={iconClass} />
+          <img src="/images/payment/amex.svg" alt="American Express" className={iconClass} />
           <img src="/images/payment/discover.svg" alt="Discover" className={iconClass} />
         </div>
       );
@@ -39,11 +39,11 @@ const PaymentIcon = ({ id, type, provider }: { id: string; type: string; provide
     case 'paypal':
       return <img src="/images/payment/paypal.svg" alt="PayPal" className={iconClass} />;
     case 'klarna':
-      return <img src="/images/payment/klarna.svg" alt="Klarna" className={iconClass} />;
+      return <CreditCard className="h-5 w-5 text-gray-600" />;
     case 'afterpay':
-      return <img src="/images/payment/afterpay.svg" alt="Afterpay" className={iconClass} />;
+      return <CreditCard className="h-5 w-5 text-gray-600" />;
     case 'affirm':
-      return <img src="/images/payment/affirm.svg" alt="Affirm" className={iconClass} />;
+      return <CreditCard className="h-5 w-5 text-gray-600" />;
     case 'braintree':
       return <CreditCard className="h-5 w-5 text-gray-600" />;
     default:
@@ -1272,13 +1272,16 @@ export default function CheckoutPage() {
                                     value={paymentData.cardNumber}
                                     onChange={handlePaymentDataChange}
                                     placeholder="1234 5678 9012 3456"
-                                    className={`w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                                    className={`w-full px-3 py-2 pr-32 border rounded-md focus:ring-primary-red focus:border-primary-red ${
                                       paymentErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                     maxLength="19"
                                   />
-                                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                                    <CreditCard className="h-5 w-5 text-gray-400" />
+                                  <div className="absolute inset-y-0 right-0 pr-2 flex items-center gap-1.5 pointer-events-none">
+                                    <img src="/images/payment/visa.svg" alt="Visa" className="h-6 w-auto object-contain opacity-70" />
+                                    <img src="/images/payment/mastercard.svg" alt="Mastercard" className="h-6 w-auto object-contain opacity-70" />
+                                    <img src="/images/payment/amex.svg" alt="Amex" className="h-6 w-auto object-contain opacity-70" />
+                                    <img src="/images/payment/discover.svg" alt="Discover" className="h-6 w-auto object-contain opacity-70" />
                                   </div>
                                 </div>
                                 {paymentErrors.cardNumber && (

@@ -288,9 +288,9 @@ const Navbar = () => {
               <Image
                 src="/images/logo/SmartBlindsLogo.png"
                 alt="Smart Blinds Hub"
-                width={140}
-                height={45}
-                style={{ height: "auto", maxHeight: "45px" }}
+                width={180}
+                height={60}
+                style={{ height: "auto", maxHeight: "60px" }}
                 priority
                 className="object-contain"
               />
