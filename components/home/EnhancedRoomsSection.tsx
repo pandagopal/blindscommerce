@@ -38,7 +38,7 @@ export default function EnhancedRoomsSection({
 
   const getImageUrl = (room: Room): string => {
     const url = room.image_url || room.image;
-    if (!url) return '/images/rooms/default-room.jpg';
+    if (!url) return '/uploads/rooms/living-room.jpg';
     if (url.startsWith('http')) return url;
     if (url.startsWith('/')) return url;
     return `/uploads/${url}`;

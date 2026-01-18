@@ -43,6 +43,13 @@ interface Recommendation {
   };
 }
 
+interface Room {
+  room_type_id: number;
+  name: string;
+  description?: string;
+  image_url?: string;
+}
+
 interface ProductConfiguratorProps {
   product: any;
   slug: string;
@@ -50,7 +57,7 @@ interface ProductConfiguratorProps {
   initialConfig?: any;
   isEditMode?: boolean;
   userRole?: string;
-  roomTypes?: string[];
+  rooms?: Room[];
   onConfigurationChange?: (config: any, price: number, isComplete: boolean) => void;
 }
 
@@ -196,9 +203,11 @@ const OpacityIndicator = ({ opacity }: { opacity?: string }) => {
   );
 };
 
-export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole, roomTypes = [], onConfigurationChange }: ProductConfiguratorProps) {
-  // Use passed roomTypes or fallback to defaults
-  const availableRoomTypes = roomTypes.length > 0 ? roomTypes : DEFAULT_ROOM_TYPES;
+export default function NewProductConfigurator({ product, slug, onAddToCart, initialConfig = {}, isEditMode = false, userRole, rooms = [], onConfigurationChange }: ProductConfiguratorProps) {
+  // Extract room names for dropdown, with fallback to default room names
+  const availableRoomTypes = rooms.length > 0
+    ? rooms.map(r => r.name)
+    : DEFAULT_ROOM_TYPES;
   const { itemCount } = useCart();
   const [showZoom, setShowZoom] = useState(false);
 

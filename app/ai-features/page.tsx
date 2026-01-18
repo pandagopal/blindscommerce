@@ -100,14 +100,14 @@ export default function AIFeaturesPage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <VisualSearch
                 trigger={
-                  <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100">
+                  <Button size="lg" className="bg-white text-primary-red hover:bg-gray-100 hover:text-primary-dark">
                     <Camera className="h-5 w-5 mr-2" />
                     Try Visual Search
                   </Button>
                 }
               />
               <Link href="/products">
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary-red">
+                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary-red transition-colors">
                   Browse Products
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </Button>

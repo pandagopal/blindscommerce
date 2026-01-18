@@ -20,7 +20,7 @@ export default function ProductConfiguratorPage() {
   const editCartItemId = searchParams.get('edit');
 
   const [product, setProduct] = useState<Product | null>(null);
-  const [roomTypes, setRoomTypes] = useState<string[]>([]);
+  const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
@@ -41,27 +41,25 @@ export default function ProductConfiguratorPage() {
     document.body.focus();
   }, [slug]); // Re-run if slug changes
 
-  // Fetch room types from database (all rooms, not just active ones)
+  // Fetch rooms from database (all rooms, not just active ones) with full data including images
   useEffect(() => {
-    const fetchRoomTypes = async () => {
+    const fetchRooms = async () => {
       try {
         // Use ?all=true to get all rooms including inactive (is_active is for home page only)
         const res = await fetch('/api/v2/content/rooms?all=true');
         if (res.ok) {
           const data = await res.json();
-          const rooms = data.data?.rooms || data.rooms || data.data || [];
+          const roomsData = data.data?.rooms || data.rooms || data.data || [];
           // Sort alphabetically by name
-          const sortedRooms = rooms
-            .sort((a: any, b: any) => a.name.localeCompare(b.name))
-            .map((room: any) => room.name);
-          setRoomTypes(sortedRooms);
+          const sortedRooms = roomsData.sort((a: any, b: any) => a.name.localeCompare(b.name));
+          setRooms(sortedRooms);
         }
       } catch (error) {
-        console.error('Error fetching room types:', error);
+        console.error('Error fetching rooms:', error);
         // Fallback will be handled by the component
       }
     };
-    fetchRoomTypes();
+    fetchRooms();
   }, []);
 
   // Fetch product data
@@ -288,7 +286,7 @@ export default function ProductConfiguratorPage() {
         initialConfig={getInitialConfig()}
         isEditMode={!!editCartItemId}
         userRole={user?.role}
-        roomTypes={roomTypes}
+        rooms={rooms}
         onConfigurationChange={handleConfigurationChange}
       />
 

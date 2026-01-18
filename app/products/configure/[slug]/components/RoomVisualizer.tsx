@@ -4,24 +4,32 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { ConfigState, Product } from './ConfigurationContext';
 
+interface Room {
+  room_type_id?: number;
+  name: string;
+  description?: string;
+  image_url?: string;
+}
+
 interface RoomVisualizerProps {
   roomType: string;
   product: Product;
   config: ConfigState;
+  room?: Room; // Optional: full room object from database
 }
 
-const RoomVisualizer = ({ roomType, product, config }: RoomVisualizerProps) => {
+const RoomVisualizer = ({ roomType, product, config, room }: RoomVisualizerProps) => {
   const [showProduct, setShowProduct] = useState(true);
 
-  // Image mapping for different room types
-  const roomImages: Record<string, string> = {
-    'Living Room': '/images/rooms/living-room.jpg',
-    'Bedroom': '/images/rooms/bedroom.jpg',
-    'Kitchen': '/images/rooms/kitchen.jpg',
-    'Bathroom': '/images/rooms/bathroom.jpg',
-    'Office': '/images/rooms/office.jpg',
+  // Fallback image mapping for when database doesn't have images
+  const fallbackRoomImages: Record<string, string> = {
+    'Living Room': '/uploads/rooms/living-room.jpg',
+    'Bedroom': '/uploads/rooms/bedroom.jpg',
+    'Kitchen': '/uploads/rooms/kitchen.jpg',
+    'Bathroom': '/uploads/rooms/bathroom.jpg',
+    'Office': '/uploads/rooms/office.jpg',
     // Default fallback
-    'default': '/images/rooms/living-room.jpg'
+    'default': '/uploads/rooms/living-room.jpg'
   };
 
   // Toggle room view with or without product
@@ -32,8 +40,20 @@ const RoomVisualizer = ({ roomType, product, config }: RoomVisualizerProps) => {
   // Get the selected color name
   const selectedColor = product.colors.find(c => c.color_id === config.colorId)?.name || 'Default';
 
-  // The room image to use (fallback to default if the roomType is not found)
-  const roomImage = roomImages[roomType] || roomImages.default;
+  // Get room image: prioritize database image, then fallback to hardcoded paths
+  const getRoomImage = (): string => {
+    // If we have a room object with image_url from database, use it
+    if (room?.image_url) {
+      // Handle both absolute and relative paths
+      if (room.image_url.startsWith('http')) return room.image_url;
+      if (room.image_url.startsWith('/')) return room.image_url;
+      return `/uploads/${room.image_url}`;
+    }
+    // Otherwise use fallback mapping
+    return fallbackRoomImages[roomType] || fallbackRoomImages.default;
+  };
+
+  const roomImage = getRoomImage();
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
