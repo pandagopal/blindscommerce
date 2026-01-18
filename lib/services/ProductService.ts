@@ -885,4 +885,79 @@ export class ProductService extends BaseService {
 
     return this.executeQuery<ProductWithDetails>(query, [productId]);
   }
+
+  /**
+   * Get products recommended for specific window dimensions and room type
+   * Used by AI recommendation engine
+   */
+  async getRecommendedProducts(criteria: {
+    minWidth: number;
+    maxWidth: number;
+    minHeight: number;
+    maxHeight: number;
+    roomType: string;
+    lightingCondition?: string;
+    budget?: { min: number; max: number };
+  }): Promise<Product[]> {
+    let query = `
+      SELECT DISTINCT
+        p.product_id,
+        p.name,
+        p.slug,
+        p.sku,
+        p.short_description,
+        p.base_price,
+        p.primary_image_url,
+        p.custom_width_min,
+        p.custom_width_max,
+        p.custom_height_min,
+        p.custom_height_max,
+        p.rating,
+        p.review_count,
+        pr.suitability_score as room_suitability_score,
+        ps_opacity.spec_value as opacity,
+        ps_type.spec_value as product_type,
+        ps_motor.spec_value as supports_motorization,
+        ps_moisture.spec_value as moisture_resistant
+      FROM products p
+      INNER JOIN product_rooms pr ON p.product_id = pr.product_id
+      LEFT JOIN product_specifications ps_opacity ON p.product_id = ps_opacity.product_id
+        AND ps_opacity.spec_name = 'opacity'
+      LEFT JOIN product_specifications ps_type ON p.product_id = ps_type.product_id
+        AND ps_type.spec_name = 'product_type'
+      LEFT JOIN product_specifications ps_motor ON p.product_id = ps_motor.product_id
+        AND ps_motor.spec_name = 'motorized'
+      LEFT JOIN product_specifications ps_moisture ON p.product_id = ps_moisture.product_id
+        AND ps_moisture.spec_name = 'moisture_resistant'
+      WHERE p.is_active = 1
+        AND COALESCE(p.custom_width_min, 12) <= ?
+        AND COALESCE(p.custom_width_max, 120) >= ?
+        AND COALESCE(p.custom_height_min, 12) <= ?
+        AND COALESCE(p.custom_height_max, 120) >= ?
+        AND pr.room_type LIKE ?
+        AND pr.suitability_score >= 5
+    `;
+
+    const params: any[] = [
+      criteria.maxWidth,
+      criteria.minWidth,
+      criteria.maxHeight,
+      criteria.minHeight,
+      `%${criteria.roomType}%`
+    ];
+
+    // Add budget filter if provided
+    if (criteria.budget) {
+      query += ' AND p.base_price BETWEEN ? AND ?';
+      params.push(criteria.budget.min, criteria.budget.max);
+    }
+
+    query += `
+      ORDER BY pr.suitability_score DESC, p.rating DESC, p.created_at DESC
+      LIMIT 50
+    `;
+
+    const products = await this.executeQuery<Product>(query, params);
+    return parseArrayPrices(products);
+  }
 }

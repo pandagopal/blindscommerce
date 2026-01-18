@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   RulerIcon, SearchIcon, FilterIcon, PlusIcon,
   PencilIcon, TrashIcon, ChevronDownIcon,
-  ArrowUpDownIcon, SaveIcon, XIcon, AlertTriangleIcon
+  ArrowUpDownIcon, SaveIcon, XIcon, AlertTriangleIcon, Sparkles
 } from 'lucide-react';
 
 interface Measurement {
@@ -17,6 +17,8 @@ interface Measurement {
   height: number;
   notes: string;
   created_at: string;
+  calibration_method?: string;
+  confidence_score?: number;
 }
 
 export default function MeasurementsPage() {
@@ -511,7 +513,20 @@ export default function MeasurementsPage() {
               <div className="flex-1">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between">
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900">{measurement.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-medium text-gray-900">{measurement.name}</h3>
+                      {measurement.calibration_method && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-red-500 to-primary-dark text-white">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          AI
+                        </span>
+                      )}
+                      {measurement.confidence_score && measurement.confidence_score > 0.8 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                          High Confidence
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">{measurement.room} • {measurement.window_type}</p>
                   </div>
                   <div className="mt-2 md:mt-0 text-sm text-gray-500">

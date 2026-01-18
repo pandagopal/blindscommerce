@@ -240,12 +240,13 @@ export default function VisualSearch({ trigger, onResultSelect }: VisualSearchPr
       });
 
       if (!response.ok) {
-        throw new Error('Visual search failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Visual search failed');
       }
 
       const data = await response.json();
-      setSearchResults(data.results);
-      setAnalysis(data.analysis);
+      setSearchResults(data.data?.results || []);
+      setAnalysis(data.data?.analysis);
 
       // Track search event
       if (typeof window !== 'undefined' && window.gtag) {
@@ -526,7 +527,7 @@ export default function VisualSearch({ trigger, onResultSelect }: VisualSearchPr
                                 
                                 <div className="flex items-center justify-between">
                                   <span className="font-bold text-primary-red">
-                                    ${product.base_price?.toFixed(2)}
+                                    ${parseFloat(product.base_price || 0).toFixed(2)}
                                   </span>
                                   <div className="flex gap-1">
                                     <Link href={`/products/${product.slug}`}>

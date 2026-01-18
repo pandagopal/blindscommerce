@@ -116,6 +116,7 @@ export class UsersHandler extends BaseHandler {
       'addresses/:id': () => this.deleteAddress(action[1], user),
       'wishlist/:id': () => this.removeFromWishlist(action[1], user),
       'account': () => this.deleteAccount(req, user),
+      'measurements': () => this.deleteMeasurement(req, user),
     };
 
     return this.routeAction(action, routes);
@@ -754,45 +755,77 @@ export class UsersHandler extends BaseHandler {
     this.requireAuth(user);
 
     const searchParams = this.getSearchParams(req);
-    const { page, limit, offset } = this.getPagination(searchParams);
+    const search = searchParams.get('search') || '';
+    const room = searchParams.get('room') || '';
     const sort = searchParams.get('sort') || 'created_at';
     const order = (searchParams.get('order') || 'desc').toUpperCase();
 
     // Validate sort and order
-    const allowedSorts = ['created_at', 'preferred_date', 'status'];
+    const allowedSorts = ['created_at', 'name', 'room', 'width', 'height'];
     const sortField = allowedSorts.includes(sort) ? sort : 'created_at';
     const sortOrder = order === 'ASC' ? 'ASC' : 'DESC';
 
-    // Get measurement requests - using safe integer interpolation for LIMIT/OFFSET
+    // Build WHERE clause
+    let whereConditions = 'WHERE user_id = ?';
+    const queryParams: any[] = [user.user_id];
+
+    if (search) {
+      whereConditions += ' AND (location_description LIKE ? OR room_name LIKE ? OR notes LIKE ?)';
+      const searchPattern = `%${search}%`;
+      queryParams.push(searchPattern, searchPattern, searchPattern);
+    }
+
+    if (room) {
+      whereConditions += ' AND room_name = ?';
+      queryParams.push(room);
+    }
+
+    // Get saved measurements
     const measurements = await this.userService.raw(
       `SELECT
-        mr.*,
-        CASE
-          WHEN mr.status = 'scheduled' AND mr.preferred_date < CURDATE() THEN 'overdue'
-          ELSE mr.status
-        END as display_status
-      FROM measurement_requests mr
-      WHERE mr.user_id = ?
-      ORDER BY ${sortField} ${sortOrder}
-      LIMIT ${Math.floor(limit)} OFFSET ${Math.floor(offset)}`,
-      [user.user_id]
+        measurement_id as id,
+        room_name as room,
+        location_description as name,
+        width,
+        height,
+        window_type,
+        notes,
+        calibration_method,
+        confidence_score,
+        created_at
+      FROM saved_measurements
+      ${whereConditions}
+      ORDER BY ${sortField} ${sortOrder}`,
+      queryParams
     );
 
-    // Get total count
-    const [countResult] = await this.userService.raw(
-      `SELECT COUNT(*) as total FROM measurement_requests WHERE user_id = ?`,
+    // Get unique room names for filter
+    const rooms = await this.userService.raw(
+      `SELECT DISTINCT room_name
+       FROM saved_measurements
+       WHERE user_id = ? AND room_name IS NOT NULL
+       ORDER BY room_name`,
       [user.user_id]
     );
 
     return {
-      measurements,
-      pagination: {
-        total: countResult.total,
-        page,
-        limit,
-        totalPages: Math.ceil(countResult.total / limit)
-      }
+      measurements: measurements.map((m: any) => ({
+        ...m,
+        name: m.name || `${m.room || 'Window'} - ${m.width}" x ${m.height}"`,
+        window_type: this.formatWindowType(m.window_type)
+      })),
+      rooms: rooms.map((r: any) => r.room_name).filter(Boolean)
     };
+  }
+
+  private formatWindowType(type: string): string {
+    const typeMap: Record<string, string> = {
+      'standard': 'Standard Window',
+      'wide': 'Wide Window',
+      'patio_door': 'Patio Door',
+      'bay': 'Bay Window'
+    };
+    return typeMap[type] || type;
   }
 
   private async createMeasurementRequest(req: NextRequest, user: any) {
@@ -800,49 +833,127 @@ export class UsersHandler extends BaseHandler {
 
     const body = await req.json();
     const {
-      order_id,
-      property_address,
-      preferred_date,
-      preferred_time,
-      contact_phone,
-      special_instructions,
-      room_details
+      id,
+      name,
+      room,
+      window_type,
+      width,
+      height,
+      notes
     } = body;
 
-    // Validate required fields
-    if (!property_address) {
-      throw new ApiError('Property address is required', 400);
+    // If id is provided, update existing measurement
+    if (id && id > 0) {
+      await this.userService.raw(
+        `UPDATE saved_measurements
+         SET location_description = ?,
+             room_name = ?,
+             window_type = ?,
+             width = ?,
+             height = ?,
+             notes = ?,
+             updated_at = NOW()
+         WHERE measurement_id = ? AND user_id = ?`,
+        [name, room, window_type?.toLowerCase().replace(/ /g, '_') || 'standard', width, height, notes || null, id, user.user_id]
+      );
+
+      const [updatedMeasurement] = await this.userService.raw(
+        `SELECT
+          measurement_id as id,
+          room_name as room,
+          location_description as name,
+          width,
+          height,
+          window_type,
+          notes,
+          created_at
+         FROM saved_measurements
+         WHERE measurement_id = ?`,
+        [id]
+      );
+
+      return {
+        success: true,
+        measurement: {
+          ...updatedMeasurement,
+          window_type: this.formatWindowType(updatedMeasurement.window_type)
+        }
+      };
     }
 
-    // Insert measurement request
+    // Validate required fields for new measurement
+    if (!width || !height) {
+      throw new ApiError('Width and height are required', 400);
+    }
+
+    // Insert new measurement
     const result = await this.userService.raw(
-      `INSERT INTO measurement_requests 
-        (user_id, order_id, property_address, preferred_date, preferred_time, 
-         contact_phone, special_instructions, room_details, status, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())`,
+      `INSERT INTO saved_measurements
+        (user_id, room_name, location_description, width, height, window_type, notes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         user.user_id,
-        order_id || null,
-        property_address,
-        preferred_date || null,
-        preferred_time || null,
-        contact_phone || user.phone,
-        special_instructions || null,
-        room_details ? JSON.stringify(room_details) : null
+        room || null,
+        name || null,
+        width,
+        height,
+        window_type?.toLowerCase().replace(/ /g, '_') || 'standard',
+        notes || null
       ]
     );
 
     const insertId = (result as any).insertId;
 
-    // Return the created measurement request
+    // Return the created measurement
     const [measurement] = await this.userService.raw(
-      `SELECT * FROM measurement_requests WHERE request_id = ?`,
+      `SELECT
+        measurement_id as id,
+        room_name as room,
+        location_description as name,
+        width,
+        height,
+        window_type,
+        notes,
+        created_at
+       FROM saved_measurements
+       WHERE measurement_id = ?`,
       [insertId]
     );
 
     return {
       success: true,
-      measurement
+      measurement: {
+        ...measurement,
+        window_type: this.formatWindowType(measurement.window_type)
+      }
+    };
+  }
+
+  private async deleteMeasurement(req: NextRequest, user: any) {
+    this.requireAuth(user);
+
+    const searchParams = this.getSearchParams(req);
+    const measurementId = searchParams.get('id');
+
+    if (!measurementId) {
+      throw new ApiError('Measurement ID is required', 400);
+    }
+
+    // Delete the measurement (ensure it belongs to the user)
+    const result = await this.userService.raw(
+      `DELETE FROM saved_measurements WHERE measurement_id = ? AND user_id = ?`,
+      [parseInt(measurementId), user.user_id]
+    );
+
+    const affectedRows = (result as any).affectedRows;
+
+    if (affectedRows === 0) {
+      throw new ApiError('Measurement not found or unauthorized', 404);
+    }
+
+    return {
+      success: true,
+      message: 'Measurement deleted successfully'
     };
   }
 

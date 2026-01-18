@@ -80,8 +80,11 @@ export default function AIProductRecommendations({
         throw new Error('Failed to fetch recommendations');
       }
 
-      const data = await response.json();
-      setRecommendations(data.recommendations.slice(0, maxItems));
+      const result = await response.json();
+
+      // API wraps response in { success, data, metadata } format
+      const recommendations = result.data?.recommendations || [];
+      setRecommendations(recommendations.slice(0, maxItems));
     } catch (error) {
       console.error('Error fetching recommendations:', error);
       setError('Failed to load recommendations');

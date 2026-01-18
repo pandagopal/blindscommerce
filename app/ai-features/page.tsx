@@ -66,7 +66,7 @@ export default function AIFeaturesPage() {
       icon: Ruler,
       gradient: 'from-primary-red to-primary-dark',
       benefits: ['Auto window detection', 'Precise measurements', 'Professional accuracy'],
-      demoTab: 'search'
+      demoTab: 'visualizer'
     }
   ];
 
@@ -107,7 +107,7 @@ export default function AIFeaturesPage() {
                 }
               />
               <Link href="/products">
-                <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-primary-red transition-colors">
+                <Button size="lg" variant="outline" className="bg-white text-primary-red hover:bg-gray-100 hover:text-primary-dark">
                   Browse Products
                   <ChevronRight className="h-5 w-5 ml-2" />
                 </Button>
@@ -384,7 +384,7 @@ export default function AIFeaturesPage() {
               </Button>
             </Link>
             <Link href="/measure-install">
-              <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-gray-900">
+              <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
                 Schedule Consultation
               </Button>
             </Link>
