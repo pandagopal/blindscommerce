@@ -2,18 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { 
-  Users, UserPlus, Phone, Mail, Calendar, DollarSign, 
-  TrendingUp, Target, Clock, CheckCircle, AlertCircle, Edit
-} from 'lucide-react';
+import { Users, UserPlus, DollarSign, TrendingUp, Target, CheckCircle, Edit, Search } from 'lucide-react';
 
 interface Lead {
   id: string;
@@ -47,57 +42,35 @@ export default function SalesLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [stats, setStats] = useState<LeadStats>({
-    total_leads: 0,
-    new_leads: 0,
-    qualified_leads: 0,
-    conversion_rate: 0,
-    avg_deal_value: 0,
-    pipeline_value: 0
+    total_leads: 0, new_leads: 0, qualified_leads: 0,
+    conversion_rate: 0, avg_deal_value: 0, pipeline_value: 0
   });
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterSource, setFilterSource] = useState<string>('all');
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [newLead, setNewLead] = useState<Partial<Lead>>({
-    name: '',
-    email: '',
-    phone: '',
-    source: 'website',
-    status: 'new',
-    priority: 'medium',
-    estimated_value: 0,
-    product_interest: '',
-    notes: ''
+    name: '', email: '', phone: '', source: 'website',
+    status: 'new', priority: 'medium', estimated_value: 0,
+    product_interest: '', notes: ''
   });
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/v2/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/sales/leads');
-          return;
-        }
+        if (!res.ok) { router.push('/login?redirect=/sales/leads'); return; }
         const result = await res.json();
-        const data = result.data || result;if (data.user.role !== 'sales' && data.user.role !== 'admin') {
-          router.push('/');
-          return;
-        }
+        const data = result.data || result;
+        if (data.user.role !== 'sales' && data.user.role !== 'admin') { router.push('/'); return; }
         setUser(data.user);
       } catch (error) {
-        console.error('Auth check failed:', error);
         router.push('/login?redirect=/sales/leads');
       }
     };
-
     checkAuth();
   }, [router]);
 
-  useEffect(() => {
-    if (user) {
-      fetchLeads();
-    }
-  }, [user]);
+  useEffect(() => { if (user) fetchLeads(); }, [user]);
 
   const fetchLeads = async () => {
     try {
@@ -105,21 +78,10 @@ export default function SalesLeadsPage() {
       const res = await fetch('/api/v2/sales/leads');
       if (res.ok) {
         const result = await res.json();
-        if (!result.success) throw new Error(result.message || 'API request failed');
-        const data = result.data;
-        setLeads(data.leads);
-        setStats(data.stats);
-      } else {
-        console.error('Failed to fetch sales leads');
-        setLeads([]);
-        setStats({
-          total_leads: 0,
-          new_leads: 0,
-          qualified_leads: 0,
-          conversion_rate: 0,
-          avg_deal_value: 0,
-          pipeline_value: 0
-        });
+        if (result.success) {
+          setLeads(result.data.leads || []);
+          setStats(result.data.stats || stats);
+        }
       }
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -135,20 +97,9 @@ export default function SalesLeadsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newLead)
       });
-
       if (res.ok) {
         fetchLeads();
-        setNewLead({
-          name: '',
-          email: '',
-          phone: '',
-          source: 'website',
-          status: 'new',
-          priority: 'medium',
-          estimated_value: 0,
-          product_interest: '',
-          notes: ''
-        });
+        setNewLead({ name: '', email: '', phone: '', source: 'website', status: 'new', priority: 'medium', estimated_value: 0, product_interest: '', notes: '' });
       }
     } catch (error) {
       console.error('Error creating lead:', error);
@@ -162,387 +113,270 @@ export default function SalesLeadsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates)
       });
-
-      if (res.ok) {
-        fetchLeads();
-        setEditingLead(null);
-      }
+      if (res.ok) { fetchLeads(); setEditingLead(null); }
     } catch (error) {
       console.error('Error updating lead:', error);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      new: 'default',
-      contacted: 'secondary',
-      qualified: 'warning',
-      proposal: 'secondary',
-      negotiation: 'warning',
-      closed_won: 'success',
-      closed_lost: 'destructive'
-    } as const;
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'}>
-        {status.replace('_', ' ').toUpperCase()}
-      </Badge>
-    );
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      new: 'bg-blue-100 text-blue-800',
+      contacted: 'bg-yellow-100 text-yellow-800',
+      qualified: 'bg-green-100 text-green-800',
+      proposal: 'bg-purple-100 text-purple-800',
+      negotiation: 'bg-orange-100 text-orange-800',
+      closed_won: 'bg-emerald-100 text-emerald-800',
+      closed_lost: 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getPriorityBadge = (priority: string) => {
-    const variants = {
-      low: 'secondary',
-      medium: 'warning',
-      high: 'destructive'
-    } as const;
-
-    return (
-      <Badge variant={variants[priority as keyof typeof variants] || 'default'}>
-        {priority.toUpperCase()}
-      </Badge>
-    );
+  const getPriorityColor = (priority: string) => {
+    const colors: Record<string, string> = {
+      low: 'bg-gray-100 text-gray-700',
+      medium: 'bg-yellow-100 text-yellow-700',
+      high: 'bg-red-100 text-red-700'
+    };
+    return colors[priority] || 'bg-gray-100 text-gray-700';
   };
 
   const filteredLeads = leads.filter(lead => {
     if (filterStatus !== 'all' && lead.status !== filterStatus) return false;
-    if (filterSource !== 'all' && lead.source !== filterSource) return false;
+    if (searchTerm && !lead.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        !lead.email.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading leads...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Sales Leads
-            </h1>
-            <p className="text-gray-600">Manage your sales pipeline and track leads</p>
-          </div>
-          
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-gray-900">Sales Leads</h1>
           <Dialog>
             <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add New Lead
-              </Button>
+              <Button size="sm"><UserPlus className="h-4 w-4 mr-1" /> Add Lead</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Lead</DialogTitle>
-              </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  placeholder="Full Name"
-                  value={newLead.name}
-                  onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
-                />
-                <Input
-                  placeholder="Email"
-                  type="email"
-                  value={newLead.email}
-                  onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                />
-                <Input
-                  placeholder="Phone"
-                  value={newLead.phone}
-                  onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-                />
-                <Select
-                  value={newLead.source}
-                  onValueChange={(value: Lead['source']) => setNewLead({ ...newLead, source: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select source" />
-                  </SelectTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>Add New Lead</DialogTitle></DialogHeader>
+              <div className="grid grid-cols-2 gap-3">
+                <Input placeholder="Name" value={newLead.name} onChange={(e) => setNewLead({ ...newLead, name: e.target.value })} />
+                <Input placeholder="Email" type="email" value={newLead.email} onChange={(e) => setNewLead({ ...newLead, email: e.target.value })} />
+                <Input placeholder="Phone" value={newLead.phone} onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })} />
+                <Select value={newLead.source} onValueChange={(value: Lead['source']) => setNewLead({ ...newLead, source: value })}>
+                  <SelectTrigger><SelectValue placeholder="Source" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="website">Website</SelectItem>
                     <SelectItem value="referral">Referral</SelectItem>
                     <SelectItem value="advertising">Advertising</SelectItem>
-                    <SelectItem value="social">Social Media</SelectItem>
+                    <SelectItem value="social">Social</SelectItem>
                     <SelectItem value="cold_call">Cold Call</SelectItem>
                   </SelectContent>
                 </Select>
-                <Select
-                  value={newLead.priority}
-                  onValueChange={(value: Lead['priority']) => setNewLead({ ...newLead, priority: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
+                <Select value={newLead.priority} onValueChange={(value: Lead['priority']) => setNewLead({ ...newLead, priority: value })}>
+                  <SelectTrigger><SelectValue placeholder="Priority" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="low">Low</SelectItem>
                     <SelectItem value="medium">Medium</SelectItem>
                     <SelectItem value="high">High</SelectItem>
                   </SelectContent>
                 </Select>
-                <Input
-                  placeholder="Estimated Value"
-                  type="number"
-                  value={newLead.estimated_value}
-                  onChange={(e) => setNewLead({ ...newLead, estimated_value: parseFloat(e.target.value) || 0 })}
-                />
-                <Input
-                  placeholder="Product Interest"
-                  value={newLead.product_interest}
-                  onChange={(e) => setNewLead({ ...newLead, product_interest: e.target.value })}
-                  className="md:col-span-2"
-                />
-                <Textarea
-                  placeholder="Notes"
-                  value={newLead.notes}
-                  onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
-                  className="md:col-span-2"
-                />
+                <Input placeholder="Est. Value" type="number" value={newLead.estimated_value} onChange={(e) => setNewLead({ ...newLead, estimated_value: parseFloat(e.target.value) || 0 })} />
+                <Input placeholder="Product Interest" className="col-span-2" value={newLead.product_interest} onChange={(e) => setNewLead({ ...newLead, product_interest: e.target.value })} />
+                <Textarea placeholder="Notes" className="col-span-2" value={newLead.notes} onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })} />
               </div>
-              <Button
-                onClick={handleCreateLead}
-                className="bg-gradient-to-r from-red-500 to-primary-dark hover:from-primary-dark hover:to-red-900"
-              >
-                Create Lead
-              </Button>
+              <Button onClick={handleCreateLead} className="mt-3">Create Lead</Button>
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6 mb-8">
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">Total Leads</CardTitle>
-                <Users className="h-4 w-4 text-red-600" />
+        {/* Compact Stats */}
+        <div className="grid grid-cols-6 gap-3 mb-4">
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-red-600" />
+              <div>
+                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-lg font-bold">{stats.total_leads}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_leads}</div>
-            </CardContent>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">New Leads</CardTitle>
-                <UserPlus className="h-4 w-4 text-green-600" />
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-xs text-gray-500">New</p>
+                <p className="text-lg font-bold">{stats.new_leads}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.new_leads}</div>
-            </CardContent>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">Qualified</CardTitle>
-                <CheckCircle className="h-4 w-4 text-primary-red" />
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-primary-red" />
+              <div>
+                <p className="text-xs text-gray-500">Qualified</p>
+                <p className="text-lg font-bold">{stats.qualified_leads}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.qualified_leads}</div>
-            </CardContent>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">Conversion Rate</CardTitle>
-                <Target className="h-4 w-4 text-orange-600" />
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-xs text-gray-500">Conversion</p>
+                <p className="text-lg font-bold">{stats.conversion_rate}%</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.conversion_rate}%</div>
-            </CardContent>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">Avg Deal Value</CardTitle>
-                <DollarSign className="h-4 w-4 text-green-600" />
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-xs text-gray-500">Avg Deal</p>
+                <p className="text-lg font-bold">{formatCurrency(stats.avg_deal_value)}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.avg_deal_value)}</div>
-            </CardContent>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-gray-600">Pipeline Value</CardTitle>
-                <TrendingUp className="h-4 w-4 text-primary-red" />
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary-red" />
+              <div>
+                <p className="text-xs text-gray-500">Pipeline</p>
+                <p className="text-lg font-bold">{formatCurrency(stats.pipeline_value)}</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.pipeline_value)}</div>
-            </CardContent>
+            </div>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card className="border-red-100 shadow-lg mb-6">
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="proposal">Proposal</SelectItem>
-                  <SelectItem value="negotiation">Negotiation</SelectItem>
-                  <SelectItem value="closed_won">Closed Won</SelectItem>
-                  <SelectItem value="closed_lost">Closed Lost</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterSource} onValueChange={setFilterSource}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter by source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
-                  <SelectItem value="advertising">Advertising</SelectItem>
-                  <SelectItem value="social">Social Media</SelectItem>
-                  <SelectItem value="cold_call">Cold Call</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex gap-3 mb-4">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input placeholder="Search leads..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-9" />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-36 h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="contacted">Contacted</SelectItem>
+              <SelectItem value="qualified">Qualified</SelectItem>
+              <SelectItem value="proposal">Proposal</SelectItem>
+              <SelectItem value="negotiation">Negotiation</SelectItem>
+              <SelectItem value="closed_won">Closed Won</SelectItem>
+              <SelectItem value="closed_lost">Closed Lost</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Leads Table */}
-        <Card className="border-red-100 shadow-lg">
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Leads Pipeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredLeads.map((lead) => (
-                <div key={lead.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-lg">{lead.name}</h4>
-                      {getStatusBadge(lead.status)}
-                      {getPriorityBadge(lead.priority)}
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <Mail className="h-4 w-4" />
-                        <span>{lead.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-4 w-4" />
-                        <span>{lead.phone}</span>
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Interest: {lead.product_interest} • Source: {lead.source.replace('_', ' ')}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Created: {formatDate(lead.created_at)} • Next Follow-up: {formatDate(lead.next_follow_up)}
-                    </div>
-                    {lead.notes && (
-                      <div className="text-sm text-gray-600 italic">"{lead.notes}"</div>
-                    )}
-                  </div>
-                  <div className="text-right space-y-2">
-                    <div className="text-2xl font-bold">{formatCurrency(lead.estimated_value)}</div>
-                    <div className="text-sm text-gray-600">Estimated Value</div>
-                    <div className="flex gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingLead(lead)}
-                            className="p-1.5 hover:bg-red-50 rounded-md transition-colors"
-                          >
-                            <Edit className="h-6 w-6" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Update Lead Status</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <Select
-                              value={editingLead?.status}
-                              onValueChange={(value: Lead['status']) => 
-                                setEditingLead(editingLead ? { ...editingLead, status: value } : null)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="contacted">Contacted</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
-                                <SelectItem value="proposal">Proposal</SelectItem>
-                                <SelectItem value="negotiation">Negotiation</SelectItem>
-                                <SelectItem value="closed_won">Closed Won</SelectItem>
-                                <SelectItem value="closed_lost">Closed Lost</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Textarea
-                              placeholder="Add notes..."
-                              value={editingLead?.notes || ''}
-                              onChange={(e) => 
-                                setEditingLead(editingLead ? { ...editingLead, notes: e.target.value } : null)
-                              }
-                            />
-                            <Button
-                              onClick={() => editingLead && handleUpdateLead(editingLead.id, editingLead)}
-                              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700"
-                            >
-                              Update Lead
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-3 font-medium text-gray-600">Name</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Contact</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Source</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Status</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Priority</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Interest</th>
+                  <th className="text-right p-3 font-medium text-gray-600">Value</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Follow-up</th>
+                  <th className="text-center p-3 font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filteredLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-gray-50">
+                    <td className="p-3 font-medium text-gray-900">{lead.name}</td>
+                    <td className="p-3">
+                      <div className="text-gray-900">{lead.email}</div>
+                      <div className="text-xs text-gray-500">{lead.phone}</div>
+                    </td>
+                    <td className="p-3 text-gray-600 capitalize">{lead.source.replace('_', ' ')}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(lead.status)}`}>
+                        {lead.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(lead.priority)}`}>
+                        {lead.priority}
+                      </span>
+                    </td>
+                    <td className="p-3 text-gray-600 max-w-[150px] truncate">{lead.product_interest || '-'}</td>
+                    <td className="p-3 text-right font-medium text-gray-900">{formatCurrency(lead.estimated_value)}</td>
+                    <td className="p-3 text-gray-600">{formatDate(lead.next_follow_up)}</td>
+                    <td className="p-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setEditingLead(lead)}>
+                              <Edit className="h-4 w-4" />
                             </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader><DialogTitle>Update Lead</DialogTitle></DialogHeader>
+                            {editingLead && (
+                              <div className="space-y-3">
+                                <Select value={editingLead.status} onValueChange={(value: Lead['status']) => setEditingLead({ ...editingLead, status: value })}>
+                                  <SelectTrigger><SelectValue placeholder="Status" /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="new">New</SelectItem>
+                                    <SelectItem value="contacted">Contacted</SelectItem>
+                                    <SelectItem value="qualified">Qualified</SelectItem>
+                                    <SelectItem value="proposal">Proposal</SelectItem>
+                                    <SelectItem value="negotiation">Negotiation</SelectItem>
+                                    <SelectItem value="closed_won">Closed Won</SelectItem>
+                                    <SelectItem value="closed_lost">Closed Lost</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Textarea placeholder="Notes" value={editingLead.notes || ''} onChange={(e) => setEditingLead({ ...editingLead, notes: e.target.value })} />
+                                <Button onClick={() => handleUpdateLead(editingLead.id, editingLead)}>Update</Button>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        <Select value={lead.status} onValueChange={(value: Lead['status']) => handleUpdateLead(lead.id, { status: value })}>
+                          <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="new">New</SelectItem>
+                            <SelectItem value="contacted">Contacted</SelectItem>
+                            <SelectItem value="qualified">Qualified</SelectItem>
+                            <SelectItem value="proposal">Proposal</SelectItem>
+                            <SelectItem value="negotiation">Negotiation</SelectItem>
+                            <SelectItem value="closed_won">Won</SelectItem>
+                            <SelectItem value="closed_lost">Lost</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredLeads.length === 0 && (
+                  <tr><td colSpan={9} className="p-8 text-center text-gray-500">No leads found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
     </div>

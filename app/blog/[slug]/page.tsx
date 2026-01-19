@@ -6,6 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { marked } from 'marked';
+import { sanitizeHTML } from '@/lib/security/htmlSanitizer';
 
 interface BlogPost {
   id: number;
@@ -47,7 +48,9 @@ async function getBlogPost(slug: string): Promise<{ post: BlogPost; content: str
     if (fs.existsSync(filePath)) {
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const { content: markdownContent } = matter(fileContent);
-      content = marked(markdownContent) as string;
+      // Convert markdown to HTML and sanitize to prevent XSS
+      const rawHtml = marked(markdownContent) as string;
+      content = sanitizeHTML(rawHtml);
     }
     
     // Increment view count

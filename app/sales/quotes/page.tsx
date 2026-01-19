@@ -2,17 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  FileText, Plus, Search, Calendar, DollarSign, User, 
-  Send, Edit, Copy, Download, Eye, Timer, CheckCircle 
-} from 'lucide-react';
+import { FileText, Plus, Search, DollarSign, Send, Copy, Download, Eye, Timer, CheckCircle } from 'lucide-react';
 
 interface Quote {
   id: string;
@@ -58,64 +53,42 @@ export default function SalesQuotesPage() {
   const [selectedQuote, setSelectedQuote] = useState<Quote | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
-  const [filterDate, setFilterDate] = useState<string>('all');
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const res = await fetch('/api/v2/auth/me');
-        if (!res.ok) {
-          router.push('/login?redirect=/sales/quotes');
-          return;
-        }
+        if (!res.ok) { router.push('/login?redirect=/sales/quotes'); return; }
         const result = await res.json();
-        const data = result.data || result;if (data.user.role !== 'sales' && data.user.role !== 'admin') {
-          router.push('/');
-          return;
-        }
+        const data = result.data || result;
+        if (data.user.role !== 'sales' && data.user.role !== 'admin') { router.push('/'); return; }
         setUser(data.user);
       } catch (error) {
-        console.error('Auth check failed:', error);
         router.push('/login?redirect=/sales/quotes');
       }
     };
-
     checkAuth();
   }, [router]);
 
-  useEffect(() => {
-    if (user) {
-      fetchQuotes();
-    }
-  }, [user]);
+  useEffect(() => { if (user) fetchQuotes(); }, [user]);
 
   const fetchQuotes = async () => {
     try {
       setLoading(true);
-      
-      // Fetch quotes and stats from API
       const [quotesRes, statsRes] = await Promise.all([
         fetch('/api/v2/commerce/quotes'),
         fetch('/api/v2/commerce/quote-stats')
       ]);
-
       if (quotesRes.ok) {
         const quotesData = await quotesRes.json();
         setQuotes(quotesData.data || []);
-      } else {
-        setQuotes([]);
       }
-
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData.data || null);
-      } else {
-        setStats(null);
       }
     } catch (error) {
       console.error('Error fetching quotes:', error);
-      setQuotes([]);
-      setStats(null);
     } finally {
       setLoading(false);
     }
@@ -123,56 +96,35 @@ export default function SalesQuotesPage() {
 
   const sendQuote = async (quoteId: string) => {
     try {
-      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
+      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/send`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
       if (!res.ok) {
         const data = await res.json();
         alert(data.error || 'Failed to send quote');
       } else {
-        alert('Quote sent successfully! Customer will receive an email.');
-        fetchQuotes(); // Refresh data
+        alert('Quote sent successfully!');
+        fetchQuotes();
       }
     } catch (error) {
-      console.error('Error sending quote:', error);
-      alert('Failed to send quote. Please try again.');
+      alert('Failed to send quote');
     }
   };
 
   const duplicateQuote = async (quoteId: string) => {
     try {
-      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/duplicate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || 'Failed to duplicate quote');
-      } else {
-        alert('Quote duplicated successfully!');
-        fetchQuotes(); // Refresh data
+      const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/duplicate`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      if (res.ok) {
+        alert('Quote duplicated!');
+        fetchQuotes();
       }
     } catch (error) {
-      console.error('Error duplicating quote:', error);
-      alert('Failed to duplicate quote. Please try again.');
+      alert('Failed to duplicate quote');
     }
   };
 
   const downloadQuote = async (quoteId: string) => {
     try {
       const res = await fetch(`/api/v2/commerce/quotes/${quoteId}/download`);
-      
-      if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || 'Failed to download quote');
-      } else {
+      if (res.ok) {
         const blob = await res.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -184,61 +136,32 @@ export default function SalesQuotesPage() {
         document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Error downloading quote:', error);
-      alert('Failed to download quote. Please try again.');
+      alert('Failed to download quote');
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      draft: 'secondary',
-      sent: 'default',
-      viewed: 'warning',
-      accepted: 'success',
-      rejected: 'destructive',
-      expired: 'destructive'
-    } as const;
-
-    const icons = {
-      draft: Edit,
-      sent: Send,
-      viewed: Eye,
-      accepted: CheckCircle,
-      rejected: Timer,
-      expired: Timer
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      draft: 'bg-gray-100 text-gray-800',
+      sent: 'bg-blue-100 text-blue-800',
+      viewed: 'bg-yellow-100 text-yellow-800',
+      accepted: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      expired: 'bg-orange-100 text-orange-800'
     };
-
-    const Icon = icons[status as keyof typeof icons] || FileText;
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants] || 'default'} className="gap-1">
-        <Icon className="h-3 w-3" />
-        {status.toUpperCase()}
-      </Badge>
-    );
+    return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   const getDaysUntilExpiry = (validUntil: string) => {
     const today = new Date();
     const expiry = new Date(validUntil);
-    const diffTime = expiry.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+    return Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   };
 
   const filteredQuotes = quotes.filter(quote => {
@@ -251,310 +174,198 @@ export default function SalesQuotesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-red mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading quotes...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-red"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-red-50">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Quote Management
-            </h1>
-            <p className="text-gray-600">Create, manage, and track your sales quotes</p>
-          </div>
-          
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              className="border-red-200 text-primary-red hover:bg-red-50"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-600 hover:to-red-700">
-              <Plus className="h-4 w-4 mr-2" />
-              New Quote
-            </Button>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-4">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold text-gray-900">Quote Management</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+            <Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Quote</Button>
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <FileText className="h-8 w-8 mx-auto text-red-600 mb-2" />
-              <div className="text-2xl font-bold">{stats?.total_quotes || 0}</div>
-              <div className="text-sm text-gray-600">Total Quotes</div>
-            </CardContent>
+        {/* Compact Stats */}
+        <div className="grid grid-cols-5 gap-3 mb-4">
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-red-600" />
+              <div>
+                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-lg font-bold">{stats?.total_quotes || 0}</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <Timer className="h-8 w-8 mx-auto text-orange-600 mb-2" />
-              <div className="text-2xl font-bold">{stats?.pending_quotes || 0}</div>
-              <div className="text-sm text-gray-600">Pending</div>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <Timer className="h-4 w-4 text-orange-600" />
+              <div>
+                <p className="text-xs text-gray-500">Pending</p>
+                <p className="text-lg font-bold">{stats?.pending_quotes || 0}</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <CheckCircle className="h-8 w-8 mx-auto text-green-600 mb-2" />
-              <div className="text-2xl font-bold">{stats?.accepted_quotes || 0}</div>
-              <div className="text-sm text-gray-600">Accepted</div>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <div>
+                <p className="text-xs text-gray-500">Accepted</p>
+                <p className="text-lg font-bold">{stats?.accepted_quotes || 0}</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <DollarSign className="h-8 w-8 mx-auto text-primary-red mb-2" />
-              <div className="text-2xl font-bold">{formatCurrency(stats?.total_value || 0)}</div>
-              <div className="text-sm text-gray-600">Total Value</div>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary-red" />
+              <div>
+                <p className="text-xs text-gray-500">Value</p>
+                <p className="text-lg font-bold">{formatCurrency(stats?.total_value || 0)}</p>
+              </div>
+            </div>
           </Card>
-
-          <Card className="border-red-100 shadow-lg">
-            <CardContent className="p-6 text-center">
-              <div className="text-2xl font-bold text-green-600">{stats?.conversion_rate || 0}%</div>
-              <div className="text-sm text-gray-600">Conversion Rate</div>
-            </CardContent>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-xs text-gray-500">Conversion</p>
+                <p className="text-lg font-bold text-green-600">{stats?.conversion_rate || 0}%</p>
+              </div>
+            </div>
           </Card>
         </div>
 
         {/* Filters */}
-        <Card className="border-red-100 shadow-lg mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search quotes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+        <div className="flex gap-3 mb-4">
+          <div className="relative flex-1 max-w-xs">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input placeholder="Search quotes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-8 h-9" />
+          </div>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-32 h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="sent">Sent</SelectItem>
+              <SelectItem value="viewed">Viewed</SelectItem>
+              <SelectItem value="accepted">Accepted</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="viewed">Viewed</SelectItem>
-                  <SelectItem value="accepted">Accepted</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={filterDate} onValueChange={setFilterDate}>
-                <SelectTrigger className="w-32">
-                  <SelectValue placeholder="Date" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quotes List */}
-        <Card className="border-red-100 shadow-lg">
-          <CardHeader>
-            <CardTitle className="bg-gradient-to-r from-primary-red to-primary-dark bg-clip-text text-transparent">
-              Quotes ({filteredQuotes.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredQuotes.map((quote) => (
-                <div key={quote.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h4 className="font-medium text-lg">{quote.quote_number}</h4>
-                      {getStatusBadge(quote.status)}
-                      {getDaysUntilExpiry(quote.valid_until) <= 7 && quote.status !== 'accepted' && (
-                        <Badge variant="destructive" className="text-xs">
-                          Expires in {getDaysUntilExpiry(quote.valid_until)} days
-                        </Badge>
+        {/* Quotes Table */}
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-3 font-medium text-gray-600">Quote #</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Customer</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Project</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Status</th>
+                  <th className="text-center p-3 font-medium text-gray-600">Items</th>
+                  <th className="text-right p-3 font-medium text-gray-600">Amount</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Created</th>
+                  <th className="text-left p-3 font-medium text-gray-600">Expires</th>
+                  <th className="text-center p-3 font-medium text-gray-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {filteredQuotes.map((quote) => (
+                  <tr key={quote.id} className="hover:bg-gray-50">
+                    <td className="p-3 font-medium text-gray-900">{quote.quote_number}</td>
+                    <td className="p-3">
+                      <div className="font-medium text-gray-900">{quote.customer_name}</div>
+                      <div className="text-xs text-gray-500">{quote.customer_email}</div>
+                    </td>
+                    <td className="p-3 text-gray-600 max-w-[150px] truncate">{quote.project_name}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(quote.status)}`}>
+                        {quote.status}
+                      </span>
+                      {getDaysUntilExpiry(quote.valid_until) <= 7 && quote.status !== 'accepted' && quote.status !== 'rejected' && (
+                        <span className="ml-1 text-xs text-red-600">({getDaysUntilExpiry(quote.valid_until)}d)</span>
                       )}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <User className="h-4 w-4" />
-                        <span>{quote.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        <span>{quote.project_name}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        <span>{formatCurrency(quote.total_amount)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>Created: {formatDate(quote.created_date)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Timer className="h-4 w-4" />
-                        <span>Expires: {formatDate(quote.valid_until)}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>{quote.items.length} items</span>
-                      </div>
-                    </div>
-                    {quote.notes && (
-                      <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                        <strong>Notes:</strong> {quote.notes}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-2 ml-6">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedQuote(quote)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-4xl">
-                        <DialogHeader>
-                          <DialogTitle>Quote Details - {selectedQuote?.quote_number}</DialogTitle>
-                        </DialogHeader>
-                        {selectedQuote && (
-                          <div className="space-y-6">
-                            {/* Quote Info */}
-                            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                              <div><strong>Customer:</strong> {selectedQuote.customer_name}</div>
-                              <div><strong>Email:</strong> {selectedQuote.customer_email}</div>
-                              <div><strong>Phone:</strong> {selectedQuote.customer_phone}</div>
-                              <div><strong>Project:</strong> {selectedQuote.project_name}</div>
-                              <div><strong>Status:</strong> {getStatusBadge(selectedQuote.status)}</div>
-                              <div><strong>Total:</strong> {formatCurrency(selectedQuote.total_amount)}</div>
-                              <div><strong>Created:</strong> {formatDate(selectedQuote.created_date)}</div>
-                              <div><strong>Expires:</strong> {formatDate(selectedQuote.valid_until)}</div>
-                            </div>
-
-                            {/* Items */}
-                            <div>
-                              <h3 className="font-medium mb-2">Quote Items ({selectedQuote.items.length})</h3>
-                              <div className="space-y-2">
-                                {selectedQuote.items.map((item) => (
-                                  <div key={item.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                                    <div className="flex-1">
-                                      <div className="font-medium">{item.product_name}</div>
-                                      <div className="text-sm text-gray-600">{item.description}</div>
-                                      {item.room && (
-                                        <div className="text-xs text-red-600">Room: {item.room}</div>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="font-medium">{formatCurrency(item.total_price)}</div>
-                                      <div className="text-sm text-gray-600">
-                                        {item.quantity} × {formatCurrency(item.unit_price)}
-                                      </div>
-                                    </div>
+                    </td>
+                    <td className="p-3 text-center text-gray-600">{quote.items.length}</td>
+                    <td className="p-3 text-right font-medium text-gray-900">{formatCurrency(quote.total_amount)}</td>
+                    <td className="p-3 text-gray-600">{formatDate(quote.created_date)}</td>
+                    <td className="p-3 text-gray-600">{formatDate(quote.valid_until)}</td>
+                    <td className="p-3">
+                      <div className="flex items-center justify-center gap-1">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => setSelectedQuote(quote)}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader><DialogTitle>Quote {selectedQuote?.quote_number}</DialogTitle></DialogHeader>
+                            {selectedQuote && (
+                              <div className="space-y-4 text-sm">
+                                <div className="grid grid-cols-2 gap-4 p-3 bg-gray-50 rounded">
+                                  <div>
+                                    <p className="text-gray-500">Customer</p>
+                                    <p className="font-medium">{selectedQuote.customer_name}</p>
+                                    <p className="text-gray-600">{selectedQuote.customer_email}</p>
+                                    <p className="text-gray-600">{selectedQuote.customer_phone}</p>
                                   </div>
-                                ))}
+                                  <div>
+                                    <p className="text-gray-500">Project</p>
+                                    <p className="font-medium">{selectedQuote.project_name}</p>
+                                    <p className="text-gray-600">Expires: {formatDate(selectedQuote.valid_until)}</p>
+                                  </div>
+                                </div>
+                                <div>
+                                  <p className="font-medium mb-2">Items ({selectedQuote.items.length})</p>
+                                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {selectedQuote.items.map((item) => (
+                                      <div key={item.id} className="flex justify-between p-2 bg-gray-50 rounded">
+                                        <div>
+                                          <p className="font-medium">{item.product_name}</p>
+                                          <p className="text-xs text-gray-500">{item.quantity} × {formatCurrency(item.unit_price)}</p>
+                                        </div>
+                                        <p className="font-medium">{formatCurrency(item.total_price)}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className="flex justify-between items-center pt-3 border-t">
+                                  <div className="flex gap-2">
+                                    {selectedQuote.status === 'draft' && (
+                                      <Button size="sm" onClick={() => sendQuote(selectedQuote.id)}><Send className="h-4 w-4 mr-1" /> Send</Button>
+                                    )}
+                                    <Button variant="outline" size="sm" onClick={() => duplicateQuote(selectedQuote.id)}><Copy className="h-4 w-4 mr-1" /> Duplicate</Button>
+                                    <Button variant="outline" size="sm" onClick={() => downloadQuote(selectedQuote.id)}><Download className="h-4 w-4 mr-1" /> PDF</Button>
+                                  </div>
+                                  <p className="text-lg font-bold">{formatCurrency(selectedQuote.total_amount)}</p>
+                                </div>
                               </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-4 border-t">
-                              {selectedQuote.status === 'draft' && (
-                                <Button
-                                  size="sm"
-                                  onClick={() => sendQuote(selectedQuote.id)}
-                                >
-                                  <Send className="h-4 w-4 mr-1" />
-                                  Send Quote
-                                </Button>
-                              )}
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => duplicateQuote(selectedQuote.id)}
-                              >
-                                <Copy className="h-4 w-4 mr-1" />
-                                Duplicate
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => downloadQuote(selectedQuote.id)}
-                              >
-                                <Download className="h-4 w-4 mr-1" />
-                                Download PDF
-                              </Button>
-                            </div>
-                          </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        {quote.status === 'draft' && (
+                          <Button size="sm" className="h-7 px-2 text-xs" onClick={() => sendQuote(quote.id)}><Send className="h-3 w-3" /></Button>
                         )}
-                      </DialogContent>
-                    </Dialog>
-
-                    {quote.status === 'draft' && (
-                      <Button
-                        size="sm"
-                        onClick={() => sendQuote(quote.id)}
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                      >
-                        <Send className="h-4 w-4 mr-1" />
-                        Send
-                      </Button>
-                    )}
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => duplicateQuote(quote.id)}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadQuote(quote.id)}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredQuotes.length === 0 && (
-              <div className="text-center py-12">
-                <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">No Quotes Found</h3>
-                <p className="text-gray-500">
-                  {searchTerm || filterStatus !== 'all'
-                    ? 'No quotes match your current filters.'
-                    : 'You haven\'t created any quotes yet.'
-                  }
-                </p>
-              </div>
-            )}
-          </CardContent>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => duplicateQuote(quote.id)}><Copy className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => downloadQuote(quote.id)}><Download className="h-4 w-4" /></Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {filteredQuotes.length === 0 && (
+                  <tr><td colSpan={9} className="p-8 text-center text-gray-500">No quotes found</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
     </div>
